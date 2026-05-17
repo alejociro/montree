@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Multitenancy;
 
 use App\Models\Tenant;
+use App\Services\Tenant\TenantConfigurationCache;
 use Illuminate\Http\Request;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\TenantFinder\TenantFinder;
@@ -13,6 +14,9 @@ final class SubdomainTenantFinder extends TenantFinder
 {
     /**
      * Hosts that NEVER resolve to a tenant (platform landing).
+     *
+     * Single source of truth for reserved hosts. Consumed here and by
+     * App\Http\Middleware\ResolveTenant via the static helper.
      *
      * @var array<int, string>
      */
@@ -23,15 +27,24 @@ final class SubdomainTenantFinder extends TenantFinder
         'www.montree.test',
         'admin.montree.app',
         'admin.montree.test',
+        'api.montree.app',
+        'api.montree.test',
         'localhost',
         '127.0.0.1',
     ];
+
+    public function __construct(private TenantConfigurationCache $cache) {}
+
+    public static function isReservedHost(string $host): bool
+    {
+        return in_array(strtolower($host), self::RESERVED_HOSTS, true);
+    }
 
     public function findForRequest(Request $request): ?IsTenant
     {
         $host = strtolower($request->getHost());
 
-        if (in_array($host, self::RESERVED_HOSTS, true)) {
+        if (self::isReservedHost($host)) {
             return null;
         }
 
@@ -41,7 +54,7 @@ final class SubdomainTenantFinder extends TenantFinder
             return null;
         }
 
-        return Tenant::query()->where('slug', $slug)->first();
+        return $this->cache->forSlug($slug);
     }
 
     private function extractSlug(string $host): ?string

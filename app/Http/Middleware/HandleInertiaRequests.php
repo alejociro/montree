@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
+use App\Http\Resources\TenantConfigurationResource;
+use App\Http\Resources\TenantResource;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
-class HandleInertiaRequests extends Middleware
+final class HandleInertiaRequests extends Middleware
 {
     /**
      * The root template that's loaded on the first page visit.
@@ -35,11 +40,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $tenant = Tenant::current();
+        $tenant?->loadMissing('configuration');
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'tenant' => $tenant !== null
+                ? (new TenantResource($tenant))->resolve()
+                : null,
+            'tenantConfiguration' => $tenant?->configuration !== null
+                ? (new TenantConfigurationResource($tenant->configuration))->resolve()
+                : null,
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
