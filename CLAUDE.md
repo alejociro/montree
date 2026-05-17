@@ -214,3 +214,62 @@ Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
+
+=== montree project rules ===
+
+# MONTREE — Project workflow
+
+This project follows a spec-driven, multi-agent workflow. Before writing any code, read the project documentation under `docs/`.
+
+## Required reading order (for any non-trivial task)
+
+1. `docs/constitution.md` — technical rules that cannot be violated (layers, patterns, naming, errors to avoid)
+2. `docs/multi-tenancy.md` — single-DB + tenant_id strategy via `spatie/laravel-multitenancy`
+3. `docs/api-conventions.md` — endpoints, versioning, response shape, errors
+4. `docs/testing-policy.md` — PHPUnit 12, minimum coverage per endpoint
+5. `docs/workflow.md` — how a feature flows from spec to merged PR
+6. The relevant feature spec at `docs/specs/F0XX-<slug>/spec.md`
+
+## Feature workflow
+
+Each of the 15 features (F001..F015) lives in `docs/specs/F0XX-<slug>/` with 4 files:
+- `spec.md` — functional spec (stable)
+- `contracts.md` — exact request/response shapes (contract between backend and frontend)
+- `plan.md` — technical decisions
+- `tasks.md` — atomic checklist
+
+Use the slash commands to orchestrate:
+- `/feature-start F0XX` — write contracts/plan/tasks for the feature, create branch
+- `/feature-status F0XX` — show progress, what's left, test status
+- `/feature-review F0XX` — invoke reviewer agent for go/no-go verdict
+
+## Specialized sub-agents
+
+Defined in `.claude/agents/`. Invoke with the `Agent` tool when working on a feature:
+
+- `montree-db-architect` — schema, migrations, models, factories, seeders. Runs once at setup, then only when a feature needs new columns/tables. Never touches application logic.
+- `montree-backend-dev` — Actions, Form Requests, Controllers, Resources, Policies, Jobs, Notifications + tests. Never touches schema or frontend.
+- `montree-frontend-dev` — Pages, components, composables, types with Inertia v3 + Vue 3 + Tailwind v4. Never touches backend.
+- `montree-reviewer` — audits a finished feature against spec + constitution + runs tests/lint/types. Returns go/no-go report. Never modifies code.
+- `montree-spec-updater` — updates spec.md / contracts.md / plan.md / tasks.md when implementation reveals the spec was wrong. Tracks changes in each file's Changelog.
+
+## Key technical decisions (already made)
+
+- **Multi-tenancy**: single DB with `tenant_id`, subdomain-based resolution via `spatie/laravel-multitenancy`
+- **RBAC**: `spatie/laravel-permission` with `teams` feature (team = tenant)
+- **Auth**: Sanctum SPA (cookies) via Fortify
+- **Payments**: Stripe (Cashier decision pending in F007 plan)
+- **Code style**: Pint with `--format agent`; strict types everywhere; no comments unless WHY is non-obvious; no dead code; early returns; max 2 nesting levels
+
+## Hard rules (from constitution)
+
+- Form Request for ALL input validation (controllers never validate inline)
+- Action class per use case; controllers stay under 10 lines per method
+- Services only when 2+ actions share logic
+- No Repository pattern (Eloquent is the repository)
+- Wayfinder for ALL frontend URLs — hardcoded URLs are a bug
+- N+1 forbidden — use `with()` / `loadMissing()`
+- Test coverage minimum per endpoint: 1 happy + 1 failure + 1 edge + 1 tenant-isolation (if tenant-scoped)
+
+When in doubt, read `docs/constitution.md` instead of guessing.
+

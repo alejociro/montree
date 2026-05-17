@@ -214,3 +214,55 @@ Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
+
+=== montree project rules ===
+
+# MONTREE — Project workflow
+
+This project follows a spec-driven, multi-agent workflow. Before writing any code, read the project documentation under `docs/`.
+
+## Required reading order (for any non-trivial task)
+
+1. `docs/constitution.md` — technical rules that cannot be violated
+2. `docs/multi-tenancy.md` — single-DB + tenant_id strategy
+3. `docs/api-conventions.md` — endpoints, versioning, response shape
+4. `docs/testing-policy.md` — minimum coverage per endpoint
+5. `docs/workflow.md` — how a feature flows from spec to merged PR
+6. The relevant feature spec at `docs/specs/F0XX-<slug>/spec.md`
+
+## Feature workflow
+
+Each feature lives in `docs/specs/F0XX-<slug>/` with spec.md, contracts.md, plan.md, tasks.md.
+
+Slash commands available:
+- `/feature-start F0XX` — write contracts/plan/tasks, create branch
+- `/feature-status F0XX` — show progress and test status
+- `/feature-review F0XX` — invoke reviewer agent
+
+## Specialized sub-agents (in `.claude/agents/`)
+
+- `montree-db-architect` — schema only
+- `montree-backend-dev` — backend implementation only
+- `montree-frontend-dev` — frontend implementation only
+- `montree-reviewer` — audit, never modifies code
+- `montree-spec-updater` — updates specs with changelog tracking
+
+## Key technical decisions
+
+- Multi-tenancy: single DB + `tenant_id` via `spatie/laravel-multitenancy`
+- RBAC: `spatie/laravel-permission` with teams feature
+- Auth: Sanctum SPA (Fortify)
+- Payments: Stripe
+
+## Hard rules
+
+- Form Request for ALL input validation
+- Action class per use case; controllers under 10 lines per method
+- No Repository pattern (Eloquent is the repository)
+- No Service layer unless 2+ actions share logic
+- Wayfinder for ALL frontend URLs
+- N+1 forbidden
+- Strict types everywhere; no comments unless WHY is non-obvious
+
+When in doubt, read `docs/constitution.md`.
+
