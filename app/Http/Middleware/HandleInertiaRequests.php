@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\AuthUserResource;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,11 +45,16 @@ final class HandleInertiaRequests extends Middleware
         $tenant = Tenant::current();
         $tenant?->loadMissing('configuration');
 
+        /** @var User|null $user */
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user !== null
+                    ? (new AuthUserResource($user, $tenant))->resolve()
+                    : null,
             ],
             'tenant' => $tenant !== null
                 ? (new TenantResource($tenant))->resolve()

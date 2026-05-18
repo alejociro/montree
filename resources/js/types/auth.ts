@@ -1,11 +1,16 @@
+export type TenantRole = 'admin' | 'operator' | 'guide' | 'customer';
+
 export type User = {
     id: number;
     name: string;
     email: string;
     avatar?: string;
+    avatar_path: string | null;
+    avatar_url: string | null;
+    phone: string | null;
     email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
+    tenantRole: TenantRole | null;
+    isSuperAdmin: boolean;
     [key: string]: unknown;
 };
 

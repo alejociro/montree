@@ -70,13 +70,18 @@ Tablas: `users`, `tenant_user`, `password_reset_tokens` (default Laravel)
 - 2FA / passkeys (Fortify lo soporta, se activará en feature aparte).
 - Magic link login.
 
-## Decisiones abiertas
+## Decisiones tomadas
 
-- [ ] ¿Verificación de email obligatoria para reservar, o opcional?
-- [ ] ¿Welcome email separado del verification email?
+- **Verificación email**: NO obligatoria para registrar/loguear. Sí obligatoria para reservar (gate en F006 con middleware `verified`). Razón: bajar fricción del onboarding, no perder customers en el primer paso.
+- **Welcome + verification**: un solo email con link de verificación y mensaje de bienvenida con branding del tenant. Razón: evitar spam doble en el inbox del usuario.
+- **Registro asocia al tenant actual con rol `customer`** automáticamente vía `tenant_user` pivot. Si el usuario ya existe globalmente (con otro tenant), solo se crea la relación nueva.
+- **Login**: si usuario existe pero NO tiene relación con el tenant actual, se crea la relación tenant_user con rol `customer` automáticamente (no error). Razón: experiencia fluida para visitantes que se loguean entre agencias.
+- **Rate limit**: 5 intentos/min por (email, IP) para login. Default Laravel para resto.
+- **`POST /api/v1/auth/*` endpoints**: NO los implementamos como API JSON. Usamos las rutas de Fortify por default (`/login`, `/register`, etc.) renderizadas via Inertia. Razón: el starter ya las tiene, no duplicar. Si en el futuro hace falta API headless, se agrega luego.
 
 ---
 
 ## Changelog
 
 - `2026-05-17` — Creación inicial migrada del enunciado de proyecto.
+- `2026-05-17` — Cerrado decisiones abiertas (verification opcional, single welcome email, tenant_user auto-attach, Fortify routes via Inertia).

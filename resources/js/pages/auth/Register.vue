@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTenant } from '@/composables/useTenant';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
@@ -20,10 +21,18 @@ defineOptions({
         description: 'Enter your details below to create your account',
     },
 });
+
+const { isResolved, displayName } = useTenant();
 </script>
 
 <template>
     <Head title="Register" />
+
+    <p v-if="isResolved" class="mb-4 text-center text-sm text-muted-foreground">
+        Creá tu cuenta en
+        <span class="font-medium text-primary">{{ displayName }}</span>
+        para reservar tours y guardar tus favoritos.
+    </p>
 
     <Form
         v-bind="store.form()"

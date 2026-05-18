@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { AlertTriangle } from 'lucide-vue-next';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTenant } from '@/composables/useTenant';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
@@ -24,6 +28,22 @@ defineProps<{
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const { tenant } = useTenant();
+
+const SUSPENSION_KEYWORDS = ['suspendida', 'suspended', 'suspendido'] as const;
+
+function isSuspensionError(message: string | undefined): boolean {
+    if (!message) {
+        return false;
+    }
+
+    const normalized = message.toLowerCase();
+
+    return SUSPENSION_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 </script>
 
 <template>
@@ -31,7 +51,7 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        class="mb-4 text-center text-sm font-medium text-primary"
     >
         {{ status }}
     </div>
@@ -42,6 +62,27 @@ defineProps<{
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
     >
+        <Alert
+            v-if="isSuspensionError(errors.email)"
+            variant="destructive"
+            class="mb-2"
+        >
+            <AlertTriangle class="size-4" />
+            <AlertTitle>Cuenta suspendida</AlertTitle>
+            <AlertDescription>
+                <p>{{ errors.email }}</p>
+                <p v-if="contactEmail" class="mt-2">
+                    Contactá al admin:
+                    <a
+                        :href="`mailto:${contactEmail}`"
+                        class="font-medium underline"
+                    >
+                        {{ contactEmail }}
+                    </a>
+                </p>
+            </AlertDescription>
+        </Alert>
+
         <div class="grid gap-6">
             <div class="grid gap-2">
                 <Label for="email">Email address</Label>
@@ -55,7 +96,10 @@ defineProps<{
                     autocomplete="email"
                     placeholder="email@example.com"
                 />
-                <InputError :message="errors.email" />
+                <InputError
+                    v-if="!isSuspensionError(errors.email)"
+                    :message="errors.email"
+                />
             </div>
 
             <div class="grid gap-2">

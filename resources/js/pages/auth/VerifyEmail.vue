@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { MailCheck } from 'lucide-vue-next';
 import TextLink from '@/components/TextLink.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
@@ -22,13 +24,21 @@ defineProps<{
 <template>
     <Head title="Email verification" />
 
-    <div
+    <Alert
         v-if="status === 'verification-link-sent'"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        class="mb-4 border-primary/40 bg-primary/10 text-primary"
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
-    </div>
+        <MailCheck class="size-4" />
+        <AlertTitle>Revisá tu casilla</AlertTitle>
+        <AlertDescription class="text-primary/90">
+            Te enviamos un nuevo link de verificación al email que indicaste en
+            tu registro.
+        </AlertDescription>
+    </Alert>
+
+    <p class="mb-6 text-center text-sm text-muted-foreground">
+        Verificá tu email para reservar tours y recibir tus confirmaciones.
+    </p>
 
     <Form
         v-bind="send.form()"

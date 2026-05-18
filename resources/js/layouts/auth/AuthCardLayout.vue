@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import {
     Card,
     CardContent,
@@ -8,12 +8,18 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTenant } from '@/composables/useTenant';
+import { useTenantBranding } from '@/composables/useTenantBranding';
 import { home } from '@/routes';
 
 defineProps<{
     title?: string;
     description?: string;
 }>();
+
+useTenantBranding();
+
+const { configuration, displayName } = useTenant();
 </script>
 
 <template>
@@ -25,17 +31,20 @@ defineProps<{
                 :href="home()"
                 class="flex items-center gap-2 self-center font-medium"
             >
-                <div class="flex h-9 w-9 items-center justify-center">
-                    <AppLogoIcon
-                        class="size-9 fill-current text-black dark:text-white"
-                    />
-                </div>
+                <TenantBrandedLogo size="md" />
+                <span class="sr-only">{{ displayName }}</span>
             </Link>
 
             <div class="flex flex-col gap-6">
                 <Card class="rounded-xl">
                     <CardHeader class="px-10 pt-8 pb-0 text-center">
                         <CardTitle class="text-xl">{{ title }}</CardTitle>
+                        <p
+                            v-if="configuration?.tagline"
+                            class="mt-1 text-sm font-medium text-primary"
+                        >
+                            {{ configuration.tagline }}
+                        </p>
                         <CardDescription>
                             {{ description }}
                         </CardDescription>
