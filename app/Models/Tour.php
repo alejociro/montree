@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStatus;
 use Database\Factories\TourFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -122,5 +123,14 @@ class Tour extends Model
     public function coverImage(): HasOne
     {
         return $this->hasOne(TourImage::class)->where('is_cover', true);
+    }
+
+    /**
+     * @param  Builder<Tour>  $query
+     * @return Builder<Tour>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', TourStatus::Active->value);
     }
 }

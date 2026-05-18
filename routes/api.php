@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
+use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
@@ -20,6 +22,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('tenant', [TenantController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('api.v1.tenant.show');
+
+Route::middleware('throttle:60,1')->group(function (): void {
+    Route::get('tours/categories', [CategoryController::class, 'index'])->name('api.v1.tours.categories.index');
+    Route::get('tours', [CatalogController::class, 'index'])->name('api.v1.tours.index');
+});
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
     Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
