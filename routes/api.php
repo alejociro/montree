@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
+use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
@@ -39,6 +40,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
+    Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
+    Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {

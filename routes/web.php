@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
+use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
@@ -18,6 +19,8 @@ Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tou
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+    Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

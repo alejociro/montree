@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\BookingException;
 use App\Exceptions\InvalidTourStatusTransitionException;
 use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
@@ -51,4 +52,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (PromotionCodeTakenException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionCodeLockedException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionInvalidException $e) => $e->toResponse());
+        $exceptions->render(fn (BookingException $e) => $e->toResponse());
     })->create();
