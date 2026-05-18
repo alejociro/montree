@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\BookingPagesController;
@@ -21,6 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
     Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
+
+    Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
+    Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
+    Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

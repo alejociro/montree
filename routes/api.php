@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
@@ -42,6 +43,11 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
     Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
     Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
+
+    Route::get('account/profile', [AccountController::class, 'profile'])->name('api.v1.account.profile');
+    Route::put('account/profile', [AccountController::class, 'updateProfile'])->name('api.v1.account.profile.update');
+    Route::get('account/bookings', [AccountController::class, 'bookings'])->name('api.v1.account.bookings');
+    Route::get('account/favorites', [AccountController::class, 'favorites'])->name('api.v1.account.favorites');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
