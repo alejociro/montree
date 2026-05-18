@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Observers\TenantConfigurationObserver;
 use App\Observers\TenantObserver;
+use App\Policies\SuperAdminTenantPolicy;
 use App\Policies\TenantPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -65,5 +66,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configurePolicies(): void
     {
         Gate::policy(Tenant::class, TenantPolicy::class);
+
+        Gate::define('manage-platform-tenant', [SuperAdminTenantPolicy::class, 'manage']);
     }
 }

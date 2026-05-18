@@ -2,8 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { Settings } from 'lucide-vue-next';
 import AdminNavMain from '@/components/AdminNavMain.vue';
-import NavUser from '@/components/NavUser.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
+import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
     SidebarContent,
