@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
@@ -34,6 +35,8 @@ use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantA
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
 use App\Http\Controllers\Api\V1\TenantController;
+use App\Models\Tenant;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('tenant', [TenantController::class, 'show'])
@@ -43,6 +46,47 @@ Route::get('tenant', [TenantController::class, 'show'])
 Route::middleware('throttle:5,1')->group(function (): void {
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('api.v1.newsletter.subscribe');
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribeByToken'])->name('api.v1.newsletter.unsubscribe');
+});
+
+// TEMP DEBUG — remove after diagnosing auth.
+Route::middleware(['auth'])->get('_debug/me_auth', function (Request $request) {
+    setPermissionsTeamId(0);
+    $user = $request->user();
+    $user?->unsetRelation('roles');
+
+    return response()->json([
+        'reached' => true,
+        'auth_user_id' => $user?->id,
+        'is_super_admin' => $user?->hasRole(UserRole::SuperAdmin->value) ?? false,
+    ]);
+});
+
+Route::middleware(['auth', 'super_admin.only'])->get('_debug/me_super', function (Request $request) {
+    return response()->json(['reached' => true, 'host' => $request->getHost()]);
+});
+
+Route::domain((string) config('montree.super_admin_host'))
+    ->middleware(['auth', 'super_admin.only'])
+    ->get('_debug/me_super_domain', function (Request $request) {
+        return response()->json(['reached' => true, 'host' => $request->getHost()]);
+    });
+
+Route::get('_debug/me', function (Request $request) {
+    setPermissionsTeamId(0);
+    $user = $request->user();
+    $user?->unsetRelation('roles');
+
+    return response()->json([
+        'host' => $request->getHost(),
+        'session_id' => $request->session()->getId(),
+        'session_cookie_name' => config('session.cookie'),
+        'session_domain' => config('session.domain'),
+        'cookies_received' => array_keys($request->cookies->all()),
+        'auth_user_id' => $user?->id,
+        'auth_user_email' => $user?->email,
+        'is_super_admin' => $user?->hasRole(UserRole::SuperAdmin->value) ?? false,
+        'tenant' => Tenant::current()?->slug,
+    ]);
 });
 
 Route::middleware('throttle:60,1')->group(function (): void {
@@ -109,8 +153,12 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
     Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->name('tour-dates.guide');
 });
 
-Route::domain((string) config('montree.super_admin_host'))
-    ->middleware(['auth', 'super_admin.only'])
+// WHY: super-admin API routes intentionally do NOT use Route::domain().
+// The super_admin.only middleware enforces the role; pinning to a specific
+// host would force Wayfinder to emit absolute URLs with that host (which
+// breaks ports in dev). The Inertia /super-admin pages in routes/web.php
+// remain Route::domain-gated so the URLs the user navigates to stay correct.
+Route::middleware(['auth', 'super_admin.only'])
     ->prefix('super-admin')
     ->name('api.v1.super-admin.')
     ->group(function (): void {
