@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Mountain, Settings } from 'lucide-vue-next';
+import { LayoutDashboard, Mountain, Settings } from 'lucide-vue-next';
 import AdminNavMain from '@/components/AdminNavMain.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -16,6 +16,11 @@ import {
 import type { NavItem } from '@/types';
 
 const navItems: NavItem[] = [
+    {
+        title: 'Dashboard',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+    },
     {
         title: 'Tours',
         href: '/admin/tours',
@@ -35,7 +40,7 @@ const navItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link href="/admin/tenant/configuration">
+                        <Link href="/admin/dashboard">
                             <TenantBrandedLogo size="sm" />
                         </Link>
                     </SidebarMenuButton>

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
@@ -21,6 +24,10 @@ Route::get('tenant', [TenantController::class, 'show'])
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
     Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
     Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->name('tenant.configuration.update');
+
+    Route::get('dashboard', [AdminDashboardController::class, 'show'])->name('dashboard.show');
+    Route::get('reports/revenue', AdminRevenueReportController::class)->name('reports.revenue');
+    Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
 
     Route::apiResource('tours', AdminTourController::class)->names('tours');
     Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');

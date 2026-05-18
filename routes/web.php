@@ -15,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::inertia('dashboard', 'Admin/Dashboard')->name('dashboard');
     Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
