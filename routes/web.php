@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
+use App\Http\Controllers\NewsletterPagesController;
 use App\Http\Controllers\NotificationPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
@@ -18,6 +19,7 @@ Route::inertia('/', 'Welcome', [
 
 Route::get('tours', [CatalogPagesController::class, 'index'])->name('catalog.index');
 Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tours.show');
+Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->name('newsletter.unsubscribe.page');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
@@ -36,6 +38,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
     Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
+    Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

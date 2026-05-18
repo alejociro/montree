@@ -2,6 +2,7 @@
 
 use App\Exceptions\BookingException;
 use App\Exceptions\InvalidTourStatusTransitionException;
+use App\Exceptions\NewsletterException;
 use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
@@ -55,4 +56,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (PromotionInvalidException $e) => $e->toResponse());
         $exceptions->render(fn (BookingException $e) => $e->toResponse());
         $exceptions->render(fn (ReviewException $e) => $e->toResponse());
+        $exceptions->render(fn (NewsletterException $e) => $e->toResponse());
     })->create();

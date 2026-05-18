@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
+use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
@@ -34,6 +36,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('tenant', [TenantController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('api.v1.tenant.show');
+
+Route::middleware('throttle:5,1')->group(function (): void {
+    Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('api.v1.newsletter.subscribe');
+    Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribeByToken'])->name('api.v1.newsletter.unsubscribe');
+});
 
 Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/categories', [CategoryController::class, 'index'])->name('api.v1.tours.categories.index');
@@ -84,6 +91,9 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
     Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
 
     Route::post('payments/{payment}/refund', AdminPaymentRefundController::class)->name('payments.refund');
+
+    Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->name('newsletter.subscribers');
+    Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->name('newsletter.send');
 });
 
 Route::domain((string) config('montree.super_admin_host'))
