@@ -8,6 +8,7 @@ use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
 use App\Exceptions\ReviewException;
+use App\Exceptions\TeamException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\HandleAppearance;
@@ -57,4 +58,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (BookingException $e) => $e->toResponse());
         $exceptions->render(fn (ReviewException $e) => $e->toResponse());
         $exceptions->render(fn (NewsletterException $e) => $e->toResponse());
+        $exceptions->render(fn (TeamException $e) => $e->toResponse());
     })->create();

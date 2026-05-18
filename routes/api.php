@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRef
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
+use App\Http\Controllers\Api\V1\GuideController;
 use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -68,6 +71,9 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
 
     Route::post('bookings/{bookingNumber}/payments', [PaymentController::class, 'store'])->name('api.v1.bookings.payments.store');
+
+    Route::get('guide/schedule', [GuideController::class, 'schedule'])->name('api.v1.guide.schedule');
+    Route::get('guide/tour-dates/{tourDate}/travelers', [GuideController::class, 'travelers'])->name('api.v1.guide.tour-dates.travelers');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
@@ -94,6 +100,13 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
 
     Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->name('newsletter.subscribers');
     Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->name('newsletter.send');
+
+    Route::get('users', [AdminTeamController::class, 'index'])->name('users.index');
+    Route::post('users', [AdminTeamController::class, 'store'])->name('users.store');
+    Route::patch('users/{user}/role', [AdminTeamController::class, 'updateRole'])->name('users.role');
+    Route::patch('users/{user}/suspend', [AdminTeamController::class, 'suspend'])->name('users.suspend');
+    Route::patch('users/{user}/reactivate', [AdminTeamController::class, 'reactivate'])->name('users.reactivate');
+    Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->name('tour-dates.guide');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

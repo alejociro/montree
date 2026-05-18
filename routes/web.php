@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
+use App\Http\Controllers\Admin\TeamPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
+use App\Http\Controllers\Guide\GuidePagesController;
 use App\Http\Controllers\NewsletterPagesController;
 use App\Http\Controllers\NotificationPagesController;
 use App\Http\Controllers\PublicTourPageController;
@@ -39,6 +41,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
     Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');
+    Route::get('team', [TeamPagesController::class, 'index'])->name('team.index');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('guide')->name('guide.')->group(function () {
+    Route::get('schedule', [GuidePagesController::class, 'schedule'])->name('schedule');
 });
 
 Route::domain((string) config('montree.super_admin_host'))
