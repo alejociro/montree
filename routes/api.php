@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageContr
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
@@ -28,6 +30,11 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours', [CatalogController::class, 'index'])->name('api.v1.tours.index');
 });
 
+Route::middleware(['auth'])->group(function (): void {
+    Route::post('promotions/validate', PromotionValidationController::class)
+        ->name('api.v1.promotions.validate');
+});
+
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
     Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
     Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->name('tenant.configuration.update');
@@ -41,6 +48,8 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
     Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
     Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
     Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
+
+    Route::apiResource('promotions', AdminPromotionController::class)->names('promotions');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

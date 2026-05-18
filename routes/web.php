@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\CatalogPagesController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
+    Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
 });
 
 Route::domain((string) config('montree.super_admin_host'))
