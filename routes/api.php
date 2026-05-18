@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingControlle
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
+use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
+use App\Http\Controllers\Api\V1\ReviewController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
@@ -48,6 +50,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::put('account/profile', [AccountController::class, 'updateProfile'])->name('api.v1.account.profile.update');
     Route::get('account/bookings', [AccountController::class, 'bookings'])->name('api.v1.account.bookings');
     Route::get('account/favorites', [AccountController::class, 'favorites'])->name('api.v1.account.favorites');
+
+    Route::post('reviews', [ReviewController::class, 'store'])->name('api.v1.reviews.store');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
@@ -65,6 +69,10 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
     Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
 
     Route::apiResource('promotions', AdminPromotionController::class)->names('promotions');
+
+    Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('reviews.status');
+    Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

@@ -6,6 +6,7 @@ use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
+use App\Exceptions\ReviewException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\HandleAppearance;
@@ -53,4 +54,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (PromotionCodeLockedException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionInvalidException $e) => $e->toResponse());
         $exceptions->render(fn (BookingException $e) => $e->toResponse());
+        $exceptions->render(fn (ReviewException $e) => $e->toResponse());
     })->create();
