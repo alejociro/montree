@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
@@ -52,6 +53,10 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('account/favorites', [AccountController::class, 'favorites'])->name('api.v1.account.favorites');
 
     Route::post('reviews', [ReviewController::class, 'store'])->name('api.v1.reviews.store');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
+    Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('api.v1.notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {

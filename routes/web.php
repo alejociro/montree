@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
+use App\Http\Controllers\NotificationPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
@@ -26,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
     Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
     Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
+    Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
