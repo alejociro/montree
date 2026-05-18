@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Settings } from 'lucide-vue-next';
+import { Mountain, Settings } from 'lucide-vue-next';
 import AdminNavMain from '@/components/AdminNavMain.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -16,6 +16,11 @@ import {
 import type { NavItem } from '@/types';
 
 const navItems: NavItem[] = [
+    {
+        title: 'Tours',
+        href: '/admin/tours',
+        icon: Mountain,
+    },
     {
         title: 'Configuración',
         href: '/admin/tenant/configuration',

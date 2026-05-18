@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
+use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
+use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
@@ -18,6 +21,12 @@ Route::get('tenant', [TenantController::class, 'show'])
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
     Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
     Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->name('tenant.configuration.update');
+
+    Route::apiResource('tours', AdminTourController::class)->names('tours');
+    Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');
+    Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
+    Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
+    Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

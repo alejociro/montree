@@ -1,5 +1,8 @@
 <?php
 
+use App\Exceptions\InvalidTourStatusTransitionException;
+use App\Exceptions\PlanLimitReachedException;
+use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -39,5 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(fn (PlanLimitReachedException $e) => $e->toResponse());
+        $exceptions->render(fn (InvalidTourStatusTransitionException $e) => $e->toResponse());
+        $exceptions->render(fn (TourHasActiveBookingsException $e) => $e->toResponse());
     })->create();

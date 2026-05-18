@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,12 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
+    Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
+    Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
 });
 
 Route::domain((string) config('montree.super_admin_host'))

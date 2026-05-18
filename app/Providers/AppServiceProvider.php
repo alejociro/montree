@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
+use App\Models\Tour;
 use App\Observers\TenantConfigurationObserver;
 use App\Observers\TenantObserver;
 use App\Policies\SuperAdminTenantPolicy;
 use App\Policies\TenantPolicy;
+use App\Policies\TourPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configurePolicies(): void
     {
         Gate::policy(Tenant::class, TenantPolicy::class);
+        Gate::policy(Tour::class, TourPolicy::class);
 
         Gate::define('manage-platform-tenant', [SuperAdminTenantPolicy::class, 'manage']);
     }
