@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
@@ -57,6 +59,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
     Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('api.v1.notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
+
+    Route::post('bookings/{bookingNumber}/payments', [PaymentController::class, 'store'])->name('api.v1.bookings.payments.store');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
@@ -78,6 +82,8 @@ Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(funct
     Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('reviews.status');
     Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
+
+    Route::post('payments/{payment}/refund', AdminPaymentRefundController::class)->name('payments.refund');
 });
 
 Route::domain((string) config('montree.super_admin_host'))
