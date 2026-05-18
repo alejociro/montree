@@ -30,6 +30,10 @@ final class LoginResponse implements LoginResponseContract
             return redirect()->intended($this->home());
         }
 
+        if ($this->isSuperAdmin($user)) {
+            return $this->redirectSuperAdmin($request);
+        }
+
         if ($tenant === null) {
             return $this->buildRedirect($user, $request);
         }
@@ -40,11 +44,32 @@ final class LoginResponse implements LoginResponseContract
             return $this->logoutSuspended($request);
         }
 
-        if ($pivot === null && ! $user->hasRole(UserRole::SuperAdmin->value)) {
+        if ($pivot === null) {
             $this->attachUserToTenant->handle($user, $tenant, UserRole::Customer, 'login');
         }
 
         return $this->buildRedirect($user, $request);
+    }
+
+    private function isSuperAdmin(User $user): bool
+    {
+        setPermissionsTeamId(0);
+        $user->unsetRelation('roles');
+
+        return $user->hasRole(UserRole::SuperAdmin->value);
+    }
+
+    private function redirectSuperAdmin(Request $request): Response
+    {
+        $host = (string) config('montree.super_admin_host', 'admin.montree.test');
+        $scheme = $request->getScheme();
+        $port = $request->getPort();
+        $portSuffix = in_array($port, [80, 443], true) ? '' : ':'.$port;
+        $url = "{$scheme}://{$host}{$portSuffix}/super-admin/dashboard";
+
+        return $request->wantsJson()
+            ? response()->json(['two_factor' => false, 'redirect' => $url])
+            : redirect()->away($url);
     }
 
     private function resolveMembership(User $user, Tenant $tenant): ?TenantUser

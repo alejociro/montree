@@ -18,6 +18,7 @@ use App\Models\TourImage;
 use App\Models\TourItinerary;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -25,6 +26,10 @@ class DemoTenantSeeder extends Seeder
 {
     public function run(): void
     {
+        // WHY: previous cached Tenant payloads can become __PHP_Incomplete_Class
+        // when the model shape changes between fresh migrations.
+        Cache::flush();
+
         $superAdmin = User::query()->updateOrCreate(
             ['email' => 'super@montree.test'],
             [

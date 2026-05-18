@@ -18,11 +18,26 @@ final class TenantConfigurationCache
 
     public function forSlug(string $slug): ?Tenant
     {
-        return Cache::remember(
-            self::key($slug),
-            self::TTL_SECONDS,
-            fn (): ?Tenant => Tenant::query()->with('configuration')->where('slug', $slug)->first(),
-        );
+        $cached = Cache::get(self::key($slug));
+
+        // WHY: a stale cache entry (e.g. after migrate:fresh changed model schema)
+        // can deserialize as __PHP_Incomplete_Class. Treat any non-Tenant payload
+        // as a miss and refresh.
+        if ($cached !== null && ! $cached instanceof Tenant) {
+            Cache::forget(self::key($slug));
+            $cached = null;
+        }
+
+        if ($cached instanceof Tenant) {
+            return $cached;
+        }
+
+        $tenant = Tenant::query()->with('configuration')->where('slug', $slug)->first();
+        if ($tenant !== null) {
+            Cache::put(self::key($slug), $tenant, self::TTL_SECONDS);
+        }
+
+        return $tenant;
     }
 
     public function forget(string $slug): void
