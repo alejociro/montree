@@ -131,6 +131,6 @@ class Tour extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', TourStatus::Active->value);
+        return $query->where('status', TourStatus::Active);
     }
 }

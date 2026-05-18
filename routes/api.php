@@ -13,7 +13,10 @@ use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageContr
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
+use App\Http\Controllers\Api\V1\PublicReviewController;
+use App\Http\Controllers\Api\V1\PublicTourController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
@@ -28,11 +31,14 @@ Route::get('tenant', [TenantController::class, 'show'])
 Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/categories', [CategoryController::class, 'index'])->name('api.v1.tours.categories.index');
     Route::get('tours', [CatalogController::class, 'index'])->name('api.v1.tours.index');
+    Route::get('tours/{slug}', [PublicTourController::class, 'show'])->name('api.v1.tours.show');
+    Route::get('tours/{slug}/reviews', [PublicReviewController::class, 'index'])->name('api.v1.tours.reviews.index');
 });
 
 Route::middleware(['auth'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
         ->name('api.v1.promotions.validate');
+    Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {

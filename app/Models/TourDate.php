@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\TourDateStatus;
 use Database\Factories\TourDateFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,5 +70,14 @@ class TourDate extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeOpenFuture(Builder $query): Builder
+    {
+        return $query->where('status', TourDateStatus::Open)->where('starts_at', '>', now());
     }
 }
