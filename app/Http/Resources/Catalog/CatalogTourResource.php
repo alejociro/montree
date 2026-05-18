@@ -39,7 +39,9 @@ class CatalogTourResource extends JsonResource
                 ? (new CategoryResource($this->category))->resolve()
                 : null,
             'cover_image_url' => $this->coverImage !== null
-                ? Storage::disk('public')->url($this->coverImage->path)
+                ? (str_starts_with((string) $this->coverImage->path, 'http')
+                    ? $this->coverImage->path
+                    : Storage::disk('public')->url($this->coverImage->path))
                 : null,
             'rating_average' => $this->rating_average,
             'rating_count' => $this->rating_count,

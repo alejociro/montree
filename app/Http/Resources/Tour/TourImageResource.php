@@ -22,7 +22,9 @@ class TourImageResource extends JsonResource
         return [
             'id' => $this->id,
             'tour_id' => $this->tour_id,
-            'url' => Storage::disk('public')->url($this->path),
+            'url' => str_starts_with((string) $this->path, 'http')
+                ? $this->path
+                : Storage::disk('public')->url($this->path),
             'alt_text' => $this->alt_text,
             'display_order' => $this->display_order,
             'is_cover' => (bool) $this->is_cover,

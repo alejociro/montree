@@ -42,8 +42,16 @@ class TourResource extends JsonResource
             'requirements' => $this->requirements ?? [],
             'rating_average' => $this->rating_average,
             'rating_count' => $this->rating_count,
-            'images' => TourImageResource::collection($this->whenLoaded('images')),
-            'itinerary' => TourItineraryStepResource::collection($this->whenLoaded('itineraries')),
+            'images' => $this->whenLoaded(
+                'images',
+                fn () => TourImageResource::collection($this->images)->resolve(),
+                fn () => [],
+            ),
+            'itinerary' => $this->whenLoaded(
+                'itineraries',
+                fn () => TourItineraryStepResource::collection($this->itineraries)->resolve(),
+                fn () => [],
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

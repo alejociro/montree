@@ -48,7 +48,15 @@ final class LoginResponse implements LoginResponseContract
             $this->attachUserToTenant->handle($user, $tenant, UserRole::Customer, 'login');
         }
 
-        return $this->buildRedirect($user, $request);
+        return $this->buildRedirect($user, $request, $tenant);
+    }
+
+    private function tenantRole(User $user, Tenant $tenant): ?string
+    {
+        setPermissionsTeamId($tenant->id);
+        $user->unsetRelation('roles');
+
+        return $user->getRoleNames()->first();
     }
 
     private function isSuperAdmin(User $user): bool
@@ -94,11 +102,22 @@ final class LoginResponse implements LoginResponseContract
         ]);
     }
 
-    private function buildRedirect(User $user, Request $request): Response
+    private function buildRedirect(User $user, Request $request, ?Tenant $tenant = null): Response
     {
+        $target = $this->home();
+
+        if ($tenant !== null) {
+            $role = $this->tenantRole($user, $tenant);
+            $target = match ($role) {
+                UserRole::Admin->value, UserRole::Operator->value => '/admin/dashboard',
+                UserRole::Guide->value => '/guide/schedule',
+                default => $this->home(),
+            };
+        }
+
         return $request->wantsJson()
-            ? response()->json(['two_factor' => false])
-            : redirect()->intended($this->home());
+            ? response()->json(['two_factor' => false, 'redirect' => $target])
+            : redirect()->intended($target);
     }
 
     private function home(): string

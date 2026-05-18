@@ -8,6 +8,7 @@ use App\Models\Tour;
 use App\Services\Catalog\RatingDistribution;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin Tour
@@ -42,12 +43,12 @@ final class PublicTourResource extends JsonResource
             'rating_distribution' => RatingDistribution::forTour($this->resource),
             'images' => $this->images->map(fn ($img) => [
                 'id' => $img->id,
-                'url' => $img->path,
+                'url' => self::publicUrl($img->path),
                 'is_cover' => (bool) $img->is_cover,
                 'alt_text' => $img->alt_text,
                 'display_order' => $img->display_order,
             ])->values(),
-            'cover_image_url' => $cover?->path,
+            'cover_image_url' => self::publicUrl($cover?->path),
             'itinerary' => $this->itineraries->map(fn ($step) => [
                 'step_number' => $step->step_number,
                 'title' => $step->title,
@@ -73,5 +74,14 @@ final class PublicTourResource extends JsonResource
             ])->values(),
             'is_favorite' => (bool) ($this->is_favorite ?? false),
         ];
+    }
+
+    private static function publicUrl(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        return str_starts_with($path, 'http') ? $path : Storage::disk('public')->url($path);
     }
 }

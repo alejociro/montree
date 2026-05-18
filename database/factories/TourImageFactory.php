@@ -19,7 +19,10 @@ class TourImageFactory extends Factory
     {
         return [
             'tour_id' => Tour::factory(),
-            'path' => 'tours/'.fake()->uuid().'.jpg',
+            // WHY: seeded data uses an external placeholder image so demos render
+            // without needing any local file in storage. Real uploads (F003)
+            // still save into storage/app/public/tours/* via AttachTourImageAction.
+            'path' => 'https://picsum.photos/seed/'.fake()->uuid().'/1200/800',
             'alt_text' => fake()->sentence(4),
             'display_order' => fake()->numberBetween(0, 10),
             'is_cover' => false,
