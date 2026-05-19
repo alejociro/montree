@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
 use App\Http\Controllers\Api\V1\ReviewController;
 use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
+use App\Http\Controllers\Api\V1\SuperAdmin\TenantConfigurationController as SuperAdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
@@ -167,4 +168,5 @@ Route::middleware(['auth', 'super_admin.only'])
         Route::get('tenants/{tenant}', [SuperAdminTenantApiController::class, 'show'])->name('tenants.show');
         Route::patch('tenants/{tenant}/status', [SuperAdminTenantStatusController::class, 'update'])->name('tenants.status.update');
         Route::patch('tenants/{tenant}/plan', [SuperAdminTenantPlanController::class, 'update'])->name('tenants.plan.update');
+        Route::post('tenants/{tenant}/configuration', [SuperAdminTenantConfigurationController::class, 'update'])->name('tenants.configuration.update');
     });

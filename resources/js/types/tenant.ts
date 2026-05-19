@@ -45,6 +45,8 @@ export type TenantConfiguration = {
     reviews_require_moderation: boolean;
     require_traveler_details: boolean;
     custom_css: string | null;
+    hero_image_url: string | null;
+    min_partial_payment_pct: number;
 };
 
 export type TenantConfigurationPayload = {
