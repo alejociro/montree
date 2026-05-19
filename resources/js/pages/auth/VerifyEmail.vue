@@ -37,7 +37,8 @@ defineProps<{
     </Alert>
 
     <p class="mb-6 text-center text-sm text-muted-foreground">
-        Verifica tu correo para poder reservar tours y recibir tus confirmaciones.
+        Verifica tu correo para poder reservar tours y recibir tus
+        confirmaciones.
     </p>
 
     <Form

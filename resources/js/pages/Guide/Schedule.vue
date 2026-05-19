@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
+import {
+    schedule as scheduleUrl,
+    travelers as travelersUrl,
+} from '@/actions/App/Http/Controllers/Api/V1/GuideController';
 import { Badge } from '@/components/ui/badge';
 import {
     Dialog,
@@ -8,10 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    schedule as scheduleUrl,
-    travelers as travelersUrl,
-} from '@/actions/App/Http/Controllers/Api/V1/GuideController';
 
 type ScheduleItem = {
     id: number;
@@ -108,7 +108,8 @@ function formatTime(date: string): string {
                     <div>
                         <p class="font-medium">{{ d.tour.name }}</p>
                         <p class="text-sm text-muted-foreground">
-                            {{ formatDate(d.starts_at) }} · {{ formatTime(d.starts_at) }}
+                            {{ formatDate(d.starts_at) }} ·
+                            {{ formatTime(d.starts_at) }}
                         </p>
                     </div>
                     <Badge variant="secondary">
@@ -124,12 +125,21 @@ function formatTime(date: string): string {
                     <DialogTitle>
                         Viajeros — {{ selectedDate?.tour.name }}
                     </DialogTitle>
-                    <p v-if="selectedDate" class="text-sm text-muted-foreground">
-                        {{ formatDate(selectedDate.starts_at) }} · {{ formatTime(selectedDate.starts_at) }}
+                    <p
+                        v-if="selectedDate"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ formatDate(selectedDate.starts_at) }} ·
+                        {{ formatTime(selectedDate.starts_at) }}
                     </p>
                 </DialogHeader>
 
-                <p v-if="loadingTravelers" class="text-sm text-muted-foreground">Cargando viajeros...</p>
+                <p
+                    v-if="loadingTravelers"
+                    class="text-sm text-muted-foreground"
+                >
+                    Cargando viajeros...
+                </p>
 
                 <div
                     v-else-if="travelers.length === 0"
@@ -146,8 +156,18 @@ function formatTime(date: string): string {
                     >
                         <div class="space-y-0.5">
                             <p class="font-medium">{{ t.name }}</p>
-                            <p v-if="t.email" class="text-sm text-muted-foreground">{{ t.email }}</p>
-                            <p v-if="t.phone" class="text-sm text-muted-foreground">{{ t.phone }}</p>
+                            <p
+                                v-if="t.email"
+                                class="text-sm text-muted-foreground"
+                            >
+                                {{ t.email }}
+                            </p>
+                            <p
+                                v-if="t.phone"
+                                class="text-sm text-muted-foreground"
+                            >
+                                {{ t.phone }}
+                            </p>
                         </div>
                         <Badge v-if="t.count > 1" variant="secondary">
                             {{ t.count }} personas

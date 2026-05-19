@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
+import { useApi } from '@/composables/useApi';
 
 const props = defineProps<{ token: string }>();
 const done = ref(false);
 const processing = ref(false);
+const api = useApi();
 
 function confirmUnsubscribe() {
     processing.value = true;
-    router.post(
+    void api.post(
         '/api/v1/newsletter/unsubscribe',
         { token: props.token },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 done.value = true;
                 toast.success('Te diste de baja del newsletter');
@@ -39,7 +40,8 @@ function confirmUnsubscribe() {
             {{ processing ? 'Procesando...' : 'Confirmar baja' }}
         </Button>
         <p v-else class="text-primary">
-            Listo. Ya no vas a recibir más correos. Podés volver a suscribirte cuando quieras.
+            Listo. Ya no vas a recibir más correos. Podés volver a suscribirte
+            cuando quieras.
         </p>
     </div>
 </template>

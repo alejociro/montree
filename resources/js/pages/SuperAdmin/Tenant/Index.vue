@@ -52,7 +52,9 @@ async function loadTenants(page: number = 1): Promise<void> {
             params.plan = plan.value;
         }
 
-        const response = (await http.submit(tenantsIndex({ query: params }))) as TenantsListPaginated;
+        const response = (await http.submit(
+            tenantsIndex({ query: params }),
+        )) as TenantsListPaginated;
         tenants.value = response.data;
         meta.value = response.meta;
     } catch {
@@ -91,11 +93,11 @@ watch([status, plan], () => {
         />
 
         <div
-            class="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:flex-row md:items-center"
+            class="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900"
         >
             <div class="relative flex-1">
                 <Search
-                    class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
+                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400"
                 />
                 <Input
                     v-model="search"
@@ -137,7 +139,8 @@ watch([status, plan], () => {
             class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400"
         >
             <span>
-                Mostrando {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} de {{ meta.total }}
+                Mostrando {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} de
+                {{ meta.total }}
             </span>
             <div class="flex gap-2">
                 <Button

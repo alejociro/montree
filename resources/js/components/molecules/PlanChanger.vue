@@ -50,7 +50,11 @@ function submit(): void {
                 <SelectValue placeholder="Seleccionar plan" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem v-for="plan in plans" :key="plan.value" :value="plan.value">
+                <SelectItem
+                    v-for="plan in plans"
+                    :key="plan.value"
+                    :value="plan.value"
+                >
                     {{ plan.label }}
                 </SelectItem>
             </SelectContent>

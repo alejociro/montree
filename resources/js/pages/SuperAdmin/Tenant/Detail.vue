@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useHttp } from '@inertiajs/vue3';
+import { Head, Link, useHttp } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -9,18 +9,24 @@ import { update as updatePlan } from '@/actions/App/Http/Controllers/Api/V1/Supe
 import { update as updateStatus } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantStatusController';
 import TenantDetailPanel from '@/components/organisms/TenantDetailPanel.vue';
 import { Button } from '@/components/ui/button';
-import type { SuperAdminTenantSummary, TenantPlan, TenantStatus } from '@/types';
+import { useApi } from '@/composables/useApi';
+import type {
+    SuperAdminTenantSummary,
+    TenantPlan,
+    TenantStatus,
+} from '@/types';
 
 const props = defineProps<{
     tenantId: number;
 }>();
 
 const http = useHttp();
-const configProcessing = ref(false);
+const api = useApi();
 
 const tenant = ref<SuperAdminTenantSummary | null>(null);
 const loading = ref(true);
 const processing = ref(false);
+const configProcessing = ref(false);
 
 async function loadTenant(): Promise<void> {
     loading.value = true;
@@ -37,6 +43,19 @@ async function loadTenant(): Promise<void> {
     }
 }
 
+function reportError(message: string): void {
+    toast.error(message);
+}
+
+function firstErrorMessage(
+    errors: Record<string, string>,
+    fallback: string,
+): string {
+    const first = Object.values(errors)[0];
+
+    return first && first.length > 0 ? first : fallback;
+}
+
 function handleStatusChange(next: TenantStatus, reason: string | null): void {
     if (tenant.value === null) {
         return;
@@ -44,25 +63,27 @@ function handleStatusChange(next: TenantStatus, reason: string | null): void {
 
     processing.value = true;
 
-    const action = updateStatus(tenant.value.id);
-
-    router.visit(action.url, {
-        method: action.method,
-        data: { status: next, reason },
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            toast.success('Estado actualizado correctamente.');
-            void loadTenant();
+    void api.patch(
+        updateStatus(tenant.value.id).url,
+        { status: next, reason },
+        {
+            onSuccess: () => {
+                toast.success('Estado actualizado correctamente.');
+                void loadTenant();
+            },
+            onError: (errors) => {
+                reportError(
+                    firstErrorMessage(
+                        errors,
+                        'No se pudo actualizar el estado.',
+                    ),
+                );
+            },
+            onFinish: () => {
+                processing.value = false;
+            },
         },
-        onError: (errors) => {
-            const message = Object.values(errors)[0] ?? 'No se pudo actualizar el estado.';
-            toast.error(String(message));
-        },
-        onFinish: () => {
-            processing.value = false;
-        },
-    });
+    );
 }
 
 function handlePlanChange(next: TenantPlan): void {
@@ -72,67 +93,50 @@ function handlePlanChange(next: TenantPlan): void {
 
     processing.value = true;
 
-    const action = updatePlan(tenant.value.id);
-
-    router.visit(action.url, {
-        method: action.method,
-        data: { plan: next },
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            toast.success('Plan actualizado correctamente.');
-            void loadTenant();
+    void api.patch(
+        updatePlan(tenant.value.id).url,
+        { plan: next },
+        {
+            onSuccess: () => {
+                toast.success('Plan actualizado correctamente.');
+                void loadTenant();
+            },
+            onError: (errors) => {
+                reportError(
+                    firstErrorMessage(errors, 'No se pudo actualizar el plan.'),
+                );
+            },
+            onFinish: () => {
+                processing.value = false;
+            },
         },
-        onError: (errors) => {
-            const message = Object.values(errors)[0] ?? 'No se pudo actualizar el plan.';
-            toast.error(String(message));
-        },
-        onFinish: () => {
-            processing.value = false;
-        },
-    });
+    );
 }
 
-async function handleConfigurationUpdate(formData: FormData): Promise<void> {
+function handleConfigurationUpdate(formData: FormData): void {
     if (tenant.value === null) {
         return;
     }
 
     configProcessing.value = true;
 
-    try {
-        const response = await fetch(updateConfiguration(tenant.value.id).url, {
-            method: 'POST',
-            body: formData,
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': decodeURIComponent(
-                    document.cookie
-                        .split('; ')
-                        .find((row) => row.startsWith('XSRF-TOKEN='))
-                        ?.split('=')[1] ?? '',
-                ),
-            },
-        });
-
-        if (response.ok) {
+    void api.post(updateConfiguration(tenant.value.id).url, formData, {
+        onSuccess: () => {
             toast.success('Configuración actualizada correctamente.');
             void loadTenant();
-        } else {
-            const body = await response.json();
-            const firstError = Object.values(body.errors ?? {})[0];
-            toast.error(
-                Array.isArray(firstError)
-                    ? (firstError[0] as string)
-                    : 'No se pudo guardar la configuración.',
+        },
+        onError: (errors) => {
+            reportError(
+                firstErrorMessage(
+                    errors,
+                    'No se pudo guardar la configuración.',
+                ),
             );
-        }
-    } catch {
-        toast.error('Error de conexión al guardar la configuración.');
-    } finally {
-        configProcessing.value = false;
-    }
+        },
+        onFinish: () => {
+            configProcessing.value = false;
+        },
+    });
 }
 
 onMounted(() => {

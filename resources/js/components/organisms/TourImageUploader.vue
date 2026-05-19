@@ -18,6 +18,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useApi } from '@/composables/useApi';
 import { cn } from '@/lib/utils';
 import type { TourImage } from '@/types/tour';
 
@@ -31,6 +32,7 @@ const props = defineProps<Props>();
 const fileInput = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const dragging = ref(false);
+const api = useApi();
 
 function openFilePicker(): void {
     fileInput.value?.click();
@@ -74,33 +76,20 @@ async function upload(file: File): Promise<void> {
     const formData = new FormData();
     formData.append('image', file);
 
-    try {
-        await new Promise<void>((resolve, reject) => {
-            router.post(action.url, formData, {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: () => resolve(),
-                onError: (errors) => {
-                    const message =
-                        Object.values(errors)[0] ??
-                        'No se pudo subir la imagen';
-                    toast.error(
-                        typeof message === 'string'
-                            ? message
-                            : 'No se pudo subir la imagen',
-                    );
-                    reject(new Error('upload-failed'));
-                },
-                onFinish: () => {
-                    isUploading.value = false;
-                },
-            });
-        });
-
-        toast.success('Imagen subida.');
-    } catch {
-        // toast already shown in onError
-    }
+    await api.post(action.url, formData, {
+        onSuccess: () => {
+            toast.success('Imagen subida.');
+            router.reload({ only: ['tour'] });
+        },
+        onError: (errors) => {
+            const message =
+                Object.values(errors)[0] ?? 'No se pudo subir la imagen';
+            toast.error(message);
+        },
+        onFinish: () => {
+            isUploading.value = false;
+        },
+    });
 }
 
 function setAsCover(image: TourImage): void {
@@ -109,12 +98,14 @@ function setAsCover(image: TourImage): void {
     }
 
     const action = updateImage({ tour: props.tourId, image: image.id });
-    router.patch(
+    void api.patch(
         action.url,
         { is_cover: true },
         {
-            preserveScroll: true,
-            onSuccess: () => toast.success('Portada actualizada.'),
+            onSuccess: () => {
+                toast.success('Portada actualizada.');
+                router.reload({ only: ['tour'] });
+            },
             onError: () => toast.error('No se pudo actualizar la portada.'),
         },
     );
@@ -133,13 +124,16 @@ function removeImage(): void {
         return;
     }
 
-    const action = destroyImage({ tour: props.tourId, image: imageToDelete.value.id });
-    router.delete(action.url, {
-        preserveScroll: true,
+    const action = destroyImage({
+        tour: props.tourId,
+        image: imageToDelete.value.id,
+    });
+    void api.delete(action.url, {
         onSuccess: () => {
             toast.success('Imagen eliminada.');
             deleteDialog.value = false;
             imageToDelete.value = null;
+            router.reload({ only: ['tour'] });
         },
         onError: () => toast.error('No se pudo eliminar la imagen.'),
     });
@@ -254,12 +248,17 @@ function removeImage(): void {
                 <DialogHeader>
                     <DialogTitle>Eliminar imagen</DialogTitle>
                     <DialogDescription>
-                        ¿Estás seguro de que querés eliminar esta imagen? Esta acción no se puede deshacer.
+                        ¿Estás seguro de que querés eliminar esta imagen? Esta
+                        acción no se puede deshacer.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" @click="deleteDialog = false">Cancelar</Button>
-                    <Button variant="destructive" @click="removeImage">Eliminar</Button>
+                    <Button variant="outline" @click="deleteDialog = false"
+                        >Cancelar</Button
+                    >
+                    <Button variant="destructive" @click="removeImage"
+                        >Eliminar</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>

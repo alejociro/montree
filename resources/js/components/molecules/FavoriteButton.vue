@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
 import { Heart } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { useApi } from '@/composables/useApi';
 
 const props = defineProps<{ tourId: number; initialFavorite: boolean }>();
 
 const isFavorite = ref(props.initialFavorite);
 const submitting = ref(false);
+const api = useApi();
+
+const ariaLabel = computed(() =>
+    isFavorite.value ? 'Quitar de favoritos' : 'Agregar a favoritos',
+);
 
 function toggle() {
     if (submitting.value) {
         return;
     }
+
     submitting.value = true;
     const previous = isFavorite.value;
     isFavorite.value = !previous;
-    router.post(
+
+    void api.post(
         '/api/v1/favorites',
         { tour_id: props.tourId },
         {
-            preserveScroll: true,
-            preserveState: true,
             onError: () => {
                 isFavorite.value = previous;
             },
@@ -39,8 +44,11 @@ function toggle() {
         variant="outline"
         size="icon"
         :aria-pressed="isFavorite"
+        :aria-label="ariaLabel"
         @click="toggle"
     >
-        <Heart :class="['size-4', isFavorite && 'fill-current text-destructive']" />
+        <Heart
+            :class="['size-4', isFavorite && 'fill-current text-destructive']"
+        />
     </Button>
 </template>

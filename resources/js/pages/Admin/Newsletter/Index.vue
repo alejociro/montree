@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useApi } from '@/composables/useApi';
+
+const api = useApi();
 
 type Subscriber = {
     id: number;
@@ -26,6 +29,7 @@ const sending = ref(false);
 
 async function load() {
     loading.value = true;
+
     try {
         const res = await fetch('/api/v1/admin/newsletter/subscribers', {
             credentials: 'same-origin',
@@ -41,7 +45,7 @@ async function load() {
 
 function send() {
     sending.value = true;
-    router.post(
+    void api.post(
         '/api/v1/admin/newsletter/send',
         {
             subject: subject.value,
@@ -49,14 +53,13 @@ function send() {
             preview_text: previewText.value,
         },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 toast.success('Campaña encolada');
                 subject.value = '';
                 bodyHtml.value = '';
                 previewText.value = '';
             },
-            onError: (e) => toast.error(Object.values(e)[0] as string ?? 'Error'),
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
             onFinish: () => {
                 sending.value = false;
             },
@@ -74,10 +77,16 @@ onMounted(load);
 
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">
-                Suscriptores activos: <span class="text-primary">{{ totalActive }}</span>
+                Suscriptores activos:
+                <span class="text-primary">{{ totalActive }}</span>
             </h2>
-            <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
-            <ul v-else-if="subscribers.length > 0" class="space-y-2 rounded-lg border p-4">
+            <p v-if="loading" class="text-sm text-muted-foreground">
+                Cargando...
+            </p>
+            <ul
+                v-else-if="subscribers.length > 0"
+                class="space-y-2 rounded-lg border p-4"
+            >
                 <li
                     v-for="s in subscribers"
                     :key="s.id"
@@ -87,7 +96,9 @@ onMounted(load);
                     <span class="text-muted-foreground">{{ s.status }}</span>
                 </li>
             </ul>
-            <p v-else class="text-sm text-muted-foreground">Sin suscriptores todavía.</p>
+            <p v-else class="text-sm text-muted-foreground">
+                Sin suscriptores todavía.
+            </p>
         </section>
 
         <section class="space-y-4 rounded-lg border p-6">
@@ -105,7 +116,11 @@ onMounted(load);
                 <Textarea id="body" v-model="bodyHtml" rows="10" />
             </div>
             <Button :disabled="sending || !subject || !bodyHtml" @click="send">
-                {{ sending ? 'Encolando...' : `Enviar a ${totalActive} suscriptores` }}
+                {{
+                    sending
+                        ? 'Encolando...'
+                        : `Enviar a ${totalActive} suscriptores`
+                }}
             </Button>
         </section>
     </div>

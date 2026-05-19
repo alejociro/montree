@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { CheckCircle, Mail, Pencil, Phone, User, X, XCircle } from 'lucide-vue-next';
+import {
+    CheckCircle,
+    Mail,
+    Pencil,
+    Phone,
+    User,
+    X,
+    XCircle,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
@@ -8,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { formatBookingStatus, formatTourDate } from '@/lib/format';
 
 defineOptions({ layout: PublicLayout });
 
@@ -54,8 +63,13 @@ const amountToPay = computed(() => {
     if (paymentType.value === 'full') {
         return totalAfterDiscount.value;
     }
+
     const amt = partialAmount.value || minPartialAmount.value;
-    return Math.min(totalAfterDiscount.value, Math.max(minPartialAmount.value, amt));
+
+    return Math.min(
+        totalAfterDiscount.value,
+        Math.max(minPartialAmount.value, amt),
+    );
 });
 
 const pendingBalance = computed(() =>
@@ -65,6 +79,7 @@ const pendingBalance = computed(() =>
 // Ensure partialAmount starts at minimum when switching to partial
 function selectPaymentType(type: 'full' | 'partial') {
     paymentType.value = type;
+
     if (type === 'partial' && partialAmount.value < minPartialAmount.value) {
         partialAmount.value = minPartialAmount.value;
     }
@@ -80,7 +95,9 @@ function formatCurrency(amount: number): string {
 
 const formattedTotal = computed(() => formatCurrency(totalNumeric.value));
 
-const isPendingPayment = computed(() => props.booking.status === 'pending_payment');
+const isPendingPayment = computed(
+    () => props.booking.status === 'pending_payment',
+);
 const isSuccess = computed(() =>
     ['confirmed', 'completed'].includes(props.booking.status),
 );
@@ -116,7 +133,10 @@ async function handlePay(): Promise<void> {
             },
             body: JSON.stringify({
                 type: paymentType.value === 'partial' ? 'partial' : 'full',
-                amount: paymentType.value === 'partial' ? amountToPay.value : undefined,
+                amount:
+                    paymentType.value === 'partial'
+                        ? amountToPay.value
+                        : undefined,
             }),
         });
 
@@ -145,7 +165,7 @@ function goBack() {
 </script>
 
 <template>
-    <Head :title="`Reserva ${booking.booking_number}`" />
+    <Head :title="`Reserva al ${booking.tour_name}`" />
 
     <div class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -169,12 +189,14 @@ function goBack() {
             class="flex flex-col items-center gap-4 rounded-lg border border-green-200 bg-green-50 px-6 py-12 text-center dark:border-green-800 dark:bg-green-950"
         >
             <CheckCircle class="size-12 text-green-600 dark:text-green-400" />
-            <h2 class="text-xl font-semibold text-green-800 dark:text-green-200">
+            <h2
+                class="text-xl font-semibold text-green-800 dark:text-green-200"
+            >
                 Pago confirmado
             </h2>
             <p class="text-sm text-green-700 dark:text-green-300">
-                Tu reserva <strong>{{ booking.booking_number }}</strong> ha
-                sido confirmada exitosamente.
+                Tu reserva <strong>{{ booking.booking_number }}</strong> ha sido
+                confirmada exitosamente.
             </p>
             <dl class="mt-2 text-sm text-green-700 dark:text-green-300">
                 <div class="flex gap-2">
@@ -186,7 +208,9 @@ function goBack() {
                     <dd>{{ formattedTotal }}</dd>
                 </div>
             </dl>
-            <Badge variant="default" class="mt-2">{{ booking.status }}</Badge>
+            <Badge variant="default" class="mt-2">{{
+                formatBookingStatus(booking.status)
+            }}</Badge>
         </div>
 
         <!-- Cancelled / Expired State -->
@@ -196,14 +220,20 @@ function goBack() {
         >
             <XCircle class="size-12 text-red-600 dark:text-red-400" />
             <h2 class="text-xl font-semibold text-red-800 dark:text-red-200">
-                Reserva {{ booking.status === 'expired' ? 'expirada' : 'cancelada' }}
+                Reserva
+                {{ booking.status === 'expired' ? 'expirada' : 'cancelada' }}
             </h2>
             <p class="text-sm text-red-700 dark:text-red-300">
                 La reserva <strong>{{ booking.booking_number }}</strong>
-                {{ booking.status === 'expired' ? 'ha expirado' : 'fue cancelada' }}.
-                Por favor, crea una nueva reserva si deseas continuar.
+                {{
+                    booking.status === 'expired'
+                        ? 'ha expirado'
+                        : 'fue cancelada'
+                }}. Por favor, crea una nueva reserva si deseas continuar.
             </p>
-            <Badge variant="outline" class="mt-2">{{ booking.status }}</Badge>
+            <Badge variant="outline" class="mt-2">{{
+                formatBookingStatus(booking.status)
+            }}</Badge>
         </div>
 
         <!-- Payment Form (pending_payment) -->
@@ -212,17 +242,25 @@ function goBack() {
             <div class="space-y-6 lg:col-span-3">
                 <!-- Datos de reserva -->
                 <section class="rounded-lg border border-border bg-card p-5">
-                    <h2 class="mb-4 text-base font-semibold text-card-foreground">
+                    <h2
+                        class="mb-4 text-base font-semibold text-card-foreground"
+                    >
                         Datos de reserva
                     </h2>
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="flex items-start gap-3">
-                            <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted"
+                            >
                                 <User class="size-4 text-muted-foreground" />
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-xs text-muted-foreground">Nombre</p>
-                                <p class="truncate text-sm font-medium text-card-foreground">
+                                <p class="text-xs text-muted-foreground">
+                                    Nombre
+                                </p>
+                                <p
+                                    class="truncate text-sm font-medium text-card-foreground"
+                                >
                                     {{ authUser?.name ?? '---' }}
                                 </p>
                             </div>
@@ -235,12 +273,18 @@ function goBack() {
                             </button>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted"
+                            >
                                 <Phone class="size-4 text-muted-foreground" />
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-xs text-muted-foreground">Teléfono</p>
-                                <p class="truncate text-sm font-medium text-card-foreground">
+                                <p class="text-xs text-muted-foreground">
+                                    Teléfono
+                                </p>
+                                <p
+                                    class="truncate text-sm font-medium text-card-foreground"
+                                >
                                     {{ authUser?.phone ?? 'No registrado' }}
                                 </p>
                             </div>
@@ -253,12 +297,18 @@ function goBack() {
                             </button>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted"
+                            >
                                 <Mail class="size-4 text-muted-foreground" />
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-xs text-muted-foreground">Correo</p>
-                                <p class="truncate text-sm font-medium text-card-foreground">
+                                <p class="text-xs text-muted-foreground">
+                                    Correo
+                                </p>
+                                <p
+                                    class="truncate text-sm font-medium text-card-foreground"
+                                >
                                     {{ authUser?.email ?? '---' }}
                                 </p>
                             </div>
@@ -275,7 +325,9 @@ function goBack() {
 
                 <!-- Información de la actividad -->
                 <section class="rounded-lg border border-border bg-card p-5">
-                    <h2 class="mb-4 text-base font-semibold text-card-foreground">
+                    <h2
+                        class="mb-4 text-base font-semibold text-card-foreground"
+                    >
                         Información de la actividad
                     </h2>
                     <dl class="grid gap-3 text-sm">
@@ -289,15 +341,9 @@ function goBack() {
                             <dt class="text-muted-foreground">Fecha</dt>
                             <dd class="text-card-foreground">
                                 {{
-                                    new Date(booking.starts_at).toLocaleDateString(
-                                        'es-CO',
-                                        {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        },
-                                    )
+                                    formatTourDate(booking.starts_at, {
+                                        withTime: false,
+                                    })
                                 }}
                             </dd>
                         </div>
@@ -305,10 +351,16 @@ function goBack() {
                             <dt class="text-muted-foreground">Viajeros</dt>
                             <dd class="text-card-foreground">
                                 {{ booking.travelers_count }}
-                                {{ booking.travelers_count === 1 ? 'persona' : 'personas' }}
+                                {{
+                                    booking.travelers_count === 1
+                                        ? 'persona'
+                                        : 'personas'
+                                }}
                             </dd>
                         </div>
-                        <div class="flex items-center justify-between border-t border-border pt-3">
+                        <div
+                            class="flex items-center justify-between border-t border-border pt-3"
+                        >
                             <dt class="text-muted-foreground">Precio total</dt>
                             <dd class="text-lg font-bold text-primary">
                                 {{ formattedTotal }}
@@ -322,7 +374,9 @@ function goBack() {
             <div class="space-y-6 lg:col-span-2">
                 <!-- Resumen de compra -->
                 <section class="rounded-lg border border-border bg-card p-5">
-                    <h2 class="mb-4 text-base font-semibold text-card-foreground">
+                    <h2
+                        class="mb-4 text-base font-semibold text-card-foreground"
+                    >
                         Resumen de compra
                     </h2>
                     <dl class="grid gap-2 text-sm">
@@ -335,11 +389,19 @@ function goBack() {
                         <div class="flex items-center justify-between">
                             <dt class="text-muted-foreground">Descuentos</dt>
                             <dd class="text-card-foreground">
-                                {{ discount > 0 ? `- ${formatCurrency(discount)}` : formatCurrency(0) }}
+                                {{
+                                    discount > 0
+                                        ? `- ${formatCurrency(discount)}`
+                                        : formatCurrency(0)
+                                }}
                             </dd>
                         </div>
-                        <div class="flex items-center justify-between border-t border-border pt-2">
-                            <dt class="font-semibold text-card-foreground">Total</dt>
+                        <div
+                            class="flex items-center justify-between border-t border-border pt-2"
+                        >
+                            <dt class="font-semibold text-card-foreground">
+                                Total
+                            </dt>
                             <dd class="text-lg font-bold text-card-foreground">
                                 {{ formatCurrency(totalAfterDiscount) }}
                             </dd>
@@ -349,7 +411,9 @@ function goBack() {
 
                 <!-- Detalles del pago -->
                 <section class="rounded-lg border border-border bg-card p-5">
-                    <h2 class="mb-4 text-base font-semibold text-card-foreground">
+                    <h2
+                        class="mb-4 text-base font-semibold text-card-foreground"
+                    >
                         Detalles del pago
                     </h2>
 
@@ -372,7 +436,9 @@ function goBack() {
                                 @change="selectPaymentType('full')"
                             />
                             <div>
-                                <span class="text-sm font-medium text-card-foreground">
+                                <span
+                                    class="text-sm font-medium text-card-foreground"
+                                >
                                     Pago total
                                 </span>
                                 <p class="text-xs text-muted-foreground">
@@ -398,13 +464,17 @@ function goBack() {
                                 @change="selectPaymentType('partial')"
                             />
                             <div>
-                                <span class="text-sm font-medium text-card-foreground">
+                                <span
+                                    class="text-sm font-medium text-card-foreground"
+                                >
                                     Valor mínimo de reserva
                                 </span>
                                 <p class="mt-0.5 text-xs text-muted-foreground">
-                                    Paga al menos el {{ PARTIAL_PAYMENT_PERCENT * 100 }}%
-                                    para asegurar tu reserva. El saldo restante podrás
-                                    pagarlo antes de la fecha de la actividad.
+                                    Paga al menos el
+                                    {{ PARTIAL_PAYMENT_PERCENT * 100 }}% para
+                                    asegurar tu reserva. El saldo restante
+                                    podrás pagarlo antes de la fecha de la
+                                    actividad.
                                 </p>
                             </div>
                         </label>
@@ -432,8 +502,12 @@ function goBack() {
                                 class="mt-1"
                             />
                         </div>
-                        <div class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm">
-                            <span class="text-muted-foreground">Saldo pendiente</span>
+                        <div
+                            class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+                        >
+                            <span class="text-muted-foreground"
+                                >Saldo pendiente</span
+                            >
                             <span class="font-semibold text-card-foreground">
                                 {{ formatCurrency(pendingBalance) }}
                             </span>
@@ -457,13 +531,18 @@ function goBack() {
                         :disabled="processing"
                         @click="handlePay"
                     >
-                        {{ processing ? 'Procesando...' : `Pagar ${formatCurrency(amountToPay)}` }}
+                        {{
+                            processing
+                                ? 'Procesando...'
+                                : `Pagar ${formatCurrency(amountToPay)}`
+                        }}
                     </Button>
 
                     <!-- Payment methods -->
                     <div class="mt-4 text-center">
                         <p class="mb-3 text-xs text-muted-foreground">
-                            Recibimos todos los medios de pago y también efectivo
+                            Recibimos todos los medios de pago y también
+                            efectivo
                         </p>
                         <div class="flex items-center justify-center gap-2">
                             <!-- Visa -->
@@ -497,18 +576,8 @@ function goBack() {
                                     rx="3"
                                     fill="#252525"
                                 />
-                                <circle
-                                    cx="16"
-                                    cy="12"
-                                    r="6"
-                                    fill="#EB001B"
-                                />
-                                <circle
-                                    cx="24"
-                                    cy="12"
-                                    r="6"
-                                    fill="#F79E1B"
-                                />
+                                <circle cx="16" cy="12" r="6" fill="#EB001B" />
+                                <circle cx="24" cy="12" r="6" fill="#F79E1B" />
                                 <path
                                     d="M20 7.5a5.96 5.96 0 012 4.5 5.96 5.96 0 01-2 4.5 5.96 5.96 0 01-2-4.5 5.96 5.96 0 012-4.5z"
                                     fill="#FF5F00"

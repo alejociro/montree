@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import {
+    index as indexReviews,
+    updateStatus,
+    respond,
+} from '@/actions/App/Http/Controllers/Api/V1/Admin/ReviewController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -14,11 +17,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    index as indexReviews,
-    updateStatus,
-    respond,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/ReviewController';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useApi } from '@/composables/useApi';
+
+const api = useApi();
 
 type AdminReview = {
     id: number;
@@ -49,10 +52,13 @@ const tabs: { key: 'pending' | 'approved' | 'rejected'; label: string }[] = [
     { key: 'rejected', label: 'Rechazadas' },
 ];
 
-const pendingCount = computed(() => items.value.filter((r) => r.status === 'pending').length);
+const pendingCount = computed(
+    () => items.value.filter((r) => r.status === 'pending').length,
+);
 
 async function load() {
     loading.value = true;
+
     try {
         const res = await fetch(indexReviews().url, {
             credentials: 'same-origin',
@@ -66,31 +72,29 @@ async function load() {
 }
 
 function approve(reviewId: number) {
-    router.patch(
+    void api.patch(
         updateStatus.url(reviewId),
         { status: 'approved' },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 toast.success('Reseña aprobada');
-                load();
+                void load();
             },
-            onError: (e) => toast.error(Object.values(e)[0] as string ?? 'Error'),
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
         },
     );
 }
 
 function reject(reviewId: number) {
-    router.patch(
+    void api.patch(
         updateStatus.url(reviewId),
         { status: 'rejected' },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 toast.success('Reseña rechazada');
-                load();
+                void load();
             },
-            onError: (e) => toast.error(Object.values(e)[0] as string ?? 'Error'),
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
         },
     );
 }
@@ -112,17 +116,16 @@ function submitResponse() {
     }
 
     respondSubmitting.value = true;
-    router.post(
+    void api.post(
         respond.url(respondReviewId.value),
         { response: respondText.value },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 toast.success('Respuesta enviada');
                 respondDialog.value = false;
-                load();
+                void load();
             },
-            onError: (e) => toast.error(Object.values(e)[0] as string ?? 'Error'),
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
             onFinish: () => {
                 respondSubmitting.value = false;
             },
@@ -134,6 +137,7 @@ function formatDate(date: string | null): string {
     if (!date) {
         return '';
     }
+
     return new Date(date).toLocaleDateString('es-CO', {
         year: 'numeric',
         month: 'short',
@@ -164,9 +168,11 @@ onMounted(load);
                 v-for="tab in tabs"
                 :key="tab.key"
                 class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-                :class="activeTab === tab.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'"
+                :class="
+                    activeTab === tab.key
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
+                "
                 @click="activeTab = tab.key"
             >
                 {{ tab.label }}
@@ -179,7 +185,14 @@ onMounted(load);
             v-else-if="filteredItems.length === 0"
             class="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
         >
-            No hay reseñas {{ activeTab === 'pending' ? 'pendientes' : activeTab === 'approved' ? 'aprobadas' : 'rechazadas' }}.
+            No hay reseñas
+            {{
+                activeTab === 'pending'
+                    ? 'pendientes'
+                    : activeTab === 'approved'
+                      ? 'aprobadas'
+                      : 'rechazadas'
+            }}.
         </div>
 
         <ul v-else class="space-y-3">
@@ -191,22 +204,42 @@ onMounted(load);
                 <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
-                            <span class="font-medium">{{ r.user?.name ?? 'Anónimo' }}</span>
-                            <span class="text-amber-500">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
-                            <Badge
-                                :variant="r.status === 'approved' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'"
+                            <span class="font-medium">{{
+                                r.user?.name ?? 'Anónimo'
+                            }}</span>
+                            <span class="text-amber-500"
+                                >{{ '★'.repeat(r.rating)
+                                }}{{ '☆'.repeat(5 - r.rating) }}</span
                             >
-                                {{ r.status === 'pending' ? 'Pendiente' : r.status === 'approved' ? 'Aprobada' : 'Rechazada' }}
+                            <Badge
+                                :variant="
+                                    r.status === 'approved'
+                                        ? 'default'
+                                        : r.status === 'rejected'
+                                          ? 'destructive'
+                                          : 'secondary'
+                                "
+                            >
+                                {{
+                                    r.status === 'pending'
+                                        ? 'Pendiente'
+                                        : r.status === 'approved'
+                                          ? 'Aprobada'
+                                          : 'Rechazada'
+                                }}
                             </Badge>
                         </div>
                         <p class="text-sm text-muted-foreground">
-                            {{ r.tour?.name ?? 'Tour eliminado' }} · {{ formatDate(r.created_at) }}
+                            {{ r.tour?.name ?? 'Tour eliminado' }} ·
+                            {{ formatDate(r.created_at) }}
                         </p>
                     </div>
                 </div>
 
                 <h3 v-if="r.title" class="font-medium">{{ r.title }}</h3>
-                <p v-if="r.comment" class="text-sm text-muted-foreground">{{ r.comment }}</p>
+                <p v-if="r.comment" class="text-sm text-muted-foreground">
+                    {{ r.comment }}
+                </p>
 
                 <div
                     v-if="r.admin_response"
@@ -249,7 +282,8 @@ onMounted(load);
                 <DialogHeader>
                     <DialogTitle>Responder reseña</DialogTitle>
                     <DialogDescription>
-                        Tu respuesta será visible públicamente junto a la reseña del cliente.
+                        Tu respuesta será visible públicamente junto a la reseña
+                        del cliente.
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-2">
@@ -263,12 +297,18 @@ onMounted(load);
                     />
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="respondDialog = false">Cancelar</Button>
+                    <Button variant="outline" @click="respondDialog = false"
+                        >Cancelar</Button
+                    >
                     <Button
                         :disabled="respondSubmitting || !respondText.trim()"
                         @click="submitResponse"
                     >
-                        {{ respondSubmitting ? 'Enviando...' : 'Enviar respuesta' }}
+                        {{
+                            respondSubmitting
+                                ? 'Enviando...'
+                                : 'Enviar respuesta'
+                        }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

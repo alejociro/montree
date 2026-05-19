@@ -25,8 +25,12 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import type {
+    SuperAdminTenantSummary,
+    TenantPlan,
+    TenantStatus,
+} from '@/types';
 import type { TenantConfiguration } from '@/types/tenant';
-import type { SuperAdminTenantSummary, TenantPlan, TenantStatus } from '@/types';
 
 const props = defineProps<{
     tenant: SuperAdminTenantSummary;
@@ -105,9 +109,11 @@ watch(
                 currency: config.value.currency ?? 'COP',
                 timezone: config.value.timezone ?? 'America/Bogota',
                 locale: (config.value.locale ?? 'es') as 'es' | 'en',
-                reviews_require_moderation: config.value.reviews_require_moderation,
+                reviews_require_moderation:
+                    config.value.reviews_require_moderation,
                 require_traveler_details: config.value.require_traveler_details,
-                min_partial_payment_pct: config.value.min_partial_payment_pct ?? 50,
+                min_partial_payment_pct:
+                    config.value.min_partial_payment_pct ?? 50,
                 social_links: {
                     instagram: config.value.social_links?.instagram ?? '',
                     facebook: config.value.social_links?.facebook ?? '',
@@ -126,7 +132,10 @@ watch(
     { immediate: true },
 );
 
-function onFileChange(event: Event, target: 'logo' | 'favicon' | 'hero_image'): void {
+function onFileChange(
+    event: Event,
+    target: 'logo' | 'favicon' | 'hero_image',
+): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
 
@@ -167,6 +176,7 @@ function submitConfiguration(): void {
             ([, v]) => v !== '',
         ),
     );
+
     if (Object.keys(socialLinks).length > 0) {
         for (const [key, value] of Object.entries(socialLinks)) {
             formData.append(`social_links[${key}]`, value);
@@ -178,6 +188,7 @@ function submitConfiguration(): void {
             ([, v]) => v !== '',
         ),
     );
+
     if (Object.keys(contactInfo).length > 0) {
         for (const [key, value] of Object.entries(contactInfo)) {
             formData.append(`contact_info[${key}]`, value);
@@ -187,9 +198,11 @@ function submitConfiguration(): void {
     if (logoFile.value) {
         formData.append('logo', logoFile.value);
     }
+
     if (faviconFile.value) {
         formData.append('favicon', faviconFile.value);
     }
+
     if (heroImageFile.value) {
         formData.append('hero_image', heroImageFile.value);
     }
@@ -226,25 +239,35 @@ const timezones = [
     <div class="space-y-6">
         <!-- Header -->
         <header
-            class="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:flex-row md:items-start md:justify-between"
+            class="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:flex-row md:items-start md:justify-between dark:border-zinc-800 dark:bg-zinc-900"
         >
             <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+                    <h1
+                        class="text-2xl font-semibold text-zinc-900 dark:text-zinc-50"
+                    >
                         {{ tenant.name }}
                     </h1>
                     <TenantStatusBadge :status="tenant.status" />
                     <PlanBadge :plan="tenant.plan" />
                 </div>
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                    {{ tenant.domain ?? tenant.slug }}.montree.app
+                    {{ tenant.domain ?? `${tenant.slug}.montree.app` }}
                 </p>
-                <div class="flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-300">
-                    <span v-if="tenant.contact_email" class="inline-flex items-center gap-1.5">
+                <div
+                    class="flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-300"
+                >
+                    <span
+                        v-if="tenant.contact_email"
+                        class="inline-flex items-center gap-1.5"
+                    >
                         <Mail class="size-4" />
                         {{ tenant.contact_email }}
                     </span>
-                    <span v-if="tenant.contact_phone" class="inline-flex items-center gap-1.5">
+                    <span
+                        v-if="tenant.contact_phone"
+                        class="inline-flex items-center gap-1.5"
+                    >
                         <Phone class="size-4" />
                         {{ tenant.contact_phone }}
                     </span>
@@ -254,15 +277,17 @@ const timezones = [
 
         <!-- Status & Plan -->
         <section
-            class="grid gap-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-2"
+            class="grid gap-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm md:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-900"
         >
             <div class="space-y-2">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                <h2
+                    class="text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                >
                     Estado del tenant
                 </h2>
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                    Suspender bloquea el acceso a todos los usuarios. Restablecer reactiva el
-                    servicio.
+                    Suspender bloquea el acceso a todos los usuarios.
+                    Restablecer reactiva el servicio.
                 </p>
                 <StatusChanger
                     :current-status="tenant.status"
@@ -272,7 +297,9 @@ const timezones = [
             </div>
 
             <div class="space-y-2">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                <h2
+                    class="text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                >
                     Plan asignado
                 </h2>
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">
@@ -291,32 +318,48 @@ const timezones = [
             <div
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
-                <p class="text-xs uppercase tracking-wider text-zinc-500">Usuarios</p>
-                <p class="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                <p class="text-xs tracking-wider text-zinc-500 uppercase">
+                    Usuarios
+                </p>
+                <p
+                    class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     {{ tenant.users_count ?? '—' }}
                 </p>
             </div>
             <div
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
-                <p class="text-xs uppercase tracking-wider text-zinc-500">Tours</p>
-                <p class="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                <p class="text-xs tracking-wider text-zinc-500 uppercase">
+                    Tours
+                </p>
+                <p
+                    class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     {{ tenant.tours_count ?? '—' }}
                 </p>
             </div>
             <div
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
-                <p class="text-xs uppercase tracking-wider text-zinc-500">Reservas (30d)</p>
-                <p class="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                <p class="text-xs tracking-wider text-zinc-500 uppercase">
+                    Reservas (30d)
+                </p>
+                <p
+                    class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     {{ tenant.bookings_count_30d ?? '—' }}
                 </p>
             </div>
             <div
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
-                <p class="text-xs uppercase tracking-wider text-zinc-500">Ingresos (30d)</p>
-                <p class="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                <p class="text-xs tracking-wider text-zinc-500 uppercase">
+                    Ingresos (30d)
+                </p>
+                <p
+                    class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     {{ formatCurrency(tenant.revenue_30d) }}
                 </p>
             </div>
@@ -326,20 +369,27 @@ const timezones = [
         <section
             class="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
         >
-            <div class="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-                <h2 class="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <div
+                class="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800"
+            >
+                <h2
+                    class="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     <Palette class="size-5" />
                     Personalización y configuración
                 </h2>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Configura la identidad visual, ajustes operativos y redes sociales del tenant.
+                    Configura la identidad visual, ajustes operativos y redes
+                    sociales del tenant.
                 </p>
             </div>
 
             <form class="space-y-8 p-6" @submit.prevent="submitConfiguration">
                 <!-- Branding -->
                 <div class="space-y-4">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                    <h3
+                        class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                    >
                         <Palette class="size-4" />
                         Identidad visual
                     </h3>
@@ -402,7 +452,9 @@ const timezones = [
 
                 <!-- Images -->
                 <div class="space-y-4">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                    <h3
+                        class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                    >
                         <Image class="size-4" />
                         Imágenes
                     </h3>
@@ -421,7 +473,9 @@ const timezones = [
                                     class="flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-zinc-500 transition hover:border-zinc-400 hover:text-zinc-700"
                                 >
                                     <Upload class="size-4" />
-                                    {{ logoFile ? logoFile.name : 'Subir logo' }}
+                                    {{
+                                        logoFile ? logoFile.name : 'Subir logo'
+                                    }}
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -445,12 +499,18 @@ const timezones = [
                                     class="flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-zinc-500 transition hover:border-zinc-400 hover:text-zinc-700"
                                 >
                                     <Upload class="size-4" />
-                                    {{ faviconFile ? faviconFile.name : 'Subir favicon' }}
+                                    {{
+                                        faviconFile
+                                            ? faviconFile.name
+                                            : 'Subir favicon'
+                                    }}
                                     <input
                                         type="file"
                                         accept="image/*"
                                         class="hidden"
-                                        @change="(e) => onFileChange(e, 'favicon')"
+                                        @change="
+                                            (e) => onFileChange(e, 'favicon')
+                                        "
                                     />
                                 </label>
                             </div>
@@ -469,12 +529,18 @@ const timezones = [
                                     class="flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-zinc-500 transition hover:border-zinc-400 hover:text-zinc-700"
                                 >
                                     <Upload class="size-4" />
-                                    {{ heroImageFile ? heroImageFile.name : 'Subir imagen hero' }}
+                                    {{
+                                        heroImageFile
+                                            ? heroImageFile.name
+                                            : 'Subir imagen hero'
+                                    }}
                                     <input
                                         type="file"
                                         accept="image/*"
                                         class="hidden"
-                                        @change="(e) => onFileChange(e, 'hero_image')"
+                                        @change="
+                                            (e) => onFileChange(e, 'hero_image')
+                                        "
                                     />
                                 </label>
                             </div>
@@ -484,7 +550,9 @@ const timezones = [
 
                 <!-- Operational settings -->
                 <div class="space-y-4">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                    <h3
+                        class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                    >
                         <Globe class="size-4" />
                         Configuración operativa
                     </h3>
@@ -494,7 +562,9 @@ const timezones = [
                             <Label>Moneda</Label>
                             <Select v-model="configForm.currency">
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar moneda" />
+                                    <SelectValue
+                                        placeholder="Seleccionar moneda"
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem
@@ -512,7 +582,9 @@ const timezones = [
                             <Label>Zona horaria</Label>
                             <Select v-model="configForm.timezone">
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar zona" />
+                                    <SelectValue
+                                        placeholder="Seleccionar zona"
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem
@@ -530,7 +602,9 @@ const timezones = [
                             <Label>Idioma</Label>
                             <Select v-model="configForm.locale">
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar idioma" />
+                                    <SelectValue
+                                        placeholder="Seleccionar idioma"
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="es">Español</SelectItem>
@@ -544,7 +618,9 @@ const timezones = [
                         <div class="space-y-2">
                             <Label>Pago parcial mínimo (%)</Label>
                             <Input
-                                v-model.number="configForm.min_partial_payment_pct"
+                                v-model.number="
+                                    configForm.min_partial_payment_pct
+                                "
                                 type="number"
                                 min="10"
                                 max="100"
@@ -554,25 +630,44 @@ const timezones = [
                     </div>
 
                     <div class="space-y-3">
-                        <div class="flex items-center justify-between rounded-md border px-4 py-3">
+                        <div
+                            class="flex items-center justify-between rounded-md border px-4 py-3"
+                        >
                             <div>
-                                <p class="text-sm font-medium">Reseñas requieren moderación</p>
-                                <p class="text-xs text-zinc-500">Las reseñas no se publican hasta que un admin las apruebe.</p>
+                                <p class="text-sm font-medium">
+                                    Reseñas requieren moderación
+                                </p>
+                                <p class="text-xs text-zinc-500">
+                                    Las reseñas no se publican hasta que un
+                                    admin las apruebe.
+                                </p>
                             </div>
                             <Switch
                                 :checked="configForm.reviews_require_moderation"
-                                @update:checked="configForm.reviews_require_moderation = $event"
+                                @update:checked="
+                                    configForm.reviews_require_moderation =
+                                        $event
+                                "
                             />
                         </div>
 
-                        <div class="flex items-center justify-between rounded-md border px-4 py-3">
+                        <div
+                            class="flex items-center justify-between rounded-md border px-4 py-3"
+                        >
                             <div>
-                                <p class="text-sm font-medium">Requerir datos de viajeros</p>
-                                <p class="text-xs text-zinc-500">Solicita nombre y documento de cada viajero al reservar.</p>
+                                <p class="text-sm font-medium">
+                                    Requerir datos de viajeros
+                                </p>
+                                <p class="text-xs text-zinc-500">
+                                    Solicita nombre y documento de cada viajero
+                                    al reservar.
+                                </p>
                             </div>
                             <Switch
                                 :checked="configForm.require_traveler_details"
-                                @update:checked="configForm.require_traveler_details = $event"
+                                @update:checked="
+                                    configForm.require_traveler_details = $event
+                                "
                             />
                         </div>
                     </div>
@@ -580,7 +675,9 @@ const timezones = [
 
                 <!-- Contact info -->
                 <div class="space-y-4">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                    <h3
+                        class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                    >
                         <Mail class="size-4" />
                         Información de contacto
                     </h3>
@@ -614,7 +711,9 @@ const timezones = [
 
                 <!-- Social links -->
                 <div class="space-y-4">
-                    <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                    <h3
+                        class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
+                    >
                         <ExternalLink class="size-4" />
                         Redes sociales
                     </h3>
@@ -659,9 +758,13 @@ const timezones = [
                 </div>
 
                 <!-- Submit -->
-                <div class="flex items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                <div
+                    class="flex items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800"
+                >
                     <Button type="submit" :disabled="processing">
-                        {{ processing ? 'Guardando…' : 'Guardar configuración' }}
+                        {{
+                            processing ? 'Guardando…' : 'Guardar configuración'
+                        }}
                     </Button>
                 </div>
             </form>

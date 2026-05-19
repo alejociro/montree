@@ -16,7 +16,9 @@ async function loadMetrics(): Promise<void> {
     loading.value = true;
 
     try {
-        const response = (await http.submit(dashboardShow())) as { data: PlatformMetrics };
+        const response = (await http.submit(dashboardShow())) as {
+            data: PlatformMetrics;
+        };
         metrics.value = response.data;
     } catch {
         toast.error('No se pudieron cargar las métricas de la plataforma.');
@@ -58,25 +60,30 @@ function planLabel(plan: TenantPlan): string {
             class="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
         >
             <header class="mb-4 flex items-center justify-between">
-                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                <h2
+                    class="text-base font-semibold text-zinc-900 dark:text-zinc-50"
+                >
                     Distribución por plan
                 </h2>
-                <span v-if="loading" class="text-xs text-zinc-500">Cargando...</span>
+                <span v-if="loading" class="text-xs text-zinc-500"
+                    >Cargando...</span
+                >
             </header>
 
-            <div
-                v-if="metrics"
-                class="grid grid-cols-1 gap-4 sm:grid-cols-3"
-            >
+            <div v-if="metrics" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div
                     v-for="(count, plan) in metrics.plan_distribution"
                     :key="plan"
                     class="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
                 >
-                    <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    <span
+                        class="text-sm font-medium text-zinc-700 dark:text-zinc-200"
+                    >
                         {{ planLabel(plan as TenantPlan) }}
                     </span>
-                    <span class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                    <span
+                        class="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+                    >
                         {{ count }}
                     </span>
                 </div>

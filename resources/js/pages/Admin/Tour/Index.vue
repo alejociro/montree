@@ -157,11 +157,29 @@ function formatPrice(amount: string, code: string): string {
                 class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-input p-12 text-center"
             >
                 <div class="rounded-full bg-muted p-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="text-muted-foreground"
+                    >
+                        <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+                        <path
+                            d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"
+                        />
+                    </svg>
                 </div>
                 <div class="space-y-1">
                     <p class="font-medium">Aún no hay tours</p>
-                    <p class="text-sm text-muted-foreground">Creá tu primer tour para empezar a recibir reservas.</p>
+                    <p class="text-sm text-muted-foreground">
+                        Creá tu primer tour para empezar a recibir reservas.
+                    </p>
                 </div>
                 <Link :href="createPage().url">
                     <Button>

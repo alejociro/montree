@@ -2,18 +2,13 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { formatTourDate } from '@/lib/format';
 import type { TourDetailDate } from '@/types/tour-detail';
 
 const props = defineProps<{ date: TourDetailDate; currency: string }>();
 
 const formattedDate = computed(() =>
-    new Date(props.date.starts_at).toLocaleString('es-CO', {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-    }),
+    formatTourDate(props.date.starts_at, { withWeekday: true, withTime: true }),
 );
 
 const formattedPrice = computed(() =>
@@ -24,13 +19,17 @@ const formattedPrice = computed(() =>
     }).format(Number(props.date.effective_price)),
 );
 
-const disabled = computed(() => props.date.is_full || props.date.status !== 'open');
+const disabled = computed(
+    () => props.date.is_full || props.date.status !== 'open',
+);
 </script>
 
 <template>
     <div
         class="flex flex-col gap-3 rounded-lg border p-4 transition"
-        :class="disabled ? 'opacity-60' : 'hover:border-primary hover:shadow-sm'"
+        :class="
+            disabled ? 'opacity-60' : 'hover:border-primary hover:shadow-sm'
+        "
     >
         <div class="flex items-start justify-between gap-2">
             <div>
@@ -47,7 +46,10 @@ const disabled = computed(() => props.date.is_full || props.date.status !== 'ope
             </span>
         </div>
         <Button as-child :disabled="disabled" size="sm">
-            <Link :href="`/booking/new?tour_date_id=${date.id}`" v-if="!disabled">
+            <Link
+                :href="`/booking/new?tour_date_id=${date.id}`"
+                v-if="!disabled"
+            >
                 Reservar
             </Link>
             <span v-else>No disponible</span>

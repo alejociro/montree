@@ -18,7 +18,10 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppShell variant="sidebar">
         <SuperAdminSidebar />
-        <AppContent variant="sidebar" class="overflow-x-hidden bg-zinc-50 dark:bg-zinc-950">
+        <AppContent
+            variant="sidebar"
+            class="overflow-x-hidden bg-zinc-50 dark:bg-zinc-950"
+        >
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
             <slot />
         </AppContent>

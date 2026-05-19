@@ -55,11 +55,28 @@ function formatPrice(amount: string, currency: string) {
             class="flex flex-col items-center gap-4 rounded-lg border border-dashed p-12 text-center"
         >
             <div class="rounded-full bg-muted p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-muted-foreground"
+                >
+                    <path
+                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+                    />
+                </svg>
             </div>
             <div class="space-y-1">
                 <p class="font-medium">No tenés tours favoritos todavía</p>
-                <p class="text-sm text-muted-foreground">Guardá tus tours favoritos para encontrarlos fácilmente.</p>
+                <p class="text-sm text-muted-foreground">
+                    Guardá tus tours favoritos para encontrarlos fácilmente.
+                </p>
             </div>
             <Link href="/tours">
                 <Button>Ver catálogo</Button>
@@ -84,12 +101,16 @@ function formatPrice(amount: string, currency: string) {
                 <div class="space-y-1 p-4">
                     <div class="flex items-start justify-between gap-2">
                         <h3 class="font-medium">{{ f.tour.name }}</h3>
-                        <Badge v-if="!f.tour.is_available" variant="outline">No disponible</Badge>
+                        <Badge v-if="!f.tour.is_available" variant="outline"
+                            >No disponible</Badge
+                        >
                     </div>
                     <p class="text-sm font-semibold text-primary">
                         {{ formatPrice(f.tour.base_price, f.tour.currency) }}
                     </p>
-                    <p class="text-xs text-muted-foreground">{{ f.tour.rating_average }} ★</p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ f.tour.rating_average }} ★
+                    </p>
                 </div>
             </Link>
         </div>

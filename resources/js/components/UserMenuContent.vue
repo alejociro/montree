@@ -44,7 +44,10 @@ defineProps<Props>();
             </Link>
         </DropdownMenuItem>
         <DropdownMenuItem :as-child="true">
-            <Link class="block w-full cursor-pointer" href="/account/notifications">
+            <Link
+                class="block w-full cursor-pointer"
+                href="/account/notifications"
+            >
                 <Bell class="mr-2 h-4 w-4" />
                 Notificaciones
             </Link>

@@ -15,14 +15,19 @@ defineProps<{
         class="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
     >
         <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">{{ title }}</span>
+            <span
+                class="text-sm font-medium text-zinc-600 dark:text-zinc-400"
+                >{{ title }}</span
+            >
             <component
                 :is="icon"
                 v-if="icon"
                 class="size-5 text-zinc-400 dark:text-zinc-500"
             />
         </div>
-        <p class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <p
+            class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+        >
             {{ value }}
         </p>
         <div

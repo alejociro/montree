@@ -45,3 +45,51 @@ export function formatDateTime(iso: string, locale = 'es-CO'): string {
         timeStyle: 'short',
     }).format(date);
 }
+
+type TourDateOptions = {
+    withWeekday?: boolean;
+    withTime?: boolean;
+};
+
+export function formatTourDate(
+    iso: string,
+    options: TourDateOptions = {},
+    locale = 'es-CO',
+): string {
+    const { withWeekday = true, withTime = true } = options;
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+
+    const formatOptions: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    };
+
+    if (withWeekday) {
+        formatOptions.weekday = 'long';
+    }
+
+    if (withTime) {
+        formatOptions.hour = 'numeric';
+        formatOptions.minute = '2-digit';
+    }
+
+    return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+}
+
+const bookingStatusLabels: Record<string, string> = {
+    pending_payment: 'Pendiente de pago',
+    confirmed: 'Confirmada',
+    completed: 'Completada',
+    cancelled: 'Cancelada',
+    expired: 'Expirada',
+    refunded: 'Reembolsada',
+};
+
+export function formatBookingStatus(status: string): string {
+    return bookingStatusLabels[status] ?? status;
+}

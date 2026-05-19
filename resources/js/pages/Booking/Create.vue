@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useApi } from '@/composables/useApi';
+
+type BookingCreateResponse = {
+    data?: { booking_number?: string };
+};
+
+const api = useApi();
 
 type Tour = {
     id: number;
@@ -31,9 +38,15 @@ const props = defineProps<{
     requireTravelers: boolean;
 }>();
 
-type Traveler = { full_name: string; email: string | null; phone: string | null };
+type Traveler = {
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+};
 
-const travelers = ref<Traveler[]>([{ full_name: '', email: null, phone: null }]);
+const travelers = ref<Traveler[]>([
+    { full_name: '', email: null, phone: null },
+]);
 
 const form = useForm({
     tour_date_id: props.tourDate.id,
@@ -43,8 +56,11 @@ const form = useForm({
     travelers: [] as Traveler[],
 });
 
+const submitting = ref(false);
+
 function syncTravelers() {
     const count = form.travelers_count;
+
     if (count > travelers.value.length) {
         for (let i = travelers.value.length; i < count; i++) {
             travelers.value.push({ full_name: '', email: null, phone: null });
@@ -72,12 +88,13 @@ const estimatedSubtotal = computed(() =>
 
 function submit() {
     form.travelers = props.requireTravelers ? travelers.value : [];
-    router.post('/api/v1/bookings', form.data(), {
-        preserveScroll: true,
-        onSuccess: (page) => {
-            const bookingNumber = (page.props as Record<string, unknown>)?.data
-                ? ((page.props as { data: { booking_number: string } }).data.booking_number)
-                : null;
+    form.clearErrors();
+    submitting.value = true;
+
+    void api.post<BookingCreateResponse>('/api/v1/bookings', form.data(), {
+        onSuccess: (response) => {
+            const bookingNumber = response?.data?.booking_number ?? null;
+
             if (bookingNumber) {
                 router.visit(`/bookings/${bookingNumber}`);
             } else {
@@ -85,8 +102,12 @@ function submit() {
             }
         },
         onError: (errors) => {
+            form.setError(errors);
             const firstError = Object.values(errors)[0];
-            toast.error(typeof firstError === 'string' ? firstError : 'No pudimos crear la reserva.');
+            toast.error(firstError ?? 'No pudimos crear la reserva.');
+        },
+        onFinish: () => {
+            submitting.value = false;
         },
     });
 }
@@ -116,7 +137,10 @@ function submit() {
                     :max="tourDate.available_seats"
                     @change="syncTravelers"
                 />
-                <p v-if="form.errors.travelers_count" class="text-sm text-destructive">
+                <p
+                    v-if="form.errors.travelers_count"
+                    class="text-sm text-destructive"
+                >
                     {{ form.errors.travelers_count }}
                 </p>
             </div>
@@ -131,28 +155,50 @@ function submit() {
                     <p class="text-sm font-medium">Viajero {{ i + 1 }}</p>
                     <div class="space-y-2">
                         <Label :for="`name-${i}`">Nombre completo</Label>
-                        <Input :id="`name-${i}`" v-model="t.full_name" required />
+                        <Input
+                            :id="`name-${i}`"
+                            v-model="t.full_name"
+                            placeholder="Tu nombre completo"
+                            required
+                        />
                     </div>
                     <div class="grid gap-3 md:grid-cols-2">
                         <div class="space-y-2">
                             <Label :for="`email-${i}`">Email</Label>
-                            <Input :id="`email-${i}`" v-model="t.email" type="email" />
+                            <Input
+                                :id="`email-${i}`"
+                                v-model="t.email"
+                                type="email"
+                                placeholder="tu@correo.com"
+                            />
                         </div>
                         <div class="space-y-2">
                             <Label :for="`phone-${i}`">Teléfono</Label>
-                            <Input :id="`phone-${i}`" v-model="t.phone" />
+                            <Input
+                                :id="`phone-${i}`"
+                                v-model="t.phone"
+                                placeholder="+57 300..."
+                            />
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="space-y-2">
-                <Label for="promotion_code">Código promocional (opcional)</Label>
-                <Input id="promotion_code" v-model="form.promotion_code" placeholder="VERANO2026" />
+                <Label for="promotion_code"
+                    >Código promocional (opcional)</Label
+                >
+                <Input
+                    id="promotion_code"
+                    v-model="form.promotion_code"
+                    placeholder="VERANO2026"
+                />
             </div>
 
             <div class="space-y-2">
-                <Label for="special_requests">Notas adicionales (opcional)</Label>
+                <Label for="special_requests"
+                    >Notas adicionales (opcional)</Label
+                >
                 <Textarea
                     id="special_requests"
                     v-model="form.special_requests"
@@ -168,8 +214,8 @@ function submit() {
                 </AlertDescription>
             </Alert>
 
-            <Button type="submit" :disabled="form.processing" class="w-full">
-                {{ form.processing ? 'Procesando...' : 'Crear reserva' }}
+            <Button type="submit" :disabled="submitting" class="w-full">
+                {{ submitting ? 'Procesando...' : 'Crear reserva' }}
             </Button>
         </form>
     </div>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -13,8 +12,13 @@ import Heading from '@/components/Heading.vue';
 import TourForm from '@/components/organisms/TourForm.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import type { Tour, TourCategory, TourFormPayload } from '@/types/tour';
+
+type StoreTourResponse = {
+    data?: Tour;
+};
 
 type Props = {
     categories: TourCategory[];
@@ -22,6 +26,7 @@ type Props = {
 
 const props = defineProps<Props>();
 const { currency: tenantCurrency } = useTenant();
+const api = useApi();
 
 const initialValues: TourFormPayload = {
     name: '',
@@ -44,14 +49,13 @@ const initialValues: TourFormPayload = {
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues }));
 const planError = ref<string | null>(null);
+const saving = ref(false);
 const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
 
-function submit(): void {
-    planError.value = null;
-
-    form.transform((data) => ({
+function normalizePayload(data: TourFormPayload): TourFormPayload {
+    return {
         ...data,
         meeting_latitude:
             data.meeting_latitude === '' ? null : data.meeting_latitude,
@@ -60,36 +64,47 @@ function submit(): void {
         meeting_point: data.meeting_point === '' ? null : data.meeting_point,
         short_description:
             data.short_description === '' ? null : data.short_description,
-    }));
+    };
+}
 
-    form.submit(storeTour(), {
-        preserveScroll: true,
-        onSuccess: (response) => {
-            const tour = (response as { props?: { tour?: Tour } }).props?.tour;
+function submit(): void {
+    planError.value = null;
+    form.clearErrors();
+    saving.value = true;
 
-            toast.success('Tour creado en borrador.');
+    void api.post<StoreTourResponse>(
+        storeTour().url,
+        normalizePayload(form.data()),
+        {
+            onSuccess: (response) => {
+                const tour = response?.data;
 
-            if (tour) {
-                router.visit(editPage({ tour: tour.id }).url);
+                toast.success('Tour creado en borrador.');
 
-                return;
-            }
+                if (tour) {
+                    router.visit(editPage({ tour: tour.id }).url);
 
-            router.visit(indexPage().url);
+                    return;
+                }
+
+                router.visit(indexPage().url);
+            },
+            onError: (errors) => {
+                if (errors.error_code === 'PLAN_LIMIT_TOURS_REACHED') {
+                    planError.value =
+                        'Alcanzaste el límite de tours de tu plan. Actualizá tu plan para crear más.';
+
+                    return;
+                }
+
+                form.setError(errors);
+                toast.error('Revisá los campos marcados.');
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
         },
-        onError: (errors) => {
-            const code = (errors as { error_code?: string }).error_code;
-
-            if (code === 'PLAN_LIMIT_TOURS_REACHED') {
-                planError.value =
-                    'Alcanzaste el límite de tours de tu plan. Actualizá tu plan para crear más.';
-
-                return;
-            }
-
-            toast.error('Revisá los campos marcados.');
-        },
-    });
+    );
 }
 </script>
 
@@ -122,8 +137,8 @@ function submit(): void {
             />
 
             <div class="flex items-center gap-3 border-t border-input pt-6">
-                <Button type="submit" :disabled="form.processing">
-                    {{ form.processing ? 'Creando…' : 'Crear borrador' }}
+                <Button type="submit" :disabled="saving">
+                    {{ saving ? 'Creando…' : 'Crear borrador' }}
                 </Button>
                 <Link :href="indexPage().url">
                     <Button type="button" variant="ghost">Cancelar</Button>

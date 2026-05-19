@@ -21,7 +21,11 @@ function formatCurrency(value: string | null): string {
         return value;
     }
 
-    return number.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+    return number.toLocaleString('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+    });
 }
 </script>
 
@@ -33,37 +37,37 @@ function formatCurrency(value: string | null): string {
             <thead class="bg-zinc-50 dark:bg-zinc-900/60">
                 <tr>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Tenant
                     </th>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Status
                     </th>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Plan
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Usuarios
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Tours
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Bookings (30d)
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
                         Revenue (30d)
                     </th>
@@ -73,7 +77,9 @@ function formatCurrency(value: string | null): string {
             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                 <tr v-if="loading">
                     <td colspan="8" class="px-4 py-12">
-                        <div class="flex items-center justify-center gap-3 text-sm text-zinc-500">
+                        <div
+                            class="flex items-center justify-center gap-3 text-sm text-zinc-500"
+                        >
                             <span
                                 class="size-3 animate-pulse rounded-full bg-zinc-400 dark:bg-zinc-600"
                             />
@@ -97,10 +103,14 @@ function formatCurrency(value: string | null): string {
                 >
                     <td class="px-4 py-3">
                         <div class="flex flex-col">
-                            <span class="font-medium text-zinc-900 dark:text-zinc-100">
+                            <span
+                                class="font-medium text-zinc-900 dark:text-zinc-100"
+                            >
                                 {{ tenant.name }}
                             </span>
-                            <span class="text-xs text-zinc-500">{{ tenant.domain ?? tenant.slug }}</span>
+                            <span class="text-xs text-zinc-500">{{
+                                tenant.domain ?? tenant.slug
+                            }}</span>
                         </div>
                     </td>
                     <td class="px-4 py-3">
@@ -109,16 +119,24 @@ function formatCurrency(value: string | null): string {
                     <td class="px-4 py-3">
                         <PlanBadge :plan="tenant.plan" />
                     </td>
-                    <td class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200">
+                    <td
+                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
+                    >
                         {{ tenant.users_count ?? '—' }}
                     </td>
-                    <td class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200">
+                    <td
+                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
+                    >
                         {{ tenant.tours_count ?? '—' }}
                     </td>
-                    <td class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200">
+                    <td
+                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
+                    >
                         {{ tenant.bookings_count_30d ?? '—' }}
                     </td>
-                    <td class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200">
+                    <td
+                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
+                    >
                         {{ formatCurrency(tenant.revenue_30d) }}
                     </td>
                     <td class="px-4 py-3 text-right">

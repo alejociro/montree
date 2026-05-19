@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import {
+    index as indexUsers,
+    store as storeUser,
+    updateRole,
+    suspend,
+    reactivate,
+} from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -14,13 +19,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    index as indexUsers,
-    store as storeUser,
-    updateRole,
-    suspend,
-    reactivate,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useApi } from '@/composables/useApi';
+
+const api = useApi();
 
 type Member = {
     id: number;
@@ -46,6 +49,7 @@ const changingRole = ref(false);
 
 async function load() {
     loading.value = true;
+
     try {
         const res = await fetch(indexUsers().url, {
             credentials: 'same-origin',
@@ -60,18 +64,21 @@ async function load() {
 
 function invite() {
     sending.value = true;
-    router.post(
+    void api.post(
         storeUser().url,
-        { email: inviteEmail.value, name: inviteName.value || null, role: inviteRole.value },
         {
-            preserveScroll: true,
+            email: inviteEmail.value,
+            name: inviteName.value || null,
+            role: inviteRole.value,
+        },
+        {
             onSuccess: () => {
                 toast.success('Invitación enviada');
                 inviteEmail.value = '';
                 inviteName.value = '';
-                load();
+                void load();
             },
-            onError: (e) => toast.error(Object.values(e)[0] as string),
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
             onFinish: () => {
                 sending.value = false;
             },
@@ -95,6 +102,7 @@ function onRoleChange(member: Member, newRole: string) {
                   ? `¿Bajar a ${member.name} a cliente? Perderá acceso al panel de administración.`
                   : `¿Cambiar el rol de ${member.name} de ${member.role} a ${newRole}?`;
         confirmDialog.value = true;
+
         return;
     }
 
@@ -105,6 +113,7 @@ function confirmRoleChange() {
     if (!confirmMember.value) {
         return;
     }
+
     executeRoleChange(confirmMember.value.id, confirmNewRole.value);
     confirmDialog.value = false;
 }
@@ -116,18 +125,17 @@ function cancelRoleChange() {
 
 function executeRoleChange(userId: number, role: string) {
     changingRole.value = true;
-    router.patch(
+    void api.patch(
         updateRole.url(userId),
         { role },
         {
-            preserveScroll: true,
             onSuccess: () => {
                 toast.success('Rol actualizado');
-                load();
+                void load();
             },
             onError: (e) => {
-                toast.error(Object.values(e)[0] as string ?? 'Error');
-                load();
+                toast.error(Object.values(e)[0] ?? 'Error');
+                void load();
             },
             onFinish: () => {
                 changingRole.value = false;
@@ -137,23 +145,29 @@ function executeRoleChange(userId: number, role: string) {
 }
 
 function doSuspend(memberId: number) {
-    router.patch(suspend.url(memberId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Miembro suspendido');
-            load();
+    void api.patch(
+        suspend.url(memberId),
+        {},
+        {
+            onSuccess: () => {
+                toast.success('Miembro suspendido');
+                void load();
+            },
         },
-    });
+    );
 }
 
 function doReactivate(memberId: number) {
-    router.patch(reactivate.url(memberId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Miembro reactivado');
-            load();
+    void api.patch(
+        reactivate.url(memberId),
+        {},
+        {
+            onSuccess: () => {
+                toast.success('Miembro reactivado');
+                void load();
+            },
         },
-    });
+    );
 }
 
 function roleLabel(role: string | null): string {
@@ -163,6 +177,7 @@ function roleLabel(role: string | null): string {
         guide: 'Guía',
         customer: 'Cliente',
     };
+
     return labels[role ?? ''] ?? role ?? 'Sin rol';
 }
 
@@ -205,7 +220,9 @@ onMounted(load);
 
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">Miembros</h2>
-            <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+            <p v-if="loading" class="text-sm text-muted-foreground">
+                Cargando...
+            </p>
             <ul v-else class="space-y-2">
                 <li
                     v-for="m in members"
@@ -215,12 +232,22 @@ onMounted(load);
                     <div class="flex items-center gap-3">
                         <div>
                             <p class="font-medium">{{ m.name }}</p>
-                            <p class="text-sm text-muted-foreground">{{ m.email }}</p>
+                            <p class="text-sm text-muted-foreground">
+                                {{ m.email }}
+                            </p>
                         </div>
                         <Badge
-                            :variant="m.status === 'suspended' ? 'destructive' : 'secondary'"
+                            :variant="
+                                m.status === 'suspended'
+                                    ? 'destructive'
+                                    : 'secondary'
+                            "
                         >
-                            {{ m.status === 'suspended' ? 'Suspendido' : 'Activo' }}
+                            {{
+                                m.status === 'suspended'
+                                    ? 'Suspendido'
+                                    : 'Activo'
+                            }}
                         </Badge>
                     </div>
                     <div class="flex items-center gap-3">
@@ -228,7 +255,12 @@ onMounted(load);
                             :value="m.role"
                             class="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                             :disabled="changingRole"
-                            @change="onRoleChange(m, ($event.target as HTMLSelectElement).value)"
+                            @change="
+                                onRoleChange(
+                                    m,
+                                    ($event.target as HTMLSelectElement).value,
+                                )
+                            "
                         >
                             <option value="admin">Admin</option>
                             <option value="operator">Operador</option>
@@ -263,7 +295,9 @@ onMounted(load);
                     <DialogDescription>{{ confirmMessage }}</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" @click="cancelRoleChange">Cancelar</Button>
+                    <Button variant="outline" @click="cancelRoleChange"
+                        >Cancelar</Button
+                    >
                     <Button @click="confirmRoleChange">Confirmar</Button>
                 </DialogFooter>
             </DialogContent>

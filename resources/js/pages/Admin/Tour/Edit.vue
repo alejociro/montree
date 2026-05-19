@@ -22,6 +22,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useApi } from '@/composables/useApi';
 import type {
     SupportedCurrency,
     Tour,
@@ -29,6 +30,8 @@ import type {
     TourFormPayload,
     TourStatus as TourStatusType,
 } from '@/types/tour';
+
+const api = useApi();
 
 type Props = {
     tour: Tour;
@@ -67,9 +70,10 @@ const form = useForm<TourFormPayload>(() => ({ ...initialValues.value }));
 const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
+const saving = ref(false);
 
-function submit(): void {
-    form.transform((data) => ({
+function normalizePayload(data: TourFormPayload): TourFormPayload {
+    return {
         ...data,
         meeting_latitude:
             data.meeting_latitude === '' ? null : data.meeting_latitude,
@@ -78,13 +82,30 @@ function submit(): void {
         meeting_point: data.meeting_point === '' ? null : data.meeting_point,
         short_description:
             data.short_description === '' ? null : data.short_description,
-    }));
+    };
+}
 
-    form.submit(updateTour({ tour: props.tour.id }), {
-        preserveScroll: true,
-        onSuccess: () => toast.success('Cambios guardados.'),
-        onError: () => toast.error('Revisá los campos marcados.'),
-    });
+function submit(): void {
+    form.clearErrors();
+    saving.value = true;
+
+    void api.put(
+        updateTour({ tour: props.tour.id }).url,
+        normalizePayload(form.data()),
+        {
+            onSuccess: () => {
+                toast.success('Cambios guardados.');
+                router.reload({ only: ['tour'] });
+            },
+            onError: (errors) => {
+                form.setError(errors);
+                toast.error('Revisá los campos marcados.');
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
+        },
+    );
 }
 
 const allowedNextStatuses = computed<TourStatusType[]>(() => {
@@ -123,14 +144,16 @@ function transitionTo(next: TourStatusType): void {
 
     const action = changeStatus({ tour: props.tour.id });
 
-    router.patch(
+    void api.patch(
         action.url,
         { status: next },
         {
-            preserveScroll: true,
-            onSuccess: () => toast.success('Estado actualizado.'),
+            onSuccess: () => {
+                toast.success('Estado actualizado.');
+                router.reload({ only: ['tour'] });
+            },
             onError: (errors) => {
-                const code = (errors as { error_code?: string }).error_code;
+                const code = errors.error_code;
 
                 if (code === 'TOUR_NEEDS_IMAGE_TO_ACTIVATE') {
                     statusError.value =
@@ -158,13 +181,13 @@ function deleteTour(): void {
         return;
     }
 
-    router.delete(destroyTour({ tour: props.tour.id }).url, {
+    void api.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
             toast.success('Tour eliminado.');
             router.visit(indexPage().url);
         },
         onError: (errors) => {
-            const code = (errors as { error_code?: string }).error_code;
+            const code = errors.error_code;
 
             if (code === 'TOUR_HAS_ACTIVE_BOOKINGS') {
                 toast.error(
@@ -230,11 +253,11 @@ function deleteTour(): void {
                 </Card>
 
                 <div class="flex items-center gap-3 border-t border-input pt-6">
-                    <Button type="submit" :disabled="form.processing">
-                        {{ form.processing ? 'Guardando…' : 'Guardar cambios' }}
+                    <Button type="submit" :disabled="saving">
+                        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
                     </Button>
                     <span
-                        v-if="form.isDirty && !form.processing"
+                        v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
                         Tenés cambios sin guardar.

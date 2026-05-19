@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import {
+    index as indexPromotions,
+    store as storePromotion,
+    update as updatePromotion,
+    destroy as destroyPromotion,
+} from '@/actions/App/Http/Controllers/Api/V1/Admin/PromotionController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -13,12 +17,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    index as indexPromotions,
-    store as storePromotion,
-    update as updatePromotion,
-    destroy as destroyPromotion,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/PromotionController';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useApi } from '@/composables/useApi';
+
+const api = useApi();
 
 type Promotion = {
     id: number;
@@ -46,8 +49,11 @@ const loading = ref(true);
 
 const stats = computed(() => {
     const total = items.value.length;
-    const active = items.value.filter((p) => p.is_active && !p.is_expired && !p.is_exhausted).length;
+    const active = items.value.filter(
+        (p) => p.is_active && !p.is_expired && !p.is_exhausted,
+    ).length;
     const totalUses = items.value.reduce((sum, p) => sum + p.uses_count, 0);
+
     return { total, active, totalUses };
 });
 
@@ -71,6 +77,7 @@ const submitting = ref(false);
 
 async function load() {
     loading.value = true;
+
     try {
         const res = await fetch(indexPromotions().url, {
             credentials: 'same-origin',
@@ -85,19 +92,22 @@ async function load() {
 
 function submitCreate() {
     submitting.value = true;
-    router.post(storePromotion().url, { ...form.value }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Promoción creada');
-            showCreateForm.value = false;
-            form.value = defaultForm();
-            load();
+    void api.post(
+        storePromotion().url,
+        { ...form.value },
+        {
+            onSuccess: () => {
+                toast.success('Promoción creada');
+                showCreateForm.value = false;
+                form.value = defaultForm();
+                void load();
+            },
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
+            onFinish: () => {
+                submitting.value = false;
+            },
         },
-        onError: (e) => toast.error(Object.values(e)[0] as string),
-        onFinish: () => {
-            submitting.value = false;
-        },
-    });
+    );
 }
 
 function openEdit(promotion: Promotion) {
@@ -121,41 +131,49 @@ function submitEdit() {
     }
 
     submitting.value = true;
-    router.put(updatePromotion.url(editingPromotion.value.id), { ...form.value }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Promoción actualizada');
-            editDialog.value = false;
-            editingPromotion.value = null;
-            load();
+    void api.put(
+        updatePromotion.url(editingPromotion.value.id),
+        { ...form.value },
+        {
+            onSuccess: () => {
+                toast.success('Promoción actualizada');
+                editDialog.value = false;
+                editingPromotion.value = null;
+                void load();
+            },
+            onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
+            onFinish: () => {
+                submitting.value = false;
+            },
         },
-        onError: (e) => toast.error(Object.values(e)[0] as string),
-        onFinish: () => {
-            submitting.value = false;
-        },
-    });
+    );
 }
 
 function deactivate(id: number) {
-    router.delete(destroyPromotion.url(id), {
-        preserveScroll: true,
+    void api.delete(destroyPromotion.url(id), {
         onSuccess: () => {
             toast.success('Promoción desactivada');
-            load();
+            void load();
         },
     });
 }
 
-function promotionState(p: Promotion): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+function promotionState(p: Promotion): {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+} {
     if (p.is_expired) {
         return { label: 'Expirada', variant: 'outline' };
     }
+
     if (p.is_exhausted) {
         return { label: 'Agotada', variant: 'outline' };
     }
+
     if (!p.is_active) {
         return { label: 'Inactiva', variant: 'secondary' };
     }
+
     return { label: 'Activa', variant: 'default' };
 }
 
@@ -163,6 +181,7 @@ function usagePercent(p: Promotion): number {
     if (!p.max_uses || p.max_uses === 0) {
         return 0;
     }
+
     return Math.min(100, Math.round((p.uses_count / p.max_uses) * 100));
 }
 
@@ -185,7 +204,9 @@ onMounted(load);
                 <p class="text-sm text-muted-foreground">Total</p>
             </div>
             <div class="rounded-lg border p-4 text-center">
-                <p class="text-2xl font-bold text-primary">{{ stats.active }}</p>
+                <p class="text-2xl font-bold text-primary">
+                    {{ stats.active }}
+                </p>
                 <p class="text-sm text-muted-foreground">Activas</p>
             </div>
             <div class="rounded-lg border p-4 text-center">
@@ -199,7 +220,12 @@ onMounted(load);
             <div class="grid gap-3 md:grid-cols-2">
                 <div class="space-y-2">
                     <Label for="code">Código</Label>
-                    <Input id="code" v-model="form.code" placeholder="VERANO2026" maxlength="40" />
+                    <Input
+                        id="code"
+                        v-model="form.code"
+                        placeholder="VERANO2026"
+                        maxlength="40"
+                    />
                 </div>
                 <div class="space-y-2">
                     <Label for="type">Tipo</Label>
@@ -214,11 +240,22 @@ onMounted(load);
                 </div>
                 <div class="space-y-2">
                     <Label for="value">Valor</Label>
-                    <Input id="value" v-model="form.value" type="number" min="1" step="0.01" />
+                    <Input
+                        id="value"
+                        v-model="form.value"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                    />
                 </div>
                 <div class="space-y-2">
                     <Label for="max">Máx. usos (opcional)</Label>
-                    <Input id="max" v-model.number="form.max_uses" type="number" min="1" />
+                    <Input
+                        id="max"
+                        v-model.number="form.max_uses"
+                        type="number"
+                        min="1"
+                    />
                 </div>
                 <div class="space-y-2">
                     <Label for="start">Desde</Label>
@@ -235,7 +272,9 @@ onMounted(load);
         </section>
 
         <section class="space-y-3">
-            <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+            <p v-if="loading" class="text-sm text-muted-foreground">
+                Cargando...
+            </p>
             <p v-else-if="items.length === 0" class="text-muted-foreground">
                 No hay promociones todavía.
             </p>
@@ -255,18 +294,29 @@ onMounted(load);
                                 </Badge>
                             </div>
                             <p class="text-sm text-muted-foreground">
-                                {{ p.type === 'percentage' ? `${p.value}%` : `$${p.value}` }}
+                                {{
+                                    p.type === 'percentage'
+                                        ? `${p.value}%`
+                                        : `$${p.value}`
+                                }}
                             </p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div v-if="p.max_uses" class="w-32 space-y-1 text-right">
+                            <div
+                                v-if="p.max_uses"
+                                class="w-32 space-y-1 text-right"
+                            >
                                 <p class="text-xs text-muted-foreground">
                                     {{ p.uses_count }}/{{ p.max_uses }} usos
                                 </p>
-                                <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                <div
+                                    class="h-2 w-full overflow-hidden rounded-full bg-muted"
+                                >
                                     <div
                                         class="h-full rounded-full bg-primary transition-all"
-                                        :style="{ width: `${usagePercent(p)}%` }"
+                                        :style="{
+                                            width: `${usagePercent(p)}%`,
+                                        }"
                                     />
                                 </div>
                             </div>
@@ -295,7 +345,11 @@ onMounted(load);
                 <div class="grid gap-3 md:grid-cols-2">
                     <div class="space-y-2">
                         <Label for="edit-code">Código</Label>
-                        <Input id="edit-code" v-model="form.code" maxlength="40" />
+                        <Input
+                            id="edit-code"
+                            v-model="form.code"
+                            maxlength="40"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="edit-type">Tipo</Label>
@@ -310,24 +364,48 @@ onMounted(load);
                     </div>
                     <div class="space-y-2">
                         <Label for="edit-value">Valor</Label>
-                        <Input id="edit-value" v-model="form.value" type="number" min="1" step="0.01" />
+                        <Input
+                            id="edit-value"
+                            v-model="form.value"
+                            type="number"
+                            min="1"
+                            step="0.01"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="edit-max">Máx. usos (opcional)</Label>
-                        <Input id="edit-max" v-model.number="form.max_uses" type="number" min="1" />
+                        <Input
+                            id="edit-max"
+                            v-model.number="form.max_uses"
+                            type="number"
+                            min="1"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="edit-start">Desde</Label>
-                        <Input id="edit-start" v-model="form.starts_at" type="date" />
+                        <Input
+                            id="edit-start"
+                            v-model="form.starts_at"
+                            type="date"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="edit-end">Hasta</Label>
-                        <Input id="edit-end" v-model="form.ends_at" type="date" />
+                        <Input
+                            id="edit-end"
+                            v-model="form.ends_at"
+                            type="date"
+                        />
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="editDialog = false">Cancelar</Button>
-                    <Button :disabled="submitting || !form.code" @click="submitEdit">
+                    <Button variant="outline" @click="editDialog = false"
+                        >Cancelar</Button
+                    >
+                    <Button
+                        :disabled="submitting || !form.code"
+                        @click="submitEdit"
+                    >
                         {{ submitting ? 'Guardando...' : 'Guardar cambios' }}
                     </Button>
                 </DialogFooter>

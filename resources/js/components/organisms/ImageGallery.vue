@@ -26,7 +26,11 @@ const active = () => props.images[activeIndex.value] ?? null;
                 :key="img.id"
                 type="button"
                 class="aspect-square w-20 flex-none snap-start overflow-hidden rounded-md border-2 transition"
-                :class="i === activeIndex ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'"
+                :class="
+                    i === activeIndex
+                        ? 'border-primary'
+                        : 'border-transparent opacity-70 hover:opacity-100'
+                "
                 @click="activeIndex = i"
             >
                 <img

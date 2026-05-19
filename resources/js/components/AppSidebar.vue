@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { CalendarCheck, Heart, Home, User } from 'lucide-vue-next';
-import AppLogo from '@/components/AppLogo.vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    CalendarCheck,
+    CalendarDays,
+    Heart,
+    Home,
+    Map,
+    User,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -14,29 +22,40 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
+import type { TenantRole } from '@/types/auth';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Inicio',
-        href: '/',
-        icon: Home,
-    },
-    {
-        title: 'Mis Reservas',
-        href: '/account/bookings',
-        icon: CalendarCheck,
-    },
-    {
-        title: 'Favoritos',
-        href: '/account/favorites',
-        icon: Heart,
-    },
-    {
-        title: 'Mi Cuenta',
-        href: '/account',
-        icon: User,
-    },
+const customerNavItems: NavItem[] = [
+    { title: 'Inicio', href: '/', icon: Home },
+    { title: 'Mis Reservas', href: '/account/bookings', icon: CalendarCheck },
+    { title: 'Favoritos', href: '/account/favorites', icon: Heart },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
 ];
+
+const guideNavItems: NavItem[] = [
+    { title: 'Mi agenda', href: '/guide/schedule', icon: CalendarDays },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
+];
+
+const operatorNavItems: NavItem[] = [
+    { title: 'Tours', href: '/admin/tours', icon: Map },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
+];
+
+const page = usePage();
+const role = computed<TenantRole | null>(
+    () => page.props.auth?.user?.tenantRole ?? null,
+);
+
+const navItems = computed<NavItem[]>(() => {
+    switch (role.value) {
+        case 'guide':
+            return guideNavItems;
+        case 'operator':
+            return operatorNavItems;
+        default:
+            return customerNavItems;
+    }
+});
 </script>
 
 <template>
@@ -46,7 +65,7 @@ const mainNavItems: NavItem[] = [
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
                         <Link href="/">
-                            <AppLogo />
+                            <TenantBrandedLogo size="sm" />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -54,7 +73,7 @@ const mainNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="navItems" />
         </SidebarContent>
 
         <SidebarFooter>

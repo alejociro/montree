@@ -23,11 +23,7 @@ const { configuration, displayName, isResolved } = useTenant();
         <!-- Left panel: branded hero -->
         <div
             class="relative hidden h-full flex-col overflow-hidden lg:flex"
-            :class="
-                configuration?.hero_image_url
-                    ? 'bg-black'
-                    : 'bg-[#2B3B2E]'
-            "
+            :class="configuration?.hero_image_url ? 'bg-black' : 'bg-[#2B3B2E]'"
         >
             <!-- Background image with overlay -->
             <img
@@ -43,18 +39,23 @@ const { configuration, displayName, isResolved } = useTenant();
 
             <!-- Decorative pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute -left-20 -top-20 size-96 rounded-full border border-white/20" />
-                <div class="absolute -bottom-32 -right-20 size-[500px] rounded-full border border-white/20" />
-                <div class="absolute left-1/3 top-1/3 size-64 rounded-full border border-white/10" />
+                <div
+                    class="absolute -top-20 -left-20 size-96 rounded-full border border-white/20"
+                />
+                <div
+                    class="absolute -right-20 -bottom-32 size-[500px] rounded-full border border-white/20"
+                />
+                <div
+                    class="absolute top-1/3 left-1/3 size-64 rounded-full border border-white/10"
+                />
             </div>
 
             <!-- Content overlay -->
-            <div class="relative z-10 flex h-full flex-col justify-between p-10 text-white">
+            <div
+                class="relative z-10 flex h-full flex-col justify-between p-10 text-white"
+            >
                 <!-- Top: Logo -->
-                <Link
-                    :href="home()"
-                    class="flex items-center gap-3"
-                >
+                <Link :href="home()" class="flex items-center gap-3">
                     <span
                         class="flex size-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur-sm"
                     >
@@ -69,14 +70,11 @@ const { configuration, displayName, isResolved } = useTenant();
                 <div class="space-y-4">
                     <p
                         v-if="configuration?.tagline"
-                        class="max-w-md text-3xl font-bold leading-tight"
+                        class="max-w-md text-3xl leading-tight font-bold"
                     >
                         {{ configuration.tagline }}
                     </p>
-                    <p
-                        v-else
-                        class="max-w-md text-3xl font-bold leading-tight"
-                    >
+                    <p v-else class="max-w-md text-3xl leading-tight font-bold">
                         Descubre experiencias únicas en la naturaleza
                     </p>
                     <p
@@ -90,20 +88,44 @@ const { configuration, displayName, isResolved } = useTenant();
                 <!-- Bottom: Trust indicators -->
                 <div class="flex items-center gap-6 text-sm text-white/60">
                     <span class="flex items-center gap-1.5">
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        <svg
+                            class="size-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd"
+                            />
                         </svg>
                         Reserva segura
                     </span>
                     <span class="flex items-center gap-1.5">
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        <svg
+                            class="size-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd"
+                            />
                         </svg>
                         Soporte 24/7
                     </span>
                     <span class="flex items-center gap-1.5">
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        <svg
+                            class="size-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd"
+                            />
                         </svg>
                         Cancelación flexible
                     </span>
@@ -130,10 +152,7 @@ const { configuration, displayName, isResolved } = useTenant();
                     >
                         {{ title }}
                     </h1>
-                    <p
-                        v-if="description"
-                        class="text-sm text-muted-foreground"
-                    >
+                    <p v-if="description" class="text-sm text-muted-foreground">
                         {{ description }}
                     </p>
                 </div>

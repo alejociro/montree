@@ -44,11 +44,17 @@ const { isCurrentUrl } = useCurrentUrl();
                             >
                                 <ShieldCheck class="size-5" />
                             </div>
-                            <div class="grid flex-1 text-left text-sm leading-tight">
-                                <span class="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                            <div
+                                class="grid flex-1 text-left text-sm leading-tight"
+                            >
+                                <span
+                                    class="truncate font-semibold text-zinc-900 dark:text-zinc-100"
+                                >
                                     MONTREE Platform
                                 </span>
-                                <span class="truncate text-xs text-zinc-500">Super Admin</span>
+                                <span class="truncate text-xs text-zinc-500"
+                                    >Super Admin</span
+                                >
                             </div>
                         </Link>
                     </SidebarMenuButton>

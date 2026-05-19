@@ -57,7 +57,11 @@ function submit(): void {
         return;
     }
 
-    emit('submit', targetStatus.value, reason.value.trim() === '' ? null : reason.value.trim());
+    emit(
+        'submit',
+        targetStatus.value,
+        reason.value.trim() === '' ? null : reason.value.trim(),
+    );
 }
 
 function closeDialog(): void {
@@ -93,8 +97,8 @@ defineExpose({ closeDialog });
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        Esta acción afecta el acceso del tenant a la plataforma y notifica a sus
-                        administradores.
+                        Esta acción afecta el acceso del tenant a la plataforma
+                        y notifica a sus administradores.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -106,11 +110,17 @@ defineExpose({ closeDialog });
                         rows="3"
                         placeholder="Describí brevemente el motivo de la suspensión"
                     />
-                    <p v-if="reasonError" class="text-sm text-red-600">{{ reasonError }}</p>
+                    <p v-if="reasonError" class="text-sm text-red-600">
+                        {{ reasonError }}
+                    </p>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="ghost" :disabled="processing" @click="open = false">
+                    <Button
+                        variant="ghost"
+                        :disabled="processing"
+                        @click="open = false"
+                    >
                         Cancelar
                     </Button>
                     <Button :disabled="processing" @click="submit">

@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Bell, CalendarCheck, Heart, Menu, Search, User } from 'lucide-vue-next';
+import {
+    Bell,
+    CalendarCheck,
+    Heart,
+    Menu,
+    Search,
+    User,
+} from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
-import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -26,6 +33,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import { useApi } from '@/composables/useApi';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
@@ -55,6 +63,7 @@ type NotifItem = {
 
 const notifications = ref<NotifItem[]>([]);
 const unreadCount = ref(0);
+const api = useApi();
 
 async function loadNotifications() {
     try {
@@ -72,15 +81,20 @@ async function loadNotifications() {
 
 function markReadAndNavigate(notif: NotifItem) {
     if (notif.read_at === null) {
-        router.patch(`/api/v1/notifications/${notif.id}/read`, {}, {
-            preserveScroll: true,
-            onFinish: () => {
-                router.visit('/account/notifications');
+        void api.patch(
+            `/api/v1/notifications/${notif.id}/read`,
+            {},
+            {
+                onFinish: () => {
+                    router.visit('/account/notifications');
+                },
             },
-        });
-    } else {
-        router.visit('/account/notifications');
+        );
+
+        return;
     }
+
+    router.visit('/account/notifications');
 }
 
 onMounted(loadNotifications);
@@ -160,7 +174,7 @@ const mainNavItems: NavItem[] = [
                 </div>
 
                 <Link href="/" class="flex items-center gap-x-2">
-                    <AppLogo />
+                    <TenantBrandedLogo size="sm" />
                 </Link>
 
                 <!-- Desktop Menu -->
@@ -212,10 +226,13 @@ const mainNavItems: NavItem[] = [
                                 class="size-5 opacity-80 group-hover:opacity-100"
                             />
                         </Button>
-
                     </div>
 
-                    <DropdownMenu @update:open="(open: boolean) => open && loadNotifications()">
+                    <DropdownMenu
+                        @update:open="
+                            (open: boolean) => open && loadNotifications()
+                        "
+                    >
                         <DropdownMenuTrigger :as-child="true">
                             <Button
                                 variant="ghost"
@@ -225,7 +242,7 @@ const mainNavItems: NavItem[] = [
                                 <Bell class="size-5 opacity-80" />
                                 <span
                                     v-if="unreadCount > 0"
-                                    class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+                                    class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
                                 >
                                     {{ unreadCount > 9 ? '9+' : unreadCount }}
                                 </span>
@@ -233,9 +250,14 @@ const mainNavItems: NavItem[] = [
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" class="w-80">
                             <div class="p-2">
-                                <p class="text-sm font-semibold">Notificaciones</p>
+                                <p class="text-sm font-semibold">
+                                    Notificaciones
+                                </p>
                             </div>
-                            <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-muted-foreground">
+                            <div
+                                v-if="notifications.length === 0"
+                                class="p-4 text-center text-sm text-muted-foreground"
+                            >
                                 Sin notificaciones
                             </div>
                             <button
@@ -246,12 +268,24 @@ const mainNavItems: NavItem[] = [
                                 @click="markReadAndNavigate(n)"
                             >
                                 <div class="flex-1">
-                                    <p class="font-medium">{{ (n.data as { tour_name?: string }).tour_name ?? n.type }}</p>
+                                    <p class="font-medium">
+                                        {{
+                                            (n.data as { tour_name?: string })
+                                                .tour_name ?? n.type
+                                        }}
+                                    </p>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ new Date(n.created_at).toLocaleString('es-CO') }}
+                                        {{
+                                            new Date(
+                                                n.created_at,
+                                            ).toLocaleString('es-CO')
+                                        }}
                                     </p>
                                 </div>
-                                <span v-if="n.read_at === null" class="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                                <span
+                                    v-if="n.read_at === null"
+                                    class="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary"
+                                />
                             </button>
                             <Link
                                 v-if="notifications.length > 0"

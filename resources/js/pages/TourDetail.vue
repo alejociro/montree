@@ -10,13 +10,14 @@ import {
     X,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import DateCard from '@/components/molecules/DateCard.vue';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
-import DateCard from '@/components/molecules/DateCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { index as catalogIndex } from '@/routes/catalog';
+import { show as tourShow } from '@/routes/tours';
 import type { TourDetail, TourDetailImage } from '@/types/tour-detail';
 
 defineOptions({ layout: PublicLayout });
@@ -56,6 +57,7 @@ const mapUrl = computed(() => {
     if (!props.tour.meeting_latitude || !props.tour.meeting_longitude) {
         return null;
     }
+
     return `https://maps.google.com/?q=${props.tour.meeting_latitude},${props.tour.meeting_longitude}`;
 });
 
@@ -66,6 +68,7 @@ const difficultyLabel = computed(() => {
         hard: 'Difícil',
         expert: 'Experto',
     };
+
     return map[props.tour.difficulty] ?? props.tour.difficulty;
 });
 
@@ -111,7 +114,10 @@ function formatTourPrice(price: string, currency: string): string {
     <!-- Breadcrumb -->
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
         <nav class="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link :href="catalogIndex().url" class="transition hover:text-foreground">
+            <Link
+                :href="catalogIndex().url"
+                class="transition hover:text-foreground"
+            >
                 Tours
             </Link>
             <ChevronLeft class="size-3.5 rotate-180" />
@@ -144,7 +150,7 @@ function formatTourPrice(price: string, currency: string): string {
                         v-if="isAuthenticated"
                         :tour-id="tour.id"
                         :initial-favorite="tour.is_favorite"
-                        class="absolute right-3 top-3"
+                        class="absolute top-3 right-3"
                     />
                 </div>
 
@@ -183,12 +189,14 @@ function formatTourPrice(price: string, currency: string): string {
                 </Badge>
 
                 <!-- Tour name -->
-                <h1 class="text-2xl font-bold leading-tight sm:text-3xl">
+                <h1 class="text-2xl leading-tight font-bold sm:text-3xl">
                     {{ tour.name }}
                 </h1>
 
                 <!-- Quick stats -->
-                <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div
+                    class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground"
+                >
                     <span class="flex items-center gap-1.5">
                         <Clock class="size-4" />
                         {{ tour.duration_hours }} horas
@@ -207,21 +215,29 @@ function formatTourPrice(price: string, currency: string): string {
                     >
                         <Star class="size-4 fill-amber-400 text-amber-400" />
                         {{ tour.rating_average }}
-                        <span class="text-muted-foreground">({{ tour.rating_count }})</span>
+                        <span class="text-muted-foreground"
+                            >({{ tour.rating_count }})</span
+                        >
                     </span>
                 </div>
 
                 <!-- Price -->
                 <div>
                     <span class="text-sm text-muted-foreground">Desde</span>
-                    <p class="text-3xl font-bold text-primary">{{ formattedPrice }}</p>
-                    <span class="text-xs text-muted-foreground">por persona</span>
+                    <p class="text-3xl font-bold text-primary">
+                        {{ formattedPrice }}
+                    </p>
+                    <span class="text-xs text-muted-foreground"
+                        >por persona</span
+                    >
                 </div>
 
                 <!-- Description -->
                 <div class="space-y-2">
                     <h2 class="text-lg font-semibold">Descripción</h2>
-                    <p class="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                    <p
+                        class="text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
+                    >
                         {{ tour.description }}
                     </p>
                 </div>
@@ -229,7 +245,9 @@ function formatTourPrice(price: string, currency: string): string {
                 <!-- Includes -->
                 <div v-if="tour.includes.length > 0" class="space-y-2">
                     <h2 class="text-lg font-semibold">¿Qué incluye?</h2>
-                    <ul class="grid grid-cols-2 gap-1.5 text-sm text-muted-foreground">
+                    <ul
+                        class="grid grid-cols-2 gap-1.5 text-sm text-muted-foreground"
+                    >
                         <li
                             v-for="(item, i) in tour.includes"
                             :key="i"
@@ -261,7 +279,7 @@ function formatTourPrice(price: string, currency: string): string {
                     <h2 class="text-lg font-semibold">Itinerario</h2>
                     <div class="relative space-y-0 pl-6">
                         <div
-                            class="absolute bottom-2 left-[9px] top-2 w-0.5 bg-primary/20"
+                            class="absolute top-2 bottom-2 left-[9px] w-0.5 bg-primary/20"
                         />
                         <div
                             v-for="step in tour.itinerary"
@@ -269,12 +287,14 @@ function formatTourPrice(price: string, currency: string): string {
                             class="relative pb-5 last:pb-0"
                         >
                             <div
-                                class="absolute -left-6 top-1 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+                                class="absolute top-1 -left-6 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
                             >
                                 {{ step.step_number }}
                             </div>
                             <div>
-                                <p class="font-medium leading-tight">{{ step.title }}</p>
+                                <p class="leading-tight font-medium">
+                                    {{ step.title }}
+                                </p>
                                 <p
                                     v-if="step.duration_label"
                                     class="text-xs text-muted-foreground"
@@ -295,10 +315,14 @@ function formatTourPrice(price: string, currency: string): string {
                 <!-- Meeting point -->
                 <div v-if="tour.meeting_point || mapUrl" class="space-y-2">
                     <h2 class="text-lg font-semibold">Punto de encuentro</h2>
-                    <div class="flex items-start gap-2 text-sm text-muted-foreground">
+                    <div
+                        class="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
                         <MapPin class="mt-0.5 size-4 shrink-0 text-primary" />
                         <div>
-                            <p v-if="tour.meeting_point">{{ tour.meeting_point }}</p>
+                            <p v-if="tour.meeting_point">
+                                {{ tour.meeting_point }}
+                            </p>
                             <a
                                 v-if="mapUrl"
                                 :href="mapUrl"
@@ -326,7 +350,8 @@ function formatTourPrice(price: string, currency: string): string {
                             v-if="tour.future_dates.length > 3"
                             class="text-center text-xs text-muted-foreground"
                         >
-                            +{{ tour.future_dates.length - 3 }} fechas más disponibles
+                            +{{ tour.future_dates.length - 3 }} fechas más
+                            disponibles
                         </p>
                     </div>
                     <p v-else class="text-sm text-muted-foreground">
@@ -344,7 +369,9 @@ function formatTourPrice(price: string, currency: string): string {
 
             <div v-if="tour.rating_count > 0" class="grid gap-8 lg:grid-cols-3">
                 <div class="lg:col-span-1">
-                    <div class="sticky top-24 rounded-xl border bg-background p-6">
+                    <div
+                        class="sticky top-24 rounded-xl border bg-background p-6"
+                    >
                         <RatingBreakdown
                             :distribution="tour.rating_distribution"
                             :average="tour.rating_average"
@@ -355,7 +382,8 @@ function formatTourPrice(price: string, currency: string): string {
 
                 <div class="space-y-4 lg:col-span-2">
                     <p class="text-sm text-muted-foreground">
-                        Las reseñas de los viajeros aparecen aquí después de completar el tour.
+                        Las reseñas de los viajeros aparecen aquí después de
+                        completar el tour.
                     </p>
                 </div>
             </div>
@@ -364,7 +392,8 @@ function formatTourPrice(price: string, currency: string): string {
                 <Star class="mx-auto size-10 text-muted-foreground/30" />
                 <p class="mt-3 font-medium">Aún no hay reseñas</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Sé el primero en compartir tu experiencia después de completar el tour.
+                    Sé el primero en compartir tu experiencia después de
+                    completar el tour.
                 </p>
             </div>
         </div>
@@ -373,15 +402,17 @@ function formatTourPrice(price: string, currency: string): string {
     <!-- Related tours -->
     <Deferred data="relatedTours">
         <template #fallback>
-            <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <h2 class="mb-6 text-2xl font-bold">Otras actividades que te podrían gustar</h2>
+            <section
+                class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+            >
+                <h2 class="mb-6 text-2xl font-bold">
+                    Otras actividades que te podrían gustar
+                </h2>
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div
-                        v-for="n in 4"
-                        :key="n"
-                        class="space-y-3"
-                    >
-                        <div class="aspect-[4/3] animate-pulse rounded-xl bg-muted" />
+                    <div v-for="n in 4" :key="n" class="space-y-3">
+                        <div
+                            class="aspect-[4/3] animate-pulse rounded-xl bg-muted"
+                        />
                         <div class="h-4 w-3/4 animate-pulse rounded bg-muted" />
                         <div class="h-3 w-1/2 animate-pulse rounded bg-muted" />
                     </div>
@@ -394,7 +425,9 @@ function formatTourPrice(price: string, currency: string): string {
             class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
         >
             <div class="mb-6 flex items-center justify-between">
-                <h2 class="text-2xl font-bold">Otras actividades que te podrían gustar</h2>
+                <h2 class="text-2xl font-bold">
+                    Otras actividades que te podrían gustar
+                </h2>
                 <Link
                     :href="catalogIndex().url"
                     class="text-sm font-medium text-primary transition hover:underline"
@@ -426,16 +459,25 @@ function formatTourPrice(price: string, currency: string): string {
                         >
                             {{ related.category.name }}
                         </Badge>
-                        <h3 class="font-semibold leading-tight">{{ related.name }}</h3>
+                        <h3 class="leading-tight font-semibold">
+                            {{ related.name }}
+                        </h3>
                         <div class="flex items-center justify-between text-sm">
                             <span class="font-bold text-primary">
-                                {{ formatTourPrice(related.base_price, related.currency) }}
+                                {{
+                                    formatTourPrice(
+                                        related.base_price,
+                                        related.currency,
+                                    )
+                                }}
                             </span>
                             <span
                                 v-if="related.rating_count > 0"
                                 class="flex items-center gap-1 text-muted-foreground"
                             >
-                                <Star class="size-3 fill-amber-400 text-amber-400" />
+                                <Star
+                                    class="size-3 fill-amber-400 text-amber-400"
+                                />
                                 {{ related.rating_average }}
                             </span>
                         </div>
@@ -455,7 +497,7 @@ function formatTourPrice(price: string, currency: string): string {
         >
             <button
                 type="button"
-                class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+                class="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
                 @click="closeLightbox"
             >
                 <X class="size-6" />

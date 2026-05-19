@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ArrowUpRight, MapPin, Mountain, Search, Star, Users } from 'lucide-vue-next';
+import {
+    ArrowUpRight,
+    MapPin,
+    Mountain,
+    Search,
+    Star,
+    Users,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import { Badge } from '@/components/ui/badge';
@@ -112,10 +119,17 @@ async function handleNewsletterSubscribe(): Promise<void> {
     <!-- Hero Section -->
     <section class="relative overflow-hidden">
         <div v-if="configuration?.hero_image_url" class="absolute inset-0">
-            <img :src="configuration.hero_image_url" alt="" class="size-full object-cover" />
+            <img
+                :src="configuration.hero_image_url"
+                alt=""
+                class="size-full object-cover"
+            />
             <div class="absolute inset-0 bg-black/50" />
         </div>
-        <div v-else class="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60" />
+        <div
+            v-else
+            class="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60"
+        />
         <div
             class="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36"
         >
@@ -123,12 +137,16 @@ async function handleNewsletterSubscribe(): Promise<void> {
                 <h1
                     class="text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl"
                 >
-                    {{ configuration?.tagline || 'Encuentra tu próxima aventura' }}
+                    {{
+                        configuration?.tagline ||
+                        'Encuentra tu próxima aventura'
+                    }}
                 </h1>
-                <p
-                    class="mt-4 text-lg text-primary-foreground/80 sm:text-xl"
-                >
-                    {{ configuration?.description || 'Explora el mundo con nosotros' }}
+                <p class="mt-4 text-lg text-primary-foreground/80 sm:text-xl">
+                    {{
+                        configuration?.description ||
+                        'Explora el mundo con nosotros'
+                    }}
                 </p>
                 <form
                     class="mt-8 flex w-full max-w-lg gap-2"
@@ -184,14 +202,24 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         :key="`ft-skel-${n}`"
                         class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
                     >
-                        <div class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted" />
+                        <div
+                            class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted"
+                        />
                         <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                        <div class="h-3 w-full animate-pulse rounded bg-muted" />
+                        <div
+                            class="h-3 w-full animate-pulse rounded bg-muted"
+                        />
                         <div class="flex gap-2">
-                            <div class="h-3 w-16 animate-pulse rounded bg-muted" />
-                            <div class="h-3 w-12 animate-pulse rounded bg-muted" />
+                            <div
+                                class="h-3 w-16 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="h-3 w-12 animate-pulse rounded bg-muted"
+                            />
                         </div>
-                        <div class="mt-2 h-5 w-24 animate-pulse rounded bg-muted" />
+                        <div
+                            class="mt-2 h-5 w-24 animate-pulse rounded bg-muted"
+                        />
                     </div>
                 </div>
             </template>
@@ -235,7 +263,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
                     <div class="flex flex-1 flex-col gap-2 p-3">
                         <Link
                             :href="`/tours/${tour.slug}`"
-                            class="text-sm font-semibold leading-tight text-foreground transition hover:text-primary"
+                            class="text-sm leading-tight font-semibold text-foreground transition hover:text-primary"
                         >
                             {{ tour.name }}
                         </Link>
@@ -249,13 +277,11 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         <div class="mt-auto flex items-center justify-between">
                             <span class="text-base font-bold text-foreground">
                                 {{
-                                    formatPrice(
-                                        tour.base_price,
-                                        tour.currency,
-                                    )
+                                    formatPrice(tour.base_price, tour.currency)
                                 }}
                             </span>
                             <div
+                                v-if="tour.rating_count > 0"
                                 class="flex items-center gap-0.5"
                                 :title="`${tour.rating_average} de 5 (${tour.rating_count})`"
                             >
@@ -278,9 +304,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
     </section>
 
     <!-- Suggested Tours Section -->
-    <section
-        class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
-    >
+    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div class="flex items-end justify-between">
             <div>
                 <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -306,14 +330,24 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         :key="`sg-skel-${n}`"
                         class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
                     >
-                        <div class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted" />
+                        <div
+                            class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted"
+                        />
                         <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                        <div class="h-3 w-full animate-pulse rounded bg-muted" />
+                        <div
+                            class="h-3 w-full animate-pulse rounded bg-muted"
+                        />
                         <div class="flex gap-2">
-                            <div class="h-3 w-16 animate-pulse rounded bg-muted" />
-                            <div class="h-3 w-12 animate-pulse rounded bg-muted" />
+                            <div
+                                class="h-3 w-16 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="h-3 w-12 animate-pulse rounded bg-muted"
+                            />
                         </div>
-                        <div class="mt-2 h-5 w-24 animate-pulse rounded bg-muted" />
+                        <div
+                            class="mt-2 h-5 w-24 animate-pulse rounded bg-muted"
+                        />
                     </div>
                 </div>
             </template>
@@ -357,7 +391,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
                     <div class="flex flex-1 flex-col gap-2 p-3">
                         <Link
                             :href="`/tours/${tour.slug}`"
-                            class="text-sm font-semibold leading-tight text-foreground transition hover:text-primary"
+                            class="text-sm leading-tight font-semibold text-foreground transition hover:text-primary"
                         >
                             {{ tour.name }}
                         </Link>
@@ -371,13 +405,11 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         <div class="mt-auto flex items-center justify-between">
                             <span class="text-base font-bold text-foreground">
                                 {{
-                                    formatPrice(
-                                        tour.base_price,
-                                        tour.currency,
-                                    )
+                                    formatPrice(tour.base_price, tour.currency)
                                 }}
                             </span>
                             <div
+                                v-if="tour.rating_count > 0"
                                 class="flex items-center gap-0.5"
                                 :title="`${tour.rating_average} de 5 (${tour.rating_count})`"
                             >
@@ -400,7 +432,10 @@ async function handleNewsletterSubscribe(): Promise<void> {
     </section>
 
     <!-- Promotions Section -->
-    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <section
+        v-if="promotions === undefined || (promotions?.length ?? 0) > 0"
+        class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+    >
         <div class="flex items-end justify-between">
             <div>
                 <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -429,10 +464,16 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         :key="`promo-skel-${n}`"
                         class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
                     >
-                        <div class="aspect-[16/9] w-full animate-pulse rounded-lg bg-muted" />
+                        <div
+                            class="aspect-[16/9] w-full animate-pulse rounded-lg bg-muted"
+                        />
                         <div class="h-5 w-1/2 animate-pulse rounded bg-muted" />
-                        <div class="h-3 w-full animate-pulse rounded bg-muted" />
-                        <div class="mt-2 h-9 w-32 animate-pulse rounded bg-muted" />
+                        <div
+                            class="h-3 w-full animate-pulse rounded bg-muted"
+                        />
+                        <div
+                            class="mt-2 h-9 w-32 animate-pulse rounded bg-muted"
+                        />
                     </div>
                 </div>
             </template>
@@ -473,34 +514,19 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         </h3>
                         <p
                             v-if="promo.description"
-                            class="text-sm text-muted-foreground line-clamp-2"
+                            class="line-clamp-2 text-sm text-muted-foreground"
                         >
                             {{ promo.description }}
                         </p>
                         <div class="mt-auto pt-2">
-                            <Button
-                                v-if="promo.tour"
-                                as-child
-                                size="sm"
-                            >
-                                <Link
-                                    :href="`/tours/${promo.tour.slug}`"
-                                >
+                            <Button v-if="promo.tour" as-child size="sm">
+                                <Link :href="`/tours/${promo.tour.slug}`">
                                     Comprar ahora
                                 </Link>
                             </Button>
                         </div>
                     </div>
                 </article>
-            </div>
-
-            <div
-                v-else
-                class="mt-6 rounded-xl border border-dashed border-border bg-card p-10 text-center"
-            >
-                <p class="text-sm text-muted-foreground">
-                    No hay promociones activas en este momento.
-                </p>
             </div>
         </Deferred>
     </section>
@@ -512,33 +538,65 @@ async function handleNewsletterSubscribe(): Promise<void> {
                 <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                     Únete a nuestra comunidad
                 </h2>
-                <p class="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-                    Miles de viajeros ya han descubierto experiencias únicas con {{ displayName }}.
-                    Sé parte de nuestra comunidad y vive aventuras que recordarás siempre.
+                <p
+                    class="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base"
+                >
+                    Miles de viajeros ya han descubierto experiencias únicas con
+                    {{ displayName }}. Sé parte de nuestra comunidad y vive
+                    aventuras que recordarás siempre.
                 </p>
             </div>
 
-            <div class="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-3">
-                <div class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm">
-                    <div class="flex size-12 items-center justify-center rounded-full bg-primary/10">
+            <div
+                class="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-3"
+            >
+                <div
+                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
+                >
+                    <div
+                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    >
                         <Users class="size-6 text-primary" />
                     </div>
-                    <span class="text-3xl font-bold tracking-tight text-foreground">500+</span>
-                    <span class="text-sm text-muted-foreground">Viajeros felices</span>
+                    <span
+                        class="text-3xl font-bold tracking-tight text-foreground"
+                        >500+</span
+                    >
+                    <span class="text-sm text-muted-foreground"
+                        >Viajeros felices</span
+                    >
                 </div>
-                <div class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm">
-                    <div class="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                <div
+                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
+                >
+                    <div
+                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    >
                         <Mountain class="size-6 text-primary" />
                     </div>
-                    <span class="text-3xl font-bold tracking-tight text-foreground">50+</span>
-                    <span class="text-sm text-muted-foreground">Experiencias únicas</span>
+                    <span
+                        class="text-3xl font-bold tracking-tight text-foreground"
+                        >50+</span
+                    >
+                    <span class="text-sm text-muted-foreground"
+                        >Experiencias únicas</span
+                    >
                 </div>
-                <div class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm">
-                    <div class="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                <div
+                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
+                >
+                    <div
+                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    >
                         <MapPin class="size-6 text-primary" />
                     </div>
-                    <span class="text-3xl font-bold tracking-tight text-foreground">20+</span>
-                    <span class="text-sm text-muted-foreground">Destinos por descubrir</span>
+                    <span
+                        class="text-3xl font-bold tracking-tight text-foreground"
+                        >20+</span
+                    >
+                    <span class="text-sm text-muted-foreground"
+                        >Destinos por descubrir</span
+                    >
                 </div>
             </div>
 
@@ -550,19 +608,15 @@ async function handleNewsletterSubscribe(): Promise<void> {
                     Creá tu cuenta gratis
                 </h3>
                 <p class="mt-2 text-sm text-muted-foreground">
-                    Registrate para guardar favoritos, recibir recomendaciones personalizadas
-                    y reservar con descuentos exclusivos.
+                    Registrate para guardar favoritos, recibir recomendaciones
+                    personalizadas y reservar con descuentos exclusivos.
                 </p>
                 <div class="mt-4 flex justify-center gap-3">
                     <Button as-child size="lg">
-                        <Link :href="register().url">
-                            Registrarse gratis
-                        </Link>
+                        <Link :href="register().url"> Registrarse gratis </Link>
                     </Button>
                     <Button as-child variant="outline" size="lg">
-                        <Link :href="catalogIndex().url">
-                            Explorar tours
-                        </Link>
+                        <Link :href="catalogIndex().url"> Explorar tours </Link>
                     </Button>
                 </div>
             </div>
@@ -571,9 +625,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
 
     <!-- Newsletter Section -->
     <section class="bg-[#2B3B2E]">
-        <div
-            class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-        >
+        <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-xl text-center">
                 <h2
                     class="text-2xl font-semibold tracking-tight text-white sm:text-3xl"
@@ -581,8 +633,8 @@ async function handleNewsletterSubscribe(): Promise<void> {
                     Mantente actualizado
                 </h2>
                 <p class="mt-3 text-sm text-white/70">
-                    Recibe noticias, descuentos exclusivos y sugerencias
-                    directo en tu bandeja.
+                    Recibe noticias, descuentos exclusivos y sugerencias directo
+                    en tu bandeja.
                 </p>
                 <form
                     v-if="!newsletterSuccess"
@@ -604,12 +656,8 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         Suscribirse
                     </Button>
                 </form>
-                <p
-                    v-else
-                    class="mt-6 text-sm font-medium text-emerald-300"
-                >
-                    Te has suscrito exitosamente. Revisa tu bandeja de
-                    entrada.
+                <p v-else class="mt-6 text-sm font-medium text-emerald-300">
+                    Te has suscrito exitosamente. Revisa tu bandeja de entrada.
                 </p>
             </div>
         </div>

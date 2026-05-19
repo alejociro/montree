@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -11,6 +11,7 @@ import OperationalSettingsForm from '@/components/organisms/OperationalSettingsF
 import SocialLinksEditor from '@/components/organisms/SocialLinksEditor.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import type {
     TenantConfigurationPayload,
@@ -33,9 +34,11 @@ type ConfigurationForm = {
 };
 
 const { tenant, configuration } = useTenant();
-const page = usePage();
+const api = useApi();
 
 const enterpriseOnlyError = ref<string | null>(null);
+const saving = ref(false);
+const recentlySaved = ref(false);
 
 const isEnterprise = computed(() => tenant.value?.plan === 'enterprise');
 
@@ -96,60 +99,58 @@ const socialValues = computed({
     },
 });
 
-const action = updateConfigAction();
+function buildPayload(data: ConfigurationForm): TenantConfigurationPayload {
+    const payload: TenantConfigurationPayload = {
+        primary_color: data.primary_color || null,
+        secondary_color: data.secondary_color || null,
+        currency: data.currency || null,
+        timezone: data.timezone || null,
+        locale: data.locale,
+        tagline: data.tagline || null,
+        description: data.description || null,
+        social_links: Object.keys(data.social_links).length
+            ? data.social_links
+            : null,
+        reviews_require_moderation: data.reviews_require_moderation,
+        require_traveler_details: data.require_traveler_details,
+    };
+
+    if (isEnterprise.value && data.custom_css) {
+        payload.custom_css = data.custom_css;
+    }
+
+    return payload;
+}
 
 function submit(): void {
     enterpriseOnlyError.value = null;
+    recentlySaved.value = false;
+    form.clearErrors();
+    saving.value = true;
 
-    form.transform((data): TenantConfigurationPayload => {
-        const payload: TenantConfigurationPayload = {
-            primary_color: data.primary_color || null,
-            secondary_color: data.secondary_color || null,
-            currency: data.currency || null,
-            timezone: data.timezone || null,
-            locale: data.locale,
-            tagline: data.tagline || null,
-            description: data.description || null,
-            social_links: Object.keys(data.social_links).length
-                ? data.social_links
-                : null,
-            reviews_require_moderation: data.reviews_require_moderation,
-            require_traveler_details: data.require_traveler_details,
-        };
-
-        if (isEnterprise.value && data.custom_css) {
-            payload.custom_css = data.custom_css;
-        }
-
-        return payload;
-    });
-
-    form.submit(action, {
-        preserveScroll: true,
+    void api.put(updateConfigAction().url, buildPayload(form.data()), {
         onSuccess: () => {
-            toast.success('Configuración actualizada correctamente.');
+            toast.success('Configuración guardada.');
+            recentlySaved.value = true;
+            router.reload({ only: ['tenant'] });
         },
         onError: (errors) => {
-            // Backend devuelve 403 con `error_code: FEATURE_REQUIRES_ENTERPRISE`
-            // y mensaje sobre la propiedad `custom_css`.
-            const errorCode = page.props.flash?.error ?? '';
-            const cssError =
-                (errors as Record<string, string | undefined>).custom_css ??
-                (errors as Record<string, string | undefined>).error_code;
+            const cssError = errors.custom_css ?? errors.error_code ?? '';
 
-            if (
-                errorCode.includes('ENTERPRISE') ||
-                cssError?.toLowerCase().includes('enterprise')
-            ) {
+            if (cssError.toLowerCase().includes('enterprise')) {
                 enterpriseOnlyError.value =
                     'El CSS personalizado solo está disponible en el plan Enterprise.';
 
                 return;
             }
 
+            form.setError(errors);
             toast.error(
                 'No se pudieron guardar los cambios. Revisá los campos marcados.',
             );
+        },
+        onFinish: () => {
+            saving.value = false;
         },
     });
 }
@@ -157,6 +158,7 @@ function submit(): void {
 function resetForm(): void {
     form.reset();
     enterpriseOnlyError.value = null;
+    recentlySaved.value = false;
 }
 </script>
 
@@ -183,7 +185,7 @@ function resetForm(): void {
         <div v-else class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
             <form class="space-y-10" @submit.prevent="submit">
                 <Alert
-                    v-if="form.recentlySuccessful"
+                    v-if="recentlySaved"
                     class="border-primary/30 bg-primary/5 text-primary"
                 >
                     <CheckCircle2 class="size-4" />
@@ -234,23 +236,23 @@ function resetForm(): void {
                 <div class="flex items-center gap-3 border-t border-input pt-6">
                     <Button
                         type="submit"
-                        :disabled="form.processing"
+                        :disabled="saving"
                         data-test="save-tenant-configuration"
                     >
-                        {{ form.processing ? 'Guardando…' : 'Guardar cambios' }}
+                        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
                     </Button>
 
                     <Button
                         type="button"
                         variant="ghost"
-                        :disabled="form.processing || !form.isDirty"
+                        :disabled="saving || !form.isDirty"
                         @click="resetForm"
                     >
                         Descartar
                     </Button>
 
                     <span
-                        v-if="form.isDirty && !form.processing"
+                        v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
                         Tenés cambios sin guardar.
