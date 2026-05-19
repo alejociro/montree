@@ -154,13 +154,17 @@ function formatPrice(amount: string, code: string): string {
 
             <div
                 v-else-if="tours.length === 0"
-                class="rounded-lg border border-dashed border-input p-10 text-center"
+                class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-input p-12 text-center"
             >
-                <p class="text-sm text-muted-foreground">
-                    Aún no hay tours que coincidan con los filtros.
-                </p>
-                <Link :href="createPage().url" class="mt-3 inline-block">
-                    <Button variant="outline" size="sm">
+                <div class="rounded-full bg-muted p-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>
+                </div>
+                <div class="space-y-1">
+                    <p class="font-medium">Aún no hay tours</p>
+                    <p class="text-sm text-muted-foreground">Creá tu primer tour para empezar a recibir reservas.</p>
+                </div>
+                <Link :href="createPage().url">
+                    <Button>
                         <Plus class="size-4" />
                         Crear el primero
                     </Button>

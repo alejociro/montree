@@ -10,6 +10,14 @@ import {
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourImageController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { TourImage } from '@/types/tour';
 
@@ -112,15 +120,27 @@ function setAsCover(image: TourImage): void {
     );
 }
 
-function removeImage(image: TourImage): void {
-    if (!confirm('¿Eliminar esta imagen?')) {
+const deleteDialog = ref(false);
+const imageToDelete = ref<TourImage | null>(null);
+
+function confirmRemoveImage(image: TourImage): void {
+    imageToDelete.value = image;
+    deleteDialog.value = true;
+}
+
+function removeImage(): void {
+    if (!imageToDelete.value) {
         return;
     }
 
-    const action = destroyImage({ tour: props.tourId, image: image.id });
+    const action = destroyImage({ tour: props.tourId, image: imageToDelete.value.id });
     router.delete(action.url, {
         preserveScroll: true,
-        onSuccess: () => toast.success('Imagen eliminada.'),
+        onSuccess: () => {
+            toast.success('Imagen eliminada.');
+            deleteDialog.value = false;
+            imageToDelete.value = null;
+        },
         onError: () => toast.error('No se pudo eliminar la imagen.'),
     });
 }
@@ -217,7 +237,7 @@ function removeImage(image: TourImage): void {
                         size="icon"
                         variant="destructive"
                         class="size-7"
-                        @click="removeImage(image)"
+                        @click="confirmRemoveImage(image)"
                     >
                         <Trash2 class="size-3" />
                     </Button>
@@ -228,5 +248,20 @@ function removeImage(image: TourImage): void {
         <p v-else class="text-xs text-muted-foreground">
             Aún no hay imágenes. Subí al menos una para activar el tour.
         </p>
+
+        <Dialog v-model:open="deleteDialog">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Eliminar imagen</DialogTitle>
+                    <DialogDescription>
+                        ¿Estás seguro de que querés eliminar esta imagen? Esta acción no se puede deshacer.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" @click="deleteDialog = false">Cancelar</Button>
+                    <Button variant="destructive" @click="removeImage">Eliminar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </section>
 </template>

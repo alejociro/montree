@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { Bell, CalendarCheck, Heart, Menu, Search, User } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
@@ -25,17 +25,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
-import { toUrl } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -53,24 +45,61 @@ const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
+type NotifItem = {
+    id: string;
+    type: string;
+    data: Record<string, unknown>;
+    read_at: string | null;
+    created_at: string;
+};
+
+const notifications = ref<NotifItem[]>([]);
+const unreadCount = ref(0);
+
+async function loadNotifications() {
+    try {
+        const res = await fetch('/api/v1/notifications?per_page=5', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+        const json = await res.json();
+        notifications.value = json.data?.slice(0, 5) ?? [];
+        unreadCount.value = json.unread_count ?? 0;
+    } catch {
+        // silent fail
+    }
+}
+
+function markReadAndNavigate(notif: NotifItem) {
+    if (notif.read_at === null) {
+        router.patch(`/api/v1/notifications/${notif.id}/read`, {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                router.visit('/account/notifications');
+            },
+        });
+    } else {
+        router.visit('/account/notifications');
+    }
+}
+
+onMounted(loadNotifications);
+
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
-
-const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
+        title: 'Mis Reservas',
+        href: '/account/bookings',
+        icon: CalendarCheck,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'Favoritos',
+        href: '/account/favorites',
+        icon: Heart,
+    },
+    {
+        title: 'Mi Cuenta',
+        href: '/account',
+        icon: User,
     },
 ];
 </script>
@@ -124,29 +153,13 @@ const rightNavItems: NavItem[] = [
                                         {{ item.title }}
                                     </Link>
                                 </nav>
-                                <div class="flex flex-col space-y-4">
-                                    <a
-                                        v-for="item in rightNavItems"
-                                        :key="item.title"
-                                        :href="toUrl(item.href)"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="flex items-center space-x-2 text-sm font-medium"
-                                    >
-                                        <component
-                                            v-if="item.icon"
-                                            :is="item.icon"
-                                            class="h-5 w-5"
-                                        />
-                                        <span>{{ item.title }}</span>
-                                    </a>
-                                </div>
+                                <div class="flex flex-col space-y-4" />
                             </div>
                         </SheetContent>
                     </Sheet>
                 </div>
 
-                <Link :href="dashboard()" class="flex items-center gap-x-2">
+                <Link href="/" class="flex items-center gap-x-2">
                     <AppLogo />
                 </Link>
 
@@ -200,43 +213,55 @@ const rightNavItems: NavItem[] = [
                             />
                         </Button>
 
-                        <div class="hidden space-x-1 lg:flex">
-                            <template
-                                v-for="item in rightNavItems"
-                                :key="item.title"
-                            >
-                                <TooltipProvider :delay-duration="0">
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                as-child
-                                                class="group h-9 w-9 cursor-pointer"
-                                            >
-                                                <a
-                                                    :href="toUrl(item.href)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <span class="sr-only">{{
-                                                        item.title
-                                                    }}</span>
-                                                    <component
-                                                        :is="item.icon"
-                                                        class="size-5 opacity-80 group-hover:opacity-100"
-                                                    />
-                                                </a>
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{{ item.title }}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </template>
-                        </div>
                     </div>
+
+                    <DropdownMenu @update:open="(open: boolean) => open && loadNotifications()">
+                        <DropdownMenuTrigger :as-child="true">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="relative h-9 w-9 cursor-pointer"
+                            >
+                                <Bell class="size-5 opacity-80" />
+                                <span
+                                    v-if="unreadCount > 0"
+                                    class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+                                >
+                                    {{ unreadCount > 9 ? '9+' : unreadCount }}
+                                </span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-80">
+                            <div class="p-2">
+                                <p class="text-sm font-semibold">Notificaciones</p>
+                            </div>
+                            <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-muted-foreground">
+                                Sin notificaciones
+                            </div>
+                            <button
+                                v-for="n in notifications"
+                                :key="n.id"
+                                class="flex w-full items-start gap-2 border-t px-3 py-2 text-left text-sm hover:bg-muted/50"
+                                :class="{ 'bg-primary/5': n.read_at === null }"
+                                @click="markReadAndNavigate(n)"
+                            >
+                                <div class="flex-1">
+                                    <p class="font-medium">{{ (n.data as { tour_name?: string }).tour_name ?? n.type }}</p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ new Date(n.created_at).toLocaleString('es-CO') }}
+                                    </p>
+                                </div>
+                                <span v-if="n.read_at === null" class="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                            </button>
+                            <Link
+                                v-if="notifications.length > 0"
+                                href="/account/notifications"
+                                class="block border-t p-2 text-center text-xs text-primary hover:underline"
+                            >
+                                Ver todas
+                            </Link>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger :as-child="true">
