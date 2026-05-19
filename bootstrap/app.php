@@ -11,6 +11,8 @@ use App\Exceptions\ReviewException;
 use App\Exceptions\TeamException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\EnsureTenantAdmin;
+use App\Http\Middleware\EnsureTenantGuide;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveTenant;
@@ -63,6 +65,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'super_admin.only' => EnsureSuperAdmin::class,
+            'tenant_admin.only' => EnsureTenantAdmin::class,
+            'tenant_guide.only' => EnsureTenantGuide::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
