@@ -109,6 +109,40 @@ class CatalogControllerTest extends TestCase
         $byPrice->assertJsonPath('data.0.name', 'Tayrona Dive');
     }
 
+    public function test_search_matches_category_name_and_slug(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+
+        $adventure = Category::factory()->create(['name' => 'Aventura', 'slug' => 'aventura']);
+        $culture = Category::factory()->create(['name' => 'Cultura', 'slug' => 'cultura']);
+
+        Tour::factory()->active()->create([
+            'name' => 'Salto del Tequendama',
+            'short_description' => 'Caminata guiada',
+            'description' => 'Recorrido tranquilo.',
+            'category_id' => $adventure->id,
+        ]);
+        Tour::factory()->active()->create([
+            'name' => 'Museo del Oro',
+            'short_description' => 'Visita guiada',
+            'description' => 'Historia precolombina.',
+            'category_id' => $culture->id,
+        ]);
+
+        $byCategoryName = $this->getJson('http://demo.montree.test/api/v1/tours?search=aventura');
+
+        $byCategoryName->assertOk();
+        $byCategoryName->assertJsonCount(1, 'data');
+        $byCategoryName->assertJsonPath('data.0.name', 'Salto del Tequendama');
+
+        $byCategorySlug = $this->getJson('http://demo.montree.test/api/v1/tours?search=cultura');
+
+        $byCategorySlug->assertOk();
+        $byCategorySlug->assertJsonCount(1, 'data');
+        $byCategorySlug->assertJsonPath('data.0.name', 'Museo del Oro');
+    }
+
     public function test_sort_next_date_asc_orders_by_soonest_future_open_date(): void
     {
         $tenant = $this->makeTenant();

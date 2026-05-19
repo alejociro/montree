@@ -76,7 +76,11 @@ final class TourCatalogQuery
             $query->where(function (Builder $inner) use ($term): void {
                 $inner->where('tours.name', 'like', $term)
                     ->orWhere('tours.short_description', 'like', $term)
-                    ->orWhere('tours.description', 'like', $term);
+                    ->orWhere('tours.description', 'like', $term)
+                    ->orWhereHas('category', function (Builder $category) use ($term): void {
+                        $category->where('name', 'like', $term)
+                            ->orWhere('slug', 'like', $term);
+                    });
             });
         }
 

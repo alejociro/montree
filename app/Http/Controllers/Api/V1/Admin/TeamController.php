@@ -26,21 +26,30 @@ final class TeamController extends Controller
         private UpdateMemberStatusAction $updateStatus,
     ) {}
 
+    private const STAFF_ROLES = [
+        UserRole::Admin->value,
+        UserRole::Operator->value,
+        UserRole::Guide->value,
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $tenant = Tenant::current();
-        $members = $tenant->users()->withPivot(['status', 'joined_at', 'suspended_at'])->get();
+        setPermissionsTeamId($tenant->id);
 
-        $payload = $members->map(function (User $u) use ($tenant) {
-            setPermissionsTeamId($tenant->id);
+        $members = $tenant->users()
+            ->withPivot(['status', 'joined_at', 'suspended_at'])
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', self::STAFF_ROLES))
+            ->get();
+
+        $payload = $members->map(function (User $u): array {
             $u->unsetRelation('roles');
-            $role = $u->getRoleNames()->first();
 
             return [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
-                'role' => $role,
+                'role' => $u->getRoleNames()->first(),
                 'status' => $u->pivot->status,
                 'joined_at' => $u->pivot->joined_at,
             ];
