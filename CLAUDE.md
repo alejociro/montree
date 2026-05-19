@@ -244,6 +244,10 @@ Use the slash commands to orchestrate:
 - `/feature-status F0XX` — show progress, what's left, test status
 - `/feature-review F0XX` — invoke reviewer agent for go/no-go verdict
 
+## UX review end-to-end
+
+For a multi-feature UX sweep with Playwright MCP (cross-role smoke checks before merge or release), follow `docs/review-playbook.md`. It contains the deterministic checklist (credentials, URLs, expected outcomes per role) plus operational gotchas discovered in past reviews. Drop findings into `docs/review-YYYY-MM-DD/findings.md`.
+
 ## Specialized sub-agents
 
 Defined in `.claude/agents/`. Invoke with the `Agent` tool when working on a feature:

@@ -56,3 +56,4 @@ Tablas: `newsletter_subscribers`
 ## Changelog
 
 - `2026-05-17` — Creación inicial.
+- `2026-05-19` — Review Playwright detectó (P0-2 sistémico para F006/F008/F009/F010/F011/F012/F013/F014) que `router.post('/api/v1/...')` no dispara request. Ver `docs/review-2026-05-19/findings.md`.

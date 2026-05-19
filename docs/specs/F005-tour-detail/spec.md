@@ -57,3 +57,4 @@ Tablas: `tours`, `tour_images`, `tour_itineraries`, `tour_dates`, `reviews`, `fa
 ## Changelog
 
 - `2026-05-17` — Creación inicial.
+- `2026-05-19` — Review Playwright detectó P0-1 específico (TourDetail.vue rompe en runtime por import faltante `tourShow`). Además impactado por P0-2 sistémico (`router.post('/api/v1/...')` no dispara request). Ver `docs/review-2026-05-19/findings.md`.

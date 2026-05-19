@@ -55,3 +55,4 @@ Tablas: `notifications`
 ## Changelog
 
 - `2026-05-17` — Creación inicial.
+- `2026-05-19` — Review Playwright detectó (P0-2 sistémico) que `router.post|patch('/api/v1/notifications/...')` no dispara request (afecta marcar leída individual y marcar todas). Ver `docs/review-2026-05-19/findings.md`.

@@ -168,6 +168,11 @@ resources/js/
 - **`useForm` de Inertia** para todos los forms — nunca fetch/axios para mutar.
 - **`useHttp` de Inertia v3** para requests one-off que no son visita.
 - **Wayfinder** para URLs: `import { storeBooking } from '@/actions/BookingController'`. Hardcodear URLs está prohibido.
+- **Inertia router vs API JSON — separación obligatoria**
+  - `router.post/put/patch/delete` de Inertia se reserva EXCLUSIVAMENTE para web routes que devuelven respuesta Inertia (redirect 302 con headers `X-Inertia`).
+  - Los endpoints `/api/v1/*` devuelven Eloquent Resources (JSON) — Inertia los descarta silenciosamente.
+  - Para llamar a `/api/v1/*` desde el frontend usar el composable `useApi()` (en `resources/js/composables/useApi.ts`) que envuelve `fetch` con CSRF + cookies + manejo de errores.
+  - **Detección:** si un click no produce request en Network tab pero el handler corre, casi seguro estás usando `router.*` contra `/api/v1/*`.
 - **Tailwind utility-first.** Sin clases CSS custom salvo en `app.css` para resets/tokens.
 - **Sin lógica de negocio en componentes.** Solo presentación + handlers que llaman composables/actions.
 - **Single root element** en cada `.vue` (regla Vue).
@@ -252,3 +257,9 @@ Ver [`testing-policy.md`](./testing-policy.md). Resumen:
 2. Justificación en el body: por qué la regla actual no sirve.
 3. Migración del código existente afectado en el mismo PR o ticket de seguimiento.
 4. Merge requiere review humano.
+
+---
+
+## Changelog
+
+- `2026-05-19` — Agregada regla "Inertia router vs API JSON — separación obligatoria" en §4.2 (Frontend Reglas). Razón: regla descubierta tras review Playwright 2026-05-19 — todos los flujos mutantes UI estaban rotos por usar `router.post` contra endpoints JSON. Ver `docs/review-2026-05-19/findings.md` (P0-2 sistémico).
