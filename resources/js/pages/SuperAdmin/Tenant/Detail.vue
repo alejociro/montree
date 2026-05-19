@@ -3,6 +3,7 @@ import { Head, Link, router, useHttp } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { update as updateConfiguration } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantConfigurationController';
 import { show as tenantShow } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantController';
 import { update as updatePlan } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantPlanController';
 import { update as updateStatus } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantStatusController';
@@ -15,6 +16,7 @@ const props = defineProps<{
 }>();
 
 const http = useHttp();
+const configProcessing = ref(false);
 
 const tenant = ref<SuperAdminTenantSummary | null>(null);
 const loading = ref(true);
@@ -91,6 +93,48 @@ function handlePlanChange(next: TenantPlan): void {
     });
 }
 
+async function handleConfigurationUpdate(formData: FormData): Promise<void> {
+    if (tenant.value === null) {
+        return;
+    }
+
+    configProcessing.value = true;
+
+    try {
+        const response = await fetch(updateConfiguration(tenant.value.id).url, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': decodeURIComponent(
+                    document.cookie
+                        .split('; ')
+                        .find((row) => row.startsWith('XSRF-TOKEN='))
+                        ?.split('=')[1] ?? '',
+                ),
+            },
+        });
+
+        if (response.ok) {
+            toast.success('Configuración actualizada correctamente.');
+            void loadTenant();
+        } else {
+            const body = await response.json();
+            const firstError = Object.values(body.errors ?? {})[0];
+            toast.error(
+                Array.isArray(firstError)
+                    ? (firstError[0] as string)
+                    : 'No se pudo guardar la configuración.',
+            );
+        }
+    } catch {
+        toast.error('Error de conexión al guardar la configuración.');
+    } finally {
+        configProcessing.value = false;
+    }
+}
+
 onMounted(() => {
     void loadTenant();
 });
@@ -115,9 +159,10 @@ onMounted(() => {
         <TenantDetailPanel
             v-if="tenant"
             :tenant="tenant"
-            :processing="processing"
+            :processing="processing || configProcessing"
             @status-change="handleStatusChange"
             @plan-change="handlePlanChange"
+            @configuration-update="handleConfigurationUpdate"
         />
     </div>
 </template>
