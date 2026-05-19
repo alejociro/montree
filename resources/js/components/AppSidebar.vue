@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-vue-next';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    CalendarCheck,
+    CalendarDays,
+    Heart,
+    Home,
+    Map,
+    User,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -14,29 +21,41 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import type { TenantRole } from '@/types/auth';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
+const customerNavItems: NavItem[] = [
+    { title: 'Inicio', href: '/', icon: Home },
+    { title: 'Mis Reservas', href: '/account/bookings', icon: CalendarCheck },
+    { title: 'Favoritos', href: '/account/favorites', icon: Heart },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
+const guideNavItems: NavItem[] = [
+    { title: 'Mi agenda', href: '/guide/schedule', icon: CalendarDays },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
 ];
+
+const operatorNavItems: NavItem[] = [
+    { title: 'Tours', href: '/admin/tours', icon: Map },
+    { title: 'Mi Cuenta', href: '/account', icon: User },
+];
+
+const page = usePage();
+const role = computed<TenantRole | null>(
+    () => page.props.auth?.user?.tenantRole ?? null,
+);
+
+const navItems = computed<NavItem[]>(() => {
+    switch (role.value) {
+        case 'guide':
+            return guideNavItems;
+        case 'operator':
+            return operatorNavItems;
+        default:
+            return customerNavItems;
+    }
+});
 </script>
 
 <template>
@@ -45,8 +64,8 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
-                            <AppLogo />
+                        <Link href="/">
+                            <TenantBrandedLogo size="sm" />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -54,11 +73,10 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="navItems" />
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

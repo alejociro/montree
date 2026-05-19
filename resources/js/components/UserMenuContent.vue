@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import { Bell, Heart, LogOut, Settings, Ticket } from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -32,9 +32,30 @@ defineProps<Props>();
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
+            <Link class="block w-full cursor-pointer" href="/account/bookings">
+                <Ticket class="mr-2 h-4 w-4" />
+                Mis reservas
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link class="block w-full cursor-pointer" href="/account/favorites">
+                <Heart class="mr-2 h-4 w-4" />
+                Favoritos
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link
+                class="block w-full cursor-pointer"
+                href="/account/notifications"
+            >
+                <Bell class="mr-2 h-4 w-4" />
+                Notificaciones
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
-                Settings
+                Configuración
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>
@@ -48,7 +69,7 @@ defineProps<Props>();
             data-test="logout-button"
         >
             <LogOut class="mr-2 h-4 w-4" />
-            Log out
+            Cerrar sesión
         </Link>
     </DropdownMenuItem>
 </template>

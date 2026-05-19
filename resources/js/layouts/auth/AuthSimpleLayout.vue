@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
+import { useTenant } from '@/composables/useTenant';
+import { useTenantBranding } from '@/composables/useTenantBranding';
 import { home } from '@/routes';
 
 defineProps<{
     title?: string;
     description?: string;
 }>();
+
+useTenantBranding();
+
+const { configuration, displayName } = useTenant();
 </script>
 
 <template>
@@ -20,18 +26,21 @@ defineProps<{
                         :href="home()"
                         class="flex flex-col items-center gap-2 font-medium"
                     >
-                        <div
-                            class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                        >
-                            <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
-                            />
-                        </div>
-                        <span class="sr-only">{{ title }}</span>
+                        <TenantBrandedLogo size="md" />
+                        <span class="sr-only">{{ displayName }}</span>
                     </Link>
                     <div class="space-y-2 text-center">
                         <h1 class="text-xl font-medium">{{ title }}</h1>
-                        <p class="text-center text-sm text-muted-foreground">
+                        <p
+                            v-if="configuration?.tagline"
+                            class="text-center text-sm font-medium text-primary"
+                        >
+                            {{ configuration.tagline }}
+                        </p>
+                        <p
+                            v-if="description"
+                            class="text-center text-sm text-muted-foreground"
+                        >
                             {{ description }}
                         </p>
                     </div>

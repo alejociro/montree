@@ -1,0 +1,266 @@
+<script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { ImagePlus, Loader2, Star, Trash2 } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
+import {
+    destroy as destroyImage,
+    store as storeImage,
+    update as updateImage,
+} from '@/actions/App/Http/Controllers/Api/V1/Admin/TourImageController';
+import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { useApi } from '@/composables/useApi';
+import { cn } from '@/lib/utils';
+import type { TourImage } from '@/types/tour';
+
+type Props = {
+    tourId: number;
+    images: TourImage[];
+};
+
+const props = defineProps<Props>();
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const isUploading = ref(false);
+const dragging = ref(false);
+const api = useApi();
+
+function openFilePicker(): void {
+    fileInput.value?.click();
+}
+
+async function onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (file) {
+        await upload(file);
+    }
+
+    input.value = '';
+}
+
+async function onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    dragging.value = false;
+
+    const file = event.dataTransfer?.files?.[0];
+
+    if (file) {
+        await upload(file);
+    }
+}
+
+function onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    dragging.value = true;
+}
+
+function onDragLeave(): void {
+    dragging.value = false;
+}
+
+async function upload(file: File): Promise<void> {
+    isUploading.value = true;
+
+    const action = storeImage({ tour: props.tourId });
+    const formData = new FormData();
+    formData.append('image', file);
+
+    await api.post(action.url, formData, {
+        onSuccess: () => {
+            toast.success('Imagen subida.');
+            router.reload({ only: ['tour'] });
+        },
+        onError: (errors) => {
+            const message =
+                Object.values(errors)[0] ?? 'No se pudo subir la imagen';
+            toast.error(message);
+        },
+        onFinish: () => {
+            isUploading.value = false;
+        },
+    });
+}
+
+function setAsCover(image: TourImage): void {
+    if (image.is_cover) {
+        return;
+    }
+
+    const action = updateImage({ tour: props.tourId, image: image.id });
+    void api.patch(
+        action.url,
+        { is_cover: true },
+        {
+            onSuccess: () => {
+                toast.success('Portada actualizada.');
+                router.reload({ only: ['tour'] });
+            },
+            onError: () => toast.error('No se pudo actualizar la portada.'),
+        },
+    );
+}
+
+const deleteDialog = ref(false);
+const imageToDelete = ref<TourImage | null>(null);
+
+function confirmRemoveImage(image: TourImage): void {
+    imageToDelete.value = image;
+    deleteDialog.value = true;
+}
+
+function removeImage(): void {
+    if (!imageToDelete.value) {
+        return;
+    }
+
+    const action = destroyImage({
+        tour: props.tourId,
+        image: imageToDelete.value.id,
+    });
+    void api.delete(action.url, {
+        onSuccess: () => {
+            toast.success('Imagen eliminada.');
+            deleteDialog.value = false;
+            imageToDelete.value = null;
+            router.reload({ only: ['tour'] });
+        },
+        onError: () => toast.error('No se pudo eliminar la imagen.'),
+    });
+}
+</script>
+
+<template>
+    <section class="space-y-4">
+        <Heading
+            variant="small"
+            title="Galería"
+            description="JPG, PNG o WebP. Máximo 5 MB por imagen."
+        />
+
+        <div
+            :class="
+                cn(
+                    'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors',
+                    dragging
+                        ? 'border-primary bg-primary/5'
+                        : 'border-input hover:border-primary/50',
+                )
+            "
+            @drop="onDrop"
+            @dragover="onDragOver"
+            @dragleave="onDragLeave"
+        >
+            <input
+                ref="fileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="hidden"
+                @change="onFileSelected"
+            />
+
+            <Loader2
+                v-if="isUploading"
+                class="size-8 animate-spin text-primary"
+            />
+            <ImagePlus v-else class="size-8 text-muted-foreground" />
+
+            <p class="text-sm text-muted-foreground">
+                Arrastrá una imagen acá o usá el botón.
+            </p>
+            <Button
+                type="button"
+                variant="outline"
+                :disabled="isUploading"
+                @click="openFilePicker"
+            >
+                {{ isUploading ? 'Subiendo...' : 'Seleccionar imagen' }}
+            </Button>
+        </div>
+
+        <div
+            v-if="images.length > 0"
+            class="grid grid-cols-2 gap-3 md:grid-cols-4"
+        >
+            <div
+                v-for="image in images"
+                :key="image.id"
+                class="group relative aspect-square overflow-hidden rounded-lg border border-input"
+            >
+                <img
+                    :src="image.url"
+                    :alt="image.alt_text ?? ''"
+                    class="size-full object-cover"
+                />
+
+                <div
+                    v-if="image.is_cover"
+                    class="absolute top-2 left-2 flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+                >
+                    <Star class="size-3" />
+                    Portada
+                </div>
+
+                <div
+                    class="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                    <Button
+                        v-if="!image.is_cover"
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        class="h-7 px-2 text-xs"
+                        @click="setAsCover(image)"
+                    >
+                        <Star class="size-3" />
+                        Portada
+                    </Button>
+                    <span v-else />
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        class="size-7"
+                        @click="confirmRemoveImage(image)"
+                    >
+                        <Trash2 class="size-3" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <p v-else class="text-xs text-muted-foreground">
+            Aún no hay imágenes. Subí al menos una para activar el tour.
+        </p>
+
+        <Dialog v-model:open="deleteDialog">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Eliminar imagen</DialogTitle>
+                    <DialogDescription>
+                        ¿Estás seguro de que querés eliminar esta imagen? Esta
+                        acción no se puede deshacer.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" @click="deleteDialog = false"
+                        >Cancelar</Button
+                    >
+                    <Button variant="destructive" @click="removeImage"
+                        >Eliminar</Button
+                    >
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </section>
+</template>

@@ -2,9 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Tenant;
+use App\Models\TenantConfiguration;
+use App\Models\Tour;
+use App\Observers\TenantConfigurationObserver;
+use App\Observers\TenantObserver;
+use App\Policies\SuperAdminTenantPolicy;
+use App\Policies\TenantPolicy;
+use App\Policies\TourPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureObservers();
+        $this->configurePolicies();
     }
 
     /**
@@ -46,5 +57,19 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureObservers(): void
+    {
+        Tenant::observe(TenantObserver::class);
+        TenantConfiguration::observe(TenantConfigurationObserver::class);
+    }
+
+    protected function configurePolicies(): void
+    {
+        Gate::policy(Tenant::class, TenantPolicy::class);
+        Gate::policy(Tour::class, TourPolicy::class);
+
+        Gate::define('manage-platform-tenant', [SuperAdminTenantPolicy::class, 'manage']);
     }
 }
