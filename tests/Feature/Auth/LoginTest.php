@@ -56,7 +56,7 @@ class LoginTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/');
     }
 
     public function test_login_creates_tenant_user_when_missing_with_customer_role(): void

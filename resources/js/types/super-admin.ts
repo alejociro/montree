@@ -1,4 +1,4 @@
-import type { TenantPlan, TenantStatus } from './tenant';
+import type { TenantConfiguration, TenantPlan, TenantStatus } from './tenant';
 
 export type SuperAdminTenantSummary = {
     id: number;
@@ -16,6 +16,7 @@ export type SuperAdminTenantSummary = {
     bookings_count_30d: number | null;
     revenue_30d: string | null;
     created_at: string | null;
+    configuration?: TenantConfiguration | null;
 };
 
 export type PlatformMetricsTotals = {

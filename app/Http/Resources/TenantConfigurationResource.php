@@ -37,6 +37,8 @@ class TenantConfigurationResource extends JsonResource
             'reviews_require_moderation' => (bool) $this->reviews_require_moderation,
             'require_traveler_details' => (bool) $this->require_traveler_details,
             'custom_css' => $this->custom_css,
+            'hero_image_url' => $this->resolveUrl($this->hero_image_path),
+            'min_partial_payment_pct' => $this->min_partial_payment_pct,
         ];
     }
 

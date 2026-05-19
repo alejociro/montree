@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TenantMembershipStatus;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -56,5 +58,18 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
             'two_factor_confirmed_at' => now(),
         ]);
+    }
+
+    /**
+     * Attach the created user as an active member of the given tenant.
+     */
+    public function customerOf(Tenant $tenant): static
+    {
+        return $this->afterCreating(function (User $user) use ($tenant): void {
+            $tenant->users()->attach($user->id, [
+                'status' => TenantMembershipStatus::Active->value,
+                'joined_at' => now(),
+            ]);
+        });
     }
 }

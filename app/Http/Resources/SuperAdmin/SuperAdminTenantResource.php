@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\SuperAdmin;
 
+use App\Http\Resources\TenantConfigurationResource;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,6 +43,9 @@ class SuperAdminTenantResource extends JsonResource
             'bookings_count_30d' => $this->stats['bookings_count_30d'] ?? null,
             'revenue_30d' => $this->stats['revenue_30d'] ?? null,
             'created_at' => $this->created_at?->toIso8601String(),
+            'configuration' => $this->whenLoaded('configuration', function () {
+                return (new TenantConfigurationResource($this->configuration))->resolve();
+            }),
         ];
     }
 }

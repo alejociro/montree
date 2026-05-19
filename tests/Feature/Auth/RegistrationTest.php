@@ -65,7 +65,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/');
 
         $user = User::query()->where('email', 'test@example.com')->firstOrFail();
         $this->assertDatabaseHas('tenant_user', [

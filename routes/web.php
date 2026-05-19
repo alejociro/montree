@@ -2,29 +2,28 @@
 
 use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
+use App\Http\Controllers\Admin\ReviewPagesController;
 use App\Http\Controllers\Admin\TeamPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
 use App\Http\Controllers\Guide\GuidePagesController;
+use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\NewsletterPagesController;
 use App\Http\Controllers\NotificationPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', HomePageController::class)->name('home');
 
 Route::get('tours', [CatalogPagesController::class, 'index'])->name('catalog.index');
 Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tours.show');
 Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->name('newsletter.unsubscribe.page');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
     Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 
@@ -32,19 +31,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
     Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
     Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
+    Route::get('account/bookings/{bookingNumber}/review', [AccountPagesController::class, 'review'])->name('account.bookings.review');
 });
 
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'tenant_admin.only'])->prefix('admin')->name('admin.')->group(function () {
     Route::inertia('dashboard', 'Admin/Dashboard')->name('dashboard');
     Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
     Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');
+    Route::get('reviews', [ReviewPagesController::class, 'index'])->name('reviews.index');
     Route::get('team', [TeamPagesController::class, 'index'])->name('team.index');
+    Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->name('tenant.configuration');
 });
 
-Route::middleware(['auth', 'verified'])->prefix('guide')->name('guide.')->group(function () {
+Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->name('guide.')->group(function () {
     Route::get('schedule', [GuidePagesController::class, 'schedule'])->name('schedule');
 });
 

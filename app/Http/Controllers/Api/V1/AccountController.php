@@ -44,7 +44,7 @@ final class AccountController extends Controller
             ->where('user_id', $user->id)
             ->whereIn('status', [BookingStatus::Completed, BookingStatus::Confirmed])
             ->whereHas('tourDate', fn ($q) => $q->where('starts_at', '<', now()))
-            ->with(['tour:id,slug,name', 'tourDate:id,starts_at,ends_at,tour_id'])
+            ->with(['tour:id,slug,name', 'tourDate:id,starts_at,ends_at,tour_id', 'review:id,booking_id'])
             ->orderBy('id', 'desc')
             ->get();
 
@@ -112,6 +112,7 @@ final class AccountController extends Controller
             ],
             'starts_at' => $booking->tourDate->starts_at->toIso8601String(),
             'expires_at' => $booking->expires_at?->toIso8601String(),
+            'has_review' => $booking->relationLoaded('review') && $booking->review !== null,
         ];
     }
 }

@@ -65,8 +65,17 @@ onMounted(load);
 
         <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
 
-        <div v-else-if="items.length === 0" class="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-            No tenés notificaciones todavía.
+        <div
+            v-else-if="items.length === 0"
+            class="flex flex-col items-center gap-4 rounded-lg border border-dashed p-12 text-center"
+        >
+            <div class="rounded-full bg-muted p-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </div>
+            <div class="space-y-1">
+                <p class="font-medium">No tenés notificaciones todavía</p>
+                <p class="text-sm text-muted-foreground">Acá vas a ver las novedades sobre tus reservas y tours.</p>
+            </div>
         </div>
 
         <ul v-else class="space-y-3">

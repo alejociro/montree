@@ -18,8 +18,8 @@ import { request } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'Iniciar sesión',
+        description: 'Ingresa tu correo y contraseña para acceder',
     },
 });
 
@@ -29,7 +29,7 @@ defineProps<{
     canRegister: boolean;
 }>();
 
-const { tenant } = useTenant();
+const { tenant, displayName } = useTenant();
 
 const SUSPENSION_KEYWORDS = ['suspendida', 'suspended', 'suspendido'] as const;
 
@@ -47,7 +47,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Iniciar sesión" />
 
     <div
         v-if="status"
@@ -72,7 +72,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             <AlertDescription>
                 <p>{{ errors.email }}</p>
                 <p v-if="contactEmail" class="mt-2">
-                    Contactá al admin:
+                    Contacta al administrador:
                     <a
                         :href="`mailto:${contactEmail}`"
                         class="font-medium underline"
@@ -85,7 +85,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">Correo electrónico</Label>
                 <Input
                     id="email"
                     type="email"
@@ -94,7 +94,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
-                    placeholder="email@example.com"
+                    placeholder="tu@correo.com"
                 />
                 <InputError
                     v-if="!isSuspensionError(errors.email)"
@@ -104,14 +104,14 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
+                    <Label for="password">Contraseña</Label>
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
                         class="text-sm"
                         :tabindex="5"
                     >
-                        Forgot password?
+                        ¿Olvidaste tu contraseña?
                     </TextLink>
                 </div>
                 <PasswordInput
@@ -120,7 +120,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Password"
+                    placeholder="Contraseña"
                 />
                 <InputError :message="errors.password" />
             </div>
@@ -128,19 +128,19 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Remember me</span>
+                    <span>Recordarme</span>
                 </Label>
             </div>
 
             <Button
                 type="submit"
-                class="mt-4 w-full"
+                class="mt-2 w-full"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
             >
                 <Spinner v-if="processing" />
-                Log in
+                Iniciar sesión
             </Button>
         </div>
 
@@ -148,8 +148,8 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             class="text-center text-sm text-muted-foreground"
             v-if="canRegister"
         >
-            Don't have an account?
-            <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
+            ¿No tienes una cuenta?
+            <TextLink :href="register()" :tabindex="5">Regístrate</TextLink>
         </div>
     </Form>
 </template>

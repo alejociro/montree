@@ -122,6 +122,6 @@ final class LoginResponse implements LoginResponseContract
 
     private function home(): string
     {
-        return config('fortify.home', '/dashboard');
+        return '/';
     }
 }
