@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutDashboard, Mountain, Settings } from 'lucide-vue-next';
+import { LayoutDashboard, Mountain, Megaphone, Mail, Star, Users, Settings } from 'lucide-vue-next';
 import AdminNavMain from '@/components/AdminNavMain.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -25,6 +25,26 @@ const navItems: NavItem[] = [
         title: 'Tours',
         href: '/admin/tours',
         icon: Mountain,
+    },
+    {
+        title: 'Promociones',
+        href: '/admin/promotions',
+        icon: Megaphone,
+    },
+    {
+        title: 'Newsletter',
+        href: '/admin/newsletter',
+        icon: Mail,
+    },
+    {
+        title: 'Reseñas',
+        href: '/admin/reviews',
+        icon: Star,
+    },
+    {
+        title: 'Equipo',
+        href: '/admin/team',
+        icon: Users,
     },
     {
         title: 'Configuración',
