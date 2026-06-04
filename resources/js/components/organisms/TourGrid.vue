@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import TourCard from '@/components/molecules/TourCard.vue';
 import { Skeleton } from '@/components/ui/skeleton';
+import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import type { CatalogTour } from '@/types/catalog';
 
 type Props = {
@@ -37,7 +39,14 @@ withDefaults(defineProps<Props>(), {
             </div>
         </template>
         <template v-else>
-            <TourCard v-for="tour in tours" :key="tour.id" :tour="tour" />
+            <Link
+                v-for="tour in tours"
+                :key="tour.id"
+                :href="tourShow(tour.slug).url"
+                class="block h-full"
+            >
+                <TourCard :tour="tour" />
+            </Link>
         </template>
     </div>
 </template>
