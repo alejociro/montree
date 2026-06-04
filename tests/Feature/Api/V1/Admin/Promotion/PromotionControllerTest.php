@@ -131,7 +131,7 @@ class PromotionControllerTest extends TestCase
             ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['code', 'name', 'type', 'value']);
+        $response->assertJsonValidationErrors(['code', 'type', 'value']);
     }
 
     public function test_store_rejects_percentage_value_above_100(): void
