@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
 
 const api = useApi();
+const currentUserId = usePage().props.auth?.user?.id;
 
 type Member = {
     id: number;
@@ -268,7 +269,7 @@ onMounted(load);
                             <option value="customer">Cliente</option>
                         </select>
                         <Button
-                            v-if="m.status !== 'suspended'"
+                            v-if="m.status !== 'suspended' && m.id !== currentUserId"
                             variant="outline"
                             size="sm"
                             @click="doSuspend(m.id)"
@@ -276,7 +277,7 @@ onMounted(load);
                             Suspender
                         </Button>
                         <Button
-                            v-else
+                            v-else-if="m.status === 'suspended'"
                             variant="outline"
                             size="sm"
                             @click="doReactivate(m.id)"
