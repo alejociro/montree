@@ -42,7 +42,7 @@ class StorePromotionRequest extends FormRequest
                 'max:40',
                 'regex:/^[A-Z0-9_-]+$/',
             ],
-            'name' => ['nullable', 'string', 'max:120'],
+            'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:2000'],
             'type' => ['required', Rule::in(array_column(PromotionType::cases(), 'value'))],
             'value' => ['required', 'numeric', 'gt:0', 'max:9999999.99'],
