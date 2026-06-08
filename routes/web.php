@@ -22,7 +22,7 @@ Route::get('tours', [CatalogPagesController::class, 'index'])->name('catalog.ind
 Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tours.show');
 Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->name('newsletter.unsubscribe.page');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
     Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');

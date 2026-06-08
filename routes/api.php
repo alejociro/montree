@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
@@ -36,8 +35,6 @@ use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantA
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
 use App\Http\Controllers\Api\V1\TenantController;
-use App\Models\Tenant;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('tenant', [TenantController::class, 'show'])
@@ -49,47 +46,6 @@ Route::middleware('throttle:5,1')->group(function (): void {
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribeByToken'])->name('api.v1.newsletter.unsubscribe');
 });
 
-// TEMP DEBUG — remove after diagnosing auth.
-Route::middleware(['auth'])->get('_debug/me_auth', function (Request $request) {
-    setPermissionsTeamId(0);
-    $user = $request->user();
-    $user?->unsetRelation('roles');
-
-    return response()->json([
-        'reached' => true,
-        'auth_user_id' => $user?->id,
-        'is_super_admin' => $user?->hasRole(UserRole::SuperAdmin->value) ?? false,
-    ]);
-});
-
-Route::middleware(['auth', 'super_admin.only'])->get('_debug/me_super', function (Request $request) {
-    return response()->json(['reached' => true, 'host' => $request->getHost()]);
-});
-
-Route::domain((string) config('montree.super_admin_host'))
-    ->middleware(['auth', 'super_admin.only'])
-    ->get('_debug/me_super_domain', function (Request $request) {
-        return response()->json(['reached' => true, 'host' => $request->getHost()]);
-    });
-
-Route::get('_debug/me', function (Request $request) {
-    setPermissionsTeamId(0);
-    $user = $request->user();
-    $user?->unsetRelation('roles');
-
-    return response()->json([
-        'host' => $request->getHost(),
-        'session_id' => $request->session()->getId(),
-        'session_cookie_name' => config('session.cookie'),
-        'session_domain' => config('session.domain'),
-        'cookies_received' => array_keys($request->cookies->all()),
-        'auth_user_id' => $user?->id,
-        'auth_user_email' => $user?->email,
-        'is_super_admin' => $user?->hasRole(UserRole::SuperAdmin->value) ?? false,
-        'tenant' => Tenant::current()?->slug,
-    ]);
-});
-
 Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/categories', [CategoryController::class, 'index'])->name('api.v1.tours.categories.index');
     Route::get('tours', [CatalogController::class, 'index'])->name('api.v1.tours.index');
@@ -97,7 +53,7 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/{slug}/reviews', [PublicReviewController::class, 'index'])->name('api.v1.tours.reviews.index');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
@@ -116,12 +72,14 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
 
     Route::post('bookings/{bookingNumber}/payments', [PaymentController::class, 'store'])->name('api.v1.bookings.payments.store');
+});
 
+Route::middleware(['auth', 'tenant_guide.only'])->group(function (): void {
     Route::get('guide/schedule', [GuideController::class, 'schedule'])->name('api.v1.guide.schedule');
     Route::get('guide/tour-dates/{tourDate}/travelers', [GuideController::class, 'travelers'])->name('api.v1.guide.tour-dates.travelers');
 });
 
-Route::middleware(['auth'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
+Route::middleware(['auth', 'tenant_admin.only'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
     Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
     Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->name('tenant.configuration.update');
 

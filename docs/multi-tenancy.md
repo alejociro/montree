@@ -218,9 +218,55 @@ montar el schema completo. Conviértelas en convención al construir features:
 
 ---
 
+## 10. Aislamiento de sesión y enforcement de membresía (2026-06-04)
+
+Hardening de seguridad P0 sobre el manejo de tenants. Reglas que ahora son
+invariantes del sistema:
+
+### 10.1 Sesión aislada por subdominio
+
+- `SESSION_DOMAIN` debe quedar en `null` (cookie host-only), NO en `.montree.app`/
+  `.montree.test`. Cada subdominio (= cada agencia) es una sesión independiente.
+- Razón: el producto es white-label. Una cookie compartida entre subdominios
+  autenticaba al usuario en agencias donde no es miembro (fuga de identidad de
+  marca). El super_admin inicia sesión en su propio host (`admin.*`).
+
+### 10.2 Membresía verificada en CADA request (no solo en login)
+
+- Middleware `tenant_member.only` (`EnsureTenantMember`) en todas las rutas
+  autenticadas tenant-scoped de customer (web y API). Verifica que el usuario sea
+  miembro `active` del tenant actual; si no, lo desloguea (web) o devuelve 403 (API).
+- `super_admin` hace bypass (es global, sin membresía).
+- `EnsureTenantAdmin` y `EnsureTenantGuide` también validan membresía `active`
+  ANTES del chequeo de rol. Un miembro suspendido pierde acceso de inmediato,
+  aunque conserve la fila de rol y tenga sesión abierta.
+
+### 10.3 El login NO crea membresía
+
+- `LoginResponse` ya no auto-enrola: un usuario que no es miembro de la agencia
+  recibe error con CTA a registro. Auto-enrolar permitía que una agencia cosechara
+  clientes de otra vía el formulario de login compartido.
+- Registro (`CreateNewUser`) sigue siendo el único punto que crea membresía customer.
+
+### 10.4 Autorización de la API por grupo
+
+- Las rutas `/api/v1/admin/*` se gatean con `tenant_admin.only` y las de guide con
+  `tenant_guide.only` a nivel de grupo. No depender solo de `Gate`/Form Request
+  por-controller (era inconsistente: varios endpoints admin no chequeaban rol).
+
+### 10.5 Helpers centralizados
+
+- El juggling de `setPermissionsTeamId()` + `unsetRelation('roles')` vive en
+  `User::loadRolesForTeam(int $teamId)` y `User::isSuperAdmin()`. Membresía:
+  `User::membershipFor(Tenant)` y `User::isActiveMemberOf(Tenant)`. No repetir
+  el patrón a mano en middlewares/resources.
+
 ## Changelog
 
 - `2026-05-17` — Versión inicial.
 - `2026-05-17` — Sección 9 añadida con decisiones de implementación efectiva
   (subdomain finder con hosts reservados, sentinel team_id=0 para super_admin,
   detalles de cada tabla y soft delete).
+- `2026-06-04` — Sección 10: hardening P0 (sesión aislada por subdominio,
+  `tenant_member.only`, enforcement de status mid-session, fin del auto-enrol en
+  login, gates de API por grupo, helpers centralizados en `User`).

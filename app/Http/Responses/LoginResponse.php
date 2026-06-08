@@ -9,7 +9,6 @@ use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Tenant\AttachUserToTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,8 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class LoginResponse implements LoginResponseContract
 {
-    public function __construct(private AttachUserToTenant $attachUserToTenant) {}
-
     public function toResponse($request): Response
     {
         /** @var User|null $user */
@@ -30,7 +27,7 @@ final class LoginResponse implements LoginResponseContract
             return redirect()->intended($this->home());
         }
 
-        if ($this->isSuperAdmin($user)) {
+        if ($user->isSuperAdmin()) {
             return $this->redirectSuperAdmin($request);
         }
 
@@ -38,14 +35,20 @@ final class LoginResponse implements LoginResponseContract
             return $this->buildRedirect($user, $request);
         }
 
-        $pivot = $this->resolveMembership($user, $tenant);
+        $pivot = $user->membershipFor($tenant);
 
-        if ($pivot !== null && $pivot->status === TenantMembershipStatus::Suspended) {
-            return $this->logoutSuspended($request);
+        // WHY: membership is NOT created on login. A user who is not a member of
+        // this agency must be told to register — silently enrolling them would let
+        // one agency harvest another agency's customers via the shared login form.
+        if ($pivot === null) {
+            return $this->logoutWithError(
+                $request,
+                __('No tenés una cuenta en esta agencia. Registrate para continuar.'),
+            );
         }
 
-        if ($pivot === null) {
-            $this->attachUserToTenant->handle($user, $tenant, UserRole::Customer, 'login');
+        if ($pivot->status !== TenantMembershipStatus::Active) {
+            return $this->logoutWithError($request, $this->inactiveMessage($pivot));
         }
 
         return $this->buildRedirect($user, $request, $tenant);
@@ -53,18 +56,9 @@ final class LoginResponse implements LoginResponseContract
 
     private function tenantRole(User $user, Tenant $tenant): ?string
     {
-        setPermissionsTeamId($tenant->id);
-        $user->unsetRelation('roles');
+        $user->loadRolesForTeam($tenant->id);
 
         return $user->getRoleNames()->first();
-    }
-
-    private function isSuperAdmin(User $user): bool
-    {
-        setPermissionsTeamId(0);
-        $user->unsetRelation('roles');
-
-        return $user->hasRole(UserRole::SuperAdmin->value);
     }
 
     private function redirectSuperAdmin(Request $request): Response
@@ -80,25 +74,21 @@ final class LoginResponse implements LoginResponseContract
             : redirect()->away($url);
     }
 
-    private function resolveMembership(User $user, Tenant $tenant): ?TenantUser
+    private function inactiveMessage(TenantUser $pivot): string
     {
-        /** @var TenantUser|null $pivot */
-        $pivot = TenantUser::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        return $pivot;
+        return $pivot->status === TenantMembershipStatus::Suspended
+            ? __('Tu cuenta está suspendida en esta agencia.')
+            : __('Tu invitación a esta agencia está pendiente de aceptación.');
     }
 
-    private function logoutSuspended(Request $request): RedirectResponse
+    private function logoutWithError(Request $request, string $message): RedirectResponse
     {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login')->withErrors([
-            'email' => __('Tu cuenta está suspendida en esta agencia.'),
+            'email' => $message,
         ]);
     }
 
