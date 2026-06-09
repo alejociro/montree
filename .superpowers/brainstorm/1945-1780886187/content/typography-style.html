@@ -1,0 +1,314 @@
+<h2>¿Cómo se siente el titular principal?</h2>
+<p class="subtitle">Mismo layout split, misma paleta — diferente personalidad tipográfica. Esto define el carácter de toda la página.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Fraunces:ital,opsz,wght@0,9..144,800;0,9..144,900;1,9..144,800;1,9..144,900&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
+
+  .hero-preview {
+    background: #f2ede4;
+    height: 260px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .hero-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(74,124,89,0.15);
+    flex-shrink: 0;
+  }
+  .hero-nav-brand {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2a4a34;
+    letter-spacing: -0.3px;
+  }
+  .nav-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .nav-link-mock {
+    width: 28px;
+    height: 4px;
+    background: #9a9a8a;
+    border-radius: 2px;
+  }
+  .nav-cta-mock {
+    width: 72px;
+    height: 22px;
+    background: #4a7c59;
+    border-radius: 4px;
+  }
+  .hero-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px 16px;
+    gap: 7px;
+  }
+  .hero-right {
+    background: linear-gradient(150deg, #2a4a34 0%, #1a3a2a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-right::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 30%, rgba(74,124,89,0.5) 0%, transparent 60%);
+  }
+  .app-card {
+    background: rgba(242,237,228,0.95);
+    border-radius: 10px;
+    padding: 10px 12px;
+    width: 105px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    position: relative;
+    z-index: 1;
+  }
+  .cta-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .btn-primary-mock {
+    height: 26px;
+    background: #4a7c59;
+    border-radius: 5px;
+    width: 100px;
+  }
+  .btn-secondary-mock {
+    height: 26px;
+    border: 1.5px solid #4a7c59;
+    border-radius: 5px;
+    width: 70px;
+  }
+  .tag-mock {
+    width: 110px;
+    height: 18px;
+    border: 1px solid rgba(74,124,89,0.4);
+    border-radius: 20px;
+    background: rgba(74,124,89,0.07);
+  }
+  .sub-mock {
+    width: 160px;
+    height: 6px;
+    background: #9a9a8a;
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+  .sub-mock-2 {
+    width: 140px;
+    height: 6px;
+    background: #9a9a8a;
+    border-radius: 2px;
+    opacity: 0.4;
+  }
+  .social-proof {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 2px;
+  }
+  .avatar-mock {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #b8cbb0;
+    margin-left: -5px;
+  }
+  .avatar-mock:first-child { margin-left: 0; }
+  .proof-text {
+    width: 80px;
+    height: 5px;
+    background: #9a9a8a;
+    border-radius: 2px;
+    opacity: 0.5;
+    margin-left: 5px;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- A: Playfair Display — Elegante clásico -->
+  <div class="card" data-choice="playfair" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div class="hero-preview">
+        <div class="hero-nav">
+          <div class="hero-nav-brand">Montree</div>
+          <div class="nav-actions">
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-cta-mock"></div>
+          </div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-left">
+            <div class="tag-mock"></div>
+            <div>
+              <div style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:900; color:#2a4a34; line-height:1.15; letter-spacing:-0.5px;">
+                Digitaliza tu<br>
+                <em style="color:#4a7c59;">agencia</em> de<br>
+                ecoturismo
+              </div>
+            </div>
+            <div class="sub-mock"></div>
+            <div class="sub-mock-2"></div>
+            <div class="cta-row">
+              <div class="btn-primary-mock"></div>
+              <div class="btn-secondary-mock"></div>
+            </div>
+            <div class="social-proof">
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="proof-text"></div>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="app-card">
+              <div style="width:55px; height:4px; background:#4a7c59; border-radius:2px; margin-bottom:6px; opacity:0.6;"></div>
+              <div style="width:80px; height:12px; background:#2a4a34; border-radius:2px; margin-bottom:5px;"></div>
+              <div style="display:flex; gap:3px; margin-bottom:5px;">
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+              </div>
+              <div style="width:81px; height:18px; background:#4a7c59; border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background:#f2ede4;">
+      <h3 style="color:#2a4a34; font-family:'Playfair Display',Georgia,serif;">A — Playfair Display</h3>
+      <p style="color:#5a6a5a;">Clásico, refinado, con serifa elegante. Recuerda a revistas de viaje premium. Cursiva natural y sofisticada.</p>
+    </div>
+  </div>
+
+  <!-- B: DM Serif Display — Moderno editorial -->
+  <div class="card" data-choice="dm-serif" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div class="hero-preview">
+        <div class="hero-nav">
+          <div class="hero-nav-brand" style="font-family:'DM Serif Display',Georgia,serif;">Montree</div>
+          <div class="nav-actions">
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-cta-mock"></div>
+          </div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-left">
+            <div class="tag-mock"></div>
+            <div>
+              <div style="font-family:'DM Serif Display',Georgia,serif; font-size:23px; color:#2a4a34; line-height:1.1; letter-spacing:-0.3px;">
+                La plataforma que<br>
+                <span style="color:#4a7c59;">transforma</span> cómo<br>
+                gestionas tours
+              </div>
+            </div>
+            <div class="sub-mock"></div>
+            <div class="sub-mock-2"></div>
+            <div class="cta-row">
+              <div class="btn-primary-mock"></div>
+              <div class="btn-secondary-mock"></div>
+            </div>
+            <div class="social-proof">
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="proof-text"></div>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="app-card">
+              <div style="width:55px; height:4px; background:#4a7c59; border-radius:2px; margin-bottom:6px; opacity:0.6;"></div>
+              <div style="width:80px; height:12px; background:#2a4a34; border-radius:2px; margin-bottom:5px;"></div>
+              <div style="display:flex; gap:3px; margin-bottom:5px;">
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+              </div>
+              <div style="width:81px; height:18px; background:#4a7c59; border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3 style="font-family:'DM Serif Display',Georgia,serif;">B — DM Serif Display</h3>
+      <p>Serif contemporáneo, más ancho y aireado. Editorial moderno sin ser anticuado. Muy usado en startups de estilo de vida.</p>
+    </div>
+  </div>
+
+  <!-- C: Fraunces — Bold expresivo -->
+  <div class="card" data-choice="fraunces" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div class="hero-preview">
+        <div class="hero-nav">
+          <div class="hero-nav-brand" style="font-family:'Fraunces',Georgia,serif;">Montree</div>
+          <div class="nav-actions">
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-link-mock"></div>
+            <div class="nav-cta-mock"></div>
+          </div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-left">
+            <div class="tag-mock"></div>
+            <div>
+              <div style="font-family:'Fraunces',Georgia,serif; font-size:24px; font-weight:900; color:#2a4a34; line-height:1.05; letter-spacing:-1px;">
+                El Excel terminó<br>
+                para tu <em style="color:#4a7c59; font-style:italic;">agencia</em>
+              </div>
+            </div>
+            <div class="sub-mock"></div>
+            <div class="sub-mock-2"></div>
+            <div class="cta-row">
+              <div class="btn-primary-mock"></div>
+              <div class="btn-secondary-mock"></div>
+            </div>
+            <div class="social-proof">
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="avatar-mock"></div>
+              <div class="proof-text"></div>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="app-card">
+              <div style="width:55px; height:4px; background:#4a7c59; border-radius:2px; margin-bottom:6px; opacity:0.6;"></div>
+              <div style="width:80px; height:12px; background:#2a4a34; border-radius:2px; margin-bottom:5px;"></div>
+              <div style="display:flex; gap:3px; margin-bottom:5px;">
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+                <div style="flex:1; height:20px; background:rgba(74,124,89,0.12); border-radius:3px; border:1px solid rgba(74,124,89,0.2);"></div>
+              </div>
+              <div style="width:81px; height:18px; background:#4a7c59; border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background:#f2ede4;">
+      <h3 style="color:#2a4a34; font-family:'Fraunces',Georgia,serif; font-weight:900;">C — Fraunces Bold</h3>
+      <p style="color:#5a6a5a;">Ultra bold, carácter fuerte, gran impacto. La página actual ya usa Fraunces — pero ahora en un contexto completamente diferente y más limpio.</p>
+    </div>
+  </div>
+
+</div>
