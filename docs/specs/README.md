@@ -39,6 +39,9 @@ Constitución, docs, sub-agents, slash commands, schema completo.
 14. [F013 — Newsletter](./F013-newsletter/spec.md)
 15. [F014 — Gestión de guías](./F014-team-management/spec.md)
 
+### Fase 5 — Crecimiento / adquisición
+16. [F016 — Onboarding self-serve de agencia](./F016-tenant-onboarding/spec.md) — depende de F002 (estado `pending`) y F001 (sesión aislada §10)
+
 ---
 
 ## Reglas

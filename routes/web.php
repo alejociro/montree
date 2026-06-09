@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\ReviewPagesController;
 use App\Http\Controllers\Admin\TeamPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
+use App\Http\Controllers\Auth\CrossHostLoginController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
 use App\Http\Controllers\Guide\GuidePagesController;
@@ -22,7 +23,13 @@ Route::get('tours', [CatalogPagesController::class, 'index'])->name('catalog.ind
 Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tours.show');
 Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->name('newsletter.unsubscribe.page');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+// WHY: cross-host login handoff (isolated per-subdomain sessions, see §10). Public
+// by design — the single-use token IS the credential. Logs the user in on this host.
+Route::get('auth/handoff/{token}', CrossHostLoginController::class)
+    ->middleware('throttle:10,1')
+    ->name('auth.handoff');
+
+Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
     Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');

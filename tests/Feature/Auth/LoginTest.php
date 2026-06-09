@@ -59,23 +59,22 @@ class LoginTest extends TestCase
         $response->assertRedirect('/');
     }
 
-    public function test_login_creates_tenant_user_when_missing_with_customer_role(): void
+    public function test_login_rejects_user_without_membership_and_does_not_enroll(): void
     {
         $user = User::factory()->create();
 
-        $this->post('http://demo.montree.test/login', [
+        $response = $this->post('http://demo.montree.test/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('tenant_user', [
+        $this->assertGuest();
+        $response->assertRedirect('http://demo.montree.test/login');
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('tenant_user', [
             'tenant_id' => $this->tenant->id,
             'user_id' => $user->id,
-            'status' => TenantMembershipStatus::Active->value,
         ]);
-        setPermissionsTeamId($this->tenant->id);
-        $this->assertTrue($user->fresh()->hasRole(UserRole::Customer->value));
     }
 
     public function test_login_rejects_suspended_membership_with_logout_and_error(): void

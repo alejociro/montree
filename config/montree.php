@@ -12,5 +12,5 @@ return [
     | super_admin routes are bound to this host via Route::domain().
     |
     */
-    'super_admin_host' => env('MONTREE_SUPER_ADMIN_HOST', 'admin.montree.test'),
+    'super_admin_host' => env('MONTREE_SUPER_ADMIN_HOST', 'montree.test'),
 ];

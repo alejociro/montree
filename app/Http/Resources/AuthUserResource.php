@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -42,11 +41,7 @@ class AuthUserResource extends JsonResource
 
     private function resolveIsSuperAdmin(): bool
     {
-        // WHY: super_admin role lives on sentinel team_id=0 (see RolesAndPermissionsSeeder).
-        setPermissionsTeamId(0);
-        $this->resource->unsetRelation('roles');
-
-        return $this->resource->hasRole(UserRole::SuperAdmin->value);
+        return $this->resource->isSuperAdmin();
     }
 
     private function resolveAvatarUrl(): ?string
@@ -64,8 +59,7 @@ class AuthUserResource extends JsonResource
             return null;
         }
 
-        setPermissionsTeamId($this->tenant->id);
-        $this->resource->unsetRelation('roles');
+        $this->resource->loadRolesForTeam($this->tenant->id);
 
         $role = $this->resource->getRoleNames()->first();
 
