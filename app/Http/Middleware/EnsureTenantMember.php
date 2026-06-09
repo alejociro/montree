@@ -28,10 +28,11 @@ final class EnsureTenantMember
             abort(401);
         }
 
-        // WHY: super_admin is global (no tenant membership) and operates from the
-        // reserved admin host; let it pass without a pivot lookup.
+        // WHY: super_admin is global (no tenant membership). It must NOT render
+        // customer/tenant pages — send it to the host home instead of showing a
+        // tenant-less customer UI.
         if ($user->isSuperAdmin()) {
-            return $next($request);
+            return redirect()->to('/');
         }
 
         $tenant = Tenant::current();

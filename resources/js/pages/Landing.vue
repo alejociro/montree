@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import {
     ArrowRight,
     BarChart3,
@@ -93,6 +94,10 @@ const benefits = [
     { icon: Star, text: 'Sistema de reseñas integrado' },
     { icon: Mail, text: 'Newsletter y notificaciones' },
 ];
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user ?? null);
+const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 </script>
 
 <template>
@@ -134,18 +139,37 @@ const benefits = [
                     >
                 </nav>
                 <div class="flex items-center gap-3">
-                    <Link
-                        href="/login"
-                        class="hidden text-sm font-medium text-zinc-600 transition hover:text-zinc-900 sm:inline-flex"
-                    >
-                        Iniciar sesión
-                    </Link>
-                    <a
-                        href="#contact"
-                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-                    >
-                        Comenzar gratis
-                    </a>
+                    <template v-if="user">
+                        <Link
+                            v-if="isSuperAdmin"
+                            href="/super-admin/dashboard"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                            Ir al panel
+                        </Link>
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                        >
+                            Cerrar sesión
+                        </Link>
+                    </template>
+                    <template v-else>
+                        <Link
+                            href="/login"
+                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                        >
+                            Iniciar sesión
+                        </Link>
+                        <a
+                            href="#contact"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                            Comenzar gratis
+                        </a>
+                    </template>
                 </div>
             </div>
         </header>

@@ -91,7 +91,7 @@ class EnsureTenantMemberTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_super_admin_bypasses_membership(): void
+    public function test_super_admin_is_redirected_away_from_customer_routes(): void
     {
         $user = User::factory()->create();
         Role::findOrCreate(UserRole::SuperAdmin->value, 'web');
@@ -99,8 +99,8 @@ class EnsureTenantMemberTest extends TestCase
         $user->assignRole(UserRole::SuperAdmin->value);
 
         $this->actingAs($user)
-            ->getJson('http://demo.montree.test/_test/member-only')
-            ->assertOk();
+            ->get('http://demo.montree.test/_test/member-only')
+            ->assertRedirect('http://demo.montree.test');
     }
 
     public function test_unauthenticated_gets_401(): void

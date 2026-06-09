@@ -9,6 +9,9 @@ use App\Http\Resources\Catalog\CatalogTourResource;
 use App\Models\Promotion;
 use App\Models\Tenant;
 use App\Models\Tour;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -16,9 +19,18 @@ use Inertia\Response;
 
 final class HomePageController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response|RedirectResponse
     {
         if (Tenant::current() === null) {
+            /** @var User|null $user */
+            $user = $request->user();
+
+            // WHY: the platform host is the super_admin's home — send them to their
+            // panel instead of the marketing landing.
+            if ($user?->isSuperAdmin()) {
+                return redirect('/super-admin/dashboard');
+            }
+
             return Inertia::render('Landing');
         }
 
