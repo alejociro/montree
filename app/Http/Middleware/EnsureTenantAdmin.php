@@ -28,8 +28,11 @@ final class EnsureTenantAdmin
             abort(403);
         }
 
-        setPermissionsTeamId($tenant->id);
-        $user->unsetRelation('roles');
+        if (! $user->isActiveMemberOf($tenant)) {
+            abort(403);
+        }
+
+        $user->loadRolesForTeam($tenant->id);
 
         if (! $user->hasAnyRole([UserRole::Admin->value, UserRole::Operator->value])) {
             abort(403);

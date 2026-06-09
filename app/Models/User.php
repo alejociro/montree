@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TenantMembershipStatus;
+use App\Enums\UserRole;
 use App\Notifications\Auth\TenantAwareResetPassword;
 use App\Notifications\Auth\TenantAwareVerifyEmail;
 use Database\Factories\UserFactory;
@@ -61,6 +63,46 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Resolve the membership pivot linking this user to the given tenant.
+     */
+    public function membershipFor(Tenant $tenant): ?TenantUser
+    {
+        /** @var TenantUser|null $membership */
+        $membership = TenantUser::query()
+            ->where('tenant_id', $tenant->getKey())
+            ->where('user_id', $this->getKey())
+            ->first();
+
+        return $membership;
+    }
+
+    public function isActiveMemberOf(Tenant $tenant): bool
+    {
+        return $this->membershipFor($tenant)?->status === TenantMembershipStatus::Active;
+    }
+
+    /**
+     * WHY: super_admin role lives on the sentinel team_id=0 (see RolesAndPermissionsSeeder
+     * + multi-tenancy.md §9.3), so resolving it must switch the permission team first.
+     */
+    public function isSuperAdmin(): bool
+    {
+        $this->loadRolesForTeam(0);
+
+        return $this->hasRole(UserRole::SuperAdmin->value);
+    }
+
+    /**
+     * Scope spatie/permission role resolution to a tenant team and reset the cached
+     * roles relation so the next role check reads the correct team.
+     */
+    public function loadRolesForTeam(int $teamId): void
+    {
+        setPermissionsTeamId($teamId);
+        $this->unsetRelation('roles');
     }
 
     public function sendEmailVerificationNotification(): void

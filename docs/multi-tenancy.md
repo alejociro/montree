@@ -218,9 +218,108 @@ montar el schema completo. Conviértelas en convención al construir features:
 
 ---
 
+## 10. Aislamiento de sesión y enforcement de membresía (2026-06-04)
+
+Hardening de seguridad P0 sobre el manejo de tenants. Reglas que ahora son
+invariantes del sistema:
+
+### 10.1 Sesión aislada por subdominio
+
+- `SESSION_DOMAIN` debe quedar en `null` (cookie host-only), NO en `.montree.app`/
+  `.montree.test`. Cada subdominio (= cada agencia) es una sesión independiente.
+- Razón: el producto es white-label. Una cookie compartida entre subdominios
+  autenticaba al usuario en agencias donde no es miembro (fuga de identidad de
+  marca).
+
+### 10.1.0 El panel del super_admin vive en el host de plataforma
+
+- El super_admin es el dueño de la plataforma: su panel `/super-admin/*` vive en
+  `montree.test` (= `config('montree.super_admin_host')`, default `montree.test`),
+  NO en un subdominio `admin.*`. Las rutas web están atadas a ese host vía
+  `Route::domain(config('montree.super_admin_host'))`.
+- `admin.montree.test` sigue siendo host reservado (no puede ser slug de tenant),
+  pero ya no aloja el panel.
+- Existe o no algún tenant, el panel de super_admin siempre está disponible: no
+  depende de que se cree ninguna agencia.
+
+### 10.1.1 Handoff de login cross-host
+
+- Como la sesión es host-only, un login exitoso en un host NO viaja a otro. Si el
+  super_admin inicia sesión **ya en el host de plataforma** (`montree.test`), no
+  hay handoff: redirige directo a `/super-admin/dashboard` (la cookie ya está en el
+  host correcto).
+- Si inicia sesión desde **otro host** (p.ej. un subdominio de tenant),
+  `LoginResponse` emite un **token de un solo uso** (`CrossHostLoginHandoff`, cache
+  TTL 60s) y redirige a `montree.test/auth/handoff/{token}`, que lo loguea en el
+  host de plataforma y lo manda a `/super-admin/dashboard`.
+- En el handoff cross-host se **destruye la sesión del host de origen** (`logout` +
+  `invalidate`): no debe quedar sesión activa donde no corresponde.
+- **El redirect cross-host se hace con `Inertia::location($url)`, NO con
+  `redirect()->away()`.** El form de login es un `<Form>` de Inertia (XHR) y no
+  puede seguir un redirect a otro origen como respuesta Inertia (falla en silencio,
+  igual que el P0-2 de la review). `Inertia::location` devuelve un 409 con
+  `X-Inertia-Location` para que el cliente haga una navegación completa al host
+  destino; para requests no-Inertia cae a un 302 normal.
+- `EnsureTenantMember` redirige al super_admin a `/` (en vez de renderizar la
+  página de customer) si llega a una ruta tenant-scoped — no es miembro de ningún
+  tenant.
+- El mismo patrón se reutiliza en F016 (onboarding) para el auto-login del fundador
+  en su subdominio.
+
+### 10.1.2 Login desde el host de plataforma enruta por membresía
+
+- Al iniciar sesión en `montree.test`, `LoginResponse` resuelve primero al
+  super_admin (→ `/super-admin/dashboard`, mismo host). Si no es super_admin,
+  resuelve la agencia del usuario por su membresía `active` (la más reciente por
+  `joined_at`) y hace handoff a ese subdominio, aterrizando según el rol:
+  admin/operator → `/admin/dashboard`, guide → `/guide/schedule`, customer → `/`.
+- Si el usuario no tiene membresía activa en ninguna agencia → error explícito.
+- TODO (multi-agencia): si un usuario pertenece a varias agencias activas, hoy se
+  elige la más reciente; un selector de agencia queda como follow-up (UX track 8).
+
+### 10.2 Membresía verificada en CADA request (no solo en login)
+
+- Middleware `tenant_member.only` (`EnsureTenantMember`) en todas las rutas
+  autenticadas tenant-scoped de customer (web y API). Verifica que el usuario sea
+  miembro `active` del tenant actual; si no, lo desloguea (web) o devuelve 403 (API).
+- `super_admin` hace bypass (es global, sin membresía).
+- `EnsureTenantAdmin` y `EnsureTenantGuide` también validan membresía `active`
+  ANTES del chequeo de rol. Un miembro suspendido pierde acceso de inmediato,
+  aunque conserve la fila de rol y tenga sesión abierta.
+
+### 10.3 El login NO crea membresía
+
+- `LoginResponse` ya no auto-enrola: un usuario que no es miembro de la agencia
+  recibe error con CTA a registro. Auto-enrolar permitía que una agencia cosechara
+  clientes de otra vía el formulario de login compartido.
+- Registro (`CreateNewUser`) sigue siendo el único punto que crea membresía customer.
+
+### 10.4 Autorización de la API por grupo
+
+- Las rutas `/api/v1/admin/*` se gatean con `tenant_admin.only` y las de guide con
+  `tenant_guide.only` a nivel de grupo. No depender solo de `Gate`/Form Request
+  por-controller (era inconsistente: varios endpoints admin no chequeaban rol).
+
+### 10.5 Helpers centralizados
+
+- El juggling de `setPermissionsTeamId()` + `unsetRelation('roles')` vive en
+  `User::loadRolesForTeam(int $teamId)` y `User::isSuperAdmin()`. Membresía:
+  `User::membershipFor(Tenant)` y `User::isActiveMemberOf(Tenant)`. No repetir
+  el patrón a mano en middlewares/resources.
+
 ## Changelog
 
 - `2026-05-17` — Versión inicial.
 - `2026-05-17` — Sección 9 añadida con decisiones de implementación efectiva
   (subdomain finder con hosts reservados, sentinel team_id=0 para super_admin,
   detalles de cada tabla y soft delete).
+- `2026-06-04` — Sección 10: hardening P0 (sesión aislada por subdominio,
+  `tenant_member.only`, enforcement de status mid-session, fin del auto-enrol en
+  login, gates de API por grupo, helpers centralizados en `User`).
+- `2026-06-08` — §10.1.1: handoff de login cross-host (`CrossHostLoginHandoff` +
+  ruta `auth.handoff`). Arregla la regresión del super_admin que, al entrar desde
+  `montree.test`, no llegaba al panel porque la cookie no cruzaba de host.
+- `2026-06-08` — §10.1.0 + §10.1.2: el panel de super_admin se mueve al host de
+  plataforma (`montree.super_admin_host = montree.test`). Login de super_admin en
+  `montree.test` va directo al panel (sin handoff ni `admin.montree.test`); login
+  de usuarios de tenant en la plataforma sigue haciendo handoff a su subdominio.

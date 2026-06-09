@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
     ArrowRight,
     BarChart3,
@@ -190,6 +190,10 @@ const faqs = [
     { q: '¿Puedo migrar desde Excel o WhatsApp?', a: 'Sí. Nuestro equipo te ayuda a migrar toda la información sin costo adicional durante los primeros 30 días.' },
     { q: '¿Qué pasa si quiero cancelar?', a: 'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima. Exportas tu información y listo.' },
 ];
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user ?? null);
+const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 </script>
 
 <template>
@@ -219,9 +223,38 @@ const faqs = [
                     <a href="#pricing">Precios</a>
                     <a href="#faq">FAQ</a>
                 </nav>
-                <div class="header-actions">
-                    <Link href="/login" class="nav-link">Iniciar sesión</Link>
-                    <a href="#pricing" class="btn-cta-sm">Comenzar gratis <ArrowRight class="size-3.5" /></a>
+                <div class="flex items-center gap-3">
+                    <template v-if="user">
+                        <Link
+                            v-if="isSuperAdmin"
+                            href="/super-admin/dashboard"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                            Ir al panel
+                        </Link>
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                        >
+                            Cerrar sesión
+                        </Link>
+                    </template>
+                    <template v-else>
+                        <Link
+                            href="/login"
+                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                        >
+                            Iniciar sesión
+                        </Link>
+                        <a
+                            href="#contact"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                            Comenzar gratis
+                        </a>
+                    </template>
                 </div>
             </div>
         </header>
