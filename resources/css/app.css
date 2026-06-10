@@ -91,24 +91,24 @@
 
 :root {
     /* MONTREE — nature palette (light) */
-    --background: #ffffff;
+    --background: #faf5ed;
     --foreground: #172e24;
-    --card: #f4f6f3;
+    --card: #ffffff;
     --card-foreground: #172e24;
     --popover: #ffffff;
     --popover-foreground: #172e24;
     --primary: #76846a;
     --primary-foreground: #ffffff;
-    --secondary: #edf0eb;
+    --secondary: #ede5d5;
     --secondary-foreground: #172e24;
-    --muted: #edf0eb;
+    --muted: #e8e0d0;
     --muted-foreground: #5a6655;
-    --accent: #e2e8df;
+    --accent: #d4c9b4;
     --accent-foreground: #2e4a38;
     --destructive: hsl(0 75% 52%);
     --destructive-foreground: #ffffff;
-    --border: #d1d8cc;
-    --input: #d1d8cc;
+    --border: #d4c9b4;
+    --input: #d4c9b4;
     --ring: #76846a;
     --chart-1: #76846a;
     --chart-2: #9aab8a;
