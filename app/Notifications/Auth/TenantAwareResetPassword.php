@@ -42,7 +42,7 @@ final class TenantAwareResetPassword extends ResetPassword
         $resetUrl = $this->resetUrl($notifiable);
 
         return (new MailMessage)
-            ->subject(__('Restablece tu contraseña en :tenant', ['tenant' => $this->tenantName]))
+            ->subject(__('Crea tu contraseña en :tenant', ['tenant' => $this->tenantName]))
             ->view('emails.reset-password', [
                 'tenantName' => $this->tenantName,
                 'primaryColor' => $this->primaryColor ?? '#16a34a',

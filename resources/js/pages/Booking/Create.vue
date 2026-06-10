@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ChevronDown, Minus, Plus } from 'lucide-vue-next';
-import { computed, reactive, ref, watch } from 'vue';
+import { Trash2, UserPlus } from 'lucide-vue-next';
+import { computed, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storeBooking } from '@/actions/App/Http/Controllers/Api/V1/BookingController';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
@@ -47,8 +47,6 @@ const props = defineProps<{
 
 const api = useApi();
 
-type TravelerMode = 'complete_now' | 'share_link';
-
 type TravelerInput = {
     full_name: string;
     phone: string;
@@ -67,12 +65,7 @@ const personal = reactive({
 
 const soyViajero = ref(false);
 
-const adults = ref(1);
-const children = ref(0);
-const babies = ref(0);
-const countersOpen = ref(false);
-
-const travelerMode = ref<TravelerMode>('share_link');
+const travelers = reactive<TravelerInput[]>([{ full_name: '', phone: '' }]);
 
 const emergency = reactive({
     name: '',
@@ -82,67 +75,25 @@ const emergency = reactive({
 const acceptedTerms = ref(false);
 const submitting = ref(false);
 
-const travelersCount = computed(
-    () => adults.value + children.value + babies.value,
-);
+const travelersCount = computed(() => travelers.length);
 
-const minAdults = computed(() => (soyViajero.value ? 1 : 0));
-
-const travelers = reactive<TravelerInput[]>([]);
-
-watch(travelerMode, (mode) => {
-    if (mode === 'complete_now') {
-        syncTravelers();
-    }
-});
-
-function syncTravelers(): void {
-    const count = travelersCount.value;
-
-    while (travelers.length < count) {
-        travelers.push({ full_name: '', phone: '' });
-    }
-
-    travelers.length = count;
-
-    if (soyViajero.value && travelers.length > 0) {
-        travelers[0].full_name = personal.full_name;
-        travelers[0].phone = personal.phone;
-    }
+function addTraveler(): void {
+    travelers.push({ full_name: '', phone: '' });
 }
 
-function increment(counter: 'adults' | 'children' | 'babies'): void {
-    if (counter === 'adults') {
-        adults.value += 1;
-    } else if (counter === 'children') {
-        children.value += 1;
-    } else {
-        babies.value += 1;
+function removeTraveler(index: number): void {
+    if (travelers.length > 1) {
+        travelers.splice(index, 1);
     }
-
-    syncTravelers();
-}
-
-function decrement(counter: 'adults' | 'children' | 'babies'): void {
-    if (counter === 'adults' && adults.value > minAdults.value) {
-        adults.value -= 1;
-    } else if (counter === 'children' && children.value > 0) {
-        children.value -= 1;
-    } else if (counter === 'babies' && babies.value > 0) {
-        babies.value -= 1;
-    }
-
-    syncTravelers();
 }
 
 function onSoyViajeroChange(checked: boolean): void {
     soyViajero.value = checked;
 
-    if (checked && adults.value < 1) {
-        adults.value = 1;
+    if (checked && travelers.length > 0) {
+        travelers[0].full_name = personal.full_name;
+        travelers[0].phone = personal.phone;
     }
-
-    syncTravelers();
 }
 
 const formattedPrice = computed(() =>
@@ -151,22 +102,6 @@ const formattedPrice = computed(() =>
         currency: props.tourDate.currency,
         maximumFractionDigits: 0,
     }).format(Number(props.tourDate.effective_price)),
-);
-
-const summaryLabel = computed(() => {
-    const parts: string[] = [];
-    parts.push(`${adults.value} Adulto${adults.value === 1 ? '' : 's'}`);
-    parts.push(`${children.value} Niño${children.value === 1 ? '' : 's'}`);
-
-    if (babies.value > 0) {
-        parts.push(`${babies.value} Bebé${babies.value === 1 ? '' : 's'}`);
-    }
-
-    return parts.join(' - ');
-});
-
-const emergencySectionNumber = computed(() =>
-    travelerMode.value === 'complete_now' ? 3 + travelersCount.value : 3,
 );
 
 function validateLocally(): string | null {
@@ -188,8 +123,8 @@ function validateLocally(): string | null {
         }
     }
 
-    if (travelersCount.value < 1) {
-        return 'Debes seleccionar al menos un viajero.';
+    if (travelers.some((t) => !t.full_name.trim())) {
+        return 'El nombre de todos los viajeros es obligatorio.';
     }
 
     if (!emergency.name.trim() || !emergency.phone.trim()) {
@@ -209,7 +144,10 @@ function buildPayload(): Record<string, unknown> {
         travelers_count: travelersCount.value,
         emergency_contact_name: emergency.name,
         emergency_contact_phone: emergency.phone,
-        traveler_mode: travelerMode.value,
+        travelers: travelers.map((t) => ({
+            full_name: t.full_name,
+            phone: t.phone,
+        })),
     };
 
     if (props.prefill === null) {
@@ -217,13 +155,6 @@ function buildPayload(): Record<string, unknown> {
         payload.email_confirmation = personal.email_confirmation;
         payload.full_name = personal.full_name;
         payload.phone = personal.phone;
-    }
-
-    if (travelerMode.value === 'complete_now') {
-        payload.travelers = travelers.map((traveler) => ({
-            full_name: traveler.full_name,
-            phone: traveler.phone,
-        }));
     }
 
     return payload;
@@ -410,242 +341,67 @@ async function submit(): Promise<void> {
                         </h2>
                     </div>
 
+                    <div class="space-y-3">
+                        <div
+                            v-for="(traveler, index) in travelers"
+                            :key="index"
+                            class="rounded-lg border border-border bg-card p-4"
+                        >
+                            <div
+                                class="mb-3 flex items-center justify-between"
+                            >
+                                <p
+                                    class="text-sm font-medium text-foreground"
+                                >
+                                    Viajero {{ index + 1 }}
+                                </p>
+                                <button
+                                    v-if="travelers.length > 1"
+                                    type="button"
+                                    class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                                    :aria-label="`Eliminar viajero ${index + 1}`"
+                                    @click="removeTraveler(index)"
+                                >
+                                    <Trash2 class="size-4" />
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <Label :for="`traveler-name-${index}`">
+                                        Nombres y apellidos *
+                                    </Label>
+                                    <Input
+                                        :id="`traveler-name-${index}`"
+                                        v-model="traveler.full_name"
+                                        type="text"
+                                        placeholder="Como aparece en tu documento"
+                                        required
+                                    />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <Label :for="`traveler-phone-${index}`">
+                                        Número celular
+                                    </Label>
+                                    <Input
+                                        :id="`traveler-phone-${index}`"
+                                        v-model="traveler.phone"
+                                        type="tel"
+                                        placeholder="+57 300 000 0000"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button
                         type="button"
-                        class="flex w-full items-center justify-between rounded-md border border-border bg-card px-4 py-3 text-left text-sm text-foreground transition hover:border-muted-foreground/40"
-                        :aria-expanded="countersOpen"
-                        @click="countersOpen = !countersOpen"
+                        class="flex items-center gap-2 text-sm font-medium text-primary transition hover:text-primary/80"
+                        @click="addTraveler"
                     >
-                        <span>{{ summaryLabel }}</span>
-                        <ChevronDown
-                            class="size-4 text-muted-foreground transition"
-                            :class="countersOpen ? 'rotate-180' : ''"
-                        />
+                        <UserPlus class="size-4" />
+                        Agregar viajero
                     </button>
-
-                    <div
-                        v-if="countersOpen"
-                        class="space-y-3 rounded-md border border-border bg-card p-4"
-                    >
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-foreground">
-                                    Adultos
-                                </p>
-                                <p class="text-xs text-muted-foreground">
-                                    Edad: 13 años o más
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted disabled:opacity-40"
-                                    :disabled="adults <= minAdults"
-                                    aria-label="Quitar adulto"
-                                    @click="decrement('adults')"
-                                >
-                                    <Minus class="size-4" />
-                                </button>
-                                <span
-                                    class="w-6 text-center text-sm font-medium"
-                                >
-                                    {{ adults }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
-                                    aria-label="Agregar adulto"
-                                    @click="increment('adults')"
-                                >
-                                    <Plus class="size-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-foreground">
-                                    Niños
-                                </p>
-                                <p class="text-xs text-muted-foreground">
-                                    Edades: 2 - 12
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted disabled:opacity-40"
-                                    :disabled="children <= 0"
-                                    aria-label="Quitar niño"
-                                    @click="decrement('children')"
-                                >
-                                    <Minus class="size-4" />
-                                </button>
-                                <span
-                                    class="w-6 text-center text-sm font-medium"
-                                >
-                                    {{ children }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
-                                    aria-label="Agregar niño"
-                                    @click="increment('children')"
-                                >
-                                    <Plus class="size-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-foreground">
-                                    Bebés
-                                </p>
-                                <p class="text-xs text-muted-foreground">
-                                    Menos de 2 años
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted disabled:opacity-40"
-                                    :disabled="babies <= 0"
-                                    aria-label="Quitar bebé"
-                                    @click="decrement('babies')"
-                                >
-                                    <Minus class="size-4" />
-                                </button>
-                                <span
-                                    class="w-6 text-center text-sm font-medium"
-                                >
-                                    {{ babies }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="flex size-8 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
-                                    aria-label="Agregar bebé"
-                                    @click="increment('babies')"
-                                >
-                                    <Plus class="size-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <button
-                            type="button"
-                            class="flex w-full items-start justify-between gap-3 rounded-md border px-4 py-3 text-left transition"
-                            :class="
-                                travelerMode === 'complete_now'
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border hover:border-muted-foreground/40'
-                            "
-                            @click="travelerMode = 'complete_now'"
-                        >
-                            <span class="space-y-0.5">
-                                <span
-                                    class="block text-sm font-medium text-foreground"
-                                >
-                                    Completar ahora todos los datos de los
-                                    viajeros
-                                </span>
-                                <span
-                                    class="block text-xs text-muted-foreground"
-                                >
-                                    Tu reserva quedará lista de inmediato
-                                </span>
-                            </span>
-                            <span
-                                v-if="travelerMode === 'complete_now'"
-                                class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                                aria-hidden="true"
-                            >
-                                &check;
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="flex w-full items-start justify-between gap-3 rounded-md border px-4 py-3 text-left transition"
-                            :class="
-                                travelerMode === 'share_link'
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border hover:border-muted-foreground/40'
-                            "
-                            @click="travelerMode = 'share_link'"
-                        >
-                            <span class="space-y-0.5">
-                                <span
-                                    class="block text-sm font-medium text-foreground"
-                                >
-                                    Solo completar mis datos y pagar ahora
-                                </span>
-                                <span
-                                    class="block text-xs text-muted-foreground"
-                                >
-                                    Te enviaremos un enlace para que compartas
-                                    con los demás viajeros para que llenen su
-                                    información antes del viaje.
-                                </span>
-                            </span>
-                            <span
-                                v-if="travelerMode === 'share_link'"
-                                class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                                aria-hidden="true"
-                            >
-                                &check;
-                            </span>
-                        </button>
-                    </div>
                 </section>
-
-                <!-- Dynamic traveler sections -->
-                <template v-if="travelerMode === 'complete_now'">
-                    <section
-                        v-for="(traveler, index) in travelers"
-                        :key="index"
-                        class="space-y-4"
-                    >
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background"
-                            >
-                                {{ index + 3 }}
-                            </span>
-                            <h2 class="text-lg font-semibold text-foreground">
-                                Viajero {{ index + 1 }}
-                            </h2>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <Label :for="`traveler-name-${index}`">
-                                    Nombres y apellidos *
-                                </Label>
-                                <Input
-                                    :id="`traveler-name-${index}`"
-                                    v-model="traveler.full_name"
-                                    type="text"
-                                    required
-                                />
-                            </div>
-                            <div class="space-y-1.5">
-                                <Label :for="`traveler-phone-${index}`">
-                                    Número celular *
-                                </Label>
-                                <Input
-                                    :id="`traveler-phone-${index}`"
-                                    v-model="traveler.phone"
-                                    type="tel"
-                                    placeholder="+57 300 000 0000"
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </section>
-                </template>
 
                 <!-- Emergency contact -->
                 <section class="space-y-4">
@@ -653,7 +409,7 @@ async function submit(): Promise<void> {
                         <span
                             class="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background"
                         >
-                            {{ emergencySectionNumber }}
+                            3
                         </span>
                         <h2 class="text-lg font-semibold text-foreground">
                             Contacto de emergencia
