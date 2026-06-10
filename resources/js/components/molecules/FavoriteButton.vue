@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { Heart } from 'lucide-vue-next';
+import type { HTMLAttributes } from 'vue';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 
-const props = defineProps<{ tourId: number; initialFavorite: boolean }>();
+const props = defineProps<{
+    tourId: number;
+    initialFavorite: boolean;
+    class?: HTMLAttributes['class'];
+}>();
 
 const isFavorite = ref(props.initialFavorite);
 const submitting = ref(false);
@@ -43,6 +48,7 @@ function toggle() {
         type="button"
         variant="outline"
         size="icon"
+        :class="props.class"
         :aria-pressed="isFavorite"
         :aria-label="ariaLabel"
         @click="toggle"

@@ -85,6 +85,8 @@ final class CreateBookingAction
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone ?? null,
+                    'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+                    'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
                 ],
                 'expires_at' => now()->addMinutes(self::HOLD_MINUTES),
             ]);

@@ -53,11 +53,14 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/{slug}/reviews', [PublicReviewController::class, 'index'])->name('api.v1.tours.reviews.index');
 });
 
+Route::middleware('throttle:30,1')->group(function (): void {
+    Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
+});
+
 Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
-    Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
     Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
 
     Route::get('account/profile', [AccountController::class, 'profile'])->name('api.v1.account.profile');

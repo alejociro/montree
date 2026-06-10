@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import TourCard from '@/components/molecules/TourCard.vue';
 import { Skeleton } from '@/components/ui/skeleton';
-import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import type { CatalogTour } from '@/types/catalog';
 
 type Props = {
@@ -18,24 +18,20 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-    <div
-        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-    >
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <template v-if="loading">
             <div
                 v-for="index in skeletonCount"
                 :key="`skeleton-${index}`"
-                class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
+                class="flex flex-col gap-3 overflow-hidden rounded-xl bg-card shadow-sm"
                 data-testid="tour-grid-skeleton"
             >
-                <Skeleton class="aspect-[4/3] w-full rounded-lg" />
-                <Skeleton class="h-4 w-2/3" />
-                <Skeleton class="h-3 w-full" />
-                <div class="flex gap-2">
-                    <Skeleton class="h-3 w-16" />
-                    <Skeleton class="h-3 w-12" />
+                <Skeleton class="aspect-[3/4] w-full rounded-none" />
+                <div class="flex flex-col gap-2 p-3">
+                    <Skeleton class="h-4 w-3/4" />
+                    <Skeleton class="h-3 w-full" />
+                    <Skeleton class="mt-2 h-4 w-24" />
                 </div>
-                <Skeleton class="mt-2 h-5 w-24" />
             </div>
         </template>
         <template v-else>

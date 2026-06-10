@@ -8,6 +8,7 @@ use App\Http\Resources\Catalog\PublicTourResource;
 use App\Models\Booking;
 use App\Models\TourDate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -28,6 +29,8 @@ final class BookingPagesController extends Controller
 
         $requireTravelers = (bool) ($tourDate->tour->tenant->configuration->require_traveler_details ?? false);
 
+        $authUser = $request->user();
+
         return Inertia::render('Booking/Create', [
             'tour' => (new PublicTourResource($tourDate->tour->load(['images', 'category', 'itineraries', 'dates' => fn ($q) => $q->where('id', $tourDateId)])))->resolve($request),
             'tourDate' => [
@@ -40,6 +43,11 @@ final class BookingPagesController extends Controller
                 'currency' => $tourDate->tour->currency,
             ],
             'requireTravelers' => $requireTravelers,
+            'prefill' => $authUser !== null ? [
+                'email' => $authUser->email,
+                'full_name' => $authUser->name,
+                'phone' => $authUser->phone ?? '',
+            ] : null,
         ]);
     }
 
@@ -48,23 +56,42 @@ final class BookingPagesController extends Controller
         $booking = Booking::query()
             ->where('booking_number', $bookingNumber)
             ->where('user_id', $request->user()->id)
-            ->with(['tour', 'tourDate', 'travelers', 'promotion'])
+            ->with(['tour.coverImage', 'tourDate', 'travelers', 'promotion'])
             ->first();
 
         if ($booking === null) {
             throw new NotFoundHttpException('Booking not found.');
         }
 
+        $coverImageUrl = null;
+        if ($booking->tour->coverImage !== null) {
+            $coverImageUrl = str_starts_with((string) $booking->tour->coverImage->path, 'http')
+                ? $booking->tour->coverImage->path
+                : Storage::disk('public')->url($booking->tour->coverImage->path);
+        }
+
         return Inertia::render('Booking/Show', [
             'booking' => [
                 'booking_number' => $booking->booking_number,
                 'status' => $booking->status->value,
+                'travelers_count' => $booking->travelers_count,
+                'subtotal' => $booking->subtotal,
+                'discount_amount' => $booking->discount_amount,
                 'total_amount' => $booking->total_amount,
+                'paid_amount' => $booking->paid_amount,
                 'currency' => $booking->currency,
                 'expires_at' => $booking->expires_at?->toIso8601String(),
-                'tour_name' => $booking->tour->name,
-                'starts_at' => $booking->tourDate->starts_at->toIso8601String(),
-                'travelers_count' => $booking->travelers_count,
+                'contact_snapshot' => $booking->contact_snapshot,
+                'tour' => [
+                    'name' => $booking->tour->name,
+                    'slug' => $booking->tour->slug,
+                    'meeting_point' => $booking->tour->meeting_point,
+                    'cover_image_url' => $coverImageUrl,
+                ],
+                'tour_date' => [
+                    'starts_at' => $booking->tourDate->starts_at->toIso8601String(),
+                    'ends_at' => $booking->tourDate->ends_at?->toIso8601String(),
+                ],
             ],
         ]);
     }

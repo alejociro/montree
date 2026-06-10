@@ -13,7 +13,7 @@ final class StoreBookingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Tenant::current() !== null && $this->user() !== null;
+        return Tenant::current() !== null;
     }
 
     /**
@@ -21,18 +21,31 @@ final class StoreBookingRequest extends FormRequest
      */
     public function rules(): array
     {
-        $requireTravelers = (bool) (Tenant::current()?->configuration?->require_traveler_details ?? false);
+        $isGuest = $this->user() === null;
 
         return [
+            // Guest personal info (required when not authenticated)
+            'email' => [$isGuest ? 'required' : 'nullable', 'email', 'max:255'],
+            'email_confirmation' => [$isGuest ? 'required' : 'nullable', 'string', 'max:255', 'same:email'],
+            'full_name' => [$isGuest ? 'required' : 'nullable', 'string', 'max:120'],
+            'phone' => [$isGuest ? 'required' : 'nullable', 'string', 'max:30'],
+
+            // Booking info
             'tour_date_id' => ['required', 'integer', 'exists:tour_dates,id'],
             'travelers_count' => ['required', 'integer', 'min:1', 'max:50'],
             'promotion_code' => ['nullable', 'string', 'max:40'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
-            'travelers' => [$requireTravelers ? 'required' : 'nullable', 'array'],
+
+            // Emergency contact
+            'emergency_contact_name' => ['nullable', 'string', 'max:120'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
+
+            // Traveler mode: complete_now = fill all travelers inline, share_link = send link later
+            'traveler_mode' => ['nullable', 'string', 'in:complete_now,share_link'],
+
+            // Traveler details (when traveler_mode = complete_now)
+            'travelers' => ['nullable', 'array'],
             'travelers.*.full_name' => ['required_with:travelers', 'string', 'max:120'],
-            'travelers.*.document_type' => ['nullable', 'string', 'max:20'],
-            'travelers.*.document_number' => ['nullable', 'string', 'max:40'],
-            'travelers.*.email' => ['nullable', 'email', 'max:255'],
             'travelers.*.phone' => ['nullable', 'string', 'max:30'],
         ];
     }

@@ -1,21 +1,11 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
-import {
-    ArrowUpRight,
-    MapPin,
-    Mountain,
-    Search,
-    Star,
-    Users,
-} from 'lucide-vue-next';
+import { ArrowRight, Search, Star } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useTenant } from '@/composables/useTenant';
 import PublicLayout from '@/layouts/PublicLayout.vue';
-import { register } from '@/routes';
 import { index as catalogIndex } from '@/routes/catalog';
 
 defineOptions({ layout: PublicLayout });
@@ -76,10 +66,6 @@ function formatPrice(amount: string, code: string): string {
     }).format(Number(amount));
 }
 
-function renderStars(average: string): number {
-    return Math.round(Number(average));
-}
-
 async function handleNewsletterSubscribe(): Promise<void> {
     if (!newsletterEmail.value.trim() || newsletterSubmitting.value) {
         return;
@@ -114,552 +100,495 @@ async function handleNewsletterSubscribe(): Promise<void> {
 </script>
 
 <template>
-    <Head :title="displayName" />
+    <div>
+        <Head :title="displayName" />
 
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden">
-        <div v-if="configuration?.hero_image_url" class="absolute inset-0">
+        <!-- Hero Section -->
+        <section class="relative min-h-[60vh] overflow-hidden">
             <img
-                :src="configuration.hero_image_url"
+                :src="configuration?.hero_image_url ?? 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop'"
                 alt=""
-                class="size-full object-cover"
+                class="absolute inset-0 size-full object-cover"
             />
-            <div class="absolute inset-0 bg-black/50" />
-        </div>
-        <div
-            v-else
-            class="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60"
-        />
-        <div
-            class="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36"
-        >
-            <div class="max-w-2xl">
+            <div class="absolute inset-0 bg-[#172e24]/60" />
+
+            <div
+                class="relative z-10 mx-auto flex min-h-[60vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6 lg:px-8"
+            >
                 <h1
-                    class="text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl"
+                    class="max-w-3xl text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl"
                 >
                     {{
                         configuration?.tagline ||
                         'Encuentra tu próxima aventura'
                     }}
                 </h1>
-                <p class="mt-4 text-lg text-primary-foreground/80 sm:text-xl">
+                <p
+                    class="mt-4 max-w-2xl text-base text-white/85 sm:text-lg lg:text-xl"
+                >
                     {{
                         configuration?.description ||
                         'Explora el mundo con nosotros'
                     }}
                 </p>
+
                 <form
-                    class="mt-8 flex w-full max-w-lg gap-2"
+                    class="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-white/95 p-2 shadow-xl ring-1 ring-black/5 backdrop-blur"
                     @submit.prevent="handleSearch"
                 >
                     <div class="relative flex-1">
                         <Search
-                            class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
                         />
-                        <Input
+                        <label class="sr-only" for="hero-search"
+                            >Buscar tours</label
+                        >
+                        <input
+                            id="hero-search"
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Buscar tours, experiencias..."
-                            class="bg-background pl-9"
+                            placeholder="Buscar tours, experiencias o destinos..."
+                            class="w-full rounded-full border-0 bg-transparent py-2.5 pr-4 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                         />
                     </div>
-                    <Button type="submit">
+                    <Button type="submit" class="rounded-full px-6">
                         Buscar
-                        <ArrowUpRight class="ml-1 size-4" />
+                        <ArrowRight class="ml-1 size-4" />
                     </Button>
                 </form>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Featured Tours Section -->
-    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div class="flex items-end justify-between">
-            <div>
-                <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    Tours
-                </h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Nuestras experiencias más reservadas este mes
-                </p>
-            </div>
-            <Link
-                :href="catalogIndex().url"
-                class="flex items-center gap-1 text-sm font-medium text-primary transition hover:underline"
-            >
-                Ver todos
-                <ArrowUpRight class="size-4" />
-            </Link>
-        </div>
-
-        <Deferred data="featuredTours">
-            <template #fallback>
-                <div
-                    class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                >
-                    <div
-                        v-for="n in 4"
-                        :key="`ft-skel-${n}`"
-                        class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
+        <!-- Featured Tours Section -->
+        <section class="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <h2
+                        class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                     >
-                        <div
-                            class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted"
-                        />
-                        <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                        <div
-                            class="h-3 w-full animate-pulse rounded bg-muted"
-                        />
-                        <div class="flex gap-2">
-                            <div
-                                class="h-3 w-16 animate-pulse rounded bg-muted"
-                            />
-                            <div
-                                class="h-3 w-12 animate-pulse rounded bg-muted"
-                            />
-                        </div>
-                        <div
-                            class="mt-2 h-5 w-24 animate-pulse rounded bg-muted"
-                        />
-                    </div>
+                        Tours
+                    </h2>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Nuestras experiencias más reservadas este mes
+                    </p>
                 </div>
-            </template>
-
-            <div
-                class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-            >
-                <article
-                    v-for="tour in featuredTours"
-                    :key="tour.id"
-                    class="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:shadow-md"
+                <Link
+                    :href="catalogIndex().url"
+                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
                 >
-                    <Link
-                        :href="`/tours/${tour.slug}`"
-                        class="relative aspect-[4/3] overflow-hidden"
-                    >
-                        <img
-                            v-if="tour.cover_image_url"
-                            :src="tour.cover_image_url"
-                            :alt="tour.name"
-                            class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                        <div
-                            v-else
-                            class="flex size-full items-center justify-center bg-muted"
-                        >
-                            <span class="text-xs text-muted-foreground"
-                                >Sin imagen</span
-                            >
-                        </div>
-                    </Link>
+                    Ver todos
+                    <ArrowRight class="size-4" />
+                </Link>
+            </div>
+
+            <Deferred data="featuredTours">
+                <template #fallback>
                     <div
-                        v-if="isAuthenticated"
-                        class="absolute top-2 right-2 z-10"
+                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
                     >
-                        <FavoriteButton
-                            :tour-id="tour.id"
-                            :initial-favorite="tour.is_favorite"
-                        />
-                    </div>
-                    <div class="flex flex-1 flex-col gap-2 p-3">
-                        <Link
-                            :href="`/tours/${tour.slug}`"
-                            class="text-sm leading-tight font-semibold text-foreground transition hover:text-primary"
+                        <div
+                            v-for="n in 4"
+                            :key="`ft-skel-${n}`"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
                         >
-                            {{ tour.name }}
-                        </Link>
-                        <Badge
-                            v-if="tour.category"
-                            variant="secondary"
-                            class="w-fit text-xs"
-                        >
-                            {{ tour.category.name }}
-                        </Badge>
-                        <div class="mt-auto flex items-center justify-between">
-                            <span class="text-base font-bold text-foreground">
-                                {{
-                                    formatPrice(tour.base_price, tour.currency)
-                                }}
-                            </span>
                             <div
-                                v-if="tour.rating_count > 0"
-                                class="flex items-center gap-0.5"
-                                :title="`${tour.rating_average} de 5 (${tour.rating_count})`"
-                            >
-                                <Star
-                                    v-for="s in 5"
-                                    :key="s"
-                                    :class="[
-                                        'size-3.5',
-                                        s <= renderStars(tour.rating_average)
-                                            ? 'fill-amber-400 text-amber-400'
-                                            : 'text-muted-foreground/40',
-                                    ]"
+                                class="aspect-[4/3] w-full animate-pulse rounded-xl bg-muted"
+                            />
+                            <div
+                                class="mt-1 h-4 w-2/3 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="h-3 w-1/2 animate-pulse rounded bg-muted"
+                            />
+                            <div class="mt-1 flex items-center justify-between">
+                                <div
+                                    class="h-5 w-24 animate-pulse rounded bg-muted"
+                                />
+                                <div
+                                    class="h-3 w-14 animate-pulse rounded bg-muted"
                                 />
                             </div>
                         </div>
                     </div>
-                </article>
-            </div>
-        </Deferred>
-    </section>
+                </template>
 
-    <!-- Suggested Tours Section -->
-    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div class="flex items-end justify-between">
-            <div>
-                <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+                <div
+                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                >
+                    <article
+                        v-for="tour in featuredTours"
+                        :key="tour.id"
+                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                        <Link
+                            :href="`/tours/${tour.slug}`"
+                            class="relative block aspect-[4/3] overflow-hidden rounded-xl"
+                        >
+                            <img
+                                v-if="tour.cover_image_url"
+                                :src="tour.cover_image_url"
+                                :alt="tour.name"
+                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center bg-muted"
+                            >
+                                <span class="text-xs text-muted-foreground"
+                                    >Sin imagen</span
+                                >
+                            </div>
+                        </Link>
+                        <div
+                            v-if="isAuthenticated"
+                            class="absolute top-5 right-5 z-10"
+                        >
+                            <FavoriteButton
+                                :tour-id="tour.id"
+                                :initial-favorite="tour.is_favorite"
+                                class="size-9 rounded-full border-0 bg-white/90 text-foreground shadow-sm backdrop-blur hover:bg-white"
+                            />
+                        </div>
+                        <div class="flex flex-1 flex-col gap-1 px-1 pt-4 pb-2">
+                            <Link
+                                :href="`/tours/${tour.slug}`"
+                                class="text-base leading-tight font-bold text-foreground transition group-hover:text-primary"
+                            >
+                                {{ tour.name }}
+                            </Link>
+                            <p
+                                v-if="tour.category"
+                                class="text-xs text-muted-foreground"
+                            >
+                                {{ tour.category.name }}
+                            </p>
+                            <div
+                                class="mt-3 flex items-center justify-between gap-2"
+                            >
+                                <span
+                                    class="text-base font-bold text-foreground"
+                                >
+                                    {{
+                                        formatPrice(
+                                            tour.base_price,
+                                            tour.currency,
+                                        )
+                                    }}
+                                </span>
+                                <span
+                                    v-if="tour.rating_count > 0"
+                                    class="flex items-center gap-1 text-xs font-medium text-muted-foreground"
+                                    :title="`${tour.rating_average} de 5`"
+                                >
+                                    <Star
+                                        class="size-3.5 fill-amber-400 text-amber-400"
+                                    />
+                                    {{ Number(tour.rating_average).toFixed(1) }}
+                                    <span class="text-muted-foreground/70"
+                                        >({{ tour.rating_count }})</span
+                                    >
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </Deferred>
+        </section>
+
+        <!-- Suggested Tours Section -->
+        <section class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+            <div class="flex items-end justify-between gap-4">
+                <h2
+                    class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                >
                     Sugerencias para ti
                 </h2>
+                <Link
+                    :href="catalogIndex().url"
+                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
+                >
+                    Ver todos
+                    <ArrowRight class="size-4" />
+                </Link>
             </div>
-            <Link
-                :href="catalogIndex().url"
-                class="flex items-center gap-1 text-sm font-medium text-primary transition hover:underline"
-            >
-                Ver todos
-                <ArrowUpRight class="size-4" />
-            </Link>
-        </div>
 
-        <Deferred data="suggestedTours">
-            <template #fallback>
-                <div
-                    class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                >
+            <Deferred data="suggestedTours">
+                <template #fallback>
                     <div
-                        v-for="n in 4"
-                        :key="`sg-skel-${n}`"
-                        class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
+                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
                     >
                         <div
-                            class="aspect-[4/3] w-full animate-pulse rounded-lg bg-muted"
-                        />
-                        <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                        <div
-                            class="h-3 w-full animate-pulse rounded bg-muted"
-                        />
-                        <div class="flex gap-2">
+                            v-for="n in 4"
+                            :key="`sg-skel-${n}`"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                        >
                             <div
-                                class="h-3 w-16 animate-pulse rounded bg-muted"
+                                class="aspect-[4/3] w-full animate-pulse rounded-xl bg-muted"
                             />
                             <div
-                                class="h-3 w-12 animate-pulse rounded bg-muted"
+                                class="mt-1 h-4 w-2/3 animate-pulse rounded bg-muted"
                             />
-                        </div>
-                        <div
-                            class="mt-2 h-5 w-24 animate-pulse rounded bg-muted"
-                        />
-                    </div>
-                </div>
-            </template>
-
-            <div
-                class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-            >
-                <article
-                    v-for="tour in suggestedTours"
-                    :key="tour.id"
-                    class="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:shadow-md"
-                >
-                    <Link
-                        :href="`/tours/${tour.slug}`"
-                        class="relative aspect-[4/3] overflow-hidden"
-                    >
-                        <img
-                            v-if="tour.cover_image_url"
-                            :src="tour.cover_image_url"
-                            :alt="tour.name"
-                            class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                        <div
-                            v-else
-                            class="flex size-full items-center justify-center bg-muted"
-                        >
-                            <span class="text-xs text-muted-foreground"
-                                >Sin imagen</span
-                            >
-                        </div>
-                    </Link>
-                    <div
-                        v-if="isAuthenticated"
-                        class="absolute top-2 right-2 z-10"
-                    >
-                        <FavoriteButton
-                            :tour-id="tour.id"
-                            :initial-favorite="tour.is_favorite"
-                        />
-                    </div>
-                    <div class="flex flex-1 flex-col gap-2 p-3">
-                        <Link
-                            :href="`/tours/${tour.slug}`"
-                            class="text-sm leading-tight font-semibold text-foreground transition hover:text-primary"
-                        >
-                            {{ tour.name }}
-                        </Link>
-                        <Badge
-                            v-if="tour.category"
-                            variant="secondary"
-                            class="w-fit text-xs"
-                        >
-                            {{ tour.category.name }}
-                        </Badge>
-                        <div class="mt-auto flex items-center justify-between">
-                            <span class="text-base font-bold text-foreground">
-                                {{
-                                    formatPrice(tour.base_price, tour.currency)
-                                }}
-                            </span>
                             <div
-                                v-if="tour.rating_count > 0"
-                                class="flex items-center gap-0.5"
-                                :title="`${tour.rating_average} de 5 (${tour.rating_count})`"
-                            >
-                                <Star
-                                    v-for="s in 5"
-                                    :key="s"
-                                    :class="[
-                                        'size-3.5',
-                                        s <= renderStars(tour.rating_average)
-                                            ? 'fill-amber-400 text-amber-400'
-                                            : 'text-muted-foreground/40',
-                                    ]"
+                                class="h-3 w-1/2 animate-pulse rounded bg-muted"
+                            />
+                            <div class="mt-1 flex items-center justify-between">
+                                <div
+                                    class="h-5 w-24 animate-pulse rounded bg-muted"
+                                />
+                                <div
+                                    class="h-3 w-14 animate-pulse rounded bg-muted"
                                 />
                             </div>
                         </div>
                     </div>
-                </article>
-            </div>
-        </Deferred>
-    </section>
+                </template>
 
-    <!-- Promotions Section -->
-    <section
-        v-if="promotions === undefined || (promotions?.length ?? 0) > 0"
-        class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
-    >
-        <div class="flex items-end justify-between">
-            <div>
-                <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    Promociones especiales
-                </h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Aprovecha nuestras ofertas de temporada
-                </p>
-            </div>
-            <Link
-                :href="catalogIndex().url"
-                class="flex items-center gap-1 text-sm font-medium text-primary transition hover:underline"
-            >
-                Ver todos
-                <ArrowUpRight class="size-4" />
-            </Link>
-        </div>
-
-        <Deferred data="promotions">
-            <template #fallback>
                 <div
-                    class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
                 >
-                    <div
-                        v-for="n in 3"
-                        :key="`promo-skel-${n}`"
-                        class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3"
+                    <article
+                        v-for="tour in suggestedTours"
+                        :key="tour.id"
+                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                     >
-                        <div
-                            class="aspect-[16/9] w-full animate-pulse rounded-lg bg-muted"
-                        />
-                        <div class="h-5 w-1/2 animate-pulse rounded bg-muted" />
-                        <div
-                            class="h-3 w-full animate-pulse rounded bg-muted"
-                        />
-                        <div
-                            class="mt-2 h-9 w-32 animate-pulse rounded bg-muted"
-                        />
-                    </div>
-                </div>
-            </template>
-
-            <div
-                v-if="(promotions?.length ?? 0) > 0"
-                class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            >
-                <article
-                    v-for="promo in promotions"
-                    :key="promo.id"
-                    class="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:shadow-md"
-                >
-                    <div class="relative aspect-[16/9] overflow-hidden">
-                        <img
-                            v-if="promo.cover_image_url"
-                            :src="promo.cover_image_url"
-                            :alt="promo.name"
-                            class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                        <div
-                            v-else
-                            class="flex size-full items-center justify-center bg-muted"
+                        <Link
+                            :href="`/tours/${tour.slug}`"
+                            class="relative block aspect-[4/3] overflow-hidden rounded-xl"
                         >
-                            <span class="text-xs text-muted-foreground"
-                                >Sin imagen</span
+                            <img
+                                v-if="tour.cover_image_url"
+                                :src="tour.cover_image_url"
+                                :alt="tour.name"
+                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center bg-muted"
                             >
-                        </div>
-                        <Badge
-                            class="absolute top-2 left-2 bg-destructive text-destructive-foreground"
+                                <span class="text-xs text-muted-foreground"
+                                    >Sin imagen</span
+                                >
+                            </div>
+                        </Link>
+                        <div
+                            v-if="isAuthenticated"
+                            class="absolute top-5 right-5 z-10"
                         >
-                            {{ promo.discount_label }} OFF
-                        </Badge>
-                    </div>
-                    <div class="flex flex-1 flex-col gap-2 p-4">
-                        <h3 class="text-base font-semibold text-foreground">
-                            {{ promo.name }}
-                        </h3>
-                        <p
-                            v-if="promo.description"
-                            class="line-clamp-2 text-sm text-muted-foreground"
-                        >
-                            {{ promo.description }}
-                        </p>
-                        <div class="mt-auto pt-2">
-                            <Button v-if="promo.tour" as-child size="sm">
-                                <Link :href="`/tours/${promo.tour.slug}`">
-                                    Comprar ahora
-                                </Link>
-                            </Button>
+                            <FavoriteButton
+                                :tour-id="tour.id"
+                                :initial-favorite="tour.is_favorite"
+                                class="size-9 rounded-full border-0 bg-white/90 text-foreground shadow-sm backdrop-blur hover:bg-white"
+                            />
                         </div>
-                    </div>
-                </article>
-            </div>
-        </Deferred>
-    </section>
+                        <div class="flex flex-1 flex-col gap-1 px-1 pt-4 pb-2">
+                            <Link
+                                :href="`/tours/${tour.slug}`"
+                                class="text-base leading-tight font-bold text-foreground transition group-hover:text-primary"
+                            >
+                                {{ tour.name }}
+                            </Link>
+                            <p
+                                v-if="tour.category"
+                                class="text-xs text-muted-foreground"
+                            >
+                                {{ tour.category.name }}
+                            </p>
+                            <div
+                                class="mt-3 flex items-center justify-between gap-2"
+                            >
+                                <span
+                                    class="text-base font-bold text-foreground"
+                                >
+                                    {{
+                                        formatPrice(
+                                            tour.base_price,
+                                            tour.currency,
+                                        )
+                                    }}
+                                </span>
+                                <span
+                                    v-if="tour.rating_count > 0"
+                                    class="flex items-center gap-1 text-xs font-medium text-muted-foreground"
+                                    :title="`${tour.rating_average} de 5`"
+                                >
+                                    <Star
+                                        class="size-3.5 fill-amber-400 text-amber-400"
+                                    />
+                                    {{ Number(tour.rating_average).toFixed(1) }}
+                                    <span class="text-muted-foreground/70"
+                                        >({{ tour.rating_count }})</span
+                                    >
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </Deferred>
+        </section>
 
-    <!-- Community / Social Proof Section -->
-    <section class="border-y border-border/60 bg-card/50">
-        <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    Únete a nuestra comunidad
-                </h2>
-                <p
-                    class="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base"
+        <!-- Promotions Section -->
+        <section
+            v-if="promotions === undefined || (promotions?.length ?? 0) > 0"
+            class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
+        >
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <h2
+                        class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                    >
+                        Promociones especiales
+                    </h2>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Aprovecha nuestras ofertas de temporada
+                    </p>
+                </div>
+                <Link
+                    :href="catalogIndex().url"
+                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
                 >
-                    Miles de viajeros ya han descubierto experiencias únicas con
-                    {{ displayName }}. Sé parte de nuestra comunidad y vive
-                    aventuras que recordarás siempre.
-                </p>
+                    Ver todos
+                    <ArrowRight class="size-4" />
+                </Link>
             </div>
 
+            <Deferred data="promotions">
+                <template #fallback>
+                    <div
+                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    >
+                        <div
+                            v-for="n in 3"
+                            :key="`promo-skel-${n}`"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                        >
+                            <div
+                                class="aspect-[16/9] w-full animate-pulse rounded-xl bg-muted"
+                            />
+                            <div
+                                class="mt-1 h-5 w-1/2 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="h-3 w-full animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="mt-2 h-9 w-32 animate-pulse rounded-full bg-muted"
+                            />
+                        </div>
+                    </div>
+                </template>
+
+                <div
+                    v-if="(promotions?.length ?? 0) > 0"
+                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    <article
+                        v-for="promo in promotions"
+                        :key="promo.id"
+                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                        <div
+                            class="relative aspect-[16/9] overflow-hidden rounded-xl"
+                        >
+                            <img
+                                v-if="promo.cover_image_url"
+                                :src="promo.cover_image_url"
+                                :alt="promo.name"
+                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center bg-muted"
+                            >
+                                <span class="text-xs text-muted-foreground"
+                                    >Sin imagen</span
+                                >
+                            </div>
+                            <span
+                                class="absolute top-3 left-3 rounded-full bg-destructive px-3 py-1 text-xs font-bold tracking-wide text-destructive-foreground shadow-sm"
+                            >
+                                {{ promo.discount_label }} OFF
+                            </span>
+                        </div>
+                        <div class="flex flex-1 flex-col gap-2 px-2 pt-4 pb-2">
+                            <h3 class="text-lg font-bold text-foreground">
+                                {{ promo.name }}
+                            </h3>
+                            <p
+                                v-if="promo.description"
+                                class="line-clamp-2 text-sm text-muted-foreground"
+                            >
+                                {{ promo.description }}
+                            </p>
+                            <div class="mt-3 pt-1">
+                                <Button
+                                    v-if="promo.tour"
+                                    as-child
+                                    class="rounded-full px-6"
+                                >
+                                    <Link :href="`/tours/${promo.tour.slug}`">
+                                        Comprar ahora
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </Deferred>
+        </section>
+
+        <!-- Newsletter Section -->
+        <section class="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
             <div
-                class="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-3"
+                class="relative overflow-hidden rounded-3xl bg-[#2B3B2E] px-6 py-16 shadow-sm sm:px-12"
             >
                 <div
-                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
-                >
-                    <div
-                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    class="pointer-events-none absolute -top-1/2 left-1/2 size-[120%] -translate-x-1/2 rounded-full border border-white/5"
+                    aria-hidden="true"
+                />
+                <div class="relative mx-auto max-w-xl text-center">
+                    <h2
+                        class="text-2xl font-bold tracking-tight text-white sm:text-3xl"
                     >
-                        <Users class="size-6 text-primary" />
-                    </div>
-                    <span
-                        class="text-3xl font-bold tracking-tight text-foreground"
-                        >500+</span
+                        Mantente actualizado
+                    </h2>
+                    <p class="mx-auto mt-3 max-w-md text-sm text-white/70">
+                        Recibe noticias, descuentos exclusivos y sugerencias
+                        directo en tu bandeja.
+                    </p>
+                    <form
+                        v-if="!newsletterSuccess"
+                        class="mx-auto mt-8 flex w-full max-w-md items-center gap-2 rounded-full bg-white/10 p-1.5 ring-1 ring-white/15"
+                        @submit.prevent="handleNewsletterSubscribe"
                     >
-                    <span class="text-sm text-muted-foreground"
-                        >Viajeros felices</span
+                        <label class="sr-only" for="newsletter-email"
+                            >Correo electrónico</label
+                        >
+                        <input
+                            id="newsletter-email"
+                            v-model="newsletterEmail"
+                            type="email"
+                            required
+                            placeholder="Tu correo electrónico"
+                            class="min-w-0 flex-1 rounded-full border-0 bg-transparent px-4 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none"
+                        />
+                        <Button
+                            type="submit"
+                            :disabled="newsletterSubmitting"
+                            class="shrink-0 rounded-full bg-[#f5ecdc] px-6 text-[#2B3B2E] hover:bg-white"
+                        >
+                            Suscribirse
+                        </Button>
+                    </form>
+                    <p
+                        v-else
+                        class="mt-8 text-sm font-medium text-emerald-300"
+                        role="status"
                     >
-                </div>
-                <div
-                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
-                >
-                    <div
-                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
-                    >
-                        <Mountain class="size-6 text-primary" />
-                    </div>
-                    <span
-                        class="text-3xl font-bold tracking-tight text-foreground"
-                        >50+</span
-                    >
-                    <span class="text-sm text-muted-foreground"
-                        >Experiencias únicas</span
-                    >
-                </div>
-                <div
-                    class="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center shadow-sm"
-                >
-                    <div
-                        class="flex size-12 items-center justify-center rounded-full bg-primary/10"
-                    >
-                        <MapPin class="size-6 text-primary" />
-                    </div>
-                    <span
-                        class="text-3xl font-bold tracking-tight text-foreground"
-                        >20+</span
-                    >
-                    <span class="text-sm text-muted-foreground"
-                        >Destinos por descubrir</span
-                    >
-                </div>
-            </div>
-
-            <div
-                v-if="!isAuthenticated"
-                class="mx-auto mt-10 max-w-lg rounded-xl bg-primary/5 p-6 text-center sm:p-8"
-            >
-                <h3 class="text-lg font-semibold text-foreground">
-                    Creá tu cuenta gratis
-                </h3>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    Registrate para guardar favoritos, recibir recomendaciones
-                    personalizadas y reservar con descuentos exclusivos.
-                </p>
-                <div class="mt-4 flex justify-center gap-3">
-                    <Button as-child size="lg">
-                        <Link :href="register().url"> Registrarse gratis </Link>
-                    </Button>
-                    <Button as-child variant="outline" size="lg">
-                        <Link :href="catalogIndex().url"> Explorar tours </Link>
-                    </Button>
+                        Te has suscrito exitosamente. Revisa tu bandeja de
+                        entrada.
+                    </p>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Newsletter Section -->
-    <section class="bg-[#2B3B2E]">
-        <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="mx-auto max-w-xl text-center">
-                <h2
-                    class="text-2xl font-semibold tracking-tight text-white sm:text-3xl"
-                >
-                    Mantente actualizado
-                </h2>
-                <p class="mt-3 text-sm text-white/70">
-                    Recibe noticias, descuentos exclusivos y sugerencias directo
-                    en tu bandeja.
-                </p>
-                <form
-                    v-if="!newsletterSuccess"
-                    class="mt-6 flex gap-2"
-                    @submit.prevent="handleNewsletterSubscribe"
-                >
-                    <Input
-                        v-model="newsletterEmail"
-                        type="email"
-                        required
-                        placeholder="Tu correo electrónico"
-                        class="flex-1 bg-white/10 text-white placeholder:text-white/50 focus-visible:ring-white/30"
-                    />
-                    <Button
-                        type="submit"
-                        :disabled="newsletterSubmitting"
-                        class="bg-white text-[#2B3B2E] hover:bg-white/90"
-                    >
-                        Suscribirse
-                    </Button>
-                </form>
-                <p v-else class="mt-6 text-sm font-medium text-emerald-300">
-                    Te has suscrito exitosamente. Revisa tu bandeja de entrada.
-                </p>
-            </div>
-        </div>
-    </section>
+        </section>
+    </div>
 </template>

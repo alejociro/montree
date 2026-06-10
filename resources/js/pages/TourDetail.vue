@@ -10,15 +10,19 @@ import {
     X,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import DateCard from '@/components/molecules/DateCard.vue';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
-import type { TourDetail, TourDetailImage } from '@/types/tour-detail';
+import type {
+    TourDetail,
+    TourDetailDate,
+    TourDetailImage,
+} from '@/types/tour-detail';
 
 defineOptions({ layout: PublicLayout });
 
@@ -44,14 +48,6 @@ const props = defineProps<{
 
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
-
-const formattedPrice = computed(() =>
-    new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: props.tour.currency,
-        maximumFractionDigits: 0,
-    }).format(Number(props.tour.base_price)),
-);
 
 const mapUrl = computed(() => {
     if (!props.tour.meeting_latitude || !props.tour.meeting_longitude) {
@@ -105,6 +101,37 @@ function formatTourPrice(price: string, currency: string): string {
         currency,
         maximumFractionDigits: 0,
     }).format(Number(price));
+}
+
+const selectableDates = computed<TourDetailDate[]>(() =>
+    props.tour.future_dates.filter(
+        (date) => !date.is_full && date.status === 'open',
+    ),
+);
+
+const selectedDateId = ref<number | null>(null);
+
+const selectedDate = computed<TourDetailDate | null>(
+    () =>
+        props.tour.future_dates.find(
+            (date) => date.id === selectedDateId.value,
+        ) ?? null,
+);
+
+const bookingUrl = computed(() =>
+    selectedDate.value
+        ? `/booking/new?tour_date_id=${selectedDate.value.id}`
+        : null,
+);
+
+function dateOptionLabel(date: TourDetailDate): string {
+    const label = formatTourDate(date.starts_at, {
+        withWeekday: true,
+        withTime: true,
+    });
+    const price = formatTourPrice(date.effective_price, props.tour.currency);
+
+    return `${label} · ${date.available_seats} cupos · ${price}`;
 }
 </script>
 
@@ -179,6 +206,36 @@ function formatTourPrice(price: string, currency: string): string {
                         />
                     </button>
                 </div>
+
+                <!-- Includes -->
+                <div v-if="tour.includes.length > 0" class="space-y-3 pt-2">
+                    <h2 class="text-base font-semibold">¿Qué incluye?</h2>
+                    <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                        <li
+                            v-for="(item, i) in tour.includes"
+                            :key="i"
+                            class="flex items-start gap-2"
+                        >
+                            <span class="mt-0.5 shrink-0 text-primary">✓</span>
+                            {{ item }}
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Requirements -->
+                <div v-if="tour.requirements.length > 0" class="space-y-3">
+                    <h2 class="text-base font-semibold">Requisitos</h2>
+                    <ul class="space-y-1.5 text-sm text-muted-foreground">
+                        <li
+                            v-for="(item, i) in tour.requirements"
+                            :key="i"
+                            class="flex items-start gap-2"
+                        >
+                            <span class="mt-0.5 shrink-0">•</span>
+                            {{ item }}
+                        </li>
+                    </ul>
+                </div>
             </div>
 
             <!-- RIGHT: Tour info -->
@@ -221,57 +278,13 @@ function formatTourPrice(price: string, currency: string): string {
                     </span>
                 </div>
 
-                <!-- Price -->
-                <div>
-                    <span class="text-sm text-muted-foreground">Desde</span>
-                    <p class="text-3xl font-bold text-primary">
-                        {{ formattedPrice }}
-                    </p>
-                    <span class="text-xs text-muted-foreground"
-                        >por persona</span
-                    >
-                </div>
-
                 <!-- Description -->
                 <div class="space-y-2">
-                    <h2 class="text-lg font-semibold">Descripción</h2>
                     <p
                         class="text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
                     >
-                        {{ tour.description }}
+                        {{ tour.short_description ?? tour.description }}
                     </p>
-                </div>
-
-                <!-- Includes -->
-                <div v-if="tour.includes.length > 0" class="space-y-2">
-                    <h2 class="text-lg font-semibold">¿Qué incluye?</h2>
-                    <ul
-                        class="grid grid-cols-2 gap-1.5 text-sm text-muted-foreground"
-                    >
-                        <li
-                            v-for="(item, i) in tour.includes"
-                            :key="i"
-                            class="flex items-start gap-2"
-                        >
-                            <span class="mt-0.5 text-primary">✓</span>
-                            {{ item }}
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Requirements -->
-                <div v-if="tour.requirements.length > 0" class="space-y-2">
-                    <h2 class="text-lg font-semibold">Requisitos</h2>
-                    <ul class="space-y-1.5 text-sm text-muted-foreground">
-                        <li
-                            v-for="(item, i) in tour.requirements"
-                            :key="i"
-                            class="flex items-start gap-2"
-                        >
-                            <span class="mt-0.5">•</span>
-                            {{ item }}
-                        </li>
-                    </ul>
                 </div>
 
                 <!-- Itinerary timeline -->
@@ -312,6 +325,79 @@ function formatTourPrice(price: string, currency: string): string {
                     </div>
                 </div>
 
+                <!-- Availability / booking -->
+                <div class="space-y-3 rounded-2xl border bg-muted/30 p-5">
+                    <h2 class="text-lg font-semibold">Disponibilidad</h2>
+
+                    <template v-if="selectableDates.length > 0">
+                        <div class="space-y-1.5">
+                            <label
+                                for="tour-date-select"
+                                class="text-sm font-medium text-foreground"
+                            >
+                                Selecciona una fecha
+                            </label>
+                            <select
+                                id="tour-date-select"
+                                v-model="selectedDateId"
+                                class="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm capitalize shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                            >
+                                <option :value="null" disabled>
+                                    Seleccionar fecha
+                                </option>
+                                <option
+                                    v-for="date in selectableDates"
+                                    :key="date.id"
+                                    :value="date.id"
+                                >
+                                    {{ dateOptionLabel(date) }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Selected date details -->
+                        <div
+                            v-if="selectedDate"
+                            class="flex items-center justify-between rounded-lg border bg-background px-4 py-3"
+                        >
+                            <span
+                                class="flex items-center gap-1.5 text-sm text-muted-foreground"
+                            >
+                                <Users class="size-4 text-primary" />
+                                {{ selectedDate.available_seats }} cupos
+                                disponibles
+                            </span>
+                            <span class="text-right">
+                                <span class="block font-bold text-primary">{{
+                                    formatTourPrice(
+                                        selectedDate.effective_price,
+                                        tour.currency,
+                                    )
+                                }}</span>
+                                <span class="text-xs text-muted-foreground"
+                                    >por persona</span
+                                >
+                            </span>
+                        </div>
+
+                        <Button
+                            v-if="bookingUrl"
+                            as-child
+                            size="lg"
+                            class="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Link :href="bookingUrl">Reservar ahora</Link>
+                        </Button>
+                        <Button v-else size="lg" class="w-full" disabled>
+                            Reservar ahora
+                        </Button>
+                    </template>
+
+                    <p v-else class="text-sm text-muted-foreground">
+                        No hay fechas disponibles.
+                    </p>
+                </div>
+
                 <!-- Meeting point -->
                 <div v-if="tour.meeting_point || mapUrl" class="space-y-2">
                     <h2 class="text-lg font-semibold">Punto de encuentro</h2>
@@ -336,28 +422,6 @@ function formatTourPrice(price: string, currency: string): string {
                     </div>
                 </div>
 
-                <!-- Available dates -->
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold">Fechas disponibles</h2>
-                    <div v-if="tour.future_dates.length > 0" class="space-y-2">
-                        <DateCard
-                            v-for="d in tour.future_dates.slice(0, 3)"
-                            :key="d.id"
-                            :date="d"
-                            :currency="tour.currency"
-                        />
-                        <p
-                            v-if="tour.future_dates.length > 3"
-                            class="text-center text-xs text-muted-foreground"
-                        >
-                            +{{ tour.future_dates.length - 3 }} fechas más
-                            disponibles
-                        </p>
-                    </div>
-                    <p v-else class="text-sm text-muted-foreground">
-                        No hay fechas disponibles por ahora.
-                    </p>
-                </div>
             </div>
         </div>
     </div>

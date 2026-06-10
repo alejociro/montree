@@ -29,9 +29,10 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
     ->middleware('throttle:10,1')
     ->name('auth.handoff');
 
+Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
-    Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 
     Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');

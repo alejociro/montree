@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CategoryChip from '@/components/molecules/CategoryChip.vue';
+import { Check } from 'lucide-vue-next';
 import PriceRangeFilter from '@/components/molecules/PriceRangeFilter.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -68,25 +68,14 @@ function handleDifficultyUpdate(value: unknown): void {
 
 <template>
     <aside class="space-y-6">
-        <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold tracking-tight text-foreground">
-                Filtros
-            </h2>
-            <Button
-                v-if="hasActiveFilters"
-                variant="ghost"
-                size="sm"
-                class="h-7 px-2 text-xs"
-                @click="$emit('reset')"
-            >
-                Limpiar
-            </Button>
-        </div>
+        <h2 class="text-lg font-semibold tracking-tight text-foreground">
+            Filtros
+        </h2>
 
         <section class="space-y-3" aria-labelledby="filter-categories">
             <h3
                 id="filter-categories"
-                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                class="text-sm font-medium text-foreground"
             >
                 Categorías
             </h3>
@@ -96,26 +85,49 @@ function handleDifficultyUpdate(value: unknown): void {
             >
                 No hay categorías disponibles.
             </p>
-            <div v-else class="flex flex-wrap gap-2">
-                <CategoryChip
-                    v-for="category in categories"
-                    :key="category.id"
-                    :label="category.name"
-                    :count="category.tours_count"
-                    :selected="selectedCategory === category.slug"
-                    :icon="category.icon"
-                    @select="toggleCategory(category.slug, selectedCategory)"
-                />
-            </div>
+            <ul v-else class="space-y-1">
+                <li v-for="category in categories" :key="category.id">
+                    <button
+                        type="button"
+                        class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                        :class="
+                            selectedCategory === category.slug
+                                ? 'font-medium text-foreground'
+                                : 'text-muted-foreground'
+                        "
+                        :aria-pressed="selectedCategory === category.slug"
+                        @click="toggleCategory(category.slug, selectedCategory)"
+                    >
+                        <span
+                            class="flex size-4 shrink-0 items-center justify-center rounded-full border transition"
+                            :class="
+                                selectedCategory === category.slug
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border'
+                            "
+                            aria-hidden="true"
+                        >
+                            <Check
+                                v-if="selectedCategory === category.slug"
+                                class="size-3"
+                            />
+                        </span>
+                        <span class="flex-1 truncate">{{ category.name }}</span>
+                        <span
+                            v-if="category.tours_count > 0"
+                            class="text-xs text-muted-foreground"
+                        >
+                            {{ category.tours_count }}
+                        </span>
+                    </button>
+                </li>
+            </ul>
         </section>
 
         <Separator />
 
         <section class="space-y-2" aria-labelledby="filter-difficulty">
-            <Label
-                id="filter-difficulty"
-                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-            >
+            <Label id="filter-difficulty" class="text-sm font-medium">
                 Dificultad
             </Label>
             <Select
@@ -146,5 +158,14 @@ function handleDifficultyUpdate(value: unknown): void {
             @update:min="(value) => emit('update:priceMin', value)"
             @update:max="(value) => emit('update:priceMax', value)"
         />
+
+        <Button
+            type="button"
+            class="w-full"
+            :disabled="!hasActiveFilters"
+            @click="emit('reset')"
+        >
+            Personalizar filtros
+        </Button>
     </aside>
 </template>

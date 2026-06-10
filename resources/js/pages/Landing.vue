@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
     ArrowRight,
     BarChart3,
@@ -18,6 +17,7 @@ import {
     TrendingUp,
     Users,
 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 // ── Carousel ─────────────────────────────────────────────────
 const carouselImages = [
@@ -30,29 +30,44 @@ const carouselImages = [
 const currentSlide = ref(0);
 let carouselTimer: ReturnType<typeof setInterval>;
 
-const nextSlide = () => { currentSlide.value = (currentSlide.value + 1) % carouselImages.length; };
-const prevSlide = () => { currentSlide.value = (currentSlide.value - 1 + carouselImages.length) % carouselImages.length; };
-const goToSlide = (i: number) => { currentSlide.value = i; resetTimer(); };
-const resetTimer = () => { clearInterval(carouselTimer); carouselTimer = setInterval(nextSlide, 5000); };
+const nextSlide = () => {
+ currentSlide.value = (currentSlide.value + 1) % carouselImages.length; 
+};
+const prevSlide = () => {
+ currentSlide.value = (currentSlide.value - 1 + carouselImages.length) % carouselImages.length; 
+};
+const goToSlide = (i: number) => {
+ currentSlide.value = i; resetTimer(); 
+};
+const resetTimer = () => {
+ clearInterval(carouselTimer); carouselTimer = setInterval(nextSlide, 5000); 
+};
 
 // ── Feature tabs ──────────────────────────────────────────────
 const activeFeature = ref(0);
 
 // ── FAQ ───────────────────────────────────────────────────────
 const openFaq = ref<number | null>(null);
-const toggleFaq = (i: number) => { openFaq.value = openFaq.value === i ? null : i; };
+const toggleFaq = (i: number) => {
+ openFaq.value = openFaq.value === i ? null : i; 
+};
 
 // ── Scroll reveal + header ────────────────────────────────────
 onMounted(() => {
     carouselTimer = setInterval(nextSlide, 5000);
 
     const observer = new IntersectionObserver(
-        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('revealed'); observer.unobserve(e.target); } }),
+        (entries) => entries.forEach((e) => {
+ if (e.isIntersecting) {
+ e.target.classList.add('revealed'); observer.unobserve(e.target); 
+} 
+}),
         { threshold: 0.07 },
     );
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
     const header = document.querySelector('.site-header') as HTMLElement | null;
+
     if (header) {
         const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 40);
         window.addEventListener('scroll', onScroll, { passive: true });
