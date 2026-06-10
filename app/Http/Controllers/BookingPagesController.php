@@ -70,7 +70,10 @@ final class BookingPagesController extends Controller
                 : Storage::disk('public')->url($booking->tour->coverImage->path);
         }
 
+        $newAccount = $request->session()->pull('booking_new_account', false);
+
         return Inertia::render('Booking/Show', [
+            'new_account' => $newAccount,
             'booking' => [
                 'booking_number' => $booking->booking_number,
                 'status' => $booking->status->value,

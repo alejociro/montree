@@ -329,6 +329,14 @@ async function submit(): Promise<void> {
                         </h2>
                     </div>
 
+                    <p
+                        v-if="prefill === null"
+                        class="rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground/70"
+                    >
+                        Al reservar crearemos una cuenta con tu correo para que
+                        puedas gestionar tus reservas y recibir actualizaciones.
+                    </p>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">
                             <Label for="email">Correo electrónico *</Label>

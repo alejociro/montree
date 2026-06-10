@@ -51,7 +51,7 @@ type BookingProp = {
     };
 };
 
-const props = defineProps<{ booking: BookingProp }>();
+const props = defineProps<{ booking: BookingProp; new_account?: boolean }>();
 
 const api = useApi();
 
@@ -211,6 +211,27 @@ function goBack(): void {
             </div>
 
             <div class="container mx-auto max-w-4xl px-4 py-8">
+                <!-- New account notice -->
+                <div
+                    v-if="new_account"
+                    class="mb-6 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4"
+                >
+                    <span class="mt-0.5 text-lg">✉️</span>
+                    <div class="text-sm">
+                        <p class="font-medium text-foreground">
+                            ¡Te creamos una cuenta!
+                        </p>
+                        <p class="mt-0.5 text-muted-foreground">
+                            Enviamos un correo a
+                            <strong>{{
+                                booking.contact_snapshot?.email
+                            }}</strong>
+                            con un enlace para configurar tu contraseña y
+                            acceder a tus reservas cuando quieras.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Share section -->
                 <div
                     class="mb-6 space-y-3 rounded-lg border border-border bg-card p-5"

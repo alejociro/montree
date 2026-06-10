@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,11 +32,16 @@ final class BookingController extends Controller
     public function store(StoreBookingRequest $request): JsonResponse
     {
         $user = $request->user();
+        $isNewAccount = false;
 
         if ($user === null) {
-            $user = $this->resolveGuestUser($request);
+            $user = $this->resolveGuestUser($request, $isNewAccount);
             Auth::login($user);
             $request->session()->regenerate();
+        }
+
+        if ($isNewAccount) {
+            $request->session()->put('booking_new_account', true);
         }
 
         $booking = $this->createBooking->handle($user, $request->validated());
@@ -58,7 +64,7 @@ final class BookingController extends Controller
         return new BookingResource($booking);
     }
 
-    private function resolveGuestUser(StoreBookingRequest $request): User
+    private function resolveGuestUser(StoreBookingRequest $request, bool &$isNewAccount): User
     {
         $email = (string) $request->validated('email');
         $tenant = Tenant::current();
@@ -75,6 +81,8 @@ final class BookingController extends Controller
 
         if ($user->wasRecentlyCreated) {
             $user->markEmailAsVerified();
+            $isNewAccount = true;
+            Password::sendResetLink(['email' => $email]);
         }
 
         if ($tenant !== null) {
