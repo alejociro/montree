@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTena
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Api\V1\Admin\TourDateController as AdminTourDateController;
+use App\Http\Controllers\Api\V1\Admin\TourDateIndexController as AdminTourDateIndexController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\BookingController;
@@ -100,6 +101,7 @@ Route::middleware(['auth', 'tenant_admin.only'])->prefix('admin')->name('api.v1.
     Route::apiResource('tours', AdminTourController::class)->names('tours');
     Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');
 
+    Route::get('tour-dates', AdminTourDateIndexController::class)->name('tour-dates.index');
     Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->name('tours.dates.index');
     Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->name('tours.dates.store');
     Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->name('tour-dates.update');

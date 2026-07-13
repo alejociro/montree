@@ -17,6 +17,7 @@ Decisión de modelado: se **evoluciona** el modelo existente en lugar de crear u
 - Como admin/operator, quiero crear, editar y cancelar salidas de un producto con fecha, capacidad y precio propio.
 - Como admin/operator, quiero asociar a cada salida sus condiciones especiales: guía, ruta, proveedor y hoteles.
 - Como admin/operator, quiero administrar mis catálogos de rutas, proveedores y hoteles para reutilizarlos entre salidas.
+- Como admin/operator, quiero un listado global de TODAS las salidas de mi tenant (cross-producto) para gestionarlas operativamente sin entrar producto por producto.
 - Como viajero, quiero ver productos del catálogo aunque no tengan fechas disponibles, con un aviso claro de "Sin fechas disponibles".
 
 ## Acceptance criteria
@@ -37,6 +38,21 @@ Decisión de modelado: se **evoluciona** el modelo existente en lugar de crear u
 
 ### Catálogos de soporte (rutas, proveedores, hoteles)
 - **Given** un admin, **when** crea/edita/elimina rutas, proveedores u hoteles, **then** el CRUD funciona scoped a su tenant (nombre requerido; campos de contacto/detalle opcionales).
+
+### Listado global de salidas ("Tours" en el admin)
+- **Given** un admin/operator, **when** abre la sección "Tours" del sidebar, **then** ve una tabla con TODAS las salidas de su tenant cross-producto (producto, fecha, ocupación, precio efectivo, guía, condiciones, estado).
+- **Given** el listado global, **when** aplica filtros de estado, producto o rango de fechas, **then** la tabla se filtra en servidor con paginado estándar.
+- **Given** una fila del listado global, **when** el admin edita o cancela, **then** reutiliza los mismos flujos del panel por producto (`TourDateFormDialog` / cancelación de `TourDatesPanel`).
+- **Given** el listado global, **when** cada fila muestra su estado, **then** usa el **estado de presentación derivado** (ver más abajo), no solo el `status` almacenado.
+
+### Estado de presentación derivado (`display_status`)
+- **Given** una salida, **when** se la muestra o filtra por estado, **then** su estado de presentación se **deriva en tiempo de request** y no se persiste como columna.
+- Reglas de derivación (sea `end = ends_at ?? starts_at`, `now` = reloj del request):
+  - Si `status` almacenado es `cancelled` → `cancelled` (siempre gana).
+  - Si `end < now` → `finished`.
+  - Si `starts_at <= now <= end` → `in_progress` (solo posible cuando la salida tiene `ends_at` asignado).
+  - En cualquier otro caso → se muestra el `status` almacenado (`open` | `full` | `closed`).
+- Racional: los estados temporales (`in_progress`, `finished`) son función del reloj. Persistirlos exigiría jobs de transición y podría quedar stale; derivarlos es determinista, sin migración y sin costo operativo. El `status` almacenado (`open`/`full`/`closed`/`cancelled`) sigue siendo la fuente de verdad para el ciclo de vida no-temporal.
 
 ### Aislamiento multi-tenant
 - **Given** salidas/rutas/proveedores/hoteles del tenant A, **when** un admin del tenant B consulta o referencia sus IDs, **then** recibe `404`.
@@ -61,6 +77,7 @@ Decisión de modelado: se **evoluciona** el modelo existente en lugar de crear u
 ## Endpoints involucrados
 
 ```
+GET    /api/v1/admin/tour-dates            (NUEVO: listado global cross-producto)
 GET    /api/v1/admin/tours/{tour}/dates
 POST   /api/v1/admin/tours/{tour}/dates
 PUT    /api/v1/admin/tour-dates/{tourDate}
@@ -79,10 +96,11 @@ PUT/DELETE         /api/v1/admin/hotels/{hotel}
 
 ## Componentes UI
 
-- Pages: sección "Salidas" dentro de `Admin/Tour/Edit` (o page dedicada `Admin/Tour/Dates`), page `Admin/Logistics` (tabs Rutas/Proveedores/Hoteles)
+- Pages: sección "Salidas" dentro de `Admin/Tour/Edit` (o page dedicada `Admin/Tour/Dates`), page `Admin/Logistics` (tabs Rutas/Proveedores/Hoteles), page `Admin/Departures/Index` (NUEVA: listado global de salidas del tenant)
 - Organisms: `TourDatesPanel` (lista + estados), `TourDateFormDialog` (crear/editar con condiciones), `LogisticsCrudPanel`
 - Molecules: selects de guía/ruta/proveedor, multi-select de hoteles, `CounterStepper` (reutilizado) para capacidad
-- Labels: en el panel admin el concepto pasa a llamarse "Productos" y "Salidas"; el lado público conserva "Tours" para el viajero
+- `Admin/Departures/Index.vue`: tabla con columnas producto (link a su show admin), fecha, ocupación (reservados/capacidad con barra), precio efectivo, guía, condiciones (ruta/proveedor/hoteles), estado (display_status). Filtros: estado, producto, rango de fechas. Acciones por fila: editar (reutiliza `TourDateFormDialog`) y cancelar (mismo flujo de `TourDatesPanel`).
+- Labels y navegación del admin: dos entradas de sidebar — **Productos** (`/admin/tours`, catálogo base existente) y **Tours** (`/admin/departures`, listado global de salidas). La "Salida" es la unidad interna; el lado público conserva "Tours" para el viajero.
 
 ## Datos requeridos
 
@@ -102,3 +120,4 @@ Tablas nuevas: `routes`, `providers`, `hotels` (tenant-scoped), `tour_date_hotel
 ## Changelog
 
 - `2026-07-12` — Creación. Origen: pedido de reestructurar tours como productos base + eventos con condiciones especiales (guía, ruta, proveedor, hoteles) y hallazgo P0-1 del review 2026-07-12 (no existe CRUD de salidas). Decisión de modelado: evolucionar `tours`/`tour_dates` en vez de tabla `products` paralela, con entidades de soporte nuevas.
+- `2026-07-13` — Separación en el admin de "Productos" (catálogo base, `/admin/tours`) vs "Tours" (listado global de salidas, `/admin/departures`, con page `Admin/Departures/Index.vue`) + estado de presentación derivado (`display_status`). Razón: separación Productos vs Tours en admin + estado de presentación derivado (los estados `in_progress`/`finished` son función del reloj y se derivan en backend sin persistir ni jobs de transición).

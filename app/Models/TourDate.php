@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
+use App\Enums\TourDateDisplayStatus;
 use App\Enums\TourDateStatus;
 use Database\Factories\TourDateFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -99,5 +100,72 @@ class TourDate extends Model
     public function scopeOpenFuture(Builder $query): Builder
     {
         return $query->where('status', TourDateStatus::Open)->where('starts_at', '>', now());
+    }
+
+    /**
+     * Presentation-only status derived from the stored status and the schedule
+     * window. No column backs this; it is computed on read.
+     *
+     * Precedence: a cancelled departure always maps to Cancelled. Otherwise,
+     * using end = ends_at ?? starts_at: a window already elapsed maps to
+     * Finished, a window currently open (only possible when ends_at is set)
+     * maps to InProgress, and any other case maps the stored status directly.
+     */
+    public function displayStatus(): TourDateDisplayStatus
+    {
+        if ($this->status === TourDateStatus::Cancelled) {
+            return TourDateDisplayStatus::Cancelled;
+        }
+
+        $now = now();
+        $end = $this->ends_at ?? $this->starts_at;
+
+        if ($end->lt($now)) {
+            return TourDateDisplayStatus::Finished;
+        }
+
+        if ($this->starts_at->lte($now) && $now->lte($end)) {
+            return TourDateDisplayStatus::InProgress;
+        }
+
+        return match ($this->status) {
+            TourDateStatus::Open => TourDateDisplayStatus::Open,
+            TourDateStatus::Full => TourDateDisplayStatus::Full,
+            TourDateStatus::Closed => TourDateDisplayStatus::Closed,
+            TourDateStatus::Cancelled => TourDateDisplayStatus::Cancelled,
+        };
+    }
+
+    /**
+     * Filters departures by their derived display status. Mirrors the
+     * derivation in displayStatus() at the SQL level so it can be paginated.
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeWithDisplayStatus(Builder $query, TourDateDisplayStatus $displayStatus): Builder
+    {
+        $now = now();
+
+        return match ($displayStatus) {
+            TourDateDisplayStatus::Cancelled => $query->where('status', TourDateStatus::Cancelled),
+            TourDateDisplayStatus::Finished => $query
+                ->where('status', '!=', TourDateStatus::Cancelled)
+                ->whereRaw('COALESCE(ends_at, starts_at) < ?', [$now]),
+            TourDateDisplayStatus::InProgress => $query
+                ->where('status', '!=', TourDateStatus::Cancelled)
+                ->whereNotNull('ends_at')
+                ->where('starts_at', '<=', $now)
+                ->where('ends_at', '>=', $now),
+            TourDateDisplayStatus::Open,
+            TourDateDisplayStatus::Full,
+            TourDateDisplayStatus::Closed => $query
+                ->where('status', $displayStatus->value)
+                ->whereRaw('COALESCE(ends_at, starts_at) >= ?', [$now])
+                ->whereNot(fn (Builder $inProgress) => $inProgress
+                    ->whereNotNull('ends_at')
+                    ->where('starts_at', '<=', $now)
+                    ->where('ends_at', '>=', $now)),
+        };
     }
 }

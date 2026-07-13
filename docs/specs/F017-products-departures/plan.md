@@ -13,8 +13,19 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 ### Modelos
 
 - `Route`, `Provider`, `Hotel` — nuevos, `final`, trait `BelongsToTenant`, `$fillable` explícito. Relación `tourDates()` (hasMany / belongsToMany para Hotel).
-- `TourDate` — extendido: `route_id`, `provider_id` en fillable; relaciones `route()`, `provider()`, `hotels()` (belongsToMany, pivot `tour_date_hotels`).
+- `TourDate` — extendido: `route_id`, `provider_id` en fillable; relaciones `route()`, `provider()`, `hotels()` (belongsToMany, pivot `tour_date_hotels`). **Nuevo método `displayStatus(): TourDateDisplayStatus`** que deriva el estado de presentación (ver "Estado de presentación derivado").
 - `Tour` — sin cambios de schema.
+
+### Estado de presentación derivado (sin migración)
+
+- Enum nuevo `App\Enums\TourDateDisplayStatus`: `Open`, `Full`, `Closed`, `Cancelled`, `InProgress`, `Finished` (values `open`/`full`/`closed`/`cancelled`/`in_progress`/`finished`, TitleCase en keys por constitución PHP rules).
+- `TourDate::displayStatus()` deriva en request-time (sea `$end = $this->ends_at ?? $this->starts_at`, `$now = now()`):
+  1. `status === cancelled` → `Cancelled` (siempre gana).
+  2. `$end < $now` → `Finished`.
+  3. `$starts_at <= $now <= $end` → `InProgress` (solo posible con `ends_at` asignado).
+  4. else → mapear el `status` almacenado (`open`/`full`/`closed`).
+- **Racional / decisión:** NO se agregan columnas ni estados persistidos. Los estados `in_progress`/`finished` son función del reloj; persistirlos exigiría jobs de transición programados y podría quedar stale entre corridas. Derivarlos es determinista, sin migración y sin costo operativo. El `status` almacenado sigue siendo fuente de verdad del ciclo de vida no-temporal.
+- El filtro `status` del endpoint global filtra sobre `display_status`: como `in_progress`/`finished` son derivados, el filtrado combina un `where` sobre columnas (`starts_at`/`ends_at`/`status`) que reproduce las reglas de derivación en SQL (no se puede filtrar por un accessor). Alternativa aceptada si el volumen lo permite: traer y filtrar en memoria por página — decisión de implementación del backend-dev, priorizar el filtrado en SQL para respetar el paginado.
 
 ### Migrations (montree-db-architect)
 
@@ -42,6 +53,7 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 
 ### Form Requests
 
+- `App\Http\Requests\Admin\TourDate\IndexTourDatesRequest` — valida filtros del listado global: `status` (`Rule::enum(TourDateDisplayStatus::class)` o `in:` whitelist), `tour_id` (exists tenant), `from`/`to` (date, `to` con `after_or_equal:from`), `direction` (`in:asc,desc`), `per_page` (`integer|max:100`).
 - `App\Http\Requests\Admin\TourDate\StoreTourDateRequest` / `UpdateTourDateRequest` (reglas del contrato; `guide_id` valida miembro del tenant con rol guide como hace `AssignGuideAction`; `route_id`/`provider_id`/`hotel_ids.*` con `Rule::exists` — el global scope de tenant NO aplica en exists, usar closure/where tenant_id).
 - `App\Http\Requests\Admin\TourDate\CancelTourDateRequest` (reason nullable).
 - `App\Http\Requests\Admin\Logistics\{StoreRouteRequest, UpdateRouteRequest, StoreProviderRequest, UpdateProviderRequest, StoreHotelRequest, UpdateHotelRequest}`.
@@ -49,13 +61,14 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 ### Controllers
 
 - `App\Http\Controllers\Api\V1\Admin\TourDateController` — `index` (nested en tour), `store` (nested), `update`, `destroy`.
+- `App\Http\Controllers\Api\V1\Admin\AdminDeparturesController` (o `TourDateIndexController` invokable) — `__invoke`: listado global cross-producto con filtros de `IndexTourDatesRequest`, eager-load `tour:id,name,slug` + guide/route/provider/hotels (sin N+1), paginado. Ruta `GET /api/v1/admin/tour-dates`.
 - `App\Http\Controllers\Api\V1\Admin\CancelTourDateController` — `__invoke`.
 - `App\Http\Controllers\Api\V1\Admin\{RouteController, ProviderController, HotelController}` — `index, store, update, destroy`.
 - Rutas en `routes/api.php` dentro del grupo admin existente (mismo middleware que `apiResource tours`).
 
 ### Resources
 
-- `App\Http\Resources\Admin\TourDateDetailResource` — shape del contrato (guide/route/provider/hotels con `whenLoaded`).
+- `App\Http\Resources\Admin\TourDateDetailResource` — shape del contrato (guide/route/provider/hotels con `whenLoaded`). **Ampliado (2026-07-13):** agrega `display_status` (`$this->displayStatus()->value`) y `tour` (`whenLoaded('tour')` → `{ id, name, slug, currency }`). Sirve tanto al index anidado como al global.
 - `App\Http\Resources\Admin\{RouteResource, ProviderResource, HotelResource}` — incluye `tour_dates_count` via `withCount`.
 
 ### Policies
@@ -68,7 +81,9 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 
 - `resources/js/pages/Admin/Tour/Edit.vue` — agregar sección/tab "Salidas" que monta `TourDatesPanel`.
 - `resources/js/pages/Admin/Logistics/Index.vue` — nueva page con tabs Rutas / Proveedores / Hoteles; entrada en el sidebar admin ("Logística").
-- Renombrar labels del panel admin: nav "Tours" → "Productos" (solo copy; rutas/archivos no se renombran).
+- `resources/js/pages/Admin/Departures/Index.vue` — **NUEVA:** listado global de salidas del tenant. Tabla: producto (link a show admin), fecha, ocupación (reservados/capacidad con barra), precio efectivo, guía, condiciones (ruta/proveedor/hoteles), estado (`display_status`). Filtros: estado / producto / rango de fechas. Acciones por fila: editar (reutiliza `TourDateFormDialog`) y cancelar (mismo flujo de `TourDatesPanel`). Consume `GET /api/v1/admin/tour-dates` vía `useApi()`/fetch de solo lectura + Wayfinder.
+- Sidebar admin: dos entradas — "Productos" (`/admin/tours`, catálogo existente) y "Tours" (`/admin/departures`, listado global nuevo).
+- Renombrar labels del panel admin: nav "Tours" (catálogo) → "Productos" (solo copy; rutas/archivos no se renombran).
 - `resources/js/pages/TourDetail.vue` — cuando `dates` está vacío: card "Sin fechas disponibles" en lugar del selector (verificar comportamiento actual y ajustar copy).
 
 ### Organisms / Molecules
@@ -93,6 +108,8 @@ Por endpoint: happy + failure + edge + tenant isolation (testing-policy). Puntos
 - Delete ruta/proveedor/hotel en uso: 409 `RESOURCE_IN_USE`.
 - ChangeTourStatus: activar sin fechas ahora pasa (actualizar tests de F003 que exigían fecha futura).
 - Catálogo público: producto activo sin fechas aparece con `has_future_dates: false` (probablemente ya cubierto en F004 — verificar).
+- **Listado global `GET /api/v1/admin/tour-dates`**: happy (retorna salidas de todos los productos del tenant); tenant isolation (no filtra salidas de otro tenant); filtro `status=in_progress`/`finished` derivado (salida con `ends_at` pasado → finished; salida en curso → in_progress); filtro `tour_id`/`from`/`to`; 422 con `status` fuera de whitelist o `tour_id` de otro tenant.
+- **`displayStatus()` unit/feature**: cancelled gana; ends_at pasado → finished; en curso → in_progress; futuro → status almacenado.
 
 ## 5. Orden de ejecución
 
@@ -104,3 +121,4 @@ Por endpoint: happy + failure + edge + tenant isolation (testing-policy). Puntos
 ## Changelog
 
 - `2026-07-12` — Creación inicial.
+- `2026-07-13` — Enum derivado `TourDateDisplayStatus` + `TourDate::displayStatus()` (sin migración), controller/ruta del listado global `GET /api/v1/admin/tour-dates` con `IndexTourDatesRequest`, `TourDateDetailResource` ampliado (`display_status` + `tour`), page frontend `Admin/Departures/Index.vue` y segunda entrada de sidebar "Tours". Razón: separación Productos vs Tours en admin + estado de presentación derivado.

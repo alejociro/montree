@@ -1,6 +1,21 @@
 export type TourDateStatus = 'open' | 'full' | 'closed' | 'cancelled';
 
+export type TourDateDisplayStatus =
+    | 'open'
+    | 'full'
+    | 'closed'
+    | 'cancelled'
+    | 'in_progress'
+    | 'finished';
+
 export type TourDateScope = 'upcoming' | 'past' | 'all';
+
+export interface TourRef {
+    id: number;
+    name: string;
+    slug: string;
+    currency: string;
+}
 
 export interface LogisticsRef {
     id: number;
@@ -22,6 +37,43 @@ export interface TourDateAdmin {
     route: LogisticsRef | null;
     provider: LogisticsRef | null;
     hotels: LogisticsRef[];
+}
+
+export interface TourDateGlobalAdmin extends TourDateAdmin {
+    display_status: TourDateDisplayStatus;
+    tour: TourRef;
+}
+
+export type TourDateGlobalStatusFilter = TourDateDisplayStatus | '';
+
+export interface TourDatesGlobalFilters {
+    status: TourDateGlobalStatusFilter;
+    tour_id: number | null;
+    from: string;
+    to: string;
+    direction: 'asc' | 'desc';
+}
+
+export interface PaginationLinks {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+}
+
+export interface PaginationMeta {
+    current_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+    last_page: number;
+}
+
+export interface TourDatesGlobalResponse {
+    data: TourDateGlobalAdmin[];
+    links: PaginationLinks;
+    meta: PaginationMeta;
 }
 
 export interface TourDateFormInput {

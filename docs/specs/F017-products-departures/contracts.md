@@ -5,6 +5,69 @@
 
 ---
 
+## GET /api/v1/admin/tour-dates  (listado global cross-producto)
+
+**Auth:** required (admin/operator del tenant)
+**Permission:** gestión de tours (mismo gate que F003)
+
+Listado global de TODAS las salidas del tenant, sin anidar en un producto. Alimenta la page `Admin/Departures/Index` (sidebar "Tours").
+
+Query params:
+
+| Param | Tipo | Reglas |
+|---|---|---|
+| `status` | string | nullable, whitelist: `open` \| `full` \| `closed` \| `cancelled` \| `in_progress` \| `finished`. Filtra sobre el **estado de presentación** (`display_status`), no sobre el `status` almacenado. |
+| `tour_id` | integer | nullable, exists tours del tenant |
+| `from` | date | nullable, filtra `starts_at >= from` |
+| `to` | date | nullable, filtra `starts_at <= to`; `after_or_equal:from` |
+| `direction` | string | nullable, `asc` \| `desc` (default `desc`) — orden por `starts_at` |
+| `per_page` | integer | nullable, default 15, max 100 |
+
+Orden por defecto: `starts_at` desc.
+
+### Response 200
+
+Paginado estándar. Cada item tiene el **mismo shape que el index anidado** (ver abajo) MÁS `display_status` y `tour`.
+
+```json
+{
+  "data": [
+    {
+      "id": 7,
+      "starts_at": "2026-08-03T20:26:00Z",
+      "ends_at": "2026-08-04T02:26:00Z",
+      "capacity": 12,
+      "booked_count": 4,
+      "available_seats": 8,
+      "price_override": "950.00",
+      "effective_price": "950.00",
+      "status": "open",
+      "display_status": "open",
+      "notes": "string|null",
+      "guide": { "id": 3, "name": "Demo Guide" },
+      "route": { "id": 1, "name": "Ruta El Mirador" },
+      "provider": { "id": 2, "name": "Transportes Andinos" },
+      "hotels": [{ "id": 1, "name": "Ecohotel La Montaña" }],
+      "tour": { "id": 5, "name": "Cascadas de Montree", "slug": "cascadas-de-montree", "currency": "USD" }
+    }
+  ],
+  "links": {},
+  "meta": {}
+}
+```
+
+`display_status` es el estado de presentación derivado (ver `spec.md` § "Estado de presentación derivado"): `open` | `full` | `closed` | `cancelled` | `in_progress` | `finished`. `tour` nunca es `null` (toda salida pertenece a un producto).
+
+### Errores
+
+| Status | Caso | error_code |
+|---|---|---|
+| 401 | No autenticado | — |
+| 403 | Sin permiso admin/operator del tenant | — |
+| 422 | Filtros inválidos (status fuera de whitelist, tour_id de otro tenant, fechas mal formadas, per_page > 100) | — |
+
+---
+
 ## GET /api/v1/admin/tours/{tour}/dates
 
 **Auth:** required (admin/operator del tenant)
@@ -27,11 +90,13 @@ Query params: `scope` opcional (`upcoming` default | `past` | `all`), `per_page`
       "price_override": "950.00",
       "effective_price": "950.00",
       "status": "open",
+      "display_status": "open",
       "notes": "string|null",
       "guide": { "id": 3, "name": "Demo Guide" },
       "route": { "id": 1, "name": "Ruta El Mirador" },
       "provider": { "id": 2, "name": "Transportes Andinos" },
-      "hotels": [{ "id": 1, "name": "Ecohotel La Montaña" }]
+      "hotels": [{ "id": 1, "name": "Ecohotel La Montaña" }],
+      "tour": { "id": 5, "name": "Cascadas de Montree", "slug": "cascadas-de-montree", "currency": "USD" }
     }
   ],
   "links": {},
@@ -40,6 +105,8 @@ Query params: `scope` opcional (`upcoming` default | `past` | `all`), `per_page`
 ```
 
 `guide`, `route`, `provider` son `null` si no están asignados; `hotels` puede ser `[]`.
+
+**Adición no-breaking (2026-07-13):** `display_status` (estado de presentación derivado) y `tour: { id, name, slug, currency }` se agregan también a este endpoint anidado. Son campos nuevos; los consumidores existentes no se rompen.
 
 ---
 
@@ -212,3 +279,7 @@ La regla de activación pasa de "≥1 imagen Y ≥1 fecha futura open" a **solo 
 ## Cambios al contrato
 
 - `2026-07-12` — Creación inicial.
+- `2026-07-13` — Nuevo endpoint global + campos derivados. Razón: separación Productos vs Tours en admin + estado de presentación derivado.
+  - **Endpoint NUEVO:** `GET /api/v1/admin/tour-dates` (listado global cross-producto, con filtros `status`/`tour_id`/`from`/`to`/`direction`/`per_page`).
+  - **Adición no-breaking** a `GET /api/v1/admin/tour-dates`, `GET /api/v1/admin/tours/{tour}/dates`, `POST /api/v1/admin/tours/{tour}/dates` (respuesta 201 hereda el shape del index) y `PUT /api/v1/admin/tour-dates/{tourDate}`: se agregan `display_status` (string derivado) y `tour: { id, name, slug, currency }` al shape del item.
+  - **Impacto backend/frontend:** son adiciones (no cambian ni renombran campos existentes) → NO breaking. Endpoints afectados por la adición de campos: los 4 listados arriba. Consumidores actuales del index anidado (`TourDatesPanel`, `TourDateFormDialog`) siguen funcionando sin cambios; opcionalmente pueden empezar a leer `display_status`.

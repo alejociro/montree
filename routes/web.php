@@ -48,6 +48,7 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only'])->prefix('admin')->n
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
     Route::get('tours/{tour}', [TourPagesController::class, 'show'])->name('tours.show');
+    Route::inertia('departures', 'Admin/Departures/Index')->name('departures.index');
     Route::inertia('logistics', 'Admin/Logistics/Index')->name('logistics.index');
     Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');

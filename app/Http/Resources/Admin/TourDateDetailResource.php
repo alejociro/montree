@@ -28,7 +28,14 @@ final class TourDateDetailResource extends JsonResource
             'price_override' => $this->price_override,
             'effective_price' => $this->price_override ?? $this->tour->base_price,
             'status' => $this->status->value,
+            'display_status' => $this->displayStatus()->value,
             'notes' => $this->notes,
+            'tour' => $this->whenLoaded('tour', fn () => [
+                'id' => $this->tour->id,
+                'name' => $this->tour->name,
+                'slug' => $this->tour->slug,
+                'currency' => $this->tour->currency,
+            ]),
             'guide' => $this->whenLoaded('guide', fn () => $this->guide
                 ? ['id' => $this->guide->id, 'name' => $this->guide->name]
                 : null),

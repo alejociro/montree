@@ -35,6 +35,21 @@
 - [x] Test: activar producto sin fechas pasa; catálogo público lo muestra con `has_future_dates: false` (ver notas)
 - [x] `php artisan wayfinder:generate`
 - [x] Pint + suite verde (340/340)
+- [x] `TourDateDisplayStatus` enum (estado de presentación derivado, labels en español)
+- [x] `TourDate::displayStatus()` + scope `withDisplayStatus()` (derivación sin columnas nuevas)
+- [x] `display_status` y `tour` (id/name/slug) en `TourDateDetailResource` (adición no breaking)
+- [x] Endpoint global `GET /api/v1/admin/tour-dates` (`TourDateIndexController` invokable + `TourDateIndexRequest`)
+- [x] Tests: `TourDateGlobalIndexTest` (happy/403/422/edge derivación/tenant isolation) — 5 tests
+
+### Listado global de salidas + estado derivado (agregado 2026-07-13)
+
+- [~] Enum `App\Enums\TourDateDisplayStatus` (open/full/closed/cancelled/in_progress/finished) — en progreso 2026-07-13
+- [~] `TourDate::displayStatus()` con reglas de derivación (cancelled gana → finished → in_progress → status almacenado) — en progreso 2026-07-13
+- [~] Ampliar `TourDateDetailResource`: `display_status` + `tour: { id, name, slug }` (adición no-breaking, sirve index anidado y global) — en progreso 2026-07-13
+- [~] `IndexTourDatesRequest` (filtros status/tour_id/from/to/direction/per_page tenant-aware) — en progreso 2026-07-13
+- [~] Controller + ruta `GET /api/v1/admin/tour-dates` (global cross-producto, eager-load sin N+1, paginado) — en progreso 2026-07-13
+- [~] Tests: listado global (happy/tenant-isolation/filtros status derivado/tour_id/from/to/422) + `displayStatus()` — en progreso 2026-07-13
+- [~] `php artisan wayfinder:generate` (nueva ruta) — en progreso 2026-07-13
 
 ## Frontend (`montree-frontend-dev`)
 
@@ -49,6 +64,13 @@
 - [x] Estados loading/error/empty en panel y dialogs
 - [x] `npm run types:check` (solo 2 errores preexistentes AppHeader/Notifications) + lint (solo 3 errores preexistentes ajenos a F017) + build verde
 - [x] Probar en navegador: crear salida con condiciones + editar + cancelar + logística CRUD (verificado 2026-07-12 con Playwright: salida creada con guía/ruta/proveedor/hotel, cancelación con motivo, ruta creada, delete de ruta en uso → 409 protegido, producto activo sin fechas visible en catálogo con "Sin disponibilidad" y detalle con card "Sin fechas disponibles")
+
+### Listado global "Tours" (agregado 2026-07-13)
+
+- [x] Page `Admin/Departures/Index.vue` (tabla producto/fecha/ocupación/precio/guía/condiciones/estado + filtros estado/producto/rango + acciones editar/cancelar) — 2026-07-13
+- [x] Segunda entrada de sidebar admin: "Productos" (`/admin/tours`) y "Tours" (`/admin/departures`) — 2026-07-13
+- [x] Reutilizar `TourDateFormDialog` (editar) y flujo de cancelación de `TourDatesPanel` desde el listado global — 2026-07-13
+- [x] Types: `TourDateGlobalAdmin` (`extends TourDateAdmin` con `display_status` + `tour`) en `resources/js/types/logistics.ts` — 2026-07-13
 
 ## Review (`montree-reviewer`)
 
@@ -68,8 +90,15 @@
 - **Autorización**: los Form Requests autorizan con `can('create', Tour::class)` (gate admin/operator ya existente); no se crearon Policies por modelo de logística (plan §2 lo indica). El middleware `tenant_admin.only` ya gatea el grupo.
 - **N+1**: verificado — el index de salidas hace 5 queries fijas (dates + tour + guide + route + provider + hotels) independiente de la cantidad de filas.
 - **Colisión `Route`**: en `RouteController` se importa `use App\Models\Route as RouteModel;` para no chocar con el facade.
+- **Listado global de salidas (2026-07-13)**: `GET /api/v1/admin/tour-dates` (name `api.v1.admin.tour-dates.index`) en el mismo grupo `tenant_admin.only`, controller invokable `TourDateIndexController` (1 statement, autorización delegada al Form Request). Filtros vía `TourDateIndexRequest`: `status` (whitelist del enum `TourDateDisplayStatus`), `tour_id` (`Rule::exists` con `where('tenant_id', ...)` porque el global scope NO aplica en exists), `from`/`to` sobre `starts_at` (`to` ≥ `from`), `per_page` (max 100, default 15), `direction` (asc/desc, default desc). Orden fijo por `starts_at`.
+- **Estado de presentación derivado**: `TourDateDisplayStatus` (open/full/closed/cancelled/in_progress/finished) NO agrega columnas. `TourDate::displayStatus()` deriva en lectura (cancelled gana; luego finished si `COALESCE(ends_at,starts_at) < now`; luego in_progress si dentro de la ventana con `ends_at` no null; si no, mapea el status almacenado). `scopeWithDisplayStatus()` replica la derivación en SQL (usa `whereRaw COALESCE` + `whereNot` para excluir in_progress de open/full/closed) para poder filtrar y paginar. Bindings Carbon se serializan por `prepareBindings()` (cross-DB, funciona en SQLite de tests).
+- **Resource extendido (no breaking)**: `TourDateDetailResource` agrega `display_status` (siempre presente) y `tour` (`whenLoaded`, id/name/slug). El `tour` ya se hacía eager load en todos los endpoints que usan el resource (nested index, cancel, respondWith y el nuevo global index incluyen `tour` en RELATIONS), por lo que `effective_price` (que usa `$this->tour->base_price`) y el nuevo campo `tour` no introducen N+1.
+- **Autorización del global index**: `TourDateIndexRequest::authorize()` usa `can('viewAny', Tour::class)` — equivalente sin instancia al `Gate::authorize('view', $tour)` del index anidado (ambos resuelven `isStaff` en `TourPolicy`). El 403 efectivo para no admin/operator lo impone el middleware `tenant_admin.only`.
+- **Wayfinder no regenerado**: el helper TS de la nueva ruta queda pendiente para `montree-frontend-dev` (fuera de mi scope backend; no corrí `wayfinder:generate` para no tocar artefactos de frontend).
 
 ## Changelog
 
 - `2026-07-12` — Creación inicial.
 - `2026-07-12` — Backend implementado (montree-backend-dev): excepciones de dominio, 4 actions de salida, modificación de `ChangeTourStatusAction`, form requests tenant-aware, controllers de salidas + logística, resources, rutas, 23 tests nuevos. Suite 340/340.
+- `2026-07-13` — Backend listado global (montree-backend-dev): enum `TourDateDisplayStatus`, `TourDate::displayStatus()` + scope `withDisplayStatus()`, endpoint `GET /api/v1/admin/tour-dates` (`TourDateIndexController` + `TourDateIndexRequest`), `display_status`/`tour` en `TourDateDetailResource`, 5 tests (`TourDateGlobalIndexTest`). Filtro `TourDate` verde 21/21.
+- `2026-07-13` — Agregadas tareas de listado global de salidas (endpoint `GET /api/v1/admin/tour-dates` + tests, enum `TourDateDisplayStatus`, `displayStatus()`, resource ampliado, page `Admin/Departures/Index.vue`, segunda entrada de sidebar "Tours"), marcadas en progreso. Razón: separación Productos vs Tours en admin + estado de presentación derivado.
