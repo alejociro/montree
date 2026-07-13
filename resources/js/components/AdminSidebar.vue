@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import {
     LayoutDashboard,
     Mountain,
+    Truck,
     Megaphone,
     Mail,
     Star,
@@ -30,9 +31,14 @@ const navItems: NavItem[] = [
         icon: LayoutDashboard,
     },
     {
-        title: 'Tours',
+        title: 'Productos',
         href: '/admin/tours',
         icon: Mountain,
+    },
+    {
+        title: 'Logística',
+        href: '/admin/logistics',
+        icon: Truck,
     },
     {
         title: 'Promociones',

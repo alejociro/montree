@@ -82,7 +82,7 @@ async function fetchTours(): Promise<void> {
         tours.value = payload.data;
         meta.value = payload.meta;
     } catch {
-        toast.error('No se pudieron cargar los tours.');
+        toast.error('No se pudieron cargar los productos.');
     } finally {
         loading.value = false;
     }
@@ -120,18 +120,18 @@ function formatPrice(amount: string, code: string): string {
 </script>
 
 <template>
-    <Head title="Tours" />
+    <Head title="Productos" />
 
     <div class="px-4 py-6 md:px-8">
         <div class="flex items-start justify-between gap-4">
             <Heading
-                title="Tours"
+                title="Productos"
                 description="Gestioná el catálogo de experiencias de tu agencia."
             />
             <Link :href="createPage().url">
                 <Button>
                     <Plus class="size-4" />
-                    Nuevo tour
+                    Nuevo producto
                 </Button>
             </Link>
         </div>
@@ -176,9 +176,9 @@ function formatPrice(amount: string, code: string): string {
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <p class="font-medium">Aún no hay tours</p>
+                    <p class="font-medium">Aún no hay productos</p>
                     <p class="text-sm text-muted-foreground">
-                        Creá tu primer tour para empezar a recibir reservas.
+                        Creá tu primer producto para empezar a recibir reservas.
                     </p>
                 </div>
                 <Link :href="createPage().url">
@@ -254,7 +254,7 @@ function formatPrice(amount: string, code: string): string {
                 class="mt-6 text-xs text-muted-foreground"
             >
                 Mostrando {{ meta.from ?? 0 }} – {{ meta.to ?? 0 }} de
-                {{ meta.total }} tours
+                {{ meta.total }} productos
             </div>
         </div>
     </div>

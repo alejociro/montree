@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
 import {
+    CalendarOff,
     ChevronLeft,
     Clock,
     MapPin,
@@ -393,9 +394,24 @@ function dateOptionLabel(date: TourDetailDate): string {
                         </Button>
                     </template>
 
-                    <p v-else class="text-sm text-muted-foreground">
-                        No hay fechas disponibles.
-                    </p>
+                    <div
+                        v-else
+                        class="rounded-xl border border-dashed bg-background px-4 py-6 text-center"
+                    >
+                        <CalendarOff
+                            class="mx-auto size-8 text-muted-foreground/40"
+                        />
+                        <p class="mt-3 font-medium text-foreground">
+                            Sin fechas disponibles
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{
+                                tour.future_dates.length === 0
+                                    ? 'Todavía no hay salidas programadas para esta experiencia. Volvé pronto para reservar.'
+                                    : 'Por ahora no quedan cupos abiertos. Volvé pronto para nuevas salidas.'
+                            }}
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Meeting point -->

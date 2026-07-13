@@ -10,6 +10,7 @@ import {
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import changeStatus from '@/actions/App/Http/Controllers/Api/V1/Admin/TourStatusController';
 import Heading from '@/components/Heading.vue';
+import TourDatesPanel from '@/components/organisms/TourDatesPanel.vue';
 import TourForm from '@/components/organisms/TourForm.vue';
 import TourImageUploader from '@/components/organisms/TourImageUploader.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
@@ -157,10 +158,7 @@ function transitionTo(next: TourStatusType): void {
 
                 if (code === 'TOUR_NEEDS_IMAGE_TO_ACTIVATE') {
                     statusError.value =
-                        'El tour necesita al menos una imagen antes de activarse.';
-                } else if (code === 'TOUR_NEEDS_FUTURE_DATE_TO_ACTIVATE') {
-                    statusError.value =
-                        'El tour necesita al menos una fecha futura abierta para activarse.';
+                        'El producto necesita al menos una imagen antes de activarse.';
                 } else {
                     statusError.value = 'No se pudo cambiar el estado.';
                 }
@@ -175,7 +173,7 @@ function transitionTo(next: TourStatusType): void {
 function deleteTour(): void {
     if (
         !confirm(
-            '¿Eliminar este tour? Esta acción se puede revertir desde tu base de datos.',
+            '¿Eliminar este producto? Esta acción se puede revertir desde tu base de datos.',
         )
     ) {
         return;
@@ -183,7 +181,7 @@ function deleteTour(): void {
 
     void api.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
-            toast.success('Tour eliminado.');
+            toast.success('Producto eliminado.');
             router.visit(indexPage().url);
         },
         onError: (errors) => {
@@ -197,7 +195,7 @@ function deleteTour(): void {
                 return;
             }
 
-            toast.error('No se pudo eliminar el tour.');
+            toast.error('No se pudo eliminar el producto.');
         },
     });
 }
@@ -270,7 +268,7 @@ function deleteTour(): void {
                     <CardHeader>
                         <CardTitle class="text-base">Estado</CardTitle>
                         <CardDescription>
-                            Controlá la visibilidad del tour en el catálogo.
+                            Controlá la visibilidad del producto en el catálogo.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
@@ -312,6 +310,13 @@ function deleteTour(): void {
                     </CardContent>
                 </Card>
             </aside>
+        </div>
+
+        <div class="mt-8">
+            <TourDatesPanel
+                :tour-id="props.tour.id"
+                :currency="props.tour.currency"
+            />
         </div>
     </div>
 </template>

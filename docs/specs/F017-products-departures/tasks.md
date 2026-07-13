@@ -38,17 +38,17 @@
 
 ## Frontend (`montree-frontend-dev`)
 
-- [ ] Types en `resources/js/types/logistics.ts`
-- [ ] `TourDatesPanel.vue` (tabla próximas/pasadas/canceladas + acciones)
-- [ ] `TourDateFormDialog.vue` (crear/editar con condiciones: guía, ruta, proveedor, hoteles)
-- [ ] Integrar panel de salidas en `Admin/Tour/Edit.vue`
-- [ ] `LogisticsCrudPanel.vue` + page `Admin/Logistics/Index.vue` (tabs Rutas/Proveedores/Hoteles)
-- [ ] Entrada "Logística" en sidebar admin + labels "Productos"/"Salidas" en el panel
-- [ ] `TourDetail.vue` público: card "Sin fechas disponibles" cuando `dates` vacío
-- [ ] Llamadas API vía `useApi()` + Wayfinder (cero URLs hardcodeadas)
-- [ ] Estados loading/error/empty en panel y dialogs
-- [ ] `npm run types:check` + lint + build
-- [ ] Probar en navegador: crear salida con condiciones + editar + cancelar + logística CRUD
+- [x] Types en `resources/js/types/logistics.ts`
+- [x] `TourDatesPanel.vue` (tabla próximas/pasadas/canceladas + acciones)
+- [x] `TourDateFormDialog.vue` (crear/editar con condiciones: guía, ruta, proveedor, hoteles)
+- [x] Integrar panel de salidas en `Admin/Tour/Edit.vue`
+- [x] `LogisticsCrudPanel.vue` + page `Admin/Logistics/Index.vue` (tabs Rutas/Proveedores/Hoteles)
+- [x] Entrada "Logística" en sidebar admin + labels "Productos"/"Salidas" en el panel
+- [x] `TourDetail.vue` público: card "Sin fechas disponibles" cuando `dates` vacío
+- [x] Llamadas API vía `useApi()` + Wayfinder (cero URLs hardcodeadas; GET de solo lectura con `fetch` siguiendo el patrón de `Admin/Team/Index.vue`)
+- [x] Estados loading/error/empty en panel y dialogs
+- [x] `npm run types:check` (solo 2 errores preexistentes AppHeader/Notifications) + lint (solo 3 errores preexistentes ajenos a F017) + build verde
+- [x] Probar en navegador: crear salida con condiciones + editar + cancelar + logística CRUD (verificado 2026-07-12 con Playwright: salida creada con guía/ruta/proveedor/hotel, cancelación con motivo, ruta creada, delete de ruta en uso → 409 protegido, producto activo sin fechas visible en catálogo con "Sin disponibilidad" y detalle con card "Sin fechas disponibles")
 
 ## Review (`montree-reviewer`)
 
