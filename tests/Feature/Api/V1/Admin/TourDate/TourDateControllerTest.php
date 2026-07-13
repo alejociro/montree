@@ -159,6 +159,40 @@ class TourDateControllerTest extends TestCase
         $response->assertJsonValidationErrors('hotel_ids.0');
     }
 
+    public function test_update_changes_capacity_price_and_conditions(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $tourDate = TourDate::factory()->for($tour)->withRoute()->withHotels()->create(['capacity' => 10]);
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $newRoute = Route::factory()->create();
+        $newHotel = Hotel::factory()->create();
+
+        $response = $this->actingAs($admin)->putJson(
+            "http://demo.montree.test/api/v1/admin/tour-dates/{$tourDate->id}",
+            [
+                'capacity' => 15,
+                'price_override' => '1200.00',
+                'notes' => 'Condiciones actualizadas',
+                'route_id' => $newRoute->id,
+                'hotel_ids' => [$newHotel->id],
+            ],
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.capacity', 15);
+        $response->assertJsonPath('data.price_override', '1200.00');
+        $response->assertJsonPath('data.route.id', $newRoute->id);
+        $response->assertJsonPath('data.hotels.0.id', $newHotel->id);
+        $response->assertJsonCount(1, 'data.hotels');
+        $this->assertDatabaseHas('tour_dates', [
+            'id' => $tourDate->id,
+            'capacity' => 15,
+            'route_id' => $newRoute->id,
+        ]);
+    }
+
     public function test_update_rejects_capacity_below_booked_count(): void
     {
         $tenant = $this->makeTenant();
