@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Tour;
 
-use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
 use App\Exceptions\InvalidTourStatusTransitionException;
 use App\Models\Tour;
@@ -34,15 +33,6 @@ final class ChangeTourStatusAction
     {
         if ($tour->images()->count() === 0) {
             throw InvalidTourStatusTransitionException::needsImage();
-        }
-
-        $hasFutureOpenDate = $tour->dates()
-            ->where('status', TourDateStatus::Open->value)
-            ->where('starts_at', '>', now())
-            ->exists();
-
-        if (! $hasFutureOpenDate) {
-            throw InvalidTourStatusTransitionException::needsFutureDate();
         }
     }
 }

@@ -71,7 +71,7 @@ class TourStatusControllerTest extends TestCase
         $response->assertJsonPath('error_code', 'TOUR_NEEDS_IMAGE_TO_ACTIVATE');
     }
 
-    public function test_activating_without_future_date_fails(): void
+    public function test_activating_without_future_date_now_succeeds(): void
     {
         $tenant = $this->makeTenant();
         $tenant->makeCurrent();
@@ -84,8 +84,9 @@ class TourStatusControllerTest extends TestCase
             ['status' => 'active'],
         );
 
-        $response->assertStatus(422);
-        $response->assertJsonPath('error_code', 'TOUR_NEEDS_FUTURE_DATE_TO_ACTIVATE');
+        $response->assertOk();
+        $response->assertJsonPath('data.status', 'active');
+        $this->assertSame(TourStatus::Active, $tour->fresh()?->status);
     }
 
     public function test_invalid_transition_returns_422(): void

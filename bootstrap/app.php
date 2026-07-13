@@ -2,6 +2,7 @@
 
 use App\Exceptions\BookingException;
 use App\Exceptions\InvalidTourStatusTransitionException;
+use App\Exceptions\LogisticsException;
 use App\Exceptions\NewsletterException;
 use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
@@ -9,6 +10,7 @@ use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
 use App\Exceptions\ReviewException;
 use App\Exceptions\TeamException;
+use App\Exceptions\TourDateException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTenantAdmin;
@@ -82,4 +84,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (ReviewException $e) => $e->toResponse());
         $exceptions->render(fn (NewsletterException $e) => $e->toResponse());
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
+        $exceptions->render(fn (TourDateException $e) => $e->toResponse());
+        $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
     })->create();

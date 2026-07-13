@@ -5,16 +5,21 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
+use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Api\V1\Admin\TourDateController as AdminTourDateController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\BookingController;
@@ -94,6 +99,16 @@ Route::middleware(['auth', 'tenant_admin.only'])->prefix('admin')->name('api.v1.
 
     Route::apiResource('tours', AdminTourController::class)->names('tours');
     Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');
+
+    Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->name('tours.dates.index');
+    Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->name('tours.dates.store');
+    Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->name('tour-dates.update');
+    Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->name('tour-dates.cancel');
+    Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->name('tour-dates.destroy');
+
+    Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes');
+    Route::apiResource('providers', AdminProviderController::class)->only(['index', 'store', 'update', 'destroy'])->names('providers');
+    Route::apiResource('hotels', AdminHotelController::class)->only(['index', 'store', 'update', 'destroy'])->names('hotels');
     Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
     Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
     Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
