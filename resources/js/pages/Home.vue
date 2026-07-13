@@ -1,42 +1,36 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ArrowRight, Search, Star } from 'lucide-vue-next';
+import {
+    ArrowRight,
+    Compass,
+    Lock,
+    Mountain,
+    Palette,
+    Quote,
+    Search,
+    ShieldCheck,
+    Star,
+    Zap,
+} from 'lucide-vue-next';
+import type { Component } from 'vue';
 import { computed, ref } from 'vue';
-import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
+import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
+import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { index as catalogIndex } from '@/routes/catalog';
+import type { CatalogCategory, CatalogTour } from '@/types/catalog';
+import type { HomePromotion, HomeTestimonial } from '@/types/home';
 
 defineOptions({ layout: PublicLayout });
 
-type TourCard = {
-    id: number;
-    slug: string;
-    name: string;
-    short_description: string | null;
-    base_price: string;
-    currency: string;
-    cover_image_url: string | null;
-    rating_average: string;
-    rating_count: number;
-    category: { name: string } | null;
-    is_favorite: boolean;
-};
-
-type PromotionCard = {
-    id: number;
-    name: string;
-    description: string | null;
-    discount_label: string;
-    cover_image_url: string | null;
-    tour: { slug: string; name: string } | null;
-};
-
 type Props = {
-    featuredTours?: TourCard[];
-    suggestedTours?: TourCard[];
-    promotions?: PromotionCard[];
+    featuredTours?: CatalogTour[];
+    suggestedTours?: CatalogTour[];
+    promotions?: HomePromotion[];
+    categories?: CatalogCategory[];
+    testimonials?: HomeTestimonial[];
 };
 
 defineProps<Props>();
@@ -45,25 +39,31 @@ const { displayName, configuration } = useTenant();
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
+const heroFallbackImage =
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop';
+
 const searchQuery = ref('');
 const newsletterEmail = ref('');
 const newsletterSubmitting = ref(false);
 const newsletterSuccess = ref(false);
 
-function handleSearch(): void {
-    if (searchQuery.value.trim()) {
-        router.get(catalogIndex().url, { search: searchQuery.value.trim() });
-    } else {
-        router.get(catalogIndex().url);
-    }
+const CATEGORY_ICONS: Record<string, Component> = {
+    mountain: Mountain,
+    compass: Compass,
+    palette: Palette,
+};
+
+function categoryIcon(icon: string | null): Component {
+    return (icon !== null ? CATEGORY_ICONS[icon] : undefined) ?? Compass;
 }
 
-function formatPrice(amount: string, code: string): string {
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: code,
-        maximumFractionDigits: 0,
-    }).format(Number(amount));
+function categoryHref(slug: string): string {
+    return catalogIndex({ query: { category: slug } }).url;
+}
+
+function handleSearch(): void {
+    const term = searchQuery.value.trim();
+    router.get(catalogIndex().url, term ? { search: term } : {});
 }
 
 async function handleNewsletterSubscribe(): Promise<void> {
@@ -103,20 +103,27 @@ async function handleNewsletterSubscribe(): Promise<void> {
     <div>
         <Head :title="displayName" />
 
-        <!-- Hero Section -->
-        <section class="relative min-h-[60vh] overflow-hidden">
+        <!-- Hero -->
+        <section class="relative min-h-[70vh] overflow-hidden">
             <img
-                :src="configuration?.hero_image_url ?? 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop'"
+                :src="configuration?.hero_image_url ?? heroFallbackImage"
                 alt=""
                 class="absolute inset-0 size-full object-cover"
             />
-            <div class="absolute inset-0 bg-[#172e24]/60" />
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/25"
+                aria-hidden="true"
+            />
+            <div
+                class="absolute inset-0 bg-gradient-to-br from-primary/35 via-transparent to-transparent mix-blend-multiply"
+                aria-hidden="true"
+            />
 
             <div
-                class="relative z-10 mx-auto flex min-h-[60vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6 lg:px-8"
+                class="relative z-10 mx-auto flex min-h-[70vh] w-full max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6 lg:px-8"
             >
                 <h1
-                    class="max-w-3xl text-4xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl"
+                    class="max-w-3xl text-4xl font-bold tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl"
                 >
                     {{
                         configuration?.tagline ||
@@ -124,25 +131,27 @@ async function handleNewsletterSubscribe(): Promise<void> {
                     }}
                 </h1>
                 <p
-                    class="mt-4 max-w-2xl text-base text-white/85 sm:text-lg lg:text-xl"
+                    class="mt-4 max-w-2xl text-base text-white/90 sm:text-lg lg:text-xl"
                 >
                     {{
                         configuration?.description ||
-                        'Explora el mundo con nosotros'
+                        'Explora experiencias inolvidables con nosotros'
                     }}
                 </p>
 
                 <form
-                    class="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-white/95 p-2 shadow-xl ring-1 ring-black/5 backdrop-blur"
+                    class="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-background/95 p-2 shadow-2xl ring-1 ring-black/5 backdrop-blur"
+                    role="search"
+                    aria-label="Buscar tours"
                     @submit.prevent="handleSearch"
                 >
                     <div class="relative flex-1">
                         <Search
                             class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
                         />
-                        <label class="sr-only" for="hero-search"
-                            >Buscar tours</label
-                        >
+                        <label class="sr-only" for="hero-search">
+                            Buscar tours
+                        </label>
                         <input
                             id="hero-search"
                             v-model="searchQuery"
@@ -156,17 +165,134 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         <ArrowRight class="ml-1 size-4" />
                     </Button>
                 </form>
+
+                <!-- Category chips -->
+                <Deferred data="categories">
+                    <template #fallback>
+                        <div class="mt-6 flex flex-wrap justify-center gap-2">
+                            <div
+                                v-for="n in 5"
+                                :key="`cat-chip-skel-${n}`"
+                                class="h-8 w-24 animate-pulse rounded-full bg-white/20"
+                            />
+                        </div>
+                    </template>
+
+                    <div
+                        v-if="(categories?.length ?? 0) > 0"
+                        class="mt-6 flex flex-wrap justify-center gap-2"
+                    >
+                        <Link
+                            v-for="category in categories"
+                            :key="category.id"
+                            :href="categoryHref(category.slug)"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
+                        >
+                            <component
+                                :is="categoryIcon(category.icon)"
+                                class="size-3.5"
+                                aria-hidden="true"
+                            />
+                            {{ category.name }}
+                            <span class="text-white/60"
+                                >({{ category.tours_count }})</span
+                            >
+                        </Link>
+                    </div>
+                </Deferred>
+
+                <!-- Trust indicators -->
+                <div
+                    class="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-white/85 sm:text-sm"
+                >
+                    <span class="inline-flex items-center gap-1.5">
+                        <ShieldCheck class="size-4" aria-hidden="true" />
+                        Reserva segura
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <Zap class="size-4" aria-hidden="true" />
+                        Confirmación instantánea
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <Lock class="size-4" aria-hidden="true" />
+                        Pago protegido
+                    </span>
+                </div>
             </div>
         </section>
 
-        <!-- Featured Tours Section -->
+        <!-- Featured categories -->
+        <Deferred data="categories">
+            <template #fallback>
+                <section
+                    class="mx-auto w-full max-w-7xl px-4 pt-14 sm:px-6 lg:px-8"
+                >
+                    <div class="h-7 w-56 animate-pulse rounded bg-muted" />
+                    <div
+                        class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+                    >
+                        <div
+                            v-for="n in 4"
+                            :key="`cat-card-skel-${n}`"
+                            class="h-28 animate-pulse rounded-2xl bg-muted"
+                        />
+                    </div>
+                </section>
+            </template>
+
+            <section
+                v-if="(categories?.length ?? 0) >= 3"
+                class="mx-auto w-full max-w-7xl px-4 pt-14 sm:px-6 lg:px-8"
+            >
+                <h2
+                    class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                >
+                    Explora por categoría
+                </h2>
+                <div
+                    class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+                >
+                    <Link
+                        v-for="category in categories"
+                        :key="category.id"
+                        :href="categoryHref(category.slug)"
+                        class="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                    >
+                        <span
+                            class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"
+                        >
+                            <component
+                                :is="categoryIcon(category.icon)"
+                                class="size-5"
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <div>
+                            <p class="text-sm font-bold text-foreground">
+                                {{ category.name }}
+                            </p>
+                            <p class="mt-0.5 text-xs text-muted-foreground">
+                                {{ category.tours_count }}
+                                {{
+                                    category.tours_count === 1
+                                        ? 'tour'
+                                        : 'tours'
+                                }}
+                            </p>
+                        </div>
+                    </Link>
+                </div>
+            </section>
+        </Deferred>
+
+        <!-- Featured tours -->
         <section class="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between gap-4">
                 <div>
                     <h2
                         class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                     >
-                        Tours
+                        Tours destacados
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
                         Nuestras experiencias más reservadas este mes
@@ -189,7 +315,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         <div
                             v-for="n in 4"
                             :key="`ft-skel-${n}`"
-                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-border/50"
                         >
                             <div
                                 class="aspect-[4/3] w-full animate-pulse rounded-xl bg-muted"
@@ -200,34 +326,94 @@ async function handleNewsletterSubscribe(): Promise<void> {
                             <div
                                 class="h-3 w-1/2 animate-pulse rounded bg-muted"
                             />
-                            <div class="mt-1 flex items-center justify-between">
-                                <div
-                                    class="h-5 w-24 animate-pulse rounded bg-muted"
-                                />
-                                <div
-                                    class="h-3 w-14 animate-pulse rounded bg-muted"
-                                />
-                            </div>
+                            <div
+                                class="mt-1 h-5 w-24 animate-pulse rounded bg-muted"
+                            />
                         </div>
                     </div>
                 </template>
 
                 <div
+                    v-if="(featuredTours?.length ?? 0) > 0"
                     class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
                 >
-                    <article
+                    <HomeTourCard
                         v-for="tour in featuredTours"
                         :key="tour.id"
-                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                        :tour="tour"
+                        :is-authenticated="isAuthenticated"
+                    />
+                </div>
+
+                <div
+                    v-else
+                    class="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center"
+                >
+                    <Compass
+                        class="size-10 text-muted-foreground"
+                        aria-hidden="true"
+                    />
+                    <h3 class="mt-4 text-lg font-semibold text-foreground">
+                        Aún no hay tours publicados
+                    </h3>
+                    <p class="mt-1 max-w-sm text-sm text-muted-foreground">
+                        Muy pronto encontrarás aquí experiencias increíbles para
+                        reservar.
+                    </p>
+                </div>
+            </Deferred>
+        </section>
+
+        <!-- Promotions -->
+        <Deferred data="promotions">
+            <template #fallback>
+                <section
+                    class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
+                >
+                    <div class="h-7 w-64 animate-pulse rounded bg-muted" />
+                    <div
+                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
                     >
-                        <Link
-                            :href="`/tours/${tour.slug}`"
-                            class="relative block aspect-[4/3] overflow-hidden rounded-xl"
+                        <div
+                            v-for="n in 3"
+                            :key="`promo-skel-${n}`"
+                            class="h-64 animate-pulse rounded-2xl bg-muted"
+                        />
+                    </div>
+                </section>
+            </template>
+
+            <section
+                v-if="(promotions?.length ?? 0) > 0"
+                class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
+            >
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h2
+                            class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                         >
+                            Promociones especiales
+                        </h2>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Aprovecha nuestras ofertas de temporada
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    <article
+                        v-for="promo in promotions"
+                        :key="promo.id"
+                        class="group relative flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    >
+                        <div class="relative aspect-[16/10] overflow-hidden">
                             <img
-                                v-if="tour.cover_image_url"
-                                :src="tour.cover_image_url"
-                                :alt="tour.name"
+                                v-if="promo.cover_image_url"
+                                :src="promo.cover_image_url"
+                                :alt="promo.name"
+                                loading="lazy"
                                 class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div
@@ -238,64 +424,45 @@ async function handleNewsletterSubscribe(): Promise<void> {
                                     >Sin imagen</span
                                 >
                             </div>
-                        </Link>
-                        <div
-                            v-if="isAuthenticated"
-                            class="absolute top-5 right-5 z-10"
-                        >
-                            <FavoriteButton
-                                :tour-id="tour.id"
-                                :initial-favorite="tour.is_favorite"
-                                class="size-9 rounded-full border-0 bg-white/90 text-foreground shadow-sm backdrop-blur hover:bg-white"
-                            />
-                        </div>
-                        <div class="flex flex-1 flex-col gap-1 px-1 pt-4 pb-2">
-                            <Link
-                                :href="`/tours/${tour.slug}`"
-                                class="text-base leading-tight font-bold text-foreground transition group-hover:text-primary"
-                            >
-                                {{ tour.name }}
-                            </Link>
-                            <p
-                                v-if="tour.category"
-                                class="text-xs text-muted-foreground"
-                            >
-                                {{ tour.category.name }}
-                            </p>
                             <div
-                                class="mt-3 flex items-center justify-between gap-2"
+                                class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+                                aria-hidden="true"
+                            />
+                            <span
+                                class="absolute top-4 left-4 rounded-full bg-destructive px-3.5 py-1.5 text-sm font-extrabold tracking-wide text-destructive-foreground shadow-lg"
                             >
-                                <span
-                                    class="text-base font-bold text-foreground"
+                                {{ promo.discount_label }} OFF
+                            </span>
+                        </div>
+                        <div class="flex flex-1 flex-col gap-2 p-5">
+                            <h3 class="text-lg font-bold text-foreground">
+                                {{ promo.name }}
+                            </h3>
+                            <p
+                                v-if="promo.description"
+                                class="line-clamp-2 text-sm text-muted-foreground"
+                            >
+                                {{ promo.description }}
+                            </p>
+                            <div class="mt-auto pt-3">
+                                <Button
+                                    v-if="promo.tour"
+                                    as-child
+                                    class="rounded-full px-6"
                                 >
-                                    {{
-                                        formatPrice(
-                                            tour.base_price,
-                                            tour.currency,
-                                        )
-                                    }}
-                                </span>
-                                <span
-                                    v-if="tour.rating_count > 0"
-                                    class="flex items-center gap-1 text-xs font-medium text-muted-foreground"
-                                    :title="`${tour.rating_average} de 5`"
-                                >
-                                    <Star
-                                        class="size-3.5 fill-amber-400 text-amber-400"
-                                    />
-                                    {{ Number(tour.rating_average).toFixed(1) }}
-                                    <span class="text-muted-foreground/70"
-                                        >({{ tour.rating_count }})</span
-                                    >
-                                </span>
+                                    <Link :href="tourShow.url(promo.tour.slug)">
+                                        Reservar ahora
+                                        <ArrowRight class="ml-1 size-4" />
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </article>
                 </div>
-            </Deferred>
-        </section>
+            </section>
+        </Deferred>
 
-        <!-- Suggested Tours Section -->
+        <!-- Suggestions -->
         <section class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between gap-4">
                 <h2
@@ -320,7 +487,7 @@ async function handleNewsletterSubscribe(): Promise<void> {
                         <div
                             v-for="n in 4"
                             :key="`sg-skel-${n}`"
-                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-border/50"
                         >
                             <div
                                 class="aspect-[4/3] w-full animate-pulse rounded-xl bg-muted"
@@ -329,259 +496,184 @@ async function handleNewsletterSubscribe(): Promise<void> {
                                 class="mt-1 h-4 w-2/3 animate-pulse rounded bg-muted"
                             />
                             <div
-                                class="h-3 w-1/2 animate-pulse rounded bg-muted"
+                                class="h-5 w-24 animate-pulse rounded bg-muted"
                             />
-                            <div class="mt-1 flex items-center justify-between">
-                                <div
-                                    class="h-5 w-24 animate-pulse rounded bg-muted"
-                                />
-                                <div
-                                    class="h-3 w-14 animate-pulse rounded bg-muted"
-                                />
-                            </div>
                         </div>
                     </div>
                 </template>
 
                 <div
-                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                    v-if="(suggestedTours?.length ?? 0) > 0"
+                    class="-mx-4 mt-8 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
+                    role="list"
+                    aria-label="Tours sugeridos"
                 >
-                    <article
+                    <HomeTourCard
                         v-for="tour in suggestedTours"
                         :key="tour.id"
-                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-                    >
-                        <Link
-                            :href="`/tours/${tour.slug}`"
-                            class="relative block aspect-[4/3] overflow-hidden rounded-xl"
-                        >
-                            <img
-                                v-if="tour.cover_image_url"
-                                :src="tour.cover_image_url"
-                                :alt="tour.name"
-                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div
-                                v-else
-                                class="flex size-full items-center justify-center bg-muted"
-                            >
-                                <span class="text-xs text-muted-foreground"
-                                    >Sin imagen</span
-                                >
-                            </div>
-                        </Link>
-                        <div
-                            v-if="isAuthenticated"
-                            class="absolute top-5 right-5 z-10"
-                        >
-                            <FavoriteButton
-                                :tour-id="tour.id"
-                                :initial-favorite="tour.is_favorite"
-                                class="size-9 rounded-full border-0 bg-white/90 text-foreground shadow-sm backdrop-blur hover:bg-white"
-                            />
-                        </div>
-                        <div class="flex flex-1 flex-col gap-1 px-1 pt-4 pb-2">
-                            <Link
-                                :href="`/tours/${tour.slug}`"
-                                class="text-base leading-tight font-bold text-foreground transition group-hover:text-primary"
-                            >
-                                {{ tour.name }}
-                            </Link>
-                            <p
-                                v-if="tour.category"
-                                class="text-xs text-muted-foreground"
-                            >
-                                {{ tour.category.name }}
-                            </p>
-                            <div
-                                class="mt-3 flex items-center justify-between gap-2"
-                            >
-                                <span
-                                    class="text-base font-bold text-foreground"
-                                >
-                                    {{
-                                        formatPrice(
-                                            tour.base_price,
-                                            tour.currency,
-                                        )
-                                    }}
-                                </span>
-                                <span
-                                    v-if="tour.rating_count > 0"
-                                    class="flex items-center gap-1 text-xs font-medium text-muted-foreground"
-                                    :title="`${tour.rating_average} de 5`"
-                                >
-                                    <Star
-                                        class="size-3.5 fill-amber-400 text-amber-400"
-                                    />
-                                    {{ Number(tour.rating_average).toFixed(1) }}
-                                    <span class="text-muted-foreground/70"
-                                        >({{ tour.rating_count }})</span
-                                    >
-                                </span>
-                            </div>
-                        </div>
-                    </article>
+                        :tour="tour"
+                        :is-authenticated="isAuthenticated"
+                        role="listitem"
+                        class="w-[80vw] shrink-0 snap-start sm:w-auto"
+                    />
                 </div>
             </Deferred>
         </section>
 
-        <!-- Promotions Section -->
-        <section
-            v-if="promotions === undefined || (promotions?.length ?? 0) > 0"
-            class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
-        >
-            <div class="flex items-end justify-between gap-4">
-                <div>
-                    <h2
-                        class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                    >
-                        Promociones especiales
-                    </h2>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Aprovecha nuestras ofertas de temporada
-                    </p>
-                </div>
-                <Link
-                    :href="catalogIndex().url"
-                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
-                >
-                    Ver todos
-                    <ArrowRight class="size-4" />
-                </Link>
-            </div>
-
-            <Deferred data="promotions">
-                <template #fallback>
-                    <div
-                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-                    >
+        <!-- Testimonials -->
+        <Deferred data="testimonials">
+            <template #fallback>
+                <section class="bg-muted/40 py-16">
+                    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div
-                            v-for="n in 3"
-                            :key="`promo-skel-${n}`"
-                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm"
-                        >
+                            class="mx-auto h-7 w-72 animate-pulse rounded bg-muted"
+                        />
+                        <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
                             <div
-                                class="aspect-[16/9] w-full animate-pulse rounded-xl bg-muted"
-                            />
-                            <div
-                                class="mt-1 h-5 w-1/2 animate-pulse rounded bg-muted"
-                            />
-                            <div
-                                class="h-3 w-full animate-pulse rounded bg-muted"
-                            />
-                            <div
-                                class="mt-2 h-9 w-32 animate-pulse rounded-full bg-muted"
+                                v-for="n in 3"
+                                :key="`test-skel-${n}`"
+                                class="h-44 animate-pulse rounded-2xl bg-muted"
                             />
                         </div>
                     </div>
-                </template>
+                </section>
+            </template>
 
-                <div
-                    v-if="(promotions?.length ?? 0) > 0"
-                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                    <article
-                        v-for="promo in promotions"
-                        :key="promo.id"
-                        class="group relative flex flex-col rounded-2xl bg-card p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-                    >
-                        <div
-                            class="relative aspect-[16/9] overflow-hidden rounded-xl"
+            <section
+                v-if="(testimonials?.length ?? 0) > 0"
+                class="bg-muted/40 py-16"
+            >
+                <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <h2
+                            class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                         >
-                            <img
-                                v-if="promo.cover_image_url"
-                                :src="promo.cover_image_url"
-                                :alt="promo.name"
-                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            Lo que dicen nuestros viajeros
+                        </h2>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Experiencias reales de quienes viajaron con nosotros
+                        </p>
+                    </div>
+
+                    <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <figure
+                            v-for="testimonial in testimonials"
+                            :key="testimonial.id"
+                            class="relative flex flex-col rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/50"
+                        >
+                            <Quote
+                                class="absolute top-5 right-5 size-8 text-primary/15"
+                                aria-hidden="true"
                             />
                             <div
-                                v-else
-                                class="flex size-full items-center justify-center bg-muted"
+                                class="flex items-center gap-0.5"
+                                :aria-label="`${testimonial.rating} de 5 estrellas`"
                             >
-                                <span class="text-xs text-muted-foreground"
-                                    >Sin imagen</span
-                                >
+                                <Star
+                                    v-for="star in 5"
+                                    :key="star"
+                                    class="size-4"
+                                    :class="
+                                        star <= testimonial.rating
+                                            ? 'fill-amber-400 text-amber-400'
+                                            : 'text-muted-foreground/30'
+                                    "
+                                    aria-hidden="true"
+                                />
                             </div>
-                            <span
-                                class="absolute top-3 left-3 rounded-full bg-destructive px-3 py-1 text-xs font-bold tracking-wide text-destructive-foreground shadow-sm"
-                            >
-                                {{ promo.discount_label }} OFF
-                            </span>
-                        </div>
-                        <div class="flex flex-1 flex-col gap-2 px-2 pt-4 pb-2">
-                            <h3 class="text-lg font-bold text-foreground">
-                                {{ promo.name }}
-                            </h3>
-                            <p
-                                v-if="promo.description"
-                                class="line-clamp-2 text-sm text-muted-foreground"
-                            >
-                                {{ promo.description }}
-                            </p>
-                            <div class="mt-3 pt-1">
-                                <Button
-                                    v-if="promo.tour"
-                                    as-child
-                                    class="rounded-full px-6"
+                            <figcaption class="contents">
+                                <h3
+                                    v-if="testimonial.title"
+                                    class="mt-4 font-semibold text-foreground"
                                 >
-                                    <Link :href="`/tours/${promo.tour.slug}`">
-                                        Comprar ahora
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </article>
+                                    {{ testimonial.title }}
+                                </h3>
+                                <blockquote
+                                    v-if="testimonial.body"
+                                    class="mt-2 line-clamp-4 text-sm text-muted-foreground"
+                                >
+                                    {{ testimonial.body }}
+                                </blockquote>
+                                <div
+                                    class="mt-auto flex flex-wrap items-center gap-x-1.5 pt-4 text-sm"
+                                >
+                                    <span class="font-medium text-foreground">
+                                        {{
+                                            testimonial.author_name ?? 'Viajero'
+                                        }}
+                                    </span>
+                                    <template v-if="testimonial.tour">
+                                        <span class="text-muted-foreground"
+                                            >·</span
+                                        >
+                                        <Link
+                                            :href="
+                                                tourShow.url(
+                                                    testimonial.tour.slug,
+                                                )
+                                            "
+                                            class="text-primary transition hover:underline"
+                                        >
+                                            {{ testimonial.tour.name }}
+                                        </Link>
+                                    </template>
+                                </div>
+                            </figcaption>
+                        </figure>
+                    </div>
                 </div>
-            </Deferred>
-        </section>
+            </section>
+        </Deferred>
 
-        <!-- Newsletter Section -->
-        <section class="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <!-- Newsletter -->
+        <section class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div
-                class="relative overflow-hidden rounded-3xl bg-[#2B3B2E] px-6 py-16 shadow-sm sm:px-12"
+                class="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 shadow-sm sm:px-12"
             >
                 <div
-                    class="pointer-events-none absolute -top-1/2 left-1/2 size-[120%] -translate-x-1/2 rounded-full border border-white/5"
+                    class="pointer-events-none absolute -top-1/2 left-1/2 size-[120%] -translate-x-1/2 rounded-full border border-primary-foreground/10"
                     aria-hidden="true"
                 />
                 <div class="relative mx-auto max-w-xl text-center">
                     <h2
-                        class="text-2xl font-bold tracking-tight text-white sm:text-3xl"
+                        class="text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl"
                     >
                         Mantente actualizado
                     </h2>
-                    <p class="mx-auto mt-3 max-w-md text-sm text-white/70">
+                    <p
+                        class="mx-auto mt-3 max-w-md text-sm text-primary-foreground/80"
+                    >
                         Recibe noticias, descuentos exclusivos y sugerencias
                         directo en tu bandeja.
                     </p>
                     <form
                         v-if="!newsletterSuccess"
-                        class="mx-auto mt-8 flex w-full max-w-md items-center gap-2 rounded-full bg-white/10 p-1.5 ring-1 ring-white/15"
+                        class="mx-auto mt-8 flex w-full max-w-md items-center gap-2 rounded-full bg-primary-foreground/10 p-1.5 ring-1 ring-primary-foreground/20"
                         @submit.prevent="handleNewsletterSubscribe"
                     >
-                        <label class="sr-only" for="newsletter-email"
-                            >Correo electrónico</label
-                        >
+                        <label class="sr-only" for="newsletter-email">
+                            Correo electrónico
+                        </label>
                         <input
                             id="newsletter-email"
                             v-model="newsletterEmail"
                             type="email"
                             required
                             placeholder="Tu correo electrónico"
-                            class="min-w-0 flex-1 rounded-full border-0 bg-transparent px-4 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none"
+                            class="min-w-0 flex-1 rounded-full border-0 bg-transparent px-4 py-2 text-sm text-primary-foreground placeholder:text-primary-foreground/50 focus:outline-none"
                         />
                         <Button
                             type="submit"
+                            variant="secondary"
                             :disabled="newsletterSubmitting"
-                            class="shrink-0 rounded-full bg-[#f5ecdc] px-6 text-[#2B3B2E] hover:bg-white"
+                            class="shrink-0 rounded-full px-6"
                         >
                             Suscribirse
                         </Button>
                     </form>
                     <p
                         v-else
-                        class="mt-8 text-sm font-medium text-emerald-300"
+                        class="mt-8 text-sm font-medium text-primary-foreground"
                         role="status"
                     >
                         Te has suscrito exitosamente. Revisa tu bandeja de

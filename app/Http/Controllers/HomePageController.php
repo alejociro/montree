@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\PromotionType;
+use App\Enums\ReviewStatus;
+use App\Http\Resources\Catalog\CatalogCategoryResource;
 use App\Http\Resources\Catalog\CatalogTourResource;
+use App\Http\Resources\Catalog\HomeTestimonialResource;
+use App\Models\Category;
 use App\Models\Promotion;
+use App\Models\Review;
 use App\Models\Tenant;
 use App\Models\Tour;
 use App\Models\User;
@@ -38,6 +43,8 @@ final class HomePageController extends Controller
             'featuredTours' => Inertia::defer(fn () => $this->featuredTours()),
             'suggestedTours' => Inertia::defer(fn () => $this->suggestedTours()),
             'promotions' => Inertia::defer(fn () => $this->activePromotions()),
+            'categories' => Inertia::defer(fn () => $this->activeCategories()),
+            'testimonials' => Inertia::defer(fn () => $this->topTestimonials()),
         ]);
     }
 
@@ -142,5 +149,37 @@ final class HomePageController extends Controller
                 ] : null,
             ];
         })->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function activeCategories(): array
+    {
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->whereHas('tours', fn ($query) => $query->active())
+            ->withCount(['tours as tours_count' => fn ($query) => $query->active()])
+            ->orderBy('display_order')
+            ->limit(8)
+            ->get();
+
+        return CatalogCategoryResource::collection($categories)->resolve();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function topTestimonials(): array
+    {
+        $reviews = Review::query()
+            ->where('status', ReviewStatus::Approved)
+            ->where('rating', '>=', 4)
+            ->with(['user:id,name', 'tour:id,name,slug'])
+            ->orderByDesc('approved_at')
+            ->limit(6)
+            ->get();
+
+        return HomeTestimonialResource::collection($reviews)->resolve();
     }
 }
