@@ -232,8 +232,8 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     <span class="brand-tag">Beta</span>
                 </a>
                 <nav class="main-nav">
-                    <a href="#problem">El problema</a>
                     <a href="#features">Funciones</a>
+                    <a href="#problem">El problema</a>
                     <a href="#how-it-works">Cómo funciona</a>
                     <a href="#pricing">Precios</a>
                     <a href="#faq">FAQ</a>
@@ -396,33 +396,6 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
             </div>
         </div>
 
-        <!-- ── PROBLEMA ───────────────────────────────────────── -->
-        <section id="problem" class="section-cream">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill">El problema real</span>
-                    <h2 class="section-title">¿Te suena familiar?</h2>
-                    <p class="section-sub">El 90% de las agencias de ecoturismo opera con herramientas improvisadas que frenan su crecimiento.</p>
-                </div>
-                <div class="pain-list">
-                    <div
-                        v-for="(pain, i) in painPoints"
-                        :key="i"
-                        class="reveal pain-item"
-                        :style="`animation-delay:${i * 110}ms`"
-                    >
-                        <span class="pain-num">0{{ i + 1 }}</span>
-                        <span class="pain-mark">&ldquo;</span>
-                        <p class="pain-text">{{ pain }}</p>
-                    </div>
-                </div>
-                <div class="reveal pain-cta">
-                    <CheckCircle class="size-5" style="color:#4a7c59;flex-shrink:0" />
-                    <p>Montree resuelve los tres de raíz — en menos de 10 minutos. <a href="#pricing">Pruébalo 30 días gratis →</a></p>
-                </div>
-            </div>
-        </section>
-
         <!-- ── FEATURES SHOWCASE ──────────────────────────────── -->
         <section id="features" class="section-pale">
             <div class="container">
@@ -494,6 +467,32 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             </div>
                         </Transition>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── PROBLEMA ───────────────────────────────────────── -->
+        <section id="problem" class="section-cream section-cream--tight">
+            <div class="container">
+                <div class="reveal section-header">
+                    <span class="eyebrow-pill">El problema real</span>
+                    <h2 class="section-title">¿Te suena familiar?</h2>
+                    <p class="section-sub">El 90% de las agencias de ecoturismo opera con herramientas improvisadas que frenan su crecimiento.</p>
+                </div>
+                <div class="pain-list">
+                    <div
+                        v-for="(pain, i) in painPoints"
+                        :key="i"
+                        class="reveal pain-item"
+                        :style="`animation-delay:${i * 110}ms`"
+                    >
+                        <span class="pain-num">0{{ i + 1 }}</span>
+                        <p class="pain-text">{{ pain }}</p>
+                    </div>
+                </div>
+                <div class="reveal pain-cta">
+                    <CheckCircle class="size-5" style="color:#4a7c59;flex-shrink:0" />
+                    <p>Montree resuelve los tres de raíz — en menos de 10 minutos. <a href="#pricing">Pruébalo 30 días gratis →</a></p>
                 </div>
             </div>
         </section>
@@ -981,19 +980,20 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 /* ════════════════════════════════════════════════════════════
    PROBLEM
 ════════════════════════════════════════════════════════════ */
-.pain-list { max-width: 800px; margin-inline: auto; margin-bottom: 3rem; }
+.section-cream--tight { padding-block: 4rem; }
+.section-cream--tight .section-header { margin-bottom: 2.5rem; }
+
+.pain-list { display: grid; gap: 1.5rem; max-width: 1040px; margin-inline: auto; margin-bottom: 2.5rem; }
+@media (min-width: 768px) { .pain-list { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
 
 .pain-item {
-    position: relative; padding: 2rem 1rem 2rem 4.5rem;
-    border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem;
+    padding-top: 1.25rem; border-top: 2px solid var(--green-light);
+    display: flex; flex-direction: column; gap: 0.625rem;
 }
-.pain-item:first-child { border-top: 1px solid var(--border); }
 
-.pain-num { position: absolute; left: 0; top: 2rem; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; color: var(--green-mid); opacity: 0.6; }
+.pain-num { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; color: var(--green-mid); opacity: 0.6; }
 
-.pain-mark { font-family: var(--ff-display); font-size: 4rem; font-weight: 900; color: var(--green-light); line-height: 0.9; opacity: 0.7; }
-
-.pain-text { font-family: var(--ff-display); font-size: clamp(1.125rem, 2vw, 1.375rem); font-style: italic; color: var(--green-dark); line-height: 1.55; }
+.pain-text { font-family: var(--ff-display); font-size: clamp(1rem, 1.4vw, 1.125rem); font-style: italic; color: var(--green-dark); line-height: 1.5; }
 
 .pain-cta {
     display: flex; align-items: center; gap: 0.625rem;
