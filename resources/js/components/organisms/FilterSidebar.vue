@@ -165,7 +165,7 @@ function handleDifficultyUpdate(value: unknown): void {
             :disabled="!hasActiveFilters"
             @click="emit('reset')"
         >
-            Personalizar filtros
+            Limpiar filtros
         </Button>
     </aside>
 </template>

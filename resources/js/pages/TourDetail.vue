@@ -62,7 +62,7 @@ const difficultyLabel = computed(() => {
         easy: 'Fácil',
         moderate: 'Moderado',
         hard: 'Difícil',
-        expert: 'Experto',
+        extreme: 'Extremo',
     };
 
     return map[props.tour.difficulty] ?? props.tour.difficulty;

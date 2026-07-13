@@ -28,8 +28,6 @@ final class BookingPagesController extends Controller
             throw new NotFoundHttpException('Tour date not found.');
         }
 
-        $requireTravelers = (bool) ($tourDate->tour->tenant->configuration->require_traveler_details ?? false);
-
         $authUser = $request->user();
 
         return Inertia::render('Booking/Create', [
@@ -43,7 +41,6 @@ final class BookingPagesController extends Controller
                 'available_seats' => max(0, $tourDate->capacity - $tourDate->booked_count),
                 'currency' => $tourDate->tour->currency,
             ],
-            'requireTravelers' => $requireTravelers,
             'prefill' => $authUser !== null ? [
                 'email' => $authUser->email,
                 'full_name' => $authUser->name,

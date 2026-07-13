@@ -35,6 +35,7 @@ class DemoTenantSeeder extends Seeder
             [
                 'name' => 'Platform Super Admin',
                 'password' => Hash::make('password'),
+                'password_set_at' => now(),
                 'email_verified_at' => now(),
             ],
         );
@@ -130,6 +131,7 @@ class DemoTenantSeeder extends Seeder
             [
                 'name' => $name,
                 'password' => Hash::make('password'),
+                'password_set_at' => now(),
                 'email_verified_at' => now(),
             ],
         );
