@@ -43,9 +43,6 @@ const heroFallbackImage =
     'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop';
 
 const searchQuery = ref('');
-const newsletterEmail = ref('');
-const newsletterSubmitting = ref(false);
-const newsletterSuccess = ref(false);
 
 const CATEGORY_ICONS: Record<string, Component> = {
     mountain: Mountain,
@@ -66,37 +63,6 @@ function handleSearch(): void {
     router.get(catalogIndex().url, term ? { search: term } : {});
 }
 
-async function handleNewsletterSubscribe(): Promise<void> {
-    if (!newsletterEmail.value.trim() || newsletterSubmitting.value) {
-        return;
-    }
-
-    newsletterSubmitting.value = true;
-
-    try {
-        const response = await fetch('/api/v1/newsletter/subscribe', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-XSRF-TOKEN': decodeURIComponent(
-                    document.cookie
-                        .split('; ')
-                        .find((row) => row.startsWith('XSRF-TOKEN='))
-                        ?.split('=')[1] ?? '',
-                ),
-            },
-            body: JSON.stringify({ email: newsletterEmail.value.trim() }),
-        });
-
-        if (response.ok) {
-            newsletterSuccess.value = true;
-            newsletterEmail.value = '';
-        }
-    } finally {
-        newsletterSubmitting.value = false;
-    }
-}
 </script>
 
 <template>
@@ -625,62 +591,5 @@ async function handleNewsletterSubscribe(): Promise<void> {
             </section>
         </Deferred>
 
-        <!-- Newsletter -->
-        <section class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div
-                class="relative overflow-hidden rounded-3xl bg-primary px-6 py-16 shadow-sm sm:px-12"
-            >
-                <div
-                    class="pointer-events-none absolute -top-1/2 left-1/2 size-[120%] -translate-x-1/2 rounded-full border border-primary-foreground/10"
-                    aria-hidden="true"
-                />
-                <div class="relative mx-auto max-w-xl text-center">
-                    <h2
-                        class="text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl"
-                    >
-                        Mantente actualizado
-                    </h2>
-                    <p
-                        class="mx-auto mt-3 max-w-md text-sm text-primary-foreground/80"
-                    >
-                        Recibe noticias, descuentos exclusivos y sugerencias
-                        directo en tu bandeja.
-                    </p>
-                    <form
-                        v-if="!newsletterSuccess"
-                        class="mx-auto mt-8 flex w-full max-w-md items-center gap-2 rounded-full bg-primary-foreground/10 p-1.5 ring-1 ring-primary-foreground/20"
-                        @submit.prevent="handleNewsletterSubscribe"
-                    >
-                        <label class="sr-only" for="newsletter-email">
-                            Correo electrónico
-                        </label>
-                        <input
-                            id="newsletter-email"
-                            v-model="newsletterEmail"
-                            type="email"
-                            required
-                            placeholder="Tu correo electrónico"
-                            class="min-w-0 flex-1 rounded-full border-0 bg-transparent px-4 py-2 text-sm text-primary-foreground placeholder:text-primary-foreground/50 focus:outline-none"
-                        />
-                        <Button
-                            type="submit"
-                            variant="secondary"
-                            :disabled="newsletterSubmitting"
-                            class="shrink-0 rounded-full px-6"
-                        >
-                            Suscribirse
-                        </Button>
-                    </form>
-                    <p
-                        v-else
-                        class="mt-8 text-sm font-medium text-primary-foreground"
-                        role="status"
-                    >
-                        Te has suscrito exitosamente. Revisa tu bandeja de
-                        entrada.
-                    </p>
-                </div>
-            </div>
-        </section>
     </div>
 </template>
