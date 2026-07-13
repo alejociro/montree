@@ -7,17 +7,17 @@
 
 ## DB (`montree-db-architect`)
 
-- [ ] Migration `create_routes_table` (tenant-scoped, índice `[tenant_id, name]`)
-- [ ] Migration `create_providers_table`
-- [ ] Migration `create_hotels_table`
-- [ ] Migration `create_tour_date_hotels_table` (unique compuesto, cascade)
-- [ ] Migration `add_route_and_provider_to_tour_dates` (nullable FKs, `restrictOnDelete`)
-- [ ] Modelos `Route`, `Provider`, `Hotel` (final, BelongsToTenant, fillable, relaciones)
-- [ ] Extender `TourDate`: fillable + relaciones `route/provider/hotels`
-- [ ] Factories de los 3 modelos + states en `TourDateFactory`
-- [ ] Seeder demo: 2 rutas, 2 proveedores, 2 hoteles, condiciones en fechas existentes
-- [ ] `php artisan migrate` verde + verificación con database-schema
-- [ ] Pint
+- [x] Migration `create_routes_table` (tenant-scoped, índice `[tenant_id, name]`)
+- [x] Migration `create_providers_table`
+- [x] Migration `create_hotels_table`
+- [x] Migration `create_tour_date_hotels_table` (unique compuesto, cascade)
+- [x] Migration `add_route_and_provider_to_tour_dates` (nullable FKs, `restrictOnDelete`)
+- [x] Modelos `Route`, `Provider`, `Hotel` (final, BelongsToTenant, fillable, relaciones)
+- [x] Extender `TourDate`: fillable + relaciones `route/provider/hotels`
+- [x] Factories de los 3 modelos + states en `TourDateFactory`
+- [x] Seeder demo: 2 rutas, 2 proveedores, 2 hoteles, condiciones en fechas existentes
+- [x] `php artisan migrate` verde + verificación con database-schema
+- [x] Pint
 
 ## Backend (`montree-backend-dev`)
 

@@ -10,6 +10,9 @@ use App\Enums\TenantStatus;
 use App\Enums\TourStatus;
 use App\Enums\UserRole;
 use App\Models\Category;
+use App\Models\Hotel;
+use App\Models\Provider;
+use App\Models\Route;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
@@ -97,6 +100,43 @@ class DemoTenantSeeder extends Seeder
             ],
         ));
 
+        $routes = collect([
+            ['name' => 'Ruta El Mirador', 'distance_km' => 12.50, 'duration_hours' => 5.0],
+            ['name' => 'Ruta Cascadas', 'distance_km' => 8.20, 'duration_hours' => 3.5],
+        ])->map(fn (array $payload) => Route::query()->updateOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+            [
+                'description' => 'Ruta demo precargada para desarrollo local.',
+                'distance_km' => $payload['distance_km'],
+                'duration_hours' => $payload['duration_hours'],
+            ],
+        ));
+
+        $providers = collect([
+            ['name' => 'Transportes Andinos', 'service_type' => 'transporte'],
+            ['name' => 'Cocina del Valle', 'service_type' => 'alimentación'],
+        ])->map(fn (array $payload) => Provider::query()->updateOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+            [
+                'service_type' => $payload['service_type'],
+                'contact_name' => 'Contacto Demo',
+                'contact_phone' => '+57 300 111 2233',
+                'contact_email' => 'contacto@demo.montree.test',
+            ],
+        ));
+
+        $hotels = collect([
+            ['name' => 'Ecohotel La Montaña'],
+            ['name' => 'Posada del Río'],
+        ])->map(fn (array $payload) => Hotel::query()->updateOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+            [
+                'address' => 'Vereda Demo, Colombia',
+                'contact_phone' => '+57 300 444 5566',
+                'contact_email' => 'reservas@demo.montree.test',
+            ],
+        ));
+
         foreach (range(1, 5) as $i) {
             $tour = Tour::factory()
                 ->state([
@@ -116,9 +156,18 @@ class DemoTenantSeeder extends Seeder
                 ])->create();
             }
 
-            TourDate::factory()->count(2)->for($tour)->state([
+            $dates = TourDate::factory()->count(2)->for($tour)->state([
                 'guide_id' => $admin->id,
             ])->create();
+
+            // WHY: assign support logistics to the first date so demo data exercises
+            // the route/provider/hotel relations end-to-end.
+            $firstDate = $dates->first();
+            $firstDate->update([
+                'route_id' => $routes->random()->id,
+                'provider_id' => $providers->random()->id,
+            ]);
+            $firstDate->hotels()->sync([$hotels->random()->id]);
         }
 
         Tenant::forgetCurrent();

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,8 @@ use Illuminate\Support\Carbon;
  * @property int $tenant_id
  * @property int $tour_id
  * @property int|null $guide_id
+ * @property int|null $route_id
+ * @property int|null $provider_id
  * @property Carbon $starts_at
  * @property Carbon|null $ends_at
  * @property int $capacity
@@ -36,6 +39,8 @@ class TourDate extends Model
         'tenant_id',
         'tour_id',
         'guide_id',
+        'route_id',
+        'provider_id',
         'starts_at',
         'ends_at',
         'capacity',
@@ -65,6 +70,21 @@ class TourDate extends Model
     public function guide(): BelongsTo
     {
         return $this->belongsTo(User::class, 'guide_id');
+    }
+
+    public function route(): BelongsTo
+    {
+        return $this->belongsTo(Route::class);
+    }
+
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class);
+    }
+
+    public function hotels(): BelongsToMany
+    {
+        return $this->belongsToMany(Hotel::class, 'tour_date_hotels');
     }
 
     public function bookings(): HasMany
