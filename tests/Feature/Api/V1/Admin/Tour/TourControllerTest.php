@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
 use App\Models\TourDate;
+use App\Models\TourImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -43,6 +44,29 @@ class TourControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
         $response->assertJsonStructure(['data' => [['id', 'slug', 'name', 'status', 'base_price']], 'meta', 'links']);
+    }
+
+    public function test_index_resolves_cover_image_url_for_external_and_stored_paths(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $externalTour = Tour::factory()->create(['name' => 'Externa']);
+        TourImage::factory()->cover()->create([
+            'tour_id' => $externalTour->id,
+            'path' => 'https://picsum.photos/seed/demo/1200/800',
+        ]);
+        $storedTour = Tour::factory()->create(['name' => 'Subida']);
+        TourImage::factory()->cover()->create([
+            'tour_id' => $storedTour->id,
+            'path' => 'tours/cover.jpg',
+        ]);
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->getJson('http://demo.montree.test/api/v1/admin/tours?sort=name&direction=asc');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.cover_image_url', 'https://picsum.photos/seed/demo/1200/800');
+        $this->assertStringEndsWith('/storage/tours/cover.jpg', $response->json('data.1.cover_image_url'));
     }
 
     public function test_index_filters_by_status_search_and_category(): void

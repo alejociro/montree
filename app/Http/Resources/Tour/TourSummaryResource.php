@@ -7,7 +7,6 @@ namespace App\Http\Resources\Tour;
 use App\Models\Tour;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin Tour
@@ -33,9 +32,7 @@ class TourSummaryResource extends JsonResource
             'category' => $this->whenLoaded('category', fn () => $this->category !== null
                 ? (new CategoryResource($this->category))->resolve()
                 : null),
-            'cover_image_url' => $this->whenLoaded('coverImage', fn () => $this->coverImage !== null
-                ? Storage::disk('public')->url($this->coverImage->path)
-                : null),
+            'cover_image_url' => $this->whenLoaded('coverImage', fn () => $this->coverImage?->url),
             'images_count' => $this->whenCounted('images'),
             'bookings_count' => $this->whenCounted('bookings'),
             'rating_average' => $this->rating_average,

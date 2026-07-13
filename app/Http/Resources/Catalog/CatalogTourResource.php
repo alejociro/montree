@@ -9,7 +9,6 @@ use App\Models\Tour;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin Tour
@@ -38,11 +37,7 @@ class CatalogTourResource extends JsonResource
             'category' => $this->category !== null
                 ? (new CategoryResource($this->category))->resolve()
                 : null,
-            'cover_image_url' => $this->coverImage !== null
-                ? (str_starts_with((string) $this->coverImage->path, 'http')
-                    ? $this->coverImage->path
-                    : Storage::disk('public')->url($this->coverImage->path))
-                : null,
+            'cover_image_url' => $this->coverImage?->url,
             'rating_average' => $this->rating_average,
             'rating_count' => $this->rating_count,
             'next_date_starts_at' => $nextDate?->toIso8601String(),

@@ -7,7 +7,6 @@ namespace App\Http\Resources\Catalog;
 use App\Models\TourDate;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin TourDate
@@ -29,11 +28,7 @@ final class UpcomingDepartureResource extends JsonResource
                 'name' => $this->tour->name,
                 'slug' => $this->tour->slug,
                 'currency' => $this->tour->currency,
-                'cover_image_url' => $this->tour->coverImage !== null
-                    ? (str_starts_with((string) $this->tour->coverImage->path, 'http')
-                        ? $this->tour->coverImage->path
-                        : Storage::disk('public')->url($this->tour->coverImage->path))
-                    : null,
+                'cover_image_url' => $this->tour->coverImage?->url,
             ],
         ];
     }

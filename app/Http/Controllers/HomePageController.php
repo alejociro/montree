@@ -20,7 +20,6 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -157,11 +156,7 @@ final class HomePageController extends Controller
                 'name' => $promo->name,
                 'description' => $promo->description,
                 'discount_label' => $discountLabel,
-                'cover_image_url' => $tour?->coverImage !== null
-                    ? (str_starts_with((string) $tour->coverImage->path, 'http')
-                        ? $tour->coverImage->path
-                        : Storage::disk('public')->url($tour->coverImage->path))
-                    : null,
+                'cover_image_url' => $tour?->coverImage?->url,
                 'tour' => $tour ? [
                     'slug' => $tour->slug,
                     'name' => $tour->name,

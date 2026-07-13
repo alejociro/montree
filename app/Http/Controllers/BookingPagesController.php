@@ -9,7 +9,6 @@ use App\Models\Booking;
 use App\Models\Tenant;
 use App\Models\TourDate;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -61,12 +60,7 @@ final class BookingPagesController extends Controller
             throw new NotFoundHttpException('Booking not found.');
         }
 
-        $coverImageUrl = null;
-        if ($booking->tour->coverImage !== null) {
-            $coverImageUrl = str_starts_with((string) $booking->tour->coverImage->path, 'http')
-                ? $booking->tour->coverImage->path
-                : Storage::disk('public')->url($booking->tour->coverImage->path);
-        }
+        $coverImageUrl = $booking->tour->coverImage?->url;
 
         $newAccount = $request->session()->pull('booking_new_account', false);
 
