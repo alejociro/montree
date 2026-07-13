@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Settings;
 
 use App\Concerns\PasswordValidationRules;
@@ -7,20 +9,19 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProfileDeleteRequest extends FormRequest
+class PasswordSetupRequest extends FormRequest
 {
     use PasswordValidationRules;
 
     /**
-     * Only super admins may delete their own account. Tenant members and tenant
-     * admins must be removed by a super admin instead.
+     * Only users who have never defined their own password may use this flow.
      */
     public function authorize(): bool
     {
         /** @var User|null $user */
         $user = $this->user();
 
-        return $user !== null && $user->isSuperAdmin();
+        return $user !== null && $user->mustSetPassword();
     }
 
     /**
@@ -31,7 +32,7 @@ class ProfileDeleteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'password' => $this->currentPasswordRules(),
+            'password' => $this->passwordRules(),
         ];
     }
 }

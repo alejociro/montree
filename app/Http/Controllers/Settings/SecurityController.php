@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\PasswordSetupRequest;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use Illuminate\Http\RedirectResponse;
@@ -51,11 +52,28 @@ class SecurityController extends Controller implements HasMiddleware
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
-            'password' => $request->password,
-        ]);
+        $request->user()->forceFill([
+            'password' => $request->validated('password'),
+            'password_set_at' => now(),
+        ])->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Define the password for the first time (e.g. accounts auto-created during guest
+     * booking). Does not require the current password.
+     */
+    public function setup(PasswordSetupRequest $request): RedirectResponse
+    {
+        $request->user()->forceFill([
+            'password' => $request->validated('password'),
+            'password_set_at' => now(),
+        ])->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password set.')]);
 
         return back();
     }

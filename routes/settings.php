@@ -20,5 +20,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
+    Route::post('settings/password/setup', [SecurityController::class, 'setup'])
+        ->middleware('throttle:6,1')
+        ->name('user-password.setup');
+
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
 });

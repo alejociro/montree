@@ -13,7 +13,10 @@ use App\Models\Tenant;
 use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
+use App\Notifications\Auth\TenantAwareResetPassword;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 final class BookingControllerTest extends TestCase
@@ -58,6 +61,32 @@ final class BookingControllerTest extends TestCase
             'status' => BookingStatus::PendingPayment->value,
         ]);
         $this->assertEquals(3, $tourDate->fresh()->booked_count);
+    }
+
+    public function test_guest_booking_creates_account_pending_password_setup(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        Notification::fake();
+
+        [$tenant, $tour, $tourDate] = $this->setupTenantWithUser(10);
+
+        $response = $this->postJson('http://demo.montree.test/api/v1/bookings', [
+            'email' => 'guest@example.com',
+            'email_confirmation' => 'guest@example.com',
+            'full_name' => 'Guest Traveler',
+            'phone' => '+57 300 000 0000',
+            'tour_date_id' => $tourDate->id,
+            'travelers_count' => 2,
+        ]);
+
+        $response->assertCreated();
+
+        $guest = User::where('email', 'guest@example.com')->firstOrFail();
+
+        $this->assertNull($guest->password_set_at);
+        $this->assertTrue($guest->mustSetPassword());
+
+        Notification::assertSentTo($guest, TenantAwareResetPassword::class);
     }
 
     public function test_rejects_when_insufficient_capacity(): void

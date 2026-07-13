@@ -36,6 +36,7 @@ class AuthUserResource extends JsonResource
             'phone' => $this->phone,
             'tenantRole' => $this->resolveTenantRole($isSuperAdmin),
             'isSuperAdmin' => $isSuperAdmin,
+            'mustSetPassword' => $this->resource->mustSetPassword(),
         ];
     }
 

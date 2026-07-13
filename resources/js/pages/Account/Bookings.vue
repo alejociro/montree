@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
+import SetPasswordCard from '@/components/organisms/SetPasswordCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatBookingStatus, formatTourDate } from '@/lib/format';
@@ -49,6 +50,8 @@ function formatPrice(amount: string, currency: string) {
 <template>
     <Head title="Mis reservas" />
     <div class="container mx-auto max-w-4xl space-y-8 px-4 py-8">
+        <SetPasswordCard />
+
         <h1 class="text-2xl font-bold">Mis reservas</h1>
 
         <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>

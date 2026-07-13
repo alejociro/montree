@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CalendarCheck, Heart } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import SetPasswordCard from '@/components/organisms/SetPasswordCard.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,6 +89,8 @@ onMounted(loadStats);
 <template>
     <Head title="Mi perfil" />
     <div class="container mx-auto max-w-3xl space-y-8 px-4 py-8">
+        <SetPasswordCard />
+
         <section class="rounded-xl border bg-card p-6">
             <div class="flex items-start gap-4">
                 <Avatar class="size-16">

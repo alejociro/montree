@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -61,12 +63,12 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account()
+    public function test_super_admin_can_delete_their_account()
     {
-        $user = User::factory()->create();
+        $superAdmin = $this->createSuperAdmin();
 
         $response = $this
-            ->actingAs($user)
+            ->actingAs($superAdmin)
             ->delete(route('profile.destroy'), [
                 'password' => 'password',
             ]);
@@ -76,15 +78,29 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertNull($superAdmin->fresh());
     }
 
-    public function test_correct_password_must_be_provided_to_delete_account()
+    public function test_tenant_user_cannot_delete_their_own_account()
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
+            ->delete(route('profile.destroy'), [
+                'password' => 'password',
+            ]);
+
+        $response->assertForbidden();
+        $this->assertNotNull($user->fresh());
+    }
+
+    public function test_correct_password_must_be_provided_to_delete_account()
+    {
+        $superAdmin = $this->createSuperAdmin();
+
+        $response = $this
+            ->actingAs($superAdmin)
             ->from(route('profile.edit'))
             ->delete(route('profile.destroy'), [
                 'password' => 'wrong-password',
@@ -94,6 +110,18 @@ class ProfileUpdateTest extends TestCase
             ->assertSessionHasErrors('password')
             ->assertRedirect(route('profile.edit'));
 
-        $this->assertNotNull($user->fresh());
+        $this->assertNotNull($superAdmin->fresh());
+    }
+
+    private function createSuperAdmin(): User
+    {
+        Role::findOrCreate(UserRole::SuperAdmin->value, 'web');
+
+        $user = User::factory()->create();
+
+        setPermissionsTeamId(0);
+        $user->assignRole(UserRole::SuperAdmin->value);
+
+        return $user;
     }
 }

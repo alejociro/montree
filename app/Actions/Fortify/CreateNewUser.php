@@ -49,6 +49,8 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $input['password'],
         ]);
 
+        $user->forceFill(['password_set_at' => now()])->save();
+
         $this->attachUserToTenant->handle($user, $tenant, UserRole::Customer, 'registration');
 
         return $user;
