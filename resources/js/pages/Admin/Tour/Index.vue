@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Pencil, Plus } from 'lucide-vue-next';
+import { Eye, Pencil, Plus } from 'lucide-vue-next';
 import { onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { create as createPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import { edit as editPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
+import {
+    create as createPage,
+    edit as editPage,
+    show as showPage,
+} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
 import { index as toursIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import Heading from '@/components/Heading.vue';
 import TourFilters from '@/components/organisms/TourFilters.vue';
@@ -193,34 +196,39 @@ function formatPrice(amount: string, code: string): string {
                 <Card
                     v-for="tour in tours"
                     :key="tour.id"
-                    class="overflow-hidden p-0"
+                    class="group overflow-hidden p-0 transition hover:border-primary/40 hover:shadow-md"
                 >
-                    <div class="aspect-[16/9] bg-muted">
-                        <img
-                            v-if="tour.cover_image_url"
-                            :src="tour.cover_image_url"
-                            :alt="tour.name"
-                            class="size-full object-cover"
-                        />
-                        <div
-                            v-else
-                            class="flex size-full items-center justify-center text-xs text-muted-foreground"
-                        >
-                            Sin portada
+                    <Link
+                        :href="showPage({ tour: tour.id }).url"
+                        class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    >
+                        <div class="aspect-[16/9] overflow-hidden bg-muted">
+                            <img
+                                v-if="tour.cover_image_url"
+                                :src="tour.cover_image_url"
+                                :alt="tour.name"
+                                class="size-full object-cover transition duration-300 group-hover:scale-105"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center text-xs text-muted-foreground"
+                            >
+                                Sin portada
+                            </div>
                         </div>
-                    </div>
 
-                    <CardHeader class="px-4 pt-4 pb-2">
-                        <div class="flex items-start justify-between gap-3">
-                            <CardTitle class="text-base leading-tight">
-                                {{ tour.name }}
-                            </CardTitle>
-                            <TourStatusBadge :status="tour.status" />
-                        </div>
-                        <CardDescription class="line-clamp-2">
-                            {{ tour.short_description || 'Sin resumen' }}
-                        </CardDescription>
-                    </CardHeader>
+                        <CardHeader class="px-4 pt-4 pb-2">
+                            <div class="flex items-start justify-between gap-3">
+                                <CardTitle class="text-base leading-tight">
+                                    {{ tour.name }}
+                                </CardTitle>
+                                <TourStatusBadge :status="tour.status" />
+                            </div>
+                            <CardDescription class="line-clamp-2">
+                                {{ tour.short_description || 'Sin resumen' }}
+                            </CardDescription>
+                        </CardHeader>
+                    </Link>
 
                     <CardContent
                         class="flex items-center justify-between gap-3 px-4 pb-4"
@@ -239,12 +247,20 @@ function formatPrice(amount: string, code: string): string {
                                 {{ tour.default_capacity }} pers.
                             </p>
                         </div>
-                        <Link :href="editPage({ tour: tour.id }).url">
-                            <Button size="sm" variant="outline">
-                                <Pencil class="size-4" />
-                                Editar
-                            </Button>
-                        </Link>
+                        <div class="flex items-center gap-2">
+                            <Link :href="showPage({ tour: tour.id }).url">
+                                <Button size="sm" variant="ghost">
+                                    <Eye class="size-4" />
+                                    Ver
+                                </Button>
+                            </Link>
+                            <Link :href="editPage({ tour: tour.id }).url">
+                                <Button size="sm" variant="outline">
+                                    <Pencil class="size-4" />
+                                    Editar
+                                </Button>
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
