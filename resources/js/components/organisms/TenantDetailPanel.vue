@@ -13,6 +13,7 @@ import PlanBadge from '@/components/molecules/PlanBadge.vue';
 import PlanChanger from '@/components/molecules/PlanChanger.vue';
 import StatusChanger from '@/components/molecules/StatusChanger.vue';
 import TenantStatusBadge from '@/components/molecules/TenantStatusBadge.vue';
+import AddTenantUserDialog from '@/components/organisms/AddTenantUserDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +42,7 @@ const emit = defineEmits<{
     'status-change': [next: TenantStatus, reason: string | null];
     'plan-change': [next: TenantPlan];
     'configuration-update': [data: FormData];
+    'user-created': [];
 }>();
 
 function handleStatusSubmit(next: TenantStatus, reason: string | null): void {
@@ -272,6 +274,13 @@ const timezones = [
                         {{ tenant.contact_phone }}
                     </span>
                 </div>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-2">
+                <AddTenantUserDialog
+                    :tenant-id="tenant.id"
+                    @created="emit('user-created')"
+                />
             </div>
         </header>
 

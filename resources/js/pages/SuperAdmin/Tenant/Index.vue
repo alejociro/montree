@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Head, useHttp } from '@inertiajs/vue3';
+import { Head, router, useHttp } from '@inertiajs/vue3';
 import { Search } from 'lucide-vue-next';
 import { onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { index as tenantsIndex } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantController';
 import Heading from '@/components/Heading.vue';
+import CreateTenantDialog from '@/components/organisms/CreateTenantDialog.vue';
 import TenantTable from '@/components/organisms/TenantTable.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,16 +82,25 @@ watch(search, () => {
 watch([status, plan], () => {
     void loadTenants();
 });
+
+function handleCreated(tenantId: number): void {
+    router.visit(`/super-admin/tenants/${tenantId}`);
+}
 </script>
 
 <template>
     <Head title="Super admin · Tenants" />
 
     <div class="space-y-6 px-4 py-6 md:px-8">
-        <Heading
-            title="Tenants de la plataforma"
-            description="Buscá, filtrá y administrá todos los tenants registrados."
-        />
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <Heading
+                title="Tenants de la plataforma"
+                description="Buscá, filtrá y administrá todos los tenants registrados."
+            />
+            <CreateTenantDialog @created="handleCreated" />
+        </div>
 
         <div
             class="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900"

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
+use App\Actions\SuperAdmin\CreateTenantAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SuperAdmin\StoreTenantRequest;
 use App\Http\Resources\SuperAdmin\SuperAdminTenantResource;
 use App\Models\Tenant;
 use App\Services\SuperAdmin\PlatformMetricsAggregator;
@@ -12,12 +14,25 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Symfony\Component\HttpFoundation\Response;
 
 final class TenantController extends Controller
 {
     private const ALLOWED_SORTS = ['created_at', 'name', 'bookings_count', 'revenue'];
 
     public function __construct(private PlatformMetricsAggregator $aggregator) {}
+
+    public function store(StoreTenantRequest $request, CreateTenantAction $action): JsonResponse
+    {
+        $tenant = $action->handle($request->validated());
+
+        return new JsonResponse([
+            'data' => (new SuperAdminTenantResource(
+                $tenant,
+                $this->aggregator->statsForTenant($tenant),
+            ))->resolve(),
+        ], Response::HTTP_CREATED);
+    }
 
     public function index(Request $request): ResourceCollection
     {

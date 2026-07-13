@@ -167,6 +167,7 @@ onMounted(() => {
             @status-change="handleStatusChange"
             @plan-change="handlePlanChange"
             @configuration-update="handleConfigurationUpdate"
+            @user-created="loadTenant"
         />
     </div>
 </template>

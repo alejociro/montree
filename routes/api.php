@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\SuperAdmin\TenantConfigurationController as Supe
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
+use App\Http\Controllers\Api\V1\SuperAdmin\TenantUserController as SuperAdminTenantUserController;
 use App\Http\Controllers\Api\V1\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -126,7 +127,9 @@ Route::middleware(['auth', 'super_admin.only'])
     ->group(function (): void {
         Route::get('dashboard', [SuperAdminDashboardApiController::class, 'show'])->name('dashboard.show');
         Route::get('tenants', [SuperAdminTenantApiController::class, 'index'])->name('tenants.index');
+        Route::post('tenants', [SuperAdminTenantApiController::class, 'store'])->name('tenants.store');
         Route::get('tenants/{tenant}', [SuperAdminTenantApiController::class, 'show'])->name('tenants.show');
+        Route::post('tenants/{tenant}/users', [SuperAdminTenantUserController::class, 'store'])->name('tenants.users.store');
         Route::patch('tenants/{tenant}/status', [SuperAdminTenantStatusController::class, 'update'])->name('tenants.status.update');
         Route::patch('tenants/{tenant}/plan', [SuperAdminTenantPlanController::class, 'update'])->name('tenants.plan.update');
         Route::post('tenants/{tenant}/configuration', [SuperAdminTenantConfigurationController::class, 'update'])->name('tenants.configuration.update');
