@@ -2,6 +2,7 @@
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     ArrowRight,
+    CalendarDays,
     Compass,
     Lock,
     Mountain,
@@ -10,18 +11,25 @@ import {
     Search,
     ShieldCheck,
     Star,
+    Users,
     Zap,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { computed, ref } from 'vue';
+import { create as bookingCreate } from '@/actions/App/Http/Controllers/BookingPagesController';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { formatCurrency, formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import type { CatalogCategory, CatalogTour } from '@/types/catalog';
-import type { HomePromotion, HomeTestimonial } from '@/types/home';
+import type {
+    HomePromotion,
+    HomeTestimonial,
+    UpcomingDeparture,
+} from '@/types/home';
 
 defineOptions({ layout: PublicLayout });
 
@@ -31,7 +39,10 @@ type Props = {
     promotions?: HomePromotion[];
     categories?: CatalogCategory[];
     testimonials?: HomeTestimonial[];
+    upcomingDepartures?: UpcomingDeparture[];
 };
+
+const LOW_SEATS_THRESHOLD = 3;
 
 defineProps<Props>();
 
@@ -63,6 +74,24 @@ function handleSearch(): void {
     router.get(catalogIndex().url, term ? { search: term } : {});
 }
 
+function departureBookingHref(departure: UpcomingDeparture): string {
+    return bookingCreate({ query: { tour_date_id: departure.id } }).url;
+}
+
+function departureDateLabel(departure: UpcomingDeparture): string {
+    const start = formatTourDate(departure.starts_at, { withWeekday: false });
+
+    if (departure.ends_at === null) {
+        return start;
+    }
+
+    const end = formatTourDate(departure.ends_at, {
+        withWeekday: false,
+        withTime: true,
+    });
+
+    return `${start} hasta ${end}`;
+}
 </script>
 
 <template>
@@ -330,6 +359,168 @@ function handleSearch(): void {
             </Deferred>
         </section>
 
+        <!-- Upcoming departures -->
+        <Deferred data="upcomingDepartures">
+            <template #fallback>
+                <section
+                    class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
+                >
+                    <div class="h-7 w-56 animate-pulse rounded bg-muted" />
+                    <div
+                        class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    >
+                        <div
+                            v-for="n in 3"
+                            :key="`dep-skel-${n}`"
+                            class="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-border/50"
+                        >
+                            <div
+                                class="aspect-[16/10] w-full animate-pulse rounded-xl bg-muted"
+                            />
+                            <div
+                                class="mt-1 h-4 w-2/3 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="h-3 w-1/2 animate-pulse rounded bg-muted"
+                            />
+                            <div
+                                class="mt-1 h-9 w-full animate-pulse rounded-full bg-muted"
+                            />
+                        </div>
+                    </div>
+                </section>
+            </template>
+
+            <section
+                v-if="(upcomingDepartures?.length ?? 0) > 0"
+                class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"
+            >
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h2
+                            class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                        >
+                            Próximas salidas
+                        </h2>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Reserva tu cupo en las próximas fechas confirmadas
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    <article
+                        v-for="departure in upcomingDepartures"
+                        :key="departure.id"
+                        class="group relative flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    >
+                        <div class="relative aspect-[16/10] overflow-hidden">
+                            <img
+                                v-if="departure.tour.cover_image_url"
+                                :src="departure.tour.cover_image_url"
+                                :alt="departure.tour.name"
+                                loading="lazy"
+                                class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center bg-muted"
+                            >
+                                <span class="text-xs text-muted-foreground"
+                                    >Sin imagen</span
+                                >
+                            </div>
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+                                aria-hidden="true"
+                            />
+                            <span
+                                v-if="
+                                    departure.available_seats <=
+                                    LOW_SEATS_THRESHOLD
+                                "
+                                class="absolute top-4 left-4 rounded-full bg-destructive px-3.5 py-1.5 text-xs font-extrabold tracking-wide text-destructive-foreground shadow-lg"
+                            >
+                                ¡Últimos {{ departure.available_seats }} cupos!
+                            </span>
+                        </div>
+                        <div class="flex flex-1 flex-col gap-3 p-5">
+                            <h3 class="text-lg font-bold text-foreground">
+                                <Link
+                                    :href="tourShow.url(departure.tour.slug)"
+                                    class="transition hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                                >
+                                    {{ departure.tour.name }}
+                                </Link>
+                            </h3>
+
+                            <div
+                                class="flex items-start gap-2 text-sm text-muted-foreground"
+                            >
+                                <CalendarDays
+                                    class="mt-0.5 size-4 shrink-0 text-primary"
+                                    aria-hidden="true"
+                                />
+                                <span>{{ departureDateLabel(departure) }}</span>
+                            </div>
+
+                            <div
+                                class="flex items-center gap-2 text-sm"
+                                :class="
+                                    departure.available_seats <=
+                                    LOW_SEATS_THRESHOLD
+                                        ? 'font-semibold text-destructive'
+                                        : 'text-muted-foreground'
+                                "
+                            >
+                                <Users
+                                    class="size-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                <span>
+                                    {{ departure.available_seats }}
+                                    {{
+                                        departure.available_seats === 1
+                                            ? 'cupo disponible'
+                                            : 'cupos disponibles'
+                                    }}
+                                </span>
+                            </div>
+
+                            <p
+                                class="text-xl font-bold text-foreground"
+                                aria-label="Precio por persona"
+                            >
+                                {{
+                                    formatCurrency(
+                                        departure.effective_price,
+                                        departure.tour.currency,
+                                    )
+                                }}
+                                <span
+                                    class="text-sm font-normal text-muted-foreground"
+                                    >/ persona</span
+                                >
+                            </p>
+
+                            <div class="mt-auto pt-2">
+                                <Button as-child class="w-full rounded-full">
+                                    <Link
+                                        :href="departureBookingHref(departure)"
+                                    >
+                                        Reservar
+                                        <ArrowRight class="ml-1 size-4" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </Deferred>
+
         <!-- Promotions -->
         <Deferred data="promotions">
             <template #fallback>
@@ -590,6 +781,5 @@ function handleSearch(): void {
                 </div>
             </section>
         </Deferred>
-
     </div>
 </template>

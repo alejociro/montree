@@ -70,6 +70,13 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 
 - `App\Http\Resources\Admin\TourDateDetailResource` — shape del contrato (guide/route/provider/hotels con `whenLoaded`). **Ampliado (2026-07-13):** agrega `display_status` (`$this->displayStatus()->value`) y `tour` (`whenLoaded('tour')` → `{ id, name, slug, currency }`). Sirve tanto al index anidado como al global.
 - `App\Http\Resources\Admin\{RouteResource, ProviderResource, HotelResource}` — incluye `tour_dates_count` via `withCount`.
+- `App\Http\Resources\Catalog\UpcomingDepartureResource` — **NUEVO (2026-07-13), público.** Alimenta la prop deferred `upcomingDepartures` del home. Shape mínimo para el viajero: `id`, `starts_at`, `ends_at`, `available_seats`, `effective_price`, `tour: { name, slug, currency, cover_image_url }`. **Decisión: NO reutilizar `TourDateDetailResource`** (admin) para evitar filtrar información operativa interna (notes, guide, route, provider, hotels, booked_count, capacity cruda, price_override) al público. `effective_price = price_override ?? tour.base_price`; `cover_image_url` con el patrón http-passthrough / `Storage::disk('public')->url()`.
+
+### Home público — sección "Próximas salidas"
+
+- **Backend:** prop deferred `upcomingDepartures` en `HomePageController` (método privado siguiendo el patrón de las demás props, envuelto en `Inertia::defer`). Query: `TourDate::openFuture()` (scope existente `status = open` AND `starts_at > now`) + `whereHas('tour', active)` + `with('tour.coverImage')` + `orderBy('starts_at')` + `limit(6)`. **No es endpoint API** — es prop de Inertia (ver `contracts.md` § "Prop Inertia `upcomingDepartures`").
+- **Decisión de producto: NO crear página/tab pública de "Salidas".** El home ("Próximas salidas") más el catálogo `/tours` (productos base, sin cambios) cubren la necesidad del viajero. Fragmentar la navegación con una tercera vista pública no aporta valor.
+- **Newsletter storefront eliminado:** se quita la sección de newsletter del home público (`Home.vue`) por falta de soporte de envío de correos. El módulo admin de newsletter (F013) y su endpoint API quedan intactos — solo se remueve la sección del storefront.
 
 ### Policies
 
@@ -85,6 +92,7 @@ Se evoluciona el modelo existente: `Tour` = Producto, `TourDate` = Salida. Se ag
 - Sidebar admin: dos entradas — "Productos" (`/admin/tours`, catálogo existente) y "Tours" (`/admin/departures`, listado global nuevo).
 - Renombrar labels del panel admin: nav "Tours" (catálogo) → "Productos" (solo copy; rutas/archivos no se renombran).
 - `resources/js/pages/TourDetail.vue` — cuando `dates` está vacío: card "Sin fechas disponibles" en lugar del selector (verificar comportamiento actual y ajustar copy).
+- `resources/js/pages/Home.vue` — **NUEVA sección "Próximas salidas"** entre "Tours destacados" y "Promociones". Consume la prop deferred `upcomingDepartures` (patrón partial reload de Inertia v3, NO `useApi`/`fetch`). Cards: imagen del producto, nombre (link a detalle público por `slug`), fecha en español, cupos con badge de urgencia (≤3), precio efectivo, CTA "Reservar" → `/booking/new?tour_date_id=X`. Skeleton animado mientras resuelve el deferred; si la lista viene vacía la sección no se renderiza. **Se elimina la sección de newsletter** del storefront (sin soporte de correos).
 
 ### Organisms / Molecules
 
@@ -122,3 +130,4 @@ Por endpoint: happy + failure + edge + tenant isolation (testing-policy). Puntos
 
 - `2026-07-12` — Creación inicial.
 - `2026-07-13` — Enum derivado `TourDateDisplayStatus` + `TourDate::displayStatus()` (sin migración), controller/ruta del listado global `GET /api/v1/admin/tour-dates` con `IndexTourDatesRequest`, `TourDateDetailResource` ampliado (`display_status` + `tour`), page frontend `Admin/Departures/Index.vue` y segunda entrada de sidebar "Tours". Razón: separación Productos vs Tours en admin + estado de presentación derivado.
+- `2026-07-13` — Lado público del home: prop deferred `upcomingDepartures` en `HomePageController` (no endpoint API), resource público NUEVO `App\Http\Resources\Catalog\UpcomingDepartureResource` (shape mínimo, sin datos operativos internos), sección "Próximas salidas" en `Home.vue` y eliminación de la sección newsletter del storefront. Decisión: NO crear página/tab pública de "Salidas" (home + catálogo cubren la necesidad). Razón: distinguir productos base vs salidas concretas y permitir reservar desde el home sin fragmentar navegación.

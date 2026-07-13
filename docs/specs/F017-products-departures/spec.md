@@ -19,6 +19,7 @@ Decisión de modelado: se **evoluciona** el modelo existente en lugar de crear u
 - Como admin/operator, quiero administrar mis catálogos de rutas, proveedores y hoteles para reutilizarlos entre salidas.
 - Como admin/operator, quiero un listado global de TODAS las salidas de mi tenant (cross-producto) para gestionarlas operativamente sin entrar producto por producto.
 - Como viajero, quiero ver productos del catálogo aunque no tengan fechas disponibles, con un aviso claro de "Sin fechas disponibles".
+- Como viajero, quiero ver en el home del tenant una sección "Próximas salidas" con las salidas concretas más cercanas (fecha, cupos, precio) para poder reservar directamente, distinguiéndolas del catálogo de productos base (`/tours`).
 
 ## Acceptance criteria
 
@@ -54,8 +55,16 @@ Decisión de modelado: se **evoluciona** el modelo existente en lugar de crear u
   - En cualquier otro caso → se muestra el `status` almacenado (`open` | `full` | `closed`).
 - Racional: los estados temporales (`in_progress`, `finished`) son función del reloj. Persistirlos exigiría jobs de transición y podría quedar stale; derivarlos es determinista, sin migración y sin costo operativo. El `status` almacenado (`open`/`full`/`closed`/`cancelled`) sigue siendo la fuente de verdad para el ciclo de vida no-temporal.
 
+### Sección pública "Próximas salidas" (home del tenant)
+- **Given** un tenant con salidas `open` y `starts_at` futuro de productos activos, **when** un viajero abre el home, **then** ve una sección "Próximas salidas" (ubicada entre "Tours destacados" y "Promociones") con hasta 6 salidas ordenadas por fecha ascendente.
+- **Given** cada salida en la sección, **when** se renderiza su card, **then** muestra imagen del producto, nombre del tour (link a su detalle público), fecha en español, cupos disponibles (con badge de urgencia si ≤3), precio efectivo y CTA "Reservar" hacia el flujo de booking de esa salida.
+- **Given** un tenant sin salidas próximas elegibles (o solo salidas `full`/`closed`/`cancelled`/pasadas o de productos inactivos), **when** se carga el home, **then** la sección "Próximas salidas" no se renderiza.
+- **Given** la distinción producto base vs salida concreta, **when** el viajero navega, **then** el catálogo `/tours` (productos base) se mantiene sin cambios y NO existe página/tab pública dedicada de "Salidas": el home + catálogo cubren la necesidad sin fragmentar la navegación.
+- **Given** la sección pública, **when** se expone cada salida al viajero, **then** NO se filtra información operativa interna (notes, guía, ruta, proveedor, hoteles, `booked_count`, `capacity` cruda, `price_override`); solo se exponen fecha, cupos disponibles, precio efectivo y datos públicos del tour.
+
 ### Aislamiento multi-tenant
 - **Given** salidas/rutas/proveedores/hoteles del tenant A, **when** un admin del tenant B consulta o referencia sus IDs, **then** recibe `404`.
+- **Given** la sección "Próximas salidas" del home, **when** se resuelve el tenant por subdominio, **then** solo se muestran salidas de ese tenant (aislamiento verificado en test).
 
 ## Edge cases
 
@@ -101,6 +110,8 @@ PUT/DELETE         /api/v1/admin/hotels/{hotel}
 - Molecules: selects de guía/ruta/proveedor, multi-select de hoteles, `CounterStepper` (reutilizado) para capacidad
 - `Admin/Departures/Index.vue`: tabla con columnas producto (link a su show admin), fecha, ocupación (reservados/capacidad con barra), precio efectivo, guía, condiciones (ruta/proveedor/hoteles), estado (display_status). Filtros: estado, producto, rango de fechas. Acciones por fila: editar (reutiliza `TourDateFormDialog`) y cancelar (mismo flujo de `TourDatesPanel`).
 - Labels y navegación del admin: dos entradas de sidebar — **Productos** (`/admin/tours`, catálogo base existente) y **Tours** (`/admin/departures`, listado global de salidas). La "Salida" es la unidad interna; el lado público conserva "Tours" para el viajero.
+- Home público (`resources/js/pages/Home.vue`): sección "Próximas salidas" entre "Tours destacados" y "Promociones". Cards con imagen del producto, nombre (link a detalle público), fecha en español, cupos con badge de urgencia (≤3), precio efectivo y CTA "Reservar" → `/booking/new?tour_date_id=X`. Skeleton mientras resuelve el prop deferred; si no hay salidas la sección no se renderiza. NO se crea página/tab pública de "Salidas".
+- Home público: se elimina la sección de newsletter del storefront (no hay soporte de envío de correos todavía). El módulo admin de newsletter (F013) y su endpoint API quedan intactos.
 
 ## Datos requeridos
 
@@ -116,8 +127,11 @@ Tablas nuevas: `routes`, `providers`, `hotels` (tenant-scoped), `tour_date_hotel
 - Costos/tarifas de proveedores y hoteles (solo se registran como condiciones logísticas, sin módulo financiero).
 - Notificaciones automáticas a viajeros al cancelar una salida (queda en F008 como mejora futura).
 - Recurrencia de salidas (crear serie semanal/mensual) — iteración futura.
+- Página/tab pública dedicada de "Salidas" — descartada: el home ("Próximas salidas") + el catálogo `/tours` cubren la necesidad del viajero sin fragmentar la navegación.
+- Reactivar la sección de newsletter en el home público — bloqueada hasta que exista soporte de envío de correos (fuera de F017; el módulo admin F013 sigue intacto).
 
 ## Changelog
 
 - `2026-07-12` — Creación. Origen: pedido de reestructurar tours como productos base + eventos con condiciones especiales (guía, ruta, proveedor, hoteles) y hallazgo P0-1 del review 2026-07-12 (no existe CRUD de salidas). Decisión de modelado: evolucionar `tours`/`tour_dates` en vez de tabla `products` paralela, con entidades de soporte nuevas.
 - `2026-07-13` — Separación en el admin de "Productos" (catálogo base, `/admin/tours`) vs "Tours" (listado global de salidas, `/admin/departures`, con page `Admin/Departures/Index.vue`) + estado de presentación derivado (`display_status`). Razón: separación Productos vs Tours en admin + estado de presentación derivado (los estados `in_progress`/`finished` son función del reloj y se derivan en backend sin persistir ni jobs de transición).
+- `2026-07-13` — Lado público: sección "Próximas salidas" en el home del tenant (user story + criterios de aceptación + componentes UI). Se descarta la página/tab pública dedicada de "Salidas" (home + catálogo cubren la necesidad). Se elimina la sección de newsletter del storefront (sin soporte de correos; F013 admin intacto). Razón: el viajero necesita distinguir productos base (catálogo `/tours`) de las salidas concretas próximas y poder reservarlas directo desde el home, sin fragmentar la navegación.

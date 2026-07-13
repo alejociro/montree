@@ -51,6 +51,21 @@
 - [~] Tests: listado global (happy/tenant-isolation/filtros status derivado/tour_id/from/to/422) + `displayStatus()` — en progreso 2026-07-13
 - [~] `php artisan wayfinder:generate` (nueva ruta) — en progreso 2026-07-13
 
+### Home público "Próximas salidas" (agregado 2026-07-13)
+
+Backend (`montree-backend-dev`) — listo:
+- [x] Prop deferred `upcomingDepartures` en `HomePageController` (`Inertia::defer`, no endpoint API) — 2026-07-13
+- [x] Resource público `App\Http\Resources\Catalog\UpcomingDepartureResource` (shape mínimo, sin datos operativos internos) — 2026-07-13
+- [x] Query: `openFuture()` + tour activo + `with('tour.coverImage')` + orden `starts_at` asc + límite 6 — 2026-07-13
+- [x] Tests en `tests/Feature/HomePageTest.php`: happy (orden asc + shape + keys prohibidas ausentes), edge (cancelled/full/closed/past/tour-inactivo excluidos + cap 6), tenant isolation — 3 tests, `HomePageTest` verde 9/9 — 2026-07-13
+
+Frontend (`montree-frontend-dev`) — listo (2026-07-13):
+- [x] Tipo `UpcomingDeparture` (aditivo en `types/home.ts`) — 2026-07-13
+- [x] Sección "Próximas salidas" (`Deferred` + skeleton) en `Home.vue` entre "Tours destacados" y "Promociones"; grid 1/2/3 cols con imagen+fallback, Link al detalle (`tourShow`), fecha ES (`formatTourDate` + "hasta …"), badge "¡Últimos X cupos!" (≤3), precio (`formatCurrency`), CTA "Reservar" → `bookingCreate({ query: { tour_date_id } })` — 2026-07-13
+- [x] Array vacío → la sección no se renderiza — 2026-07-13
+- [x] Wayfinder para todas las URLs (cero hardcode); eslint/types:check/build OK — 2026-07-13
+- [x] Eliminar la sección de newsletter del storefront `Home.vue` (F013 admin + endpoint API intactos) — 2026-07-13
+
 ## Frontend (`montree-frontend-dev`)
 
 - [x] Types en `resources/js/types/logistics.ts`
@@ -95,6 +110,7 @@
 - **Resource extendido (no breaking)**: `TourDateDetailResource` agrega `display_status` (siempre presente) y `tour` (`whenLoaded`, id/name/slug). El `tour` ya se hacía eager load en todos los endpoints que usan el resource (nested index, cancel, respondWith y el nuevo global index incluyen `tour` en RELATIONS), por lo que `effective_price` (que usa `$this->tour->base_price`) y el nuevo campo `tour` no introducen N+1.
 - **Autorización del global index**: `TourDateIndexRequest::authorize()` usa `can('viewAny', Tour::class)` — equivalente sin instancia al `Gate::authorize('view', $tour)` del index anidado (ambos resuelven `isStaff` en `TourPolicy`). El 403 efectivo para no admin/operator lo impone el middleware `tenant_admin.only`.
 - **Wayfinder no regenerado**: el helper TS de la nueva ruta queda pendiente para `montree-frontend-dev` (fuera de mi scope backend; no corrí `wayfinder:generate` para no tocar artefactos de frontend).
+- **Home público "Próximas salidas" (2026-07-13, backend)**: nueva prop deferred `upcomingDepartures` en `HomePageController` (método privado siguiendo el patrón de las demás props, `Inertia::defer`). Query: `TourDate::openFuture()` (scope existente: `status = open` AND `starts_at > now`) + `whereHas('tour', active)` + `with('tour.coverImage')` + `orderBy('starts_at')` + `limit(6)`. Resource público NUEVO `UpcomingDepartureResource` (NO se reutilizó el admin `TourDateDetailResource` para no filtrar notes/guide/route/provider/capacity cruda/price_override al público). `effective_price = price_override ?? tour.base_price`; `cover_image_url` con el patrón http-passthrough/`Storage::disk('public')->url()`. Serialización de fechas `toIso8601String()` (consistente con el resto). Sin filtro extra por cupos: `open` con 0 disponibles no debería existir (full ya cubre lleno). 3 tests nuevos en `HomePageTest` (happy con orden asc + shape + keys prohibidas ausentes, edge con cancelled/full/closed/past/tour-inactivo excluidos + cap 6, tenant isolation). N+1: cubierto por eager load `tour.coverImage`.
 
 ## Changelog
 
@@ -102,3 +118,6 @@
 - `2026-07-12` — Backend implementado (montree-backend-dev): excepciones de dominio, 4 actions de salida, modificación de `ChangeTourStatusAction`, form requests tenant-aware, controllers de salidas + logística, resources, rutas, 23 tests nuevos. Suite 340/340.
 - `2026-07-13` — Backend listado global (montree-backend-dev): enum `TourDateDisplayStatus`, `TourDate::displayStatus()` + scope `withDisplayStatus()`, endpoint `GET /api/v1/admin/tour-dates` (`TourDateIndexController` + `TourDateIndexRequest`), `display_status`/`tour` en `TourDateDetailResource`, 5 tests (`TourDateGlobalIndexTest`). Filtro `TourDate` verde 21/21.
 - `2026-07-13` — Agregadas tareas de listado global de salidas (endpoint `GET /api/v1/admin/tour-dates` + tests, enum `TourDateDisplayStatus`, `displayStatus()`, resource ampliado, page `Admin/Departures/Index.vue`, segunda entrada de sidebar "Tours"), marcadas en progreso. Razón: separación Productos vs Tours en admin + estado de presentación derivado.
+- `2026-07-13` — Home público "Próximas salidas" (montree-backend-dev): prop deferred `upcomingDepartures` en `HomePageController`, resource público `UpcomingDepartureResource`, 3 tests en `HomePageTest`. `HomePageTest` verde 9/9. Frontend (sección Home) pendiente para `montree-frontend-dev`.
+- `2026-07-13` — Home público "Próximas salidas" (montree-frontend-dev): tipo `UpcomingDeparture` (aditivo en `types/home.ts`), sección `Deferred` con skeleton entre "Tours destacados" y "Promociones" en `Home.vue`. Cards grid (1/2/3 cols) con imagen+fallback, Link al detalle (`tourShow`), fecha ES vía `formatTourDate` + "hasta …", badge destructivo "¡Últimos X cupos!" (≤3), precio `formatCurrency`, CTA "Reservar" → `bookingCreate({ query: { tour_date_id } })`. Array vacío → no renderiza sección. eslint OK, types:check OK (solo 6 errores preexistentes ajenos), build OK.
+- `2026-07-13` — Spec sincronizada con el delta público (montree-spec-updater): documentada la sección "Próximas salidas" del home en `spec.md` (user story + criterios + componentes UI + out-of-scope), `contracts.md` (prop Inertia deferred `upcomingDepartures` + `UpcomingDepartureResource`, marcada como NO endpoint REST, con claves internas no expuestas) y `plan.md` (resource público nuevo + decisión de no crear página pública de salidas + baja de newsletter). Ítems del home marcados según estado real (backend + frontend listos, newsletter storefront removido). Razón: distinguir productos base del catálogo vs salidas concretas próximas y permitir reservar desde el home sin fragmentar navegación.

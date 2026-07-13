@@ -269,6 +269,50 @@ La regla de activación pasa de "≥1 imagen Y ≥1 fecha futura open" a **solo 
 
 ---
 
+## Prop Inertia `upcomingDepartures` (home público — NO es endpoint REST)
+
+> **Importante:** esto NO es un endpoint de la API `/api/v1/*`. Es una **prop de Inertia deferred** que sirve `HomePageController` al renderizar `resources/js/pages/Home.vue`. Se documenta acá por ser un contrato backend↔frontend, pero no tiene ruta REST, ni versionado, ni response envelope de la API. Se consume vía partial reload del prop deferred (patrón Inertia v3), no con `fetch`/`useApi`.
+
+**Origen:** `HomePageController` (home del tenant, resuelto por subdominio).
+**Tipo de prop:** `Inertia::defer(...)` — se carga en un request de continuación tras el render inicial; el frontend muestra skeleton mientras resuelve.
+**Resource:** `App\Http\Resources\Catalog\UpcomingDepartureResource` (público, nuevo — NO reutiliza el admin `TourDateDetailResource`).
+
+**Reglas de selección (backend):**
+- Solo salidas con `status = open` y `starts_at > now`.
+- Solo de productos (`tour`) activos del tenant actual.
+- Orden `starts_at` ascendente.
+- Límite: hasta 6 salidas.
+- Eager load `tour.coverImage` (sin N+1).
+
+**Shape de cada item:**
+
+```json
+{
+  "id": 7,
+  "starts_at": "2026-08-03T20:26:00+00:00",
+  "ends_at": "2026-08-04T02:26:00+00:00",
+  "available_seats": 8,
+  "effective_price": "950.00",
+  "tour": {
+    "name": "Cascadas de Montree",
+    "slug": "cascadas-de-montree",
+    "currency": "USD",
+    "cover_image_url": "https://.../cover.jpg"
+  }
+}
+```
+
+- `ends_at`: ISO 8601 o `null`.
+- `tour.cover_image_url`: URL o `null`.
+- `effective_price` = `price_override ?? tour.base_price` (decimal string).
+- Fechas serializadas con `toIso8601String()` (offset `+00:00`), consistente con el resto de la app.
+
+**Claves deliberadamente NO expuestas al público** (información operativa interna): `notes`, `guide`, `route`, `provider`, `hotels`, `booked_count`, `capacity` (cruda) y `price_override`. Un test verifica su ausencia.
+
+**Consumo frontend:** cada card enlaza al detalle público del tour (por `slug`) y su CTA "Reservar" apunta a `/booking/new?tour_date_id={id}`. Si la lista viene vacía, la sección no se renderiza.
+
+---
+
 ## Eventos / Side-effects
 
 - Cancelar una salida NO notifica automáticamente a los viajeros (out of scope, F008 futuro). Las reservas asociadas no cambian de estado en esta iteración.
@@ -283,3 +327,4 @@ La regla de activación pasa de "≥1 imagen Y ≥1 fecha futura open" a **solo 
   - **Endpoint NUEVO:** `GET /api/v1/admin/tour-dates` (listado global cross-producto, con filtros `status`/`tour_id`/`from`/`to`/`direction`/`per_page`).
   - **Adición no-breaking** a `GET /api/v1/admin/tour-dates`, `GET /api/v1/admin/tours/{tour}/dates`, `POST /api/v1/admin/tours/{tour}/dates` (respuesta 201 hereda el shape del index) y `PUT /api/v1/admin/tour-dates/{tourDate}`: se agregan `display_status` (string derivado) y `tour: { id, name, slug, currency }` al shape del item.
   - **Impacto backend/frontend:** son adiciones (no cambian ni renombran campos existentes) → NO breaking. Endpoints afectados por la adición de campos: los 4 listados arriba. Consumidores actuales del index anidado (`TourDatesPanel`, `TourDateFormDialog`) siguen funcionando sin cambios; opcionalmente pueden empezar a leer `display_status`.
+- `2026-07-13` — Nueva **prop Inertia deferred** `upcomingDepartures` (home público, `HomePageController`) + resource público `UpcomingDepartureResource`. Razón: sección "Próximas salidas" en el home del tenant. **No es endpoint REST**: no impacta el contrato de la API `/api/v1/*` ni versionado. No breaking para consumidores existentes (prop nueva). Contrato de shape documentado en la sección "Prop Inertia `upcomingDepartures`" de este archivo, con las claves internas explícitamente NO expuestas al público.

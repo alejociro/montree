@@ -9,11 +9,13 @@ use App\Enums\ReviewStatus;
 use App\Http\Resources\Catalog\CatalogCategoryResource;
 use App\Http\Resources\Catalog\CatalogTourResource;
 use App\Http\Resources\Catalog\HomeTestimonialResource;
+use App\Http\Resources\Catalog\UpcomingDepartureResource;
 use App\Models\Category;
 use App\Models\Promotion;
 use App\Models\Review;
 use App\Models\Tenant;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +47,24 @@ final class HomePageController extends Controller
             'promotions' => Inertia::defer(fn () => $this->activePromotions()),
             'categories' => Inertia::defer(fn () => $this->activeCategories()),
             'testimonials' => Inertia::defer(fn () => $this->topTestimonials()),
+            'upcomingDepartures' => Inertia::defer(fn () => $this->upcomingDepartures()),
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function upcomingDepartures(): array
+    {
+        $departures = TourDate::query()
+            ->openFuture()
+            ->whereHas('tour', fn ($query) => $query->active())
+            ->with('tour.coverImage')
+            ->orderBy('starts_at')
+            ->limit(6)
+            ->get();
+
+        return UpcomingDepartureResource::collection($departures)->resolve();
     }
 
     /**

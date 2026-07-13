@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\ReviewStatus;
+use App\Enums\TourDateStatus;
 use App\Enums\UserRole;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Category;
@@ -12,6 +13,7 @@ use App\Models\Review;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -143,6 +145,97 @@ class HomePageTest extends TestCase
         $response->assertJsonPath('props.categories.0.name', $ownCategory->name);
         $this->assertCount(1, $response->json('props.testimonials'));
         $response->assertJsonPath('props.testimonials.0.title', 'Nuestra reseña');
+    }
+
+    public function test_home_exposes_upcoming_open_future_departures_of_active_tours(): void
+    {
+        $tenant = $this->makeTenant();
+
+        $sooner = Tour::factory()->active()->create([
+            'name' => 'Cañón Amanecer',
+            'slug' => 'canon-amanecer',
+            'base_price' => '1200.00',
+            'currency' => 'USD',
+        ]);
+        $later = Tour::factory()->active()->create(['name' => 'Selva Nocturna', 'slug' => 'selva-nocturna']);
+
+        TourDate::factory()->for($later)->create(['starts_at' => now()->addDays(10)]);
+        TourDate::factory()->for($sooner)->create([
+            'starts_at' => now()->addDays(3),
+            'capacity' => 12,
+            'booked_count' => 4,
+            'price_override' => '950.00',
+            'notes' => 'internal ops note',
+        ]);
+
+        $response = $this->partialReload($tenant, ['upcomingDepartures']);
+
+        $response->assertOk();
+        $this->assertCount(2, $response->json('props.upcomingDepartures'));
+        $response->assertJsonPath('props.upcomingDepartures.0.tour.name', 'Cañón Amanecer');
+        $response->assertJsonPath('props.upcomingDepartures.0.tour.slug', 'canon-amanecer');
+        $response->assertJsonPath('props.upcomingDepartures.0.tour.currency', 'USD');
+        $response->assertJsonPath('props.upcomingDepartures.0.available_seats', 8);
+        $response->assertJsonPath('props.upcomingDepartures.0.effective_price', '950.00');
+        $response->assertJsonPath('props.upcomingDepartures.1.tour.name', 'Selva Nocturna');
+
+        $item = $response->json('props.upcomingDepartures.0');
+        $this->assertEqualsCanonicalizing(
+            ['id', 'starts_at', 'ends_at', 'available_seats', 'effective_price', 'tour'],
+            array_keys($item),
+        );
+        $this->assertEqualsCanonicalizing(
+            ['name', 'slug', 'currency', 'cover_image_url'],
+            array_keys($item['tour']),
+        );
+        $this->assertArrayNotHasKey('notes', $item);
+        $this->assertArrayNotHasKey('guide', $item);
+        $this->assertArrayNotHasKey('capacity', $item);
+        $this->assertArrayNotHasKey('price_override', $item);
+        $this->assertArrayNotHasKey('booked_count', $item);
+    }
+
+    public function test_home_excludes_non_open_past_and_inactive_tour_departures_and_caps_at_six(): void
+    {
+        $tenant = $this->makeTenant();
+
+        $activeTour = Tour::factory()->active()->create();
+        $inactiveTour = Tour::factory()->create();
+
+        TourDate::factory()->count(7)->for($activeTour)->create();
+
+        TourDate::factory()->for($activeTour)->full()->create();
+        TourDate::factory()->for($activeTour)->create(['status' => TourDateStatus::Cancelled]);
+        TourDate::factory()->for($activeTour)->create(['status' => TourDateStatus::Closed]);
+        TourDate::factory()->for($activeTour)->past()->create();
+        TourDate::factory()->for($inactiveTour)->create();
+
+        $response = $this->partialReload($tenant, ['upcomingDepartures']);
+
+        $response->assertOk();
+        $this->assertCount(6, $response->json('props.upcomingDepartures'));
+    }
+
+    public function test_home_isolates_upcoming_departures_by_tenant(): void
+    {
+        $tenant = $this->makeTenant();
+
+        $ownTour = Tour::factory()->active()->create(['name' => 'Nuestra Salida']);
+        TourDate::factory()->for($ownTour)->create(['starts_at' => now()->addDays(2)]);
+
+        $otherTenant = Tenant::factory()->create(['slug' => 'other', 'domain' => 'other.montree.test']);
+        TenantConfiguration::factory()->for($otherTenant)->create();
+        $otherTenant->makeCurrent();
+        $otherTour = Tour::factory()->active()->create(['name' => 'Salida Ajena']);
+        TourDate::factory()->for($otherTour)->create(['starts_at' => now()->addDays(2)]);
+
+        $tenant->makeCurrent();
+
+        $response = $this->partialReload($tenant, ['upcomingDepartures']);
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('props.upcomingDepartures'));
+        $response->assertJsonPath('props.upcomingDepartures.0.tour.name', 'Nuestra Salida');
     }
 
     private function makeTenant(): Tenant
