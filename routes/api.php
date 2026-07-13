@@ -63,6 +63,7 @@ Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
     Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
+    Route::put('bookings/{bookingNumber}/travelers', [BookingController::class, 'syncTravelers'])->name('api.v1.bookings.travelers.sync');
 
     Route::get('account/profile', [AccountController::class, 'profile'])->name('api.v1.account.profile');
     Route::put('account/profile', [AccountController::class, 'updateProfile'])->name('api.v1.account.profile.update');

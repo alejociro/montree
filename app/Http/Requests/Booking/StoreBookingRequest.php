@@ -32,7 +32,8 @@ final class StoreBookingRequest extends FormRequest
 
             // Booking info
             'tour_date_id' => ['required', 'integer', 'exists:tour_dates,id'],
-            'travelers_count' => ['required', 'integer', 'min:1', 'max:50'],
+            'adults_count' => ['required', 'integer', 'min:1'],
+            'minors_count' => ['required', 'integer', 'min:0'],
             'promotion_code' => ['nullable', 'string', 'max:40'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
 
@@ -40,12 +41,10 @@ final class StoreBookingRequest extends FormRequest
             'emergency_contact_name' => ['nullable', 'string', 'max:120'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
 
-            // Traveler mode: complete_now = fill all travelers inline, share_link = send link later
-            'traveler_mode' => ['nullable', 'string', 'in:complete_now,share_link'],
-
-            // Traveler details (when traveler_mode = complete_now)
+            // Traveler details (optional: filled here or completed after booking)
             'travelers' => ['nullable', 'array'],
             'travelers.*.full_name' => ['required_with:travelers', 'string', 'max:120'],
+            'travelers.*.is_minor' => ['nullable', 'boolean'],
             'travelers.*.phone' => ['nullable', 'string', 'max:30'],
         ];
     }
@@ -53,6 +52,11 @@ final class StoreBookingRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($v): void {
+            $total = (int) $this->input('adults_count', 0) + (int) $this->input('minors_count', 0);
+            if ($total > 50) {
+                $v->errors()->add('adults_count', 'El total de viajeros no puede superar 50.');
+            }
+
             $tourDateId = (int) $this->input('tour_date_id', 0);
             $tourDate = TourDate::query()->find($tourDateId);
             if ($tourDate === null) {

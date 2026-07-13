@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\Catalog\PublicTourResource;
 use App\Models\Booking;
+use App\Models\Tenant;
 use App\Models\TourDate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -72,12 +73,17 @@ final class BookingPagesController extends Controller
 
         $newAccount = $request->session()->pull('booking_new_account', false);
 
+        $requireTravelerDetails = (bool) (Tenant::current()?->configuration?->require_traveler_details ?? false);
+
         return Inertia::render('Booking/Show', [
             'new_account' => $newAccount,
+            'require_traveler_details' => $requireTravelerDetails,
             'booking' => [
                 'booking_number' => $booking->booking_number,
                 'status' => $booking->status->value,
                 'travelers_count' => $booking->travelers_count,
+                'adults_count' => $booking->adults_count,
+                'minors_count' => $booking->minors_count,
                 'subtotal' => $booking->subtotal,
                 'discount_amount' => $booking->discount_amount,
                 'total_amount' => $booking->total_amount,
@@ -95,6 +101,16 @@ final class BookingPagesController extends Controller
                     'starts_at' => $booking->tourDate->starts_at->toIso8601String(),
                     'ends_at' => $booking->tourDate->ends_at?->toIso8601String(),
                 ],
+                'travelers' => $booking->travelers->map(fn ($traveler) => [
+                    'id' => $traveler->id,
+                    'full_name' => $traveler->full_name,
+                    'is_minor' => $traveler->is_minor,
+                    'email' => $traveler->email,
+                    'phone' => $traveler->phone,
+                    'document_type' => $traveler->document_type,
+                    'document_number' => $traveler->document_number,
+                    'birth_date' => $traveler->birth_date?->toDateString(),
+                ])->values(),
             ],
         ]);
     }

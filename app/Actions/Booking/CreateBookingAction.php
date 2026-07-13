@@ -40,7 +40,9 @@ final class CreateBookingAction
                 throw BookingException::bookingWindowClosed();
             }
 
-            $travelers = (int) $data['travelers_count'];
+            $adults = (int) $data['adults_count'];
+            $minors = (int) $data['minors_count'];
+            $travelers = $adults + $minors;
             $available = $tourDate->capacity - $tourDate->booked_count;
             if ($available < $travelers) {
                 throw BookingException::insufficientCapacity($available);
@@ -73,6 +75,8 @@ final class CreateBookingAction
                 'tour_date_id' => $tourDate->id,
                 'promotion_id' => $promotionId,
                 'travelers_count' => $travelers,
+                'adults_count' => $adults,
+                'minors_count' => $minors,
                 'subtotal' => $subtotal,
                 'discount_amount' => $discount,
                 'total_amount' => $total,
@@ -95,6 +99,7 @@ final class CreateBookingAction
                 BookingTraveler::query()->create([
                     'booking_id' => $booking->id,
                     'full_name' => $traveler['full_name'],
+                    'is_minor' => (bool) ($traveler['is_minor'] ?? false),
                     'document_type' => $traveler['document_type'] ?? null,
                     'document_number' => $traveler['document_number'] ?? null,
                     'email' => $traveler['email'] ?? null,

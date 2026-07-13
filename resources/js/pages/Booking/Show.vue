@@ -4,19 +4,20 @@ import {
     Calendar,
     CheckCircle,
     MapPin,
-    Share2,
     X,
     XCircle,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
+import BookingTravelersSection from '@/components/organisms/BookingTravelersSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApi } from '@/composables/useApi';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatBookingStatus } from '@/lib/format';
+import type { BookingTraveler } from '@/types/booking';
 
 defineOptions({ layout: PublicLayout });
 
@@ -32,6 +33,9 @@ type BookingProp = {
     booking_number: string;
     status: string;
     travelers_count: number;
+    adults_count: number;
+    minors_count: number;
+    travelers: BookingTraveler[];
     subtotal: string;
     discount_amount: string;
     total_amount: string;
@@ -51,7 +55,11 @@ type BookingProp = {
     };
 };
 
-const props = defineProps<{ booking: BookingProp; new_account?: boolean }>();
+const props = defineProps<{
+    booking: BookingProp;
+    require_traveler_details: boolean;
+    new_account?: boolean;
+}>();
 
 const api = useApi();
 
@@ -108,13 +116,6 @@ const pendingBalance = computed(() =>
 );
 
 const meetingPoint = computed(() => props.booking.tour.meeting_point ?? '—');
-
-function shareRegistrationLink(): void {
-    void navigator.clipboard
-        .writeText(window.location.href)
-        .then(() => toast.success('Enlace copiado al portapapeles.'))
-        .catch(() => toast.error('No pudimos copiar el enlace.'));
-}
 
 // Pending payment form state
 const paymentType = ref<'full' | 'partial'>('full');
@@ -230,20 +231,6 @@ function goBack(): void {
                             acceder a tus reservas cuando quieras.
                         </p>
                     </div>
-                </div>
-
-                <!-- Share section -->
-                <div
-                    class="mb-6 space-y-3 rounded-lg border border-border bg-card p-5"
-                >
-                    <p class="text-sm text-muted-foreground">
-                        Si aún hay viajeros pendientes por registrar, comparte
-                        el siguiente enlace para que completen su información.
-                    </p>
-                    <Button variant="outline" @click="shareRegistrationLink">
-                        <Share2 class="size-4" />
-                        Compartir enlace de registro
-                    </Button>
                 </div>
 
                 <p class="mb-6 text-sm text-muted-foreground">
@@ -417,6 +404,17 @@ function goBack(): void {
                         </div>
                     </section>
                 </div>
+
+                <!-- Travelers -->
+                <div class="mt-6">
+                    <BookingTravelersSection
+                        :booking-number="booking.booking_number"
+                        :adults-count="booking.adults_count"
+                        :minors-count="booking.minors_count"
+                        :travelers="booking.travelers"
+                        :required="require_traveler_details"
+                    />
+                </div>
             </div>
         </div>
 
@@ -517,6 +515,14 @@ function goBack(): void {
                             </div>
                         </dl>
                     </section>
+
+                    <BookingTravelersSection
+                        :booking-number="booking.booking_number"
+                        :adults-count="booking.adults_count"
+                        :minors-count="booking.minors_count"
+                        :travelers="booking.travelers"
+                        :required="require_traveler_details"
+                    />
                 </div>
 
                 <!-- RIGHT -->

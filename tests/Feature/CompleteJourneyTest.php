@@ -61,7 +61,8 @@ final class CompleteJourneyTest extends TestCase
         $bookingResponse = $this->actingAs($customer)
             ->postJson('http://demo.montree.test/api/v1/bookings', [
                 'tour_date_id' => $tourDate->id,
-                'travelers_count' => 2,
+                'adults_count' => 2,
+                'minors_count' => 0,
             ]);
 
         $bookingResponse->assertCreated();

@@ -22,6 +22,8 @@ final class BookingResource extends JsonResource
             'booking_number' => $this->booking_number,
             'status' => $this->status->value,
             'travelers_count' => $this->travelers_count,
+            'adults_count' => $this->adults_count,
+            'minors_count' => $this->minors_count,
             'subtotal' => $this->subtotal,
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
@@ -48,7 +50,12 @@ final class BookingResource extends JsonResource
             'travelers' => $this->whenLoaded('travelers', fn () => $this->travelers->map(fn ($t) => [
                 'id' => $t->id,
                 'full_name' => $t->full_name,
+                'is_minor' => $t->is_minor,
                 'email' => $t->email,
+                'phone' => $t->phone,
+                'document_type' => $t->document_type,
+                'document_number' => $t->document_number,
+                'birth_date' => $t->birth_date?->toDateString(),
             ])->values()),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

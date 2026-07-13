@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Trash2, UserPlus } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storeBooking } from '@/actions/App/Http/Controllers/Api/V1/BookingController';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
+import CounterStepper from '@/components/molecules/CounterStepper.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -41,16 +41,12 @@ type Prefill = {
 const props = defineProps<{
     tour: Tour;
     tourDate: TourDate;
-    requireTravelers: boolean;
     prefill: Prefill | null;
 }>();
 
 const api = useApi();
 
-type TravelerInput = {
-    full_name: string;
-    phone: string;
-};
+const MAX_TOTAL_TRAVELERS = 50;
 
 type BookingCreateResponse = {
     data?: { booking_number?: string };
@@ -63,9 +59,8 @@ const personal = reactive({
     phone: props.prefill?.phone ?? '',
 });
 
-const soyViajero = ref(false);
-
-const travelers = reactive<TravelerInput[]>([{ full_name: '', phone: '' }]);
+const adultsCount = ref(1);
+const minorsCount = ref(0);
 
 const emergency = reactive({
     name: '',
@@ -75,26 +70,19 @@ const emergency = reactive({
 const acceptedTerms = ref(false);
 const submitting = ref(false);
 
-const travelersCount = computed(() => travelers.length);
+const seatCap = computed(() =>
+    Math.min(MAX_TOTAL_TRAVELERS, props.tourDate.available_seats),
+);
 
-function addTraveler(): void {
-    travelers.push({ full_name: '', phone: '' });
-}
+const totalTravelers = computed(() => adultsCount.value + minorsCount.value);
 
-function removeTraveler(index: number): void {
-    if (travelers.length > 1) {
-        travelers.splice(index, 1);
-    }
-}
+const adultsMax = computed(() =>
+    Math.max(1, seatCap.value - minorsCount.value),
+);
 
-function onSoyViajeroChange(checked: boolean): void {
-    soyViajero.value = checked;
-
-    if (checked && travelers.length > 0) {
-        travelers[0].full_name = personal.full_name;
-        travelers[0].phone = personal.phone;
-    }
-}
+const minorsMax = computed(() =>
+    Math.max(0, seatCap.value - adultsCount.value),
+);
 
 const formattedPrice = computed(() =>
     new Intl.NumberFormat('es-CO', {
@@ -102,6 +90,14 @@ const formattedPrice = computed(() =>
         currency: props.tourDate.currency,
         maximumFractionDigits: 0,
     }).format(Number(props.tourDate.effective_price)),
+);
+
+const formattedTotal = computed(() =>
+    new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: props.tourDate.currency,
+        maximumFractionDigits: 0,
+    }).format(Number(props.tourDate.effective_price) * totalTravelers.value),
 );
 
 function validateLocally(): string | null {
@@ -123,8 +119,12 @@ function validateLocally(): string | null {
         }
     }
 
-    if (travelers.some((t) => !t.full_name.trim())) {
-        return 'El nombre de todos los viajeros es obligatorio.';
+    if (adultsCount.value < 1) {
+        return 'Debe viajar al menos un adulto.';
+    }
+
+    if (totalTravelers.value > seatCap.value) {
+        return 'No hay suficientes cupos disponibles para esa cantidad de viajeros.';
     }
 
     if (!emergency.name.trim() || !emergency.phone.trim()) {
@@ -141,13 +141,10 @@ function validateLocally(): string | null {
 function buildPayload(): Record<string, unknown> {
     const payload: Record<string, unknown> = {
         tour_date_id: props.tourDate.id,
-        travelers_count: travelersCount.value,
+        adults_count: adultsCount.value,
+        minors_count: minorsCount.value,
         emergency_contact_name: emergency.name,
         emergency_contact_phone: emergency.phone,
-        travelers: travelers.map((t) => ({
-            full_name: t.full_name,
-            phone: t.phone,
-        })),
     };
 
     if (props.prefill === null) {
@@ -314,18 +311,6 @@ async function submit(): Promise<void> {
                             />
                         </div>
                     </div>
-
-                    <label
-                        class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
-                    >
-                        <Checkbox
-                            :model-value="soyViajero"
-                            @update:model-value="
-                                onSoyViajeroChange(Boolean($event))
-                            "
-                        />
-                        También viajo en este grupo
-                    </label>
                 </section>
 
                 <!-- Section 2: ¿Quiénes van a viajar? -->
@@ -337,70 +322,47 @@ async function submit(): Promise<void> {
                             2
                         </span>
                         <h2 class="text-lg font-semibold text-foreground">
-                            ¿Quiénes van a viajar? *
+                            ¿Cuántos van a viajar? *
                         </h2>
                     </div>
 
                     <div class="space-y-3">
-                        <div
-                            v-for="(traveler, index) in travelers"
-                            :key="index"
-                            class="rounded-lg border border-border bg-card p-4"
-                        >
-                            <div
-                                class="mb-3 flex items-center justify-between"
-                            >
-                                <p
-                                    class="text-sm font-medium text-foreground"
-                                >
-                                    Viajero {{ index + 1 }}
-                                </p>
-                                <button
-                                    v-if="travelers.length > 1"
-                                    type="button"
-                                    class="flex size-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                                    :aria-label="`Eliminar viajero ${index + 1}`"
-                                    @click="removeTraveler(index)"
-                                >
-                                    <Trash2 class="size-4" />
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1.5">
-                                    <Label :for="`traveler-name-${index}`">
-                                        Nombres y apellidos *
-                                    </Label>
-                                    <Input
-                                        :id="`traveler-name-${index}`"
-                                        v-model="traveler.full_name"
-                                        type="text"
-                                        placeholder="Como aparece en tu documento"
-                                        required
-                                    />
-                                </div>
-                                <div class="space-y-1.5">
-                                    <Label :for="`traveler-phone-${index}`">
-                                        Número celular
-                                    </Label>
-                                    <Input
-                                        :id="`traveler-phone-${index}`"
-                                        v-model="traveler.phone"
-                                        type="tel"
-                                        placeholder="+57 300 000 0000"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                        <CounterStepper
+                            v-model="adultsCount"
+                            label="Adultos"
+                            description="Mayores de edad"
+                            :min="1"
+                            :max="adultsMax"
+                        />
+                        <CounterStepper
+                            v-model="minorsCount"
+                            label="Menores"
+                            description="Menores de edad"
+                            :min="0"
+                            :max="minorsMax"
+                        />
                     </div>
 
-                    <button
-                        type="button"
-                        class="flex items-center gap-2 text-sm font-medium text-primary transition hover:text-primary/80"
-                        @click="addTraveler"
+                    <p
+                        class="rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground/70"
                     >
-                        <UserPlus class="size-4" />
-                        Agregar viajero
-                    </button>
+                        Los datos de cada viajero (nombre, documento, etc.) se
+                        completan después de reservar, desde el detalle de tu
+                        reserva.
+                    </p>
+
+                    <div
+                        class="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm"
+                    >
+                        <span class="text-muted-foreground">
+                            {{ totalTravelers }}
+                            {{ totalTravelers === 1 ? 'viajero' : 'viajeros' }}
+                            × {{ formattedPrice }}
+                        </span>
+                        <span class="font-semibold text-foreground">
+                            {{ formattedTotal }}
+                        </span>
+                    </div>
                 </section>
 
                 <!-- Emergency contact -->

@@ -57,4 +57,9 @@ final class BookingException extends \Exception implements HttpExceptionInterfac
     {
         return new self('BOOKING_NOT_FOUND', 'No encontramos la reserva indicada.', 404);
     }
+
+    public static function travelersLocked(): self
+    {
+        return new self('BOOKING_TRAVELERS_LOCKED', 'No es posible editar los viajeros de una reserva cancelada o expirada.', 409);
+    }
 }

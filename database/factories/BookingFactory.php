@@ -21,7 +21,9 @@ class BookingFactory extends Factory
 
     public function definition(): array
     {
-        $travelers = fake()->numberBetween(1, 5);
+        $adults = fake()->numberBetween(1, 4);
+        $minors = fake()->numberBetween(0, 2);
+        $travelers = $adults + $minors;
         $unitPrice = fake()->randomFloat(2, 50, 500);
         $subtotal = round($unitPrice * $travelers, 2);
 
@@ -31,6 +33,8 @@ class BookingFactory extends Factory
             'tour_date_id' => TourDate::factory(),
             'promotion_id' => null,
             'travelers_count' => $travelers,
+            'adults_count' => $adults,
+            'minors_count' => $minors,
             'subtotal' => $subtotal,
             'discount_amount' => 0,
             'total_amount' => $subtotal,
