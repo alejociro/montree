@@ -10,9 +10,11 @@ import {
     Users,
     X,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { index as tourReviewsIndex } from '@/actions/App/Http/Controllers/Api/V1/PublicReviewController';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
+import ReviewCard from '@/components/molecules/ReviewCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import PublicLayout from '@/layouts/PublicLayout.vue';
@@ -20,6 +22,7 @@ import { formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
 import type {
+    ReviewSummary,
     TourDetail,
     TourDetailDate,
     TourDetailImage,
@@ -67,6 +70,69 @@ const difficultyLabel = computed(() => {
     };
 
     return map[props.tour.difficulty] ?? props.tour.difficulty;
+});
+
+const reviews = ref<ReviewSummary[]>([]);
+const reviewsLoading = ref(true);
+const reviewsLoadError = ref(false);
+const reviewsLastPage = ref(1);
+const reviewsPage = ref(1);
+const loadingMoreReviews = ref(false);
+
+const hasMoreReviews = computed(() => reviewsPage.value < reviewsLastPage.value);
+
+type ReviewsPageResponse = {
+    data: ReviewSummary[];
+    meta: { current_page: number; last_page: number };
+};
+
+async function loadReviews(pageNumber: number): Promise<void> {
+    const isFirstPage = pageNumber === 1;
+
+    if (isFirstPage) {
+        reviewsLoading.value = true;
+        reviewsLoadError.value = false;
+    } else {
+        loadingMoreReviews.value = true;
+    }
+
+    try {
+        const response = await fetch(
+            tourReviewsIndex.url(props.tour.slug, {
+                query: { page: pageNumber },
+            }),
+            {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const json = (await response.json()) as ReviewsPageResponse;
+        reviews.value = isFirstPage
+            ? json.data
+            : [...reviews.value, ...json.data];
+        reviewsPage.value = json.meta.current_page;
+        reviewsLastPage.value = json.meta.last_page;
+    } catch {
+        if (isFirstPage) {
+            reviewsLoadError.value = true;
+        }
+    } finally {
+        reviewsLoading.value = false;
+        loadingMoreReviews.value = false;
+    }
+}
+
+onMounted(() => {
+    if (props.tour.rating_count > 0) {
+        void loadReviews(1);
+    } else {
+        reviewsLoading.value = false;
+    }
 });
 
 const activeImageIndex = ref(0);
@@ -461,10 +527,51 @@ function dateOptionLabel(date: TourDetailDate): string {
                 </div>
 
                 <div class="space-y-4 lg:col-span-2">
-                    <p class="text-sm text-muted-foreground">
-                        Las reseñas de los viajeros aparecen aquí después de
-                        completar el tour.
-                    </p>
+                    <div v-if="reviewsLoading" class="space-y-4">
+                        <div
+                            v-for="n in 3"
+                            :key="`review-skel-${n}`"
+                            class="h-28 animate-pulse rounded-lg border bg-muted"
+                        />
+                    </div>
+
+                    <div
+                        v-else-if="reviewsLoadError"
+                        class="rounded-lg border border-dashed p-6 text-center"
+                    >
+                        <p class="text-sm text-muted-foreground">
+                            No se pudieron cargar las reseñas.
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="mt-3"
+                            @click="loadReviews(1)"
+                        >
+                            Reintentar
+                        </Button>
+                    </div>
+
+                    <template v-else>
+                        <ReviewCard
+                            v-for="review in reviews"
+                            :key="review.id"
+                            :review="review"
+                        />
+                        <div v-if="hasMoreReviews" class="pt-2 text-center">
+                            <Button
+                                variant="outline"
+                                :disabled="loadingMoreReviews"
+                                @click="loadReviews(reviewsPage + 1)"
+                            >
+                                {{
+                                    loadingMoreReviews
+                                        ? 'Cargando...'
+                                        : 'Ver más reseñas'
+                                }}
+                            </Button>
+                        </div>
+                    </template>
                 </div>
             </div>
 
