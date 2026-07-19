@@ -35,7 +35,7 @@ export type TourDetail = {
     base_price: string;
     currency: string;
     duration_hours: number;
-    difficulty: 'easy' | 'moderate' | 'hard' | 'expert';
+    difficulty: 'easy' | 'moderate' | 'hard' | 'extreme';
     default_capacity: number;
     category: { id: number; name: string; slug: string } | null;
     rating_average: string;

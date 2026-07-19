@@ -5,16 +5,22 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
+use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
 use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Api\V1\Admin\TourDateController as AdminTourDateController;
+use App\Http\Controllers\Api\V1\Admin\TourDateIndexController as AdminTourDateIndexController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\BookingController;
@@ -34,6 +40,7 @@ use App\Http\Controllers\Api\V1\SuperAdmin\TenantConfigurationController as Supe
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
+use App\Http\Controllers\Api\V1\SuperAdmin\TenantUserController as SuperAdminTenantUserController;
 use App\Http\Controllers\Api\V1\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,12 +60,16 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('tours/{slug}/reviews', [PublicReviewController::class, 'index'])->name('api.v1.tours.reviews.index');
 });
 
+Route::middleware('throttle:30,1')->group(function (): void {
+    Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
+});
+
 Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
-    Route::post('bookings', [BookingController::class, 'store'])->name('api.v1.bookings.store');
     Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
+    Route::put('bookings/{bookingNumber}/travelers', [BookingController::class, 'syncTravelers'])->name('api.v1.bookings.travelers.sync');
 
     Route::get('account/profile', [AccountController::class, 'profile'])->name('api.v1.account.profile');
     Route::put('account/profile', [AccountController::class, 'updateProfile'])->name('api.v1.account.profile.update');
@@ -89,6 +100,17 @@ Route::middleware(['auth', 'tenant_admin.only'])->prefix('admin')->name('api.v1.
 
     Route::apiResource('tours', AdminTourController::class)->names('tours');
     Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');
+
+    Route::get('tour-dates', AdminTourDateIndexController::class)->name('tour-dates.index');
+    Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->name('tours.dates.index');
+    Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->name('tours.dates.store');
+    Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->name('tour-dates.update');
+    Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->name('tour-dates.cancel');
+    Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->name('tour-dates.destroy');
+
+    Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes');
+    Route::apiResource('providers', AdminProviderController::class)->only(['index', 'store', 'update', 'destroy'])->names('providers');
+    Route::apiResource('hotels', AdminHotelController::class)->only(['index', 'store', 'update', 'destroy'])->names('hotels');
     Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
     Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
     Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
@@ -123,7 +145,9 @@ Route::middleware(['auth', 'super_admin.only'])
     ->group(function (): void {
         Route::get('dashboard', [SuperAdminDashboardApiController::class, 'show'])->name('dashboard.show');
         Route::get('tenants', [SuperAdminTenantApiController::class, 'index'])->name('tenants.index');
+        Route::post('tenants', [SuperAdminTenantApiController::class, 'store'])->name('tenants.store');
         Route::get('tenants/{tenant}', [SuperAdminTenantApiController::class, 'show'])->name('tenants.show');
+        Route::post('tenants/{tenant}/users', [SuperAdminTenantUserController::class, 'store'])->name('tenants.users.store');
         Route::patch('tenants/{tenant}/status', [SuperAdminTenantStatusController::class, 'update'])->name('tenants.status.update');
         Route::patch('tenants/{tenant}/plan', [SuperAdminTenantPlanController::class, 'update'])->name('tenants.plan.update');
         Route::post('tenants/{tenant}/configuration', [SuperAdminTenantConfigurationController::class, 'update'])->name('tenants.configuration.update');

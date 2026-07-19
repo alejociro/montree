@@ -11,6 +11,7 @@ export type User = {
     email_verified_at: string | null;
     tenantRole: TenantRole | null;
     isSuperAdmin: boolean;
+    mustSetPassword: boolean;
     [key: string]: unknown;
 };
 

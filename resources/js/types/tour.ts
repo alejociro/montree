@@ -100,6 +100,25 @@ export type TourFormPayload = {
     itinerary: TourItineraryDraft[];
 };
 
+export type TourShowStats = {
+    bookings: {
+        total: number;
+        confirmed: number;
+        pending_payment: number;
+        cancelled: number;
+    };
+    travelers_total: number;
+    revenue_total: string;
+    currency: string;
+    occupancy_upcoming: {
+        booked_total: number;
+        capacity_total: number;
+        rate: number;
+    };
+    upcoming_dates_count: number;
+    next_date_starts_at: string | null;
+};
+
 export type PaginatedTours = {
     data: TourSummary[];
     links: {

@@ -38,8 +38,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_set_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether the user still needs to define their own password for the first time
+     * (e.g. accounts auto-created during guest booking).
+     */
+    public function mustSetPassword(): bool
+    {
+        return $this->password_set_at === null;
     }
 
     public function tenants(): BelongsToMany

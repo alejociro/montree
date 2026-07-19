@@ -3,6 +3,8 @@ import { Link } from '@inertiajs/vue3';
 import {
     LayoutDashboard,
     Mountain,
+    CalendarClock,
+    Truck,
     Megaphone,
     Mail,
     Star,
@@ -21,6 +23,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { index as departuresIndex } from '@/routes/admin/departures';
 import type { NavItem } from '@/types';
 
 const navItems: NavItem[] = [
@@ -30,9 +33,19 @@ const navItems: NavItem[] = [
         icon: LayoutDashboard,
     },
     {
-        title: 'Tours',
+        title: 'Productos',
         href: '/admin/tours',
         icon: Mountain,
+    },
+    {
+        title: 'Tours',
+        href: departuresIndex().url,
+        icon: CalendarClock,
+    },
+    {
+        title: 'Logística',
+        href: '/admin/logistics',
+        icon: Truck,
     },
     {
         title: 'Promociones',

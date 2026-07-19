@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\TourDateStatus;
+use App\Models\Hotel;
+use App\Models\Provider;
+use App\Models\Route;
 use App\Models\Tour;
 use App\Models\TourDate;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -47,5 +50,28 @@ class TourDateFactory extends Factory
             'starts_at' => now()->subDays(7),
             'ends_at' => now()->subDays(7)->addHours(4),
         ]);
+    }
+
+    public function withRoute(): self
+    {
+        return $this->state(fn () => [
+            'route_id' => Route::factory(),
+        ]);
+    }
+
+    public function withProvider(): self
+    {
+        return $this->state(fn () => [
+            'provider_id' => Provider::factory(),
+        ]);
+    }
+
+    public function withHotels(int $count = 1): self
+    {
+        return $this->afterCreating(function (TourDate $tourDate) use ($count): void {
+            $tourDate->hotels()->attach(
+                Hotel::factory()->count($count)->create()->pluck('id')->all(),
+            );
+        });
     }
 }

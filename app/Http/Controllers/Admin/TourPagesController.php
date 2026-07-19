@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Tour\BuildTourShowStatsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Tour\CategoryResource;
 use App\Http\Resources\Tour\TourResource;
@@ -15,6 +16,18 @@ use Inertia\Response;
 
 final class TourPagesController extends Controller
 {
+    public function show(Tour $tour, BuildTourShowStatsAction $buildStats): Response
+    {
+        Gate::authorize('view', $tour);
+
+        $tour->load(['category', 'images', 'itineraries']);
+
+        return Inertia::render('Admin/Tour/Show', [
+            'tour' => (new TourResource($tour))->resolve(),
+            'stats' => $buildStats->handle($tour),
+        ]);
+    }
+
     public function index(): Response
     {
         Gate::authorize('viewAny', Tour::class);

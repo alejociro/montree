@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CalendarCheck, Heart } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import SetPasswordCard from '@/components/organisms/SetPasswordCard.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,7 +69,10 @@ function submit() {
     processing.value = true;
 
     void api.put('/api/v1/account/profile', formData.value, {
-        onSuccess: () => toast.success('Perfil actualizado'),
+        onSuccess: () => {
+            toast.success('Perfil actualizado');
+            router.reload({ only: ['auth'] });
+        },
         onError: (e) => {
             errors.value = e;
             toast.error('No pudimos actualizar el perfil');
@@ -85,6 +89,8 @@ onMounted(loadStats);
 <template>
     <Head title="Mi perfil" />
     <div class="container mx-auto max-w-3xl space-y-8 px-4 py-8">
+        <SetPasswordCard />
+
         <section class="rounded-xl border bg-card p-6">
             <div class="flex items-start gap-4">
                 <Avatar class="size-16">
@@ -167,7 +173,7 @@ onMounted(loadStats);
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="space-y-2">
                     <Label for="name">Nombre</Label>
-                    <Input id="name" v-model="formData.name" required />
+                    <Input id="name" name="name" v-model="formData.name" required />
                     <p v-if="errors.name" class="text-sm text-destructive">
                         {{ errors.name }}
                     </p>
@@ -176,6 +182,7 @@ onMounted(loadStats);
                     <Label for="email">Email</Label>
                     <Input
                         id="email"
+                        name="email"
                         v-model="formData.email"
                         type="email"
                         required
@@ -186,7 +193,7 @@ onMounted(loadStats);
                 </div>
                 <div class="space-y-2">
                     <Label for="phone">Teléfono</Label>
-                    <Input id="phone" v-model="formData.phone" />
+                    <Input id="phone" name="phone" v-model="formData.phone" />
                     <p v-if="errors.phone" class="text-sm text-destructive">
                         {{ errors.phone }}
                     </p>

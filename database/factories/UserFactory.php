@@ -31,6 +31,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'password_set_at' => now(),
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
@@ -45,6 +46,17 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user has not defined their own password yet
+     * (mirrors accounts auto-created during guest booking).
+     */
+    public function needsPasswordSetup(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'password_set_at' => null,
         ]);
     }
 

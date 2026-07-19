@@ -29,6 +29,8 @@ class BookingSummaryResource extends JsonResource
             'tour_name' => $this->whenLoaded('tour', fn () => $this->tour?->name),
             'tour_date_starts_at' => $this->whenLoaded('tourDate', fn () => $this->tourDate?->starts_at?->toIso8601String()),
             'travelers_count' => $this->travelers_count,
+            'adults_count' => $this->adults_count,
+            'minors_count' => $this->minors_count,
             'total_amount' => $this->total_amount,
             'currency' => $this->currency,
             'expires_at' => $this->expires_at?->toIso8601String(),

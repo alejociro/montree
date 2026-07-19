@@ -7,7 +7,6 @@ namespace App\Http\Resources\Tour;
 use App\Models\TourImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin TourImage
@@ -22,9 +21,7 @@ class TourImageResource extends JsonResource
         return [
             'id' => $this->id,
             'tour_id' => $this->tour_id,
-            'url' => str_starts_with((string) $this->path, 'http')
-                ? $this->path
-                : Storage::disk('public')->url($this->path),
+            'url' => $this->url,
             'alt_text' => $this->alt_text,
             'display_order' => $this->display_order,
             'is_cover' => (bool) $this->is_cover,

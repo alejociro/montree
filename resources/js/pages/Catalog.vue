@@ -195,44 +195,19 @@ function goToPage(url: string | null): void {
 <template>
     <Head :title="`Tours - ${displayName}`" />
 
-    <section
-        class="border-b border-border/60 bg-gradient-to-b from-primary/5 via-background to-background"
-    >
-        <div class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-            <p
-                class="text-xs font-medium tracking-wider text-primary uppercase"
-            >
-                Catálogo
-            </p>
-            <h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Descubre {{ displayName }}
-            </h1>
-            <p
-                class="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base"
-            >
-                Explora todos los tours disponibles, filtra por categoría o
-                dificultad y reserva la experiencia perfecta para tu próxima
-                aventura.
-            </p>
-            <div class="mt-6 max-w-2xl">
-                <CatalogSearchBar v-model="local.search" />
-            </div>
-        </div>
-    </section>
-
     <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
             <Deferred data="categories">
                 <template #fallback>
                     <aside class="hidden space-y-4 lg:block">
                         <div
-                            class="h-4 w-24 animate-pulse rounded bg-muted"
+                            class="h-6 w-20 animate-pulse rounded bg-muted"
                         ></div>
                         <div class="space-y-2">
                             <div
                                 v-for="n in 5"
                                 :key="`cat-skel-${n}`"
-                                class="h-7 w-full animate-pulse rounded-full bg-muted"
+                                class="h-8 w-full animate-pulse rounded-md bg-muted"
                             ></div>
                         </div>
                     </aside>
@@ -258,6 +233,15 @@ function goToPage(url: string | null): void {
             </Deferred>
 
             <div class="space-y-5">
+                <div class="flex flex-col gap-4">
+                    <h1
+                        class="text-2xl font-semibold tracking-tight text-foreground"
+                    >
+                        Resultados de Búsqueda
+                    </h1>
+                    <CatalogSearchBar v-model="local.search" />
+                </div>
+
                 <div
                     class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                 >

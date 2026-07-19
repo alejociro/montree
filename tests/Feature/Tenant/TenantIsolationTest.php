@@ -8,10 +8,13 @@ use App\Models\Booking;
 use App\Models\BookingTraveler;
 use App\Models\Category;
 use App\Models\Favorite;
+use App\Models\Hotel;
 use App\Models\NewsletterSubscriber;
 use App\Models\Payment;
 use App\Models\Promotion;
+use App\Models\Provider;
 use App\Models\Review;
+use App\Models\Route;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
@@ -107,6 +110,48 @@ class TenantIsolationTest extends TestCase
 
         $tenantA->makeCurrent();
         $this->assertSame([5], TourDate::query()->pluck('capacity')->all());
+    }
+
+    public function test_global_scope_isolates_routes(): void
+    {
+        [$tenantA, $tenantB] = $this->twoTenants();
+
+        $tenantA->makeCurrent();
+        Route::factory()->create(['name' => 'Route A']);
+
+        $tenantB->makeCurrent();
+        Route::factory()->create(['name' => 'Route B']);
+
+        $tenantA->makeCurrent();
+        $this->assertSame(['Route A'], Route::query()->pluck('name')->all());
+    }
+
+    public function test_global_scope_isolates_providers(): void
+    {
+        [$tenantA, $tenantB] = $this->twoTenants();
+
+        $tenantA->makeCurrent();
+        Provider::factory()->create(['name' => 'Provider A']);
+
+        $tenantB->makeCurrent();
+        Provider::factory()->create(['name' => 'Provider B']);
+
+        $tenantA->makeCurrent();
+        $this->assertSame(['Provider A'], Provider::query()->pluck('name')->all());
+    }
+
+    public function test_global_scope_isolates_hotels(): void
+    {
+        [$tenantA, $tenantB] = $this->twoTenants();
+
+        $tenantA->makeCurrent();
+        Hotel::factory()->create(['name' => 'Hotel A']);
+
+        $tenantB->makeCurrent();
+        Hotel::factory()->create(['name' => 'Hotel B']);
+
+        $tenantA->makeCurrent();
+        $this->assertSame(['Hotel A'], Hotel::query()->pluck('name')->all());
     }
 
     public function test_global_scope_isolates_promotions(): void

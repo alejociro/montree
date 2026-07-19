@@ -26,6 +26,8 @@ use Illuminate\Support\Str;
  * @property int $tour_date_id
  * @property int|null $promotion_id
  * @property int $travelers_count
+ * @property int $adults_count
+ * @property int $minors_count
  * @property string $subtotal
  * @property string $discount_amount
  * @property string $total_amount
@@ -54,6 +56,8 @@ class Booking extends Model
         'tour_date_id',
         'promotion_id',
         'travelers_count',
+        'adults_count',
+        'minors_count',
         'subtotal',
         'discount_amount',
         'total_amount',
@@ -79,6 +83,8 @@ class Booking extends Model
     {
         return [
             'travelers_count' => 'integer',
+            'adults_count' => 'integer',
+            'minors_count' => 'integer',
             'subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',

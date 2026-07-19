@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\PromotionType;
+use App\Enums\ReviewStatus;
+use App\Http\Resources\Catalog\CatalogCategoryResource;
 use App\Http\Resources\Catalog\CatalogTourResource;
+use App\Http\Resources\Catalog\HomeTestimonialResource;
+use App\Http\Resources\Catalog\UpcomingDepartureResource;
+use App\Models\Category;
 use App\Models\Promotion;
+use App\Models\Review;
 use App\Models\Tenant;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,7 +44,26 @@ final class HomePageController extends Controller
             'featuredTours' => Inertia::defer(fn () => $this->featuredTours()),
             'suggestedTours' => Inertia::defer(fn () => $this->suggestedTours()),
             'promotions' => Inertia::defer(fn () => $this->activePromotions()),
+            'categories' => Inertia::defer(fn () => $this->activeCategories()),
+            'testimonials' => Inertia::defer(fn () => $this->topTestimonials()),
+            'upcomingDepartures' => Inertia::defer(fn () => $this->upcomingDepartures()),
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function upcomingDepartures(): array
+    {
+        $departures = TourDate::query()
+            ->openFuture()
+            ->whereHas('tour', fn ($query) => $query->active())
+            ->with('tour.coverImage')
+            ->orderBy('starts_at')
+            ->limit(6)
+            ->get();
+
+        return UpcomingDepartureResource::collection($departures)->resolve();
     }
 
     /**
@@ -131,16 +156,44 @@ final class HomePageController extends Controller
                 'name' => $promo->name,
                 'description' => $promo->description,
                 'discount_label' => $discountLabel,
-                'cover_image_url' => $tour?->coverImage !== null
-                    ? (str_starts_with((string) $tour->coverImage->path, 'http')
-                        ? $tour->coverImage->path
-                        : Storage::disk('public')->url($tour->coverImage->path))
-                    : null,
+                'cover_image_url' => $tour?->coverImage?->url,
                 'tour' => $tour ? [
                     'slug' => $tour->slug,
                     'name' => $tour->name,
                 ] : null,
             ];
         })->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function activeCategories(): array
+    {
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->whereHas('tours', fn ($query) => $query->active())
+            ->withCount(['tours as tours_count' => fn ($query) => $query->active()])
+            ->orderBy('display_order')
+            ->limit(8)
+            ->get();
+
+        return CatalogCategoryResource::collection($categories)->resolve();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function topTestimonials(): array
+    {
+        $reviews = Review::query()
+            ->where('status', ReviewStatus::Approved)
+            ->where('rating', '>=', 4)
+            ->with(['user:id,name', 'tour:id,name,slug'])
+            ->orderByDesc('approved_at')
+            ->limit(6)
+            ->get();
+
+        return HomeTestimonialResource::collection($reviews)->resolve();
     }
 }

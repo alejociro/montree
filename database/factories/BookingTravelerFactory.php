@@ -20,6 +20,7 @@ class BookingTravelerFactory extends Factory
         return [
             'booking_id' => Booking::factory(),
             'full_name' => fake()->name(),
+            'is_minor' => false,
             'document_type' => fake()->randomElement(['passport', 'national_id']),
             'document_number' => fake()->bothify('??######'),
             'birth_date' => fake()->dateTimeBetween('-70 years', '-12 years'),
@@ -31,5 +32,13 @@ class BookingTravelerFactory extends Factory
             'emergency_contact_name' => fake()->name(),
             'emergency_contact_phone' => fake()->phoneNumber(),
         ];
+    }
+
+    public function minor(): self
+    {
+        return $this->state(fn (array $attrs) => [
+            'is_minor' => true,
+            'birth_date' => fake()->dateTimeBetween('-17 years', '-1 years'),
+        ]);
     }
 }

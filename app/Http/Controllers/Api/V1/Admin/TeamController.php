@@ -78,6 +78,11 @@ final class TeamController extends Controller
         if (! $request->user()?->hasRole('admin')) {
             abort(403);
         }
+
+        if ($user->id === $request->user()?->id) {
+            abort(422, 'No puedes suspenderte a ti mismo.');
+        }
+
         $this->updateStatus->handle(Tenant::current(), $user, TenantMembershipStatus::Suspended);
 
         return new JsonResponse(['data' => ['id' => $user->id, 'status' => 'suspended']]);

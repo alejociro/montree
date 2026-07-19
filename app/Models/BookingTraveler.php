@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $tenant_id
  * @property int $booking_id
  * @property string $full_name
+ * @property bool $is_minor
  * @property string|null $document_type
  * @property string|null $document_number
  * @property Carbon|null $birth_date
@@ -36,6 +37,7 @@ class BookingTraveler extends Model
         'tenant_id',
         'booking_id',
         'full_name',
+        'is_minor',
         'document_type',
         'document_number',
         'birth_date',
@@ -51,6 +53,7 @@ class BookingTraveler extends Model
     protected function casts(): array
     {
         return [
+            'is_minor' => 'boolean',
             'birth_date' => 'date',
         ];
     }

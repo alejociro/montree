@@ -143,7 +143,7 @@ Roles probados: público, customer (`customer@demo`), guide (`guide@demo`), admi
 | F007 Pagos | (saltado) |
 | F008 Notificaciones | ❌ marcar leída rota por P0-2; lista renderiza OK |
 | F009 Mi cuenta | ❌ favoritos toggle rota por P0-2; P1-1 sidebar; P1-5 status; P1-6 aria; P2-4 |
-| F010 Reviews | ❌ submit rota por P0-2 (UI customer + admin moderation); memoria desactualizada (P2-10) |
+| F010 Reviews | ✅ resuelto 2026-07-13: submit customer y moderación admin migrados a `useApi()` y verificados E2E en navegador (crear → aprobar → responder → visible en detalle público). La lista pública de reseñas en `TourDetail.vue` faltaba (solo había placeholder) y se implementó ese mismo día contra `GET /api/v1/tours/{slug}/reviews` |
 | F011 Dashboard admin | ✅ renderiza con KPIs correctos en seed |
 | F012 Promociones | ❌ CRUD rota por P0-2; list vacío renderiza OK |
 | F013 Newsletter | ❌ enviar campaña rota por P0-2; lista vacía renderiza OK |

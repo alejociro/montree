@@ -31,15 +31,6 @@ final class InvalidTourStatusTransitionException extends RuntimeException implem
         return $exception;
     }
 
-    public static function needsFutureDate(): self
-    {
-        $exception = new self(TourStatus::Draft, TourStatus::Active);
-        $exception->message = 'Tour needs at least one open future date before activating.';
-        $exception->errorCode = 'TOUR_NEEDS_FUTURE_DATE_TO_ACTIVATE';
-
-        return $exception;
-    }
-
     public function getStatusCode(): int
     {
         return 422;

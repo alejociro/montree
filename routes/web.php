@@ -29,9 +29,10 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
     ->middleware('throttle:10,1')
     ->name('auth.handoff');
 
+Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
-    Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 
     Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
@@ -46,6 +47,9 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only'])->prefix('admin')->n
     Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
+    Route::get('tours/{tour}', [TourPagesController::class, 'show'])->name('tours.show');
+    Route::inertia('departures', 'Admin/Departures/Index')->name('departures.index');
+    Route::inertia('logistics', 'Admin/Logistics/Index')->name('logistics.index');
     Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');
     Route::get('reviews', [ReviewPagesController::class, 'index'])->name('reviews.index');

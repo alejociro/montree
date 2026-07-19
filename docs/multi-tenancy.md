@@ -52,8 +52,13 @@ tours, tour_images, tour_itineraries, tour_dates,
 bookings, booking_travelers, payments,
 reviews, favorites, notifications,
 promotions, newsletter_subscribers, categories,
-tenant_configurations
+tenant_configurations,
+routes, providers, hotels                (F017 — catálogos de soporte)
 ```
+
+El pivote `tour_date_hotels` no lleva `tenant_id` propio: su aislamiento es
+transitivo (ambos lados, `tour_dates` y `hotels`, ya son tenant-scoped) y usa
+`cascadeOnDelete` en las dos FKs + unique compuesto `(tour_date_id, hotel_id)`.
 
 ### 3.2 Tablas NO tenant-scoped (landlord)
 
@@ -323,3 +328,9 @@ invariantes del sistema:
   plataforma (`montree.super_admin_host = montree.test`). Login de super_admin en
   `montree.test` va directo al panel (sin handoff ni `admin.montree.test`); login
   de usuarios de tenant en la plataforma sigue haciendo handoff a su subdominio.
+- `2026-07-12` — F017: nuevas tablas tenant-scoped `routes`, `providers`, `hotels`
+  (trait `BelongsToTenant`, índice `[tenant_id, name]`) + pivote `tour_date_hotels`
+  (aislamiento transitivo, cascade, unique compuesto). FKs `tour_dates.route_id` y
+  `tour_dates.provider_id` nullable con `restrictOnDelete` (la BD refuerza el 409
+  `RESOURCE_IN_USE` de la app). Tests de aislamiento en `TenantIsolationTest`
+  (ahora 17 modelos cubiertos).

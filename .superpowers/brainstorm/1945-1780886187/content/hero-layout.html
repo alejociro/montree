@@ -1,0 +1,169 @@
+<h2>¿Cómo se ve el primer bloque que ve el usuario?</h2>
+<p class="subtitle">Mismo verde + crema — estructura diferente. El hero define el carácter de toda la página.</p>
+
+<div class="cards">
+
+  <!-- A: Centrado editorial -->
+  <div class="card" data-choice="centered-editorial" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div style="background:#f2ede4; height:240px; display:flex; flex-direction:column; font-family:Georgia,serif; position:relative; overflow:hidden;">
+        <!-- Nav -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid rgba(74,124,89,0.15);">
+          <div style="font-size:12px; font-weight:800; color:#2a4a34; letter-spacing:-0.3px;">Montree</div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:28px; height:5px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:28px; height:5px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:28px; height:5px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:70px; height:22px; background:#4a7c59; border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Centered content -->
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 30px; text-align:center; gap:8px;">
+          <!-- Tag -->
+          <div style="width:110px; height:18px; border:1px solid rgba(74,124,89,0.4); border-radius:20px; background:rgba(74,124,89,0.07);"></div>
+          <!-- Big headline with serif -->
+          <div style="display:flex; flex-direction:column; align-items:center; gap:5px; margin-top:4px;">
+            <div style="width:280px; height:22px; background:#2a4a34; border-radius:2px;"></div>
+            <div style="width:220px; height:22px; background:#4a7c59; border-radius:2px; opacity:0.7;"></div>
+          </div>
+          <div style="width:240px; height:8px; background:#9a9a8a; border-radius:2px; opacity:0.6;"></div>
+          <!-- CTAs -->
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <div style="width:120px; height:28px; background:#4a7c59; border-radius:5px;"></div>
+            <div style="width:90px; height:28px; border:1.5px solid #4a7c59; border-radius:5px;"></div>
+          </div>
+          <!-- Logos / social proof -->
+          <div style="display:flex; gap:8px; margin-top:6px; opacity:0.4;">
+            <div style="width:40px; height:8px; background:#2a4a34; border-radius:2px;"></div>
+            <div style="width:50px; height:8px; background:#2a4a34; border-radius:2px;"></div>
+            <div style="width:35px; height:8px; background:#2a4a34; border-radius:2px;"></div>
+          </div>
+        </div>
+        <!-- Bottom strip — mockup preview hint -->
+        <div style="height:28px; background:rgba(74,124,89,0.08); border-top:1px solid rgba(74,124,89,0.12); display:flex; align-items:center; justify-content:center; gap:4px;">
+          <div style="width:60px; height:5px; background:#b8cbb0; border-radius:2px;"></div>
+          <div style="width:80px; height:5px; background:#b8cbb0; border-radius:2px;"></div>
+          <div style="width:50px; height:5px; background:#b8cbb0; border-radius:2px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background:#f2ede4;">
+      <h3 style="color:#2a4a34;">A — Editorial Centrado</h3>
+      <p style="color:#5a6a5a;">Todo centrado, tipografía dominante, mucho aire. Elegante, como una revista de viajes. El texto es el protagonista.</p>
+    </div>
+  </div>
+
+  <!-- B: Split — texto izq + imagen/mockup der -->
+  <div class="card" data-choice="split-layout" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div style="background:#f2ede4; height:240px; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+        <!-- Nav -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid rgba(74,124,89,0.15);">
+          <div style="font-size:12px; font-weight:800; color:#2a4a34;">Montree</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="width:25px; height:4px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:25px; height:4px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:25px; height:4px; background:#9a9a8a; border-radius:2px;"></div>
+            <div style="width:70px; height:22px; background:#4a7c59; border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Split body -->
+        <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden;">
+          <!-- Left: text -->
+          <div style="display:flex; flex-direction:column; justify-content:center; padding:18px 16px; gap:8px;">
+            <div style="width:80px; height:5px; background:#4a7c59; border-radius:1px; opacity:0.6;"></div>
+            <div style="width:190px; height:18px; background:#2a4a34; border-radius:2px;"></div>
+            <div style="width:170px; height:18px; background:#2a4a34; border-radius:2px; opacity:0.75;"></div>
+            <div style="width:150px; height:7px; background:#9a9a8a; border-radius:2px; opacity:0.6;"></div>
+            <div style="width:155px; height:7px; background:#9a9a8a; border-radius:2px; opacity:0.4;"></div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <div style="width:100px; height:26px; background:#4a7c59; border-radius:5px;"></div>
+              <div style="width:70px; height:26px; border:1.5px solid #4a7c59; border-radius:5px;"></div>
+            </div>
+            <div style="display:flex; gap:5px; margin-top:2px;">
+              <div style="width:14px; height:14px; border-radius:50%; background:#b8cbb0;"></div>
+              <div style="width:14px; height:14px; border-radius:50%; background:#b8cbb0; margin-left:-6px;"></div>
+              <div style="width:14px; height:14px; border-radius:50%; background:#b8cbb0; margin-left:-6px;"></div>
+              <div style="width:60px; height:7px; background:#9a9a8a; border-radius:2px; align-self:center; margin-left:4px; opacity:0.5;"></div>
+            </div>
+          </div>
+          <!-- Right: image/mockup -->
+          <div style="background:linear-gradient(135deg, #4a7c59 0%, #2a4a34 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+            <!-- Subtle photo overlay hint -->
+            <div style="position:absolute; inset:0; background:url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"4\"><rect width=\"4\" height=\"4\" fill=\"%232a4a34\"/><rect width=\"1\" height=\"1\" fill=\"%234a7c59\" opacity=\"0.3\"/></svg>'); opacity:0.3;"></div>
+            <!-- Mockup card on top -->
+            <div style="background:rgba(242,237,228,0.95); border-radius:10px; padding:10px 12px; width:110px; box-shadow:0 8px 24px rgba(0,0,0,0.2); position:relative; z-index:1;">
+              <div style="width:60px; height:5px; background:#4a7c59; border-radius:2px; margin-bottom:6px; opacity:0.6;"></div>
+              <div style="width:80px; height:14px; background:#2a4a34; border-radius:2px; margin-bottom:5px;"></div>
+              <div style="display:flex; gap:4px; margin-bottom:5px;">
+                <div style="flex:1; height:22px; background:rgba(74,124,89,0.12); border-radius:4px; border:1px solid rgba(74,124,89,0.2);"></div>
+                <div style="flex:1; height:22px; background:rgba(74,124,89,0.12); border-radius:4px; border:1px solid rgba(74,124,89,0.2);"></div>
+              </div>
+              <div style="width:80px; height:20px; background:#4a7c59; border-radius:4px; margin-top:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Split Izquierda / Derecha</h3>
+      <p>Texto a la izquierda, visual de la app (o foto de naturaleza) a la derecha. Clásico SaaS moderno. Equilibrado e informativo desde el primer vistazo.</p>
+    </div>
+  </div>
+
+  <!-- C: Full bleed oscuro con foto -->
+  <div class="card" data-choice="fullbleed" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0; overflow:hidden; border-bottom:1px solid #e5e7eb;">
+      <div style="height:240px; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+        <!-- Dark green photo-like bg -->
+        <div style="position:absolute; inset:0; background:linear-gradient(170deg, #1a3a2a 0%, #0d2218 60%, #152d1e 100%);"></div>
+        <!-- Simulated photo texture -->
+        <div style="position:absolute; inset:0; background:radial-gradient(ellipse at 80% 30%, rgba(74,124,89,0.4) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(45,106,79,0.25) 0%, transparent 50%);"></div>
+        <!-- Grain -->
+        <div style="position:absolute; inset:0; opacity:0.05; background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAlW6q0AAAAB3RSTlMAgPj4+CAgmx6xAAAAMklEQVQoz2NgYGBgZGBg+P9/YQMDw/8FBgYWFhb/FRgYGP7/Z2BgYP7/n4GBgYWBgQEArTsK3Q8uoQAAAABJRU5ErkJggg==');"></div>
+        <!-- Nav -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; position:relative; z-index:1;">
+          <div style="font-size:12px; font-weight:800; color:#f2ede4;">Montree</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="width:25px; height:4px; background:rgba(242,237,228,0.4); border-radius:2px;"></div>
+            <div style="width:25px; height:4px; background:rgba(242,237,228,0.4); border-radius:2px;"></div>
+            <div style="width:25px; height:4px; background:rgba(242,237,228,0.4); border-radius:2px;"></div>
+            <div style="width:70px; height:22px; background:#4a7c59; border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Centered content on dark bg -->
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 30px; gap:8px; position:relative; z-index:1; text-align:center;">
+          <!-- Serif label -->
+          <div style="width:130px; height:5px; background:rgba(184,203,176,0.7); border-radius:1px;"></div>
+          <div style="width:270px; height:22px; background:#f2ede4; border-radius:2px;"></div>
+          <div style="width:220px; height:16px; background:#b8cbb0; border-radius:2px; opacity:0.8;"></div>
+          <div style="width:220px; height:7px; background:rgba(242,237,228,0.35); border-radius:2px;"></div>
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <div style="width:110px; height:28px; background:#4a7c59; border-radius:5px;"></div>
+            <div style="width:80px; height:28px; border:1px solid rgba(242,237,228,0.3); border-radius:5px;"></div>
+          </div>
+        </div>
+        <!-- Stats bottom bar -->
+        <div style="display:flex; gap:0; border-top:1px solid rgba(242,237,228,0.1); position:relative; z-index:1;">
+          <div style="flex:1; padding:8px; text-align:center; border-right:1px solid rgba(242,237,228,0.1);">
+            <div style="width:30px; height:10px; background:#b8cbb0; border-radius:2px; margin:0 auto 3px;"></div>
+            <div style="width:50px; height:5px; background:rgba(242,237,228,0.3); border-radius:2px; margin:0 auto;"></div>
+          </div>
+          <div style="flex:1; padding:8px; text-align:center; border-right:1px solid rgba(242,237,228,0.1);">
+            <div style="width:25px; height:10px; background:#b8cbb0; border-radius:2px; margin:0 auto 3px;"></div>
+            <div style="width:55px; height:5px; background:rgba(242,237,228,0.3); border-radius:2px; margin:0 auto;"></div>
+          </div>
+          <div style="flex:1; padding:8px; text-align:center;">
+            <div style="width:35px; height:10px; background:#b8cbb0; border-radius:2px; margin:0 auto 3px;"></div>
+            <div style="width:48px; height:5px; background:rgba(242,237,228,0.3); border-radius:2px; margin:0 auto;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="background:#f2ede4;">
+      <h3 style="color:#2a4a34;">C — Full Bleed Inmersivo</h3>
+      <p style="color:#5a6a5a;">Fondo oscuro verde profundo cubriendo toda la pantalla (con textura o foto de naturaleza). Dramático e impactante. El visitante "entra" al bosque.</p>
+    </div>
+  </div>
+
+</div>

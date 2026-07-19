@@ -30,7 +30,7 @@ Todas las cuentas usan `password = password`.
 | Guide | `guide@demo.montree.test` | `demo.montree.test:8000` |
 | Operator | `operator@demo.montree.test` | `demo.montree.test:8000` |
 | Admin tenant | `admin@demo.montree.test` | `demo.montree.test:8000` |
-| Super admin | `super@montree.test` | `admin.montree.test:8000` |
+| Super admin | `super@montree.test` | `montree.test:8000` (dominio central — las rutas `/super-admin/*` NO viven en `admin.montree.test`) |
 
 Páginas a recorrer por rol — ver §4.
 
@@ -80,7 +80,7 @@ Cada item: **acción → resultado esperado → cómo verificar**.
 | 3 | `?search=aventura` en hero | 1 resultado (tour de categoría Aventura) | Matchea por categoría (P2-1 fix) |
 | 4 | Click filtro "Aventura" en sidebar | URL `?category=aventura`, 1 tour | `1 tour disponible` en el header |
 | 5 | Click un tour | TourDetail renderiza, sin `tourShow` error, sección "Otras actividades" muestra cards reales | 0 errores console, no `_ctx.tourShow is not a function` |
-| 6 | Click "Reservar" en una fecha sin auth | Redirige a `/login` | Conserva intent: tras login vuelve a `/booking/new?tour_date_id=X` |
+| 6 | Click "Reservar" en una fecha sin auth | Va directo a `/booking/new?tour_date_id=X` (guest checkout — el redirect a `/login` quedó obsoleto desde F006 guest checkout) | Formulario pide email×2 + nombre + celular del comprador |
 
 ### 4.2 Customer — F006/F008/F009/F010
 
@@ -90,7 +90,7 @@ Login con `customer@demo.montree.test`.
 |---|---|---|---|
 | 1 | Tras login, sidebar muestra brand del tenant | "Demo Eco Adventures", no "Laravel Starter Kit" | `AppSidebar.vue` usa `TenantBrandedLogo` |
 | 2 | `/tours/tour-demo-2` → click corazón | `aria-pressed: false → true`, `aria-label: "Quitar de favoritos"`, fila nueva en `favorites` | `SELECT * FROM favorites WHERE user_id=X` |
-| 3 | `/booking/new?tour_date_id=1` → llenar `#name-0`, `#email-0`, `#phone-0`, click "Crear reserva" | Redirige a `/bookings/{uuid}`, page title "Reserva al Tour Demo #1" | Booking row nuevo en `bookings`; title sin UUID raw (P2-5) |
+| 3 | `/booking/new?tour_date_id=1` → steppers Adultos/Menores + contacto de emergencia + términos, click "Realizar pago" | Redirige a `/bookings/{uuid}`; sección "Viajeros" con slots por adulto/menor para completar datos después | Booking row con `adults_count`/`minors_count`; travelers se guardan vía `PUT /api/v1/bookings/{uuid}/travelers` |
 | 4 | `/account/bookings` | Lista bookings con status humanizado ("Pendiente de pago", no `pending_payment`) | helper `formatBookingStatus` en `lib/format.ts` |
 | 5 | `/account/favorites` | Card del tour favoriteado en paso 2 | — |
 | 6 | `/account/notifications` | Empty state o lista; marcar leída debe hacer PATCH al API | DB column `read_at` en `notifications` cambia |
@@ -123,7 +123,7 @@ Login con `admin@demo.montree.test`.
 
 ### 4.5 Super admin — F015
 
-Login con `super@montree.test` en `admin.montree.test:8000`.
+Login con `super@montree.test` en `montree.test:8000` (dominio central).
 
 | # | Paso | Esperado | Verificación |
 |---|---|---|---|
@@ -188,4 +188,5 @@ php artisan tinker --execute 'App\Models\Tenant::find(1)->update(["status" => "a
 
 ## Changelog
 
+- `2026-07-12` — Actualizado tras review: super admin vive en `montree.test` (no `admin.montree.test`); paso de reserva sin auth ahora es guest checkout directo; checkout con steppers adultos/menores + sección "Viajeros" post-reserva (F006 dos fases). Ver `docs/review-2026-07-12/findings.md`.
 - `2026-05-19` — Creación inicial. Basada en review Playwright que detectó P0-2 sistémico (router.post a /api/v1/*) y otros 13 issues. Ver `docs/review-2026-05-19/findings.md`.

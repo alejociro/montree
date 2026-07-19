@@ -10,7 +10,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>{{ __('Restablece tu contraseña en :tenant', ['tenant' => $tenantName]) }}</title>
+    <title>{{ __('Crea tu contraseña en :tenant', ['tenant' => $tenantName]) }}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f5;padding:32px 0;">
@@ -29,13 +29,13 @@
                         <td style="padding:32px;">
                             <p style="margin:0 0 16px 0;font-size:16px;">{{ __('Hola :name,', ['name' => $recipientName]) }}</p>
                             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
-                                {{ __('Recibimos una solicitud para restablecer la contraseña de tu cuenta en :tenant. Hacé clic en el botón para crear una nueva contraseña.', ['tenant' => $tenantName]) }}
+                                {{ __('Acabas de hacer tu primera reserva en :tenant. Haz clic en el botón para crear tu contraseña y acceder a tu cuenta cuando quieras.', ['tenant' => $tenantName]) }}
                             </p>
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
                                 <tr>
                                     <td align="center" style="border-radius:6px;background-color:{{ $primaryColor }};">
                                         <a href="{{ $resetUrl }}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">
-                                            {{ __('Restablecer contraseña') }}
+                                            {{ __('Crear contraseña') }}
                                         </a>
                                     </td>
                                 </tr>
@@ -44,7 +44,7 @@
                                 {{ __('Este enlace expira en :minutes minutos.', ['minutes' => $expiresInMinutes]) }}
                             </p>
                             <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">
-                                {{ __('Si no solicitaste un cambio de contraseña, ignorá este mensaje y tu cuenta seguirá segura.') }}
+                                {{ __('Si no hiciste esta reserva, ignorá este mensaje.') }}
                             </p>
                             <p style="margin:24px 0 0 0;font-size:13px;color:#6b7280;word-break:break-all;">
                                 {{ __('¿No funciona el botón? Copiá y pegá este enlace en tu navegador:') }}<br>
