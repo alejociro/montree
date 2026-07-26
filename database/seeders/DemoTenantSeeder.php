@@ -53,7 +53,7 @@ class DemoTenantSeeder extends Seeder
             ['slug' => 'demo'],
             [
                 'name' => 'Demo Eco Adventures',
-                'domain' => 'demo.montree.test',
+                'domain' => 'demo.'.config('montree.super_admin_host'),
                 'contact_email' => 'hello@demo.montree.test',
                 'contact_phone' => '+57 300 000 0000',
                 'status' => TenantStatus::Active,
