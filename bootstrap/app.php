@@ -39,6 +39,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // WHY: Railway (y otros PaaS) terminan el TLS en un proxy y reenvian
+        // HTTP al contenedor. Confiamos en el proxy para que Laravel detecte
+        // el esquema HTTPS via X-Forwarded-Proto y genere URLs https. Sin esto,
+        // los assets de Vite salen con http:// y el navegador los bloquea por
+        // "Mixed Content" (pantalla en blanco).
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(prepend: [
