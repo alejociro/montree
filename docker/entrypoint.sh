@@ -5,6 +5,12 @@ set -e
 # Entrypoint de montree en Railway
 # ------------------------------------------------------------
 
+# Asegurar UN SOLO MPM (prefork, requerido por mod_php) en cada arranque.
+# Evita el fallo "AH00534: apache2: More than one MPM loaded" pase lo que
+# pase con el cache de build. Se ejecuta en runtime, sin cache posible.
+a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
 # Railway inyecta $PORT en runtime. Apache debe escuchar ahi.
 PORT="${PORT:-8080}"
 sed -ri "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
