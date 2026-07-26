@@ -1,30 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # ============================================================
-#  montree — imagen de produccion para Railway
-#  Etapa 1: build de assets (Vite/Vue) con Node 22
-#  Etapa 2: runtime PHP 8.4 + Apache con todas las extensiones
+#  montree — imagen de produccion para Railway (una sola etapa)
+#  PHP 8.4 + Apache + Node 22 en la misma imagen, porque el
+#  build de Vite ejecuta `php artisan wayfinder:generate`
+#  (plugin @laravel/vite-plugin-wayfinder) y necesita PHP.
 # ============================================================
+FROM php:8.4-apache-bookworm
 
-# ---------- Etapa 1: assets front-end ----------
-# Base Debian (glibc): el package-lock fija binarios nativos
-# linux-x64-gnu (rollup / tailwind oxide). NO usar Alpine (musl).
-FROM node:22-bookworm-slim AS assets
-WORKDIR /app
-
-# Instalar dependencias con el lockfile (incluye binarios linux-x64-gnu)
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci --no-audit --no-fund
-
-# Copiar el resto y compilar
-COPY . .
-RUN npm run build
-
-
-# ---------- Etapa 2: runtime PHP + Apache ----------
-FROM php:8.4-apache-bookworm AS app
-
-# Librerias de sistema necesarias para compilar las extensiones PHP
+# ---- 1) Librerias de sistema + extensiones PHP ----
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -37,7 +21,10 @@ RUN set -eux; \
         libonig-dev \
         libgmp-dev \
         unzip \
-        git; \
+        git \
+        ca-certificates \
+        curl \
+        gnupg; \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install -j"$(nproc)" \
         bcmath \
@@ -48,15 +35,19 @@ RUN set -eux; \
         pcntl \
         pdo_mysql \
         gd; \
-    # mbstring viene incluido en la imagen oficial; instalar solo si faltara
     php -m | grep -qi '^mbstring$' || docker-php-ext-install -j"$(nproc)" mbstring; \
-    apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
-# Composer (desde la imagen oficial)
+# ---- 2) Node 22 (para compilar los assets con Vite) ----
+RUN set -eux; \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
+    apt-get install -y --no-install-recommends nodejs; \
+    rm -rf /var/lib/apt/lists/*
+
+# ---- 3) Composer ----
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Apache: habilitar rewrite y usar nuestro vhost (docroot -> /public)
+# ---- 4) Apache: docroot -> public, habilitar rewrite ----
 RUN a2enmod rewrite \
     && rm -f /etc/apache2/sites-enabled/000-default.conf
 COPY docker/vhost.conf /etc/apache2/sites-available/montree.conf
@@ -64,9 +55,7 @@ RUN a2ensite montree
 
 WORKDIR /var/www/html
 
-# Instalar dependencias PHP primero (mejor cache de capas).
-# --no-scripts evita correr package:discover en build (sin .env);
-# se ejecuta en runtime desde el entrypoint.
+# ---- 5) Dependencias PHP (mejor cache). wayfinder queda en vendor ----
 COPY composer.json composer.lock ./
 RUN composer install \
         --no-dev \
@@ -76,21 +65,27 @@ RUN composer install \
         --optimize-autoloader \
         --no-progress
 
-# Codigo de la app
+# ---- 6) Codigo de la app ----
 COPY . .
 
-# Assets ya compilados desde la etapa 1
-COPY --from=assets /app/public/build ./public/build
+# ---- 7) Assets: npm ci + npm run build.
+#      Vite ejecuta `php artisan wayfinder:generate`, que necesita un
+#      APP_KEY para bootear artisan -> generamos un .env de build temporal.
+#      Al final borramos node_modules y el .env (runtime usa las env de Railway).
+RUN set -eux; \
+    cp .env.example .env; \
+    php artisan key:generate --force; \
+    npm ci --no-audit --no-fund; \
+    npm run build; \
+    rm -rf node_modules .env
 
-# Regenerar autoload optimizado y ajustar permisos
+# ---- 8) Autoload optimizado + permisos ----
 RUN composer dump-autoload --optimize --no-dev --no-scripts \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Entrypoint: ajusta puerto ($PORT de Railway), migra y arranca Apache
+# ---- 9) Entrypoint (ajusta $PORT, storage:link, migrate --force, arranca Apache) ----
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
-# Railway inyecta $PORT; exponemos un default informativo
 EXPOSE 8080
-
 ENTRYPOINT ["entrypoint"]
