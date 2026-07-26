@@ -1,0 +1,37 @@
+# Dependencias / artefactos que se regeneran dentro de la imagen
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+
+# Entorno y secretos — NUNCA copiar al build
+.env
+.env.*
+!.env.example
+
+# Git y metadatos
+.git
+.gitignore
+.gitattributes
+.github
+
+# Almacenamiento en runtime (logs, cache, etc.)
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/app/public/*
+
+# Dev / editores / docs pesados
+.vscode
+.idea
+/tests
+/.junie
+/.superpowers
+/.ai
+*.md
+!README.md
+
+# SQLite local
+/database/database.sqlite

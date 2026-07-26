@@ -7,6 +7,7 @@ namespace Tests\Feature\Tenant;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -84,6 +85,22 @@ class ResolveTenantMiddlewareTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('tenant_id', null);
+    }
+
+    public function test_reserved_hosts_follow_configuration(): void
+    {
+        Config::set('montree.reserved_hosts', 'demo.montree.duckdns.org');
+
+        $tenant = Tenant::factory()->create(['slug' => 'demo']);
+        TenantConfiguration::factory()->for($tenant)->create();
+
+        $reserved = $this->get('http://demo.montree.duckdns.org/_test/tenant-context');
+        $reserved->assertOk();
+        $reserved->assertJsonPath('tenant_id', null);
+
+        $resolved = $this->get('http://demo.other-host.test/_test/tenant-context');
+        $resolved->assertOk();
+        $resolved->assertJsonPath('tenant_id', $tenant->id);
     }
 
     public function test_sets_permissions_team_id_after_resolution(): void
