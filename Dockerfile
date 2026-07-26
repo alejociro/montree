@@ -47,9 +47,15 @@ RUN set -eux; \
 # ---- 3) Composer ----
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ---- 4) Apache: docroot -> public, habilitar rewrite ----
-RUN a2enmod rewrite \
-    && rm -f /etc/apache2/sites-enabled/000-default.conf
+# ---- 4) Apache: un solo MPM (prefork, requerido por mod_php) + rewrite + docroot -> public ----
+#   Al instalar Node/apt, Debian puede reactivar mpm_event junto a mpm_prefork
+#   y Apache no arranca ("More than one MPM loaded"). Forzamos solo prefork.
+RUN set -eux; \
+    a2dismod mpm_event 2>/dev/null || true; \
+    a2dismod mpm_worker 2>/dev/null || true; \
+    a2enmod mpm_prefork; \
+    a2enmod rewrite; \
+    rm -f /etc/apache2/sites-enabled/000-default.conf
 COPY docker/vhost.conf /etc/apache2/sites-available/montree.conf
 RUN a2ensite montree
 
