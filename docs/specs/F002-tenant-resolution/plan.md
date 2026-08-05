@@ -8,7 +8,7 @@ Middleware HTTP que ejecuta `Spatie\Multitenancy\Http\Middleware\NeedsTenant` co
 
 ### Middleware (`app/Http/Middleware/`)
 
-- **`ResolveTenant`** — ejecuta el finder de spatie, decide si el tenant es requerido (404 si no se resuelve en subdominio no reservado), maneja suspendido (renderiza 503), y setea `setPermissionsTeamId($tenant->id)`. Reemplaza `NeedsTenant` del paquete para no acoplarnos.
+- **`ResolveTenant`** — ejecuta el finder de spatie, decide si el tenant es requerido (404 si no se resuelve en subdominio no reservado), maneja suspendido (renderiza 503), maneja `pending` (renderiza 503 `Errors/TenantPending`, delta F016), y setea `setPermissionsTeamId($tenant->id)`. Reemplaza `NeedsTenant` del paquete para no acoplarnos. El chequeo de `pending` corta ANTES de `setPermissionsTeamId`: un tenant sin verificar nunca establece contexto de permisos.
 - Registrar en `bootstrap/app.php` dentro del grupo `web`. Para landing pública (`montree.app` raíz, `www`, `admin`, `api`): el middleware lo permite sin tenant.
 
 ### Service (`app/Services/Tenant/`)
@@ -55,6 +55,7 @@ Middleware HTTP que ejecuta `Spatie\Multitenancy\Http\Middleware\NeedsTenant` co
 
 - **`Errors\TenantNotFoundController::__invoke()`** → `Inertia::render('Errors/TenantNotFound')->toResponse(...)->setStatusCode(404)`.
 - **`Errors\TenantSuspendedController::__invoke()`** → idem con 503 + props `{ tenantName, contactEmail }`.
+- **`Errors\TenantPendingController::__invoke(Request, Tenant)`** → `Inertia::render('Errors/TenantPending', ['tenantName' => ...])` con 503 (agregado por F016 para tenants `pending`).
 - Llamados directamente desde `ResolveTenant` middleware (no via routes públicas).
 
 ### Rutas
@@ -108,6 +109,7 @@ import { update as updateConfig } from '@/actions/Api/V1/Admin/TenantConfigurati
   - `test_resolves_tenant_from_subdomain`
   - `test_returns_404_inertia_when_subdomain_not_found`
   - `test_returns_503_inertia_when_tenant_suspended`
+  - `test_returns_503_inertia_when_tenant_pending` (delta F016 → `Errors/TenantPending`)
   - `test_allows_reserved_host_without_tenant` (`www`, `admin`, `api`)
   - `test_allows_root_domain_without_tenant`
   - `test_sets_permissions_team_id_after_resolution`
@@ -157,3 +159,7 @@ import { update as updateConfig } from '@/actions/Api/V1/Admin/TenantConfigurati
 - Upload de logo/favicon (sube placeholder; storage real en feature aparte si se prioriza).
 - Preview en vivo de cambios sin guardar (preview es estático con valores en form).
 - Cache invalidation distribuida (single-server por ahora).
+
+## Changelog
+
+- `2026-08-01` — Delta de F016 (onboarding): `ResolveTenant` maneja el estado `TenantStatus::Pending` → nuevo `Errors\TenantPendingController` renderiza `Errors/TenantPending` (`503`) antes de setear el team_id; nuevo test `test_returns_503_inertia_when_tenant_pending` en `ResolveTenantMiddlewareTest`. Razón: F016 crea tenants `pending` (email del fundador sin verificar); sin la rama, el subdominio nuevo caía en catálogo vacío o `404`.

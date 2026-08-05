@@ -71,6 +71,19 @@ class ResolveTenantMiddlewareTest extends TestCase
         $this->assertSame($tenant->name, $response->json('props.tenantName'));
     }
 
+    public function test_returns_503_inertia_when_tenant_pending(): void
+    {
+        $tenant = Tenant::factory()->pending()->create(['slug' => 'incoming']);
+        TenantConfiguration::factory()->for($tenant)->create();
+
+        $response = $this->withHeaders(['X-Inertia' => 'true'])
+            ->get('http://incoming.montree.test/_test/tenant-context');
+
+        $response->assertStatus(503);
+        $this->assertSame('Errors/TenantPending', $response->json('component'));
+        $this->assertSame($tenant->name, $response->json('props.tenantName'));
+    }
+
     public function test_allows_reserved_host_without_tenant(): void
     {
         $response = $this->get('http://www.montree.test/_test/tenant-context');

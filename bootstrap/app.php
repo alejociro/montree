@@ -9,6 +9,7 @@ use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
 use App\Exceptions\ReviewException;
+use App\Exceptions\SubdomainTakenException;
 use App\Exceptions\TeamException;
 use App\Exceptions\TourDateException;
 use App\Exceptions\TourHasActiveBookingsException;
@@ -26,9 +27,12 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -93,4 +97,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
         $exceptions->render(fn (TourDateException $e) => $e->toResponse());
         $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
+        $exceptions->render(fn (SubdomainTakenException $e) => $e->toResponse());
+
+        // WHY: onboarding signed links diverge from the default 403 page. An expired
+        // verify link shows a branded Inertia page with a resend CTA; an expired
+        // claim link bounces to login (its nonce is single-use). Returning null
+        // falls back to Laravel's default rendering for every other signed route.
+        $exceptions->render(function (InvalidSignatureException $e, Request $request) {
+            if ($request->routeIs('onboarding.verify')) {
+                return Inertia::render('Onboarding/VerificationExpired')
+                    ->toResponse($request)
+                    ->setStatusCode(403);
+            }
+
+            if ($request->routeIs('onboarding.claim')) {
+                return redirect()->route('login')->withErrors([
+                    'email' => __('El enlace de acceso expiró o ya fue usado. Iniciá sesión de nuevo.'),
+                ]);
+            }
+
+            return null;
+        });
     })->create();

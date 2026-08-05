@@ -26,6 +26,11 @@
 - Fallback: si el host es `montree.app` o `www.montree.app` → **NO hay tenant** (landing pública de la plataforma).
 - Si el subdominio no existe → 404 con página genérica.
 - Si el tenant está `status = 'suspended'` → 503 con página de "temporalmente no disponible".
+- Si el tenant está `status = 'pending'` (agencia recién registrada por F016, con el
+  email del fundador aún sin verificar) → 503 con la página Inertia `Errors/TenantPending`
+  (`App\Http\Controllers\Errors\TenantPendingController`), **NO** el catálogo. El
+  middleware `ResolveTenant` corta en esta rama antes de setear el team_id de permisos.
+  Al verificar el email, F016 pasa el tenant a `active` y el subdominio queda operativo.
 
 ### 2.1 Local dev
 
@@ -152,6 +157,12 @@ montar el schema completo. Conviértelas en convención al construir features:
 - Hosts reservados que devuelven `null` (sin tenant): `montree.app`, `www.montree.app`,
   `montree.test`, `www.montree.test`, `admin.montree.app`, `admin.montree.test`,
   `localhost`, `127.0.0.1`.
+- **Slugs de marca reservados (D4 de F016)**: además de los hosts reservados, existe
+  `SubdomainTenantFinder::RESERVED_SLUGS` + helper `isReservedSlug(string): bool`.
+  La lista: `www`, `admin`, `api`, `app`, `blog`, `docs`, `status`, `ayuda`, `soporte`,
+  `help`, `support`, `mail`, `static`, `cdn`, `assets`. Ningún tenant puede registrar
+  un subdominio con estos valores; la regla `App\Rules\NotReservedSubdomain` (alta de
+  agencia, F016) los consulta junto a `isReservedHost()`.
 - El subdomain se valida contra `^[a-z0-9][a-z0-9-]{1,62}$`. Si no matchea: `null`.
 - Las conexiones `landlord_database_connection_name` y `tenant_database_connection_name`
   quedan en `null` para usar la misma conexión por default (single-DB).
@@ -334,3 +345,7 @@ invariantes del sistema:
   `tour_dates.provider_id` nullable con `restrictOnDelete` (la BD refuerza el 409
   `RESOURCE_IN_USE` de la app). Tests de aislamiento en `TenantIsolationTest`
   (ahora 17 modelos cubiertos).
+- `2026-08-01` — F016 (onboarding): §2 documenta que un tenant `status = 'pending'`
+  resuelve a `Errors/TenantPending` (`503`), no al catálogo. §9.1 documenta los slugs
+  de marca reservados (`SubdomainTenantFinder::RESERVED_SLUGS` + `isReservedSlug()`,
+  decisión D4) además de los hosts reservados existentes.

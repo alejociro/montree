@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\TenantPlan;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -28,4 +30,18 @@ return [
         'MONTREE_RESERVED_HOSTS',
         'montree.app,www.montree.app,montree.test,www.montree.test,admin.montree.app,admin.montree.test,api.montree.app,api.montree.test,localhost,127.0.0.1',
     ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Self-serve onboarding (F016)
+    |--------------------------------------------------------------------------
+    |
+    | Trial length and default plan a newly registered agency enters once its
+    | founder verifies their email. Read by App\Actions\Onboarding.
+    |
+    */
+    'onboarding' => [
+        'trial_days' => (int) env('MONTREE_ONBOARDING_TRIAL_DAYS', 14),
+        'default_plan' => TenantPlan::Professional,
+    ],
 ];

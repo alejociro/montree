@@ -131,9 +131,10 @@ function submit(): void {
 
         <form class="space-y-8" @submit.prevent="submit">
             <TourForm
-                v-model="form"
+                :model-value="form.data()"
                 :errors="formErrors"
                 :categories="props.categories"
+                @update:model-value="(value) => Object.assign(form, value)"
             />
 
             <div class="flex items-center gap-3 border-t border-input pt-6">

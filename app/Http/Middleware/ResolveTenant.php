@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\TenantStatus;
 use App\Http\Controllers\Errors\TenantNotFoundController;
+use App\Http\Controllers\Errors\TenantPendingController;
 use App\Http\Controllers\Errors\TenantSuspendedController;
 use App\Models\Tenant;
 use App\Multitenancy\SubdomainTenantFinder;
@@ -20,6 +21,7 @@ final class ResolveTenant
         private TenantFinder $finder,
         private TenantNotFoundController $notFound,
         private TenantSuspendedController $suspended,
+        private TenantPendingController $pending,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -44,6 +46,10 @@ final class ResolveTenant
 
         if ($tenant->status === TenantStatus::Suspended) {
             return ($this->suspended)($request, $tenant);
+        }
+
+        if ($tenant->status === TenantStatus::Pending) {
+            return ($this->pending)($request, $tenant);
         }
 
         // WHY: spatie/permission with teams=true scopes role checks by team_id.

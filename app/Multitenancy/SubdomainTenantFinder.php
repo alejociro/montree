@@ -13,6 +13,18 @@ use Spatie\Multitenancy\TenantFinder\TenantFinder;
 
 final class SubdomainTenantFinder extends TenantFinder
 {
+    /**
+     * Brand/platform slugs that can never be claimed as a tenant subdomain even
+     * though `{slug}.montree.app` is not itself a reserved host. Consumed by the
+     * onboarding `not_reserved_subdomain` rule and the availability endpoint.
+     *
+     * @var array<int, string>
+     */
+    public const RESERVED_SLUGS = [
+        'www', 'admin', 'api', 'app', 'blog', 'docs', 'status',
+        'ayuda', 'soporte', 'help', 'support', 'mail', 'static', 'cdn', 'assets',
+    ];
+
     public function __construct(private TenantConfigurationCache $cache) {}
 
     /**
@@ -24,6 +36,11 @@ final class SubdomainTenantFinder extends TenantFinder
     public static function isReservedHost(string $host): bool
     {
         return in_array(strtolower($host), self::reservedHosts(), true);
+    }
+
+    public static function isReservedSlug(string $slug): bool
+    {
+        return in_array(strtolower($slug), self::RESERVED_SLUGS, true);
     }
 
     /**

@@ -12,6 +12,10 @@ use App\Http\Controllers\Guide\GuidePagesController;
 use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\NewsletterPagesController;
 use App\Http\Controllers\NotificationPagesController;
+use App\Http\Controllers\Onboarding\ClaimAgencyController;
+use App\Http\Controllers\Onboarding\OnboardingPageController;
+use App\Http\Controllers\Onboarding\ResendVerificationController;
+use App\Http\Controllers\Onboarding\VerifyAgencyController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
@@ -30,6 +34,22 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
     ->name('auth.handoff');
 
 Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+
+// WHY: self-serve onboarding (F016). `/start` + check-email + verify run on the
+// platform host; `claim` runs on the tenant subdomain and produces the founder's
+// host-scoped session. verify/claim are gated by signed URLs (the signature is the
+// credential); onboarding.claim additionally consumes a one-shot nonce.
+Route::get('start', [OnboardingPageController::class, 'start'])->name('onboarding.start');
+Route::get('onboarding/check-email', [OnboardingPageController::class, 'checkEmail'])->name('onboarding.check-email');
+Route::get('onboarding/verify/{tenant}/{user}', VerifyAgencyController::class)
+    ->middleware('signed')
+    ->name('onboarding.verify');
+Route::get('onboarding/claim', ClaimAgencyController::class)
+    ->middleware('signed')
+    ->name('onboarding.claim');
+Route::post('onboarding/resend-verification', ResendVerificationController::class)
+    ->middleware('throttle:3,10')
+    ->name('onboarding.resend-verification');
 
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');

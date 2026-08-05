@@ -236,9 +236,10 @@ function deleteTour(): void {
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
             <form class="space-y-8" @submit.prevent="submit">
                 <TourForm
-                    v-model="form"
+                    :model-value="form.data()"
                     :errors="formErrors"
                     :categories="props.categories"
+                    @update:model-value="(value) => Object.assign(form, value)"
                 />
 
                 <Card>

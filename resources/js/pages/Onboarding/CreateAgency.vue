@@ -1,0 +1,138 @@
+<script setup lang="ts">
+import { Head, Link } from '@inertiajs/vue3';
+import { BarChart3, CalendarCheck, Leaf, Palette } from 'lucide-vue-next';
+import AgencySignupForm from '@/components/organisms/AgencySignupForm.vue';
+import { home, login } from '@/routes';
+
+const highlights = [
+    {
+        icon: CalendarCheck,
+        title: 'Reservas 24/7',
+        body: 'Recibí y confirmá reservas automáticamente, sin responder un solo WhatsApp.',
+    },
+    {
+        icon: BarChart3,
+        title: 'Tu negocio en tiempo real',
+        body: 'Ingresos, cupos y próximas salidas en un panel claro y accionable.',
+    },
+    {
+        icon: Palette,
+        title: 'Tu marca, tu subdominio',
+        body: 'Un sitio propio con tu logo y colores desde el primer minuto.',
+    },
+];
+</script>
+
+<template>
+    <div class="min-h-svh bg-background text-foreground lg:grid lg:grid-cols-2">
+        <Head title="Creá tu agencia — Montree" />
+
+        <aside
+            class="relative hidden overflow-hidden bg-emerald-900 px-10 py-12 text-emerald-50 lg:flex lg:flex-col lg:justify-between"
+        >
+            <div
+                class="absolute inset-0 opacity-40"
+                aria-hidden="true"
+                style="
+                    background-image: radial-gradient(
+                        circle,
+                        rgba(255, 255, 255, 0.08) 1px,
+                        transparent 1px
+                    );
+                    background-size: 26px 26px;
+                "
+            />
+
+            <Link
+                :href="home().url"
+                class="relative z-10 inline-flex items-center gap-2"
+            >
+                <span
+                    class="flex size-9 items-center justify-center rounded-lg bg-emerald-500 text-white"
+                >
+                    <Leaf class="size-5" />
+                </span>
+                <span class="text-lg font-semibold tracking-tight"
+                    >Montree</span
+                >
+            </Link>
+
+            <div class="relative z-10 max-w-md space-y-8">
+                <h1
+                    class="text-3xl font-semibold tracking-tight text-white sm:text-4xl"
+                >
+                    Poné tu agencia de ecoturismo en línea en minutos.
+                </h1>
+
+                <ul class="space-y-5">
+                    <li
+                        v-for="item in highlights"
+                        :key="item.title"
+                        class="flex items-start gap-3"
+                    >
+                        <span
+                            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-200"
+                        >
+                            <component :is="item.icon" class="size-5" />
+                        </span>
+                        <div>
+                            <p class="font-medium text-white">
+                                {{ item.title }}
+                            </p>
+                            <p class="text-sm text-emerald-100/80">
+                                {{ item.body }}
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="relative z-10 text-sm text-emerald-100/70">
+                Sin tarjeta de crédito · 14 días de prueba en el plan
+                Professional.
+            </p>
+        </aside>
+
+        <main
+            class="flex min-h-svh flex-col justify-center px-6 py-10 sm:px-10 lg:px-16"
+        >
+            <div class="mx-auto w-full max-w-md">
+                <Link
+                    :href="home().url"
+                    class="mb-8 inline-flex items-center gap-2 lg:hidden"
+                >
+                    <span
+                        class="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white"
+                    >
+                        <Leaf class="size-4" />
+                    </span>
+                    <span class="text-base font-semibold tracking-tight"
+                        >Montree</span
+                    >
+                </Link>
+
+                <div class="mb-8 space-y-2">
+                    <h2 class="text-2xl font-semibold tracking-tight">
+                        Creá tu agencia
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        Completá tus datos y empezá tu prueba gratis. Activás tu
+                        cuenta confirmando tu email.
+                    </p>
+                </div>
+
+                <AgencySignupForm />
+
+                <p class="mt-6 text-center text-sm text-muted-foreground">
+                    ¿Ya tenés una agencia?
+                    <Link
+                        :href="login().url"
+                        class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
+                    >
+                        Iniciá sesión
+                    </Link>
+                </p>
+            </div>
+        </main>
+    </div>
+</template>

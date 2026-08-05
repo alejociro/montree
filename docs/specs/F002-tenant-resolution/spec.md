@@ -16,6 +16,7 @@ Mecanismo que identifica qué agencia está siendo accedida a partir del subdomi
 - **Given** una petición a `eco-adventures.montree.app`, **when** el sistema procesa la URL, **then** identifica el tenant `eco-adventures` y carga su configuración.
 - **Given** un subdominio que no existe, **then** retorna `404` con página genérica de "agencia no encontrada".
 - **Given** un tenant suspendido, **then** muestra página de "temporalmente no disponible" (`503`).
+- **Given** un tenant en estado `pending` (agencia recién registrada en F016, con email del fundador aún sin verificar), **then** muestra la página `Errors/TenantPending` (`503`) en vez del catálogo o un `404`.
 - **Given** un admin actualizando colores, **when** guarda, **then** las siguientes peticiones ya muestran los nuevos colores.
 - **Given** un tenant en plan Basic intentando activar custom CSS, **then** recibe error indicando que requiere plan Enterprise.
 
@@ -24,6 +25,7 @@ Mecanismo que identifica qué agencia está siendo accedida a partir del subdomi
 - Subdominio con caracteres inválidos: normalizar y rechazar si no matchea regex.
 - Petición sin subdominio (`montree.app` directo): mostrar landing de plataforma, NO error de tenant.
 - Configuración parcial (tenant nuevo): usar valores default de `tenant_configurations`.
+- Tenant en estado `pending`: no debe exponer catálogo ni configuración; el middleware corta antes de setear el team_id y renderiza `Errors/TenantPending`.
 - Cache de configuración: invalidar al actualizar, TTL 5 min para lecturas.
 
 ## Dependencias
@@ -39,7 +41,7 @@ PUT    /api/v1/admin/tenant/configuration      # edita configuración (admin)
 
 ## Componentes UI
 
-- Pages: `TenantConfigPage` (admin), `TenantNotFoundPage`, `TenantSuspendedPage`
+- Pages: `TenantConfigPage` (admin), `TenantNotFoundPage`, `TenantSuspendedPage`, `Errors/TenantPending` (agregada por F016)
 - Organisms: `BrandingEditor`, `OperationalSettingsForm`, `SocialLinksEditor`
 - Molecules: `ColorPicker`, `PreviewPanel`, `CurrencySelector`, `TimezoneSelector`
 - Atoms: `BaseInput`, `BaseSwitch`, `BaseSelect`, `ColorSwatch`
@@ -69,3 +71,4 @@ Tablas: `tenants`, `tenant_configurations`
 
 - `2026-05-17` — Creación inicial migrada del enunciado de proyecto.
 - `2026-05-17` — Cerrado decisiones abiertas (custom CSS sanitization, cache strategy, suspended page, shared props).
+- `2026-08-01` — Delta de F016 (onboarding): `ResolveTenant` ahora maneja el estado `TenantStatus::Pending` renderizando `Errors/TenantPending` (`503`). Razón: F016 crea tenants en estado `pending` antes de que el fundador verifique su email; sin esta rama el subdominio recién creado mostraría un catálogo vacío o un `404`.
