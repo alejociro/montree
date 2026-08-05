@@ -51,8 +51,9 @@ function update<K extends keyof TourFormPayload>(
 
 function handleString<K extends keyof TourFormPayload>(
     key: K,
-): (v: string | number) => void {
-    return (v) => update(key, String(v) as TourFormPayload[K]);
+    value: string | number,
+): void {
+    update(key, String(value) as TourFormPayload[K]);
 }
 
 function handleCategoryChange(raw: AcceptableValue): void {
@@ -123,7 +124,7 @@ const meetingErrors = computed(() => ({
                     :model-value="value.name"
                     maxlength="120"
                     placeholder="Sendero del Quindío"
-                    @update:model-value="handleString('name')"
+                    @update:model-value="(v) => handleString('name', v)"
                 />
                 <InputError :message="errors.name" />
             </div>
@@ -135,7 +136,9 @@ const meetingErrors = computed(() => ({
                     :model-value="value.short_description"
                     maxlength="280"
                     placeholder="Caminata de 6 horas por el valle de Cocora"
-                    @update:model-value="handleString('short_description')"
+                    @update:model-value="
+                        (v) => handleString('short_description', v)
+                    "
                 />
                 <p class="text-xs text-muted-foreground">
                     Aparece en listados. Máx. 280 caracteres.
@@ -151,7 +154,7 @@ const meetingErrors = computed(() => ({
                     rows="6"
                     maxlength="10000"
                     placeholder="Detalle de la experiencia"
-                    @update:model-value="handleString('description')"
+                    @update:model-value="(v) => handleString('description', v)"
                 />
                 <InputError :message="errors.description" />
             </div>
