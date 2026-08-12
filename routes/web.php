@@ -81,7 +81,15 @@ Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->n
     Route::get('schedule', [GuidePagesController::class, 'schedule'])->name('schedule');
 });
 
-Route::domain((string) config('montree.super_admin_host'))
+// WHY: marketing/legal pages belong to the platform brand, not to a tenant's
+// branded site, so they answer only on the apex host.
+Route::domain((string) config('montree.platform_host'))->group(function (): void {
+    Route::inertia('faq', 'Faq')->name('faq');
+    Route::inertia('politica-de-pago', 'Policies/Payment')->name('policies.payment');
+    Route::inertia('politica-de-cancelacion', 'Policies/Cancellation')->name('policies.cancellation');
+});
+
+Route::domain((string) config('montree.platform_host'))
     ->middleware(['auth', 'super_admin.only'])
     ->prefix('super-admin')
     ->name('super-admin.')

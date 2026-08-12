@@ -22,7 +22,7 @@ final class TenantUserInvitationNotification extends Notification implements Sho
 
     public static function for(Tenant $tenant, string $token, string $email): self
     {
-        $host = $tenant->domain ?? ($tenant->slug.'.'.Config::get('montree.super_admin_host'));
+        $host = $tenant->domain ?? ($tenant->slug.'.'.Config::get('montree.platform_host'));
         $scheme = str_starts_with((string) Config::get('app.url'), 'https') ? 'https' : 'http';
         $url = $scheme.'://'.$host.'/reset-password/'.$token.'?email='.urlencode($email);
 
@@ -44,7 +44,7 @@ final class TenantUserInvitationNotification extends Notification implements Sho
             ->greeting(__('¡Hola!'))
             ->line(__('Fuiste agregado al equipo de :tenant en Montree.', ['tenant' => $this->tenantName]))
             ->action(__('Establecer mi contraseña'), $this->actionUrl)
-            ->line(__('El enlace caduca en :minutes minutos. Si no esperabas esta invitación, podés ignorar este correo.', [
+            ->line(__('El enlace caduca en :minutes minutos. Si no esperabas esta invitación, puedes ignorar este correo.', [
                 'minutes' => Config::get('auth.passwords.users.expire', 60),
             ]));
     }

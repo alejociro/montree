@@ -47,7 +47,7 @@ final class LoginResponse implements LoginResponseContract
         if ($pivot === null) {
             return $this->logoutWithError(
                 $request,
-                __('No tenés una cuenta en esta agencia. Registrate para continuar.'),
+                __('No tienes una cuenta en esta agencia. Registrate para continuar.'),
             );
         }
 
@@ -67,7 +67,7 @@ final class LoginResponse implements LoginResponseContract
 
     private function redirectSuperAdmin(User $user, Request $request): Response
     {
-        $host = (string) config('montree.super_admin_host', 'montree.test');
+        $host = (string) config('montree.platform_host', 'montree.test');
         $dashboard = '/super-admin/dashboard';
 
         // WHY: when the login already happens on the admin host, the session cookie

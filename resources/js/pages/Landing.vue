@@ -67,12 +67,6 @@ const resetTimer = () => {
 // ── Feature tabs ──────────────────────────────────────────────
 const activeFeature = ref(0);
 
-// ── FAQ ───────────────────────────────────────────────────────
-const openFaq = ref<number | null>(null);
-const toggleFaq = (i: number) => {
-    openFaq.value = openFaq.value === i ? null : i;
-};
-
 // ── Scroll reveal + header ────────────────────────────────────
 onMounted(() => {
     carouselTimer = setInterval(nextSlide, 5000);
@@ -122,7 +116,7 @@ const features = [
         detail: 'El sistema recibe, confirma y gestiona reservas las 24 horas sin que respondas un solo WhatsApp. El cliente elige el tour, la fecha y el número de personas, paga en línea y recibe su confirmación automáticamente por email.',
         bullets: [
             'Confirmación automática por email y WhatsApp al instante',
-            'Gestión de cupos: nunca más overbooking ni reservas dobles',
+            'Gestión de cupos en tiempo real: nunca más vender más lugares de los que tienes',
             'Historial completo por cliente: quién reservó qué y cuándo',
         ],
         image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=900&q=80&auto=format&fit=crop',
@@ -157,12 +151,12 @@ const features = [
     {
         icon: CreditCard,
         title: 'Pagos integrados',
-        body: 'Cobra con Stripe directo a tu cuenta.',
-        detail: 'Configura si cobras el 100% anticipado o solo un depósito para asegurar el cupo. Los pagos llegan a tu cuenta bancaria en 2-3 días hábiles. Sin intermediarios que retengan tu dinero semanas. Comisiones claras desde el primer día.',
+        body: 'Cobra con Bre-B y PSE directo a tu cuenta.',
+        detail: 'Configura si cobras el 100% anticipado o solo un depósito para asegurar el cupo. El dinero llega a la cuenta bancaria de tu agencia ya con la comisión descontada, sin intermediarios que lo retengan semanas. Comisiones claras desde el primer día.',
         bullets: [
-            'PSE, tarjeta débito/crédito, Nequi y más medios de pago locales',
+            'Bre-B y PSE, los medios que ya usan tus clientes en Colombia',
             'Configura el anticipo por tour: 30%, 50% o pago total',
-            'Reembolsos automáticos según tu política de cancelación',
+            'Reembolsos según tu política de cancelación',
         ],
         image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80&auto=format&fit=crop',
         imageAlt: 'Pago móvil y transacciones digitales seguras',
@@ -184,8 +178,8 @@ const features = [
 ];
 
 const painPoints = [
-    '¿Manejas las reservas por WhatsApp y pierdes clientes cuando no puedes responder a tiempo?',
-    '¿Tu Excel tiene errores de cupos y ya tuviste un overbooking que te costó dinero y reputación?',
+    '¿Manejas las reservas por WhatsApp y pierdes clientes cuando no alcanzas a responder a tiempo?',
+    '¿Tu Excel se desactualiza y terminas vendiendo más cupos de los que tienes, con el costo y el mal rato que eso implica?',
     '¿No sabes cuánto ganaste el mes pasado sin revisar diez hojas de cálculo distintas?',
 ];
 
@@ -208,7 +202,7 @@ const steps = [
     {
         num: '04',
         title: 'Recibe y cobra',
-        body: 'Reservas 24/7, pagos automáticos, dinero directo a tu cuenta.',
+        body: 'Reservas 24/7 y cobros con Bre-B o PSE. Nos quedamos con una comisión de 3% a 5% por reserva confirmada; el resto va a tu cuenta.',
     },
 ];
 
@@ -243,7 +237,7 @@ const plans = [
             'Hasta 5 tours activos',
             'Reservas ilimitadas',
             'Subdominio incluido',
-            'Pagos con Stripe',
+            'Cobros con Bre-B y PSE',
             'Dashboard básico',
             'Soporte por email',
         ],
@@ -267,29 +261,6 @@ const plans = [
         ],
         cta: 'Probar 30 días gratis',
         hot: true,
-    },
-];
-
-const faqs = [
-    {
-        q: '¿Necesito saber de tecnología para usar Montree?',
-        a: 'No. Si sabes usar WhatsApp y Excel, puedes usar Montree. Está diseñado para operadores de campo, no programadores.',
-    },
-    {
-        q: '¿Cuánto tarda en estar lista mi agencia?',
-        a: 'La mayoría publica su primer tour en menos de 10 minutos. Sin configuraciones complicadas, sin técnicos, sin esperas.',
-    },
-    {
-        q: '¿Cómo recibo el dinero de las reservas?',
-        a: 'Usamos Stripe. El dinero se deposita directo a tu cuenta bancaria en 2–3 días hábiles tras cada pago completado.',
-    },
-    {
-        q: '¿Puedo migrar desde Excel o WhatsApp?',
-        a: 'Sí. Nuestro equipo te ayuda a migrar toda la información sin costo adicional durante los primeros 30 días.',
-    },
-    {
-        q: '¿Qué pasa si quiero cancelar?',
-        a: 'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima. Exportas tu información y listo.',
     },
 ];
 
@@ -329,7 +300,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     <a href="#problem">El problema</a>
                     <a href="#how-it-works">Cómo funciona</a>
                     <a href="#pricing">Precios</a>
-                    <a href="#faq">FAQ</a>
+                    <a href="/faq">FAQ</a>
                 </nav>
                 <div class="flex items-center gap-3">
                     <template v-if="user">
@@ -690,8 +661,8 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         style="color: #4a7c59; flex-shrink: 0"
                     />
                     <p>
-                        Montree resuelve los tres de raíz — en menos de 10
-                        minutos.
+                        Montree resuelve los tres problemas desde el mismo
+                        lugar, y lo dejas andando en menos de 10 minutos.
                         <a href="#pricing">Pruébalo 30 días gratis →</a>
                     </p>
                 </div>
@@ -777,10 +748,52 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     <span class="eyebrow-pill">Precios</span>
                     <h2 class="section-title">Precios claros, sin sorpresas</h2>
                     <p class="section-sub">
-                        Sin comisiones por reserva. Sin costos ocultos. 30 días
-                        completamente gratis para empezar.
+                        Ganamos cuando tú cobras: una comisión por reserva
+                        confirmada. Sin costos ocultos y con 30 días gratis para
+                        empezar.
                     </p>
                 </div>
+
+                <div class="reveal commission-card">
+                    <div class="commission-main">
+                        <span class="commission-label">
+                            Comisión por reserva
+                        </span>
+                        <div class="commission-figure">
+                            <span class="commission-range">3% – 5%</span>
+                            <span class="commission-unit">
+                                por reserva confirmada
+                            </span>
+                        </div>
+                        <p class="commission-desc">
+                            El porcentaje depende del volumen mensual de tu
+                            agencia. No cobramos por reservas canceladas,
+                            expiradas ni por cupos que no se vendieron.
+                        </p>
+                    </div>
+                    <div class="commission-side">
+                        <span class="commission-label">Medios de pago</span>
+                        <ul class="commission-rails">
+                            <li>
+                                <CheckCircle class="size-4 shrink-0" />
+                                Bre-B — transferencia inmediata
+                            </li>
+                            <li>
+                                <CheckCircle class="size-4 shrink-0" />
+                                PSE — débito desde tu banco
+                            </li>
+                        </ul>
+                        <p class="commission-pending">
+                            Tarjeta de crédito para paquetes de viaje: en
+                            evaluación.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="pricing-bridge">
+                    ¿Prefieres una tarifa fija mensual? Estos son los planes que
+                    estamos evaluando:
+                </p>
                 <div class="pricing-grid">
                     <div
                         v-for="plan in plans"
@@ -826,48 +839,18 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         </Link>
                     </div>
                 </div>
+                <p class="pricing-note pricing-note--pending">
+                    Estamos evaluando una tarifa mensual reducida para agencias
+                    pequeñas, pensada solo para cubrir costos de
+                    infraestructura. Valor por confirmar.
+                </p>
                 <p class="pricing-note">
                     ¿Varias agencias o necesidades especiales?
                     <a href="mailto:hola@montree.co"
                         >Contáctanos para un plan Enterprise →</a
                     >
+                    · <a href="/politica-de-pago">Ver política de pago</a>
                 </p>
-            </div>
-        </section>
-
-        <!-- ── FAQ ───────────────────────────────────────────── -->
-        <section id="faq" class="section-pale">
-            <div class="container--narrow container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill">FAQ</span>
-                    <h2 class="section-title">Preguntas frecuentes</h2>
-                    <p class="section-sub">
-                        Todo lo que necesitas saber antes de empezar.
-                    </p>
-                </div>
-                <div class="faq-list">
-                    <div
-                        v-for="(faq, i) in faqs"
-                        :key="i"
-                        class="reveal faq-item"
-                        :style="`animation-delay:${i * 55}ms`"
-                    >
-                        <button class="faq-trigger" @click="toggleFaq(i)">
-                            <span>{{ faq.q }}</span>
-                            <ChevronDown
-                                :class="[
-                                    'faq-chevron',
-                                    openFaq === i ? 'faq-chevron--open' : '',
-                                ]"
-                            />
-                        </button>
-                        <Transition name="faq-slide">
-                            <div v-if="openFaq === i" class="faq-answer">
-                                {{ faq.a }}
-                            </div>
-                        </Transition>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -925,31 +908,17 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 </div>
                 <div class="footer-links-col">
                     <h4>Producto</h4>
-                    <a
-                        v-for="l in [
-                            'Funciones',
-                            'Precios',
-                            'FAQ',
-                            'Casos de uso',
-                        ]"
-                        :key="l"
-                        href="#"
-                        >{{ l }}</a
-                    >
+                    <a href="#features">Funciones</a>
+                    <a href="#how-it-works">Cómo funciona</a>
+                    <a href="#pricing">Precios</a>
+                    <a href="/faq">Preguntas frecuentes</a>
                 </div>
                 <div class="footer-links-col">
-                    <h4>Empresa</h4>
-                    <a
-                        v-for="l in [
-                            'Sobre nosotros',
-                            'Blog',
-                            'Términos de uso',
-                            'Privacidad',
-                        ]"
-                        :key="l"
-                        href="#"
-                        >{{ l }}</a
-                    >
+                    <h4>Legal</h4>
+                    <a href="/politica-de-pago">Política de pago</a>
+                    <a href="/politica-de-cancelacion">
+                        Política de cancelación
+                    </a>
                 </div>
             </div>
             <div class="footer-bottom container">
@@ -2166,6 +2135,106 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 /* ════════════════════════════════════════════════════════════
    PRICING — button always pinned to bottom via flex
 ════════════════════════════════════════════════════════════ */
+.commission-card {
+    display: grid;
+    gap: 1.75rem;
+    background: var(--green-dark);
+    color: #f2ede4;
+    border-radius: 18px;
+    padding: 2.25rem 2rem;
+    margin-bottom: 2.5rem;
+}
+@media (min-width: 768px) {
+    .commission-card {
+        grid-template-columns: 1.4fr 1fr;
+        gap: 2.5rem;
+        padding: 2.75rem 2.5rem;
+    }
+}
+
+.commission-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--green-light);
+    margin-bottom: 0.85rem;
+}
+
+.commission-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+.commission-range {
+    font-family: var(--ff-display);
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 1;
+}
+.commission-unit {
+    font-size: 0.9375rem;
+    color: var(--green-light);
+}
+
+.commission-desc {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: rgba(242, 237, 228, 0.78);
+    max-width: 46ch;
+}
+
+.commission-side {
+    border-top: 1px solid rgba(184, 203, 176, 0.28);
+    padding-top: 1.5rem;
+}
+@media (min-width: 768px) {
+    .commission-side {
+        border-top: none;
+        border-left: 1px solid rgba(184, 203, 176, 0.28);
+        padding-top: 0;
+        padding-left: 2.5rem;
+    }
+}
+
+.commission-rails {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    font-size: 0.9rem;
+}
+.commission-rails li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+.commission-rails li svg {
+    color: var(--green-light);
+}
+
+.commission-pending {
+    margin-top: 1.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: rgba(242, 237, 228, 0.6);
+}
+
+.pricing-bridge {
+    text-align: center;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+}
+
+.pricing-note--pending {
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+}
+
 .pricing-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -2353,82 +2422,6 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 }
 .pricing-note a:hover {
     text-decoration: underline;
-}
-
-/* ════════════════════════════════════════════════════════════
-   FAQ
-════════════════════════════════════════════════════════════ */
-.faq-list {
-    display: flex;
-    flex-direction: column;
-}
-.faq-item {
-    border-bottom: 1px solid var(--border);
-}
-.faq-item:first-child {
-    border-top: 1px solid var(--border);
-}
-
-.faq-trigger {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.375rem 0;
-    text-align: left;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text-dark);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    font-family: var(--ff-body);
-    gap: 1rem;
-    transition: color 0.2s;
-}
-.faq-trigger:hover {
-    color: var(--green-mid);
-}
-
-.faq-chevron {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    color: var(--text-muted);
-    transition:
-        transform 0.3s ease,
-        color 0.2s;
-}
-.faq-chevron--open {
-    transform: rotate(180deg);
-    color: var(--green-mid);
-}
-
-.faq-answer {
-    padding-bottom: 1.375rem;
-    font-size: 0.9rem;
-    line-height: 1.78;
-    color: var(--text-muted);
-}
-
-.faq-slide-enter-active {
-    transition: all 0.28s ease;
-    overflow: hidden;
-}
-.faq-slide-leave-active {
-    transition: all 0.2s ease;
-    overflow: hidden;
-}
-.faq-slide-enter-from,
-.faq-slide-leave-to {
-    opacity: 0;
-    max-height: 0;
-    padding-bottom: 0;
-}
-.faq-slide-enter-to,
-.faq-slide-leave-from {
-    opacity: 1;
-    max-height: 200px;
 }
 
 /* ════════════════════════════════════════════════════════════

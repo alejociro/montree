@@ -37,7 +37,7 @@ function setRating(value: number) {
 
 function submit() {
     if (rating.value === 0) {
-        toast.error('Seleccioná una calificación');
+        toast.error('Selecciona una calificación');
 
         return;
     }
@@ -106,7 +106,7 @@ function submit() {
                 Ya dejaste una reseña para esta reserva.
             </p>
             <p v-else class="font-medium">
-                Solo podés reseñar reservas completadas.
+                Solo puedes reseñar reservas completadas.
             </p>
             <Link href="/account/bookings">
                 <Button variant="outline" size="sm">Volver</Button>

@@ -172,9 +172,9 @@ function formatPrice(amount: string, currency: string) {
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tenés reservas todavía</p>
+                <p class="font-medium">No tienes reservas todavía</p>
                 <p class="text-sm text-muted-foreground">
-                    Explorá los tours disponibles y reservá tu próxima aventura.
+                    Explora los tours disponibles y reserva tu próxima aventura.
                 </p>
             </div>
             <Link href="/tours">

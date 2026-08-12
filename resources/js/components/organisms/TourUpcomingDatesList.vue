@@ -100,7 +100,7 @@ onMounted(loadDates);
             <CalendarClock class="mx-auto size-8 text-muted-foreground/40" />
             <p class="mt-3 font-medium text-foreground">Sin salidas próximas</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Programá una salida desde la edición del producto.
+                Programa una salida desde la edición del producto.
             </p>
         </div>
 

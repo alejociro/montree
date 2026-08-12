@@ -56,7 +56,7 @@ const hotelFields: LogisticsField[] = [
     <div class="px-4 py-6 md:px-8">
         <Heading
             title="Logística"
-            description="Administrá las rutas, proveedores y hoteles que reutilizás en tus salidas."
+            description="Administra las rutas, proveedores y hoteles que reutilizás en tus salidas."
         />
 
         <div class="mt-6 max-w-3xl space-y-6">
@@ -82,21 +82,21 @@ const hotelFields: LogisticsField[] = [
                 kind="routes"
                 singular="Ruta"
                 feminine
-                empty-label="Aún no tenés rutas"
+                empty-label="Aún no tienes rutas"
                 :fields="routeFields"
             />
             <LogisticsCrudPanel
                 v-else-if="activeTab === 'providers'"
                 kind="providers"
                 singular="Proveedor"
-                empty-label="Aún no tenés proveedores"
+                empty-label="Aún no tienes proveedores"
                 :fields="providerFields"
             />
             <LogisticsCrudPanel
                 v-else
                 kind="hotels"
                 singular="Hotel"
-                empty-label="Aún no tenés hoteles"
+                empty-label="Aún no tienes hoteles"
                 :fields="hotelFields"
             />
         </div>

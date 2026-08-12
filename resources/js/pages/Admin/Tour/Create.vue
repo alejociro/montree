@@ -92,13 +92,13 @@ function submit(): void {
             onError: (errors) => {
                 if (errors.error_code === 'PLAN_LIMIT_TOURS_REACHED') {
                     planError.value =
-                        'Alcanzaste el límite de tours de tu plan. Actualizá tu plan para crear más.';
+                        'Alcanzaste el límite de tours de tu plan. Actualiza tu plan para crear más.';
 
                     return;
                 }
 
                 form.setError(errors);
-                toast.error('Revisá los campos marcados.');
+                toast.error('Revisa los campos marcados.');
             },
             onFinish: () => {
                 saving.value = false;
@@ -120,7 +120,7 @@ function submit(): void {
             </Link>
             <Heading
                 title="Nuevo producto"
-                description="Empezá creando un borrador. Podrás publicarlo cuando tenga al menos una imagen; las salidas se agregan después."
+                description="Empieza creando un borrador. Podrás publicarlo cuando tenga al menos una imagen; las salidas se agregan después."
             />
         </div>
 

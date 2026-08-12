@@ -40,7 +40,7 @@ class EnsureSuperAdminTest extends TestCase
         $user->assignRole(UserRole::SuperAdmin->value);
 
         $response = $this->actingAs($user)->getJson(
-            'http://admin.montree.test/_test/super-admin-only',
+            'http://montree.test/_test/super-admin-only',
         );
 
         $response->assertOk();
@@ -52,7 +52,7 @@ class EnsureSuperAdminTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->getJson(
-            'http://admin.montree.test/_test/super-admin-only',
+            'http://montree.test/_test/super-admin-only',
         );
 
         $response->assertForbidden();
@@ -60,7 +60,7 @@ class EnsureSuperAdminTest extends TestCase
 
     public function test_unauthenticated_gets_401(): void
     {
-        $response = $this->getJson('http://admin.montree.test/_test/super-admin-only');
+        $response = $this->getJson('http://montree.test/_test/super-admin-only');
 
         $response->assertStatus(401);
     }

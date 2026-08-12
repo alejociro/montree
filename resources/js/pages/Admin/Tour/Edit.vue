@@ -100,7 +100,7 @@ function submit(): void {
             },
             onError: (errors) => {
                 form.setError(errors);
-                toast.error('Revisá los campos marcados.');
+                toast.error('Revisa los campos marcados.');
             },
             onFinish: () => {
                 saving.value = false;
@@ -259,7 +259,7 @@ function deleteTour(): void {
                         v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
-                        Tenés cambios sin guardar.
+                        Tienes cambios sin guardar.
                     </span>
                 </div>
             </form>
@@ -269,7 +269,7 @@ function deleteTour(): void {
                     <CardHeader>
                         <CardTitle class="text-base">Estado</CardTitle>
                         <CardDescription>
-                            Controlá la visibilidad del producto en el catálogo.
+                            Controla la visibilidad del producto en el catálogo.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">

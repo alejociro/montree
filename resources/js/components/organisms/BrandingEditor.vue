@@ -88,7 +88,7 @@ function onDescription(value: string | number): void {
             <Textarea
                 id="description"
                 :model-value="modelValue.description"
-                placeholder="Contá brevemente qué hace única a tu agencia"
+                placeholder="Cuenta brevemente qué hace única a tu agencia"
                 rows="4"
                 maxlength="2000"
                 @update:model-value="onDescription"

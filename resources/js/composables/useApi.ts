@@ -99,7 +99,7 @@ async function request<TResponse>(
 
         if (response.status === 403) {
             options.onError?.({
-                _global: 'No tenés permisos para esta acción.',
+                _global: 'No tienes permisos para esta acción.',
             });
 
             return null;

@@ -45,6 +45,6 @@ final class TeamException extends \Exception implements HttpExceptionInterface
 
     public static function lastAdmin(): self
     {
-        return new self('TEAM_LAST_ADMIN', 'No podés remover al último admin del equipo.', 422);
+        return new self('TEAM_LAST_ADMIN', 'No puedes remover al último admin del equipo.', 422);
     }
 }

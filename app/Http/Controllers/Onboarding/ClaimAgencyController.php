@@ -19,7 +19,7 @@ final class ClaimAgencyController extends Controller
 
         if ($user === null) {
             return redirect()->route('login')->withErrors([
-                'email' => __('El enlace de acceso expiró o ya fue usado. Iniciá sesión de nuevo.'),
+                'email' => __('El enlace de acceso expiró o ya fue usado. Inicia sesión de nuevo.'),
             ]);
         }
 

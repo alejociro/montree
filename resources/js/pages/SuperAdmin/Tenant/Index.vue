@@ -97,7 +97,7 @@ function handleCreated(tenantId: number): void {
         >
             <Heading
                 title="Tenants de la plataforma"
-                description="Buscá, filtrá y administrá todos los tenants registrados."
+                description="Busca, filtra y administra todos los tenants registrados."
             />
             <CreateTenantDialog @created="handleCreated" />
         </div>

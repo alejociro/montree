@@ -7,14 +7,22 @@ use App\Enums\TenantPlan;
 return [
     /*
     |--------------------------------------------------------------------------
-    | Super admin host
+    | Platform host
     |--------------------------------------------------------------------------
     |
-    | Hostname (without scheme) the super admin panel responds to. All
-    | super_admin routes are bound to this host via Route::domain().
+    | Apex hostname (without scheme) that serves the marketing landing, the
+    | agency onboarding and the super admin panel (`/super-admin`). Tenant
+    | subdomains are built as `{slug}.{platform_host}`.
+    |
+    | Every other reserved host under this apex (`www.`, `admin.`, ...) is
+    | 301'd here by App\Http\Middleware\RedirectToPlatformHost so the landing
+    | lives at a single canonical URL.
+    |
+    | MONTREE_SUPER_ADMIN_HOST is the legacy name of this variable and is kept
+    | as a fallback so existing deployments keep working.
     |
     */
-    'super_admin_host' => env('MONTREE_SUPER_ADMIN_HOST', 'montree.test'),
+    'platform_host' => env('MONTREE_PLATFORM_HOST', env('MONTREE_SUPER_ADMIN_HOST', 'montree.test')),
 
     /*
     |--------------------------------------------------------------------------

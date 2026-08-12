@@ -413,6 +413,7 @@ function goBack(): void {
                         :minors-count="booking.minors_count"
                         :travelers="booking.travelers"
                         :required="require_traveler_details"
+                        :contact="booking.contact_snapshot"
                     />
                 </div>
             </div>
@@ -522,6 +523,7 @@ function goBack(): void {
                         :minors-count="booking.minors_count"
                         :travelers="booking.travelers"
                         :required="require_traveler_details"
+                        :contact="booking.contact_snapshot"
                     />
                 </div>
 

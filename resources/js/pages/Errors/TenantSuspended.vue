@@ -35,8 +35,8 @@ useTenantBranding();
                 {{ tenantName }} no está disponible en este momento
             </h1>
             <p class="text-sm text-muted-foreground">
-                Esta agencia se encuentra suspendida temporalmente. Volvé más
-                tarde o contactá al equipo si creés que es un error.
+                Esta agencia se encuentra suspendida temporalmente. Vuelve más
+                tarde o contacta al equipo si creés que es un error.
             </p>
         </div>
 

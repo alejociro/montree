@@ -108,7 +108,7 @@ defineExpose({ closeDialog });
                         id="suspension-reason"
                         v-model="reason"
                         rows="3"
-                        placeholder="Describí brevemente el motivo de la suspensión"
+                        placeholder="Describe brevemente el motivo de la suspensión"
                     />
                     <p v-if="reasonError" class="text-sm text-red-600">
                         {{ reasonError }}

@@ -36,6 +36,13 @@ const { status: subdomainStatus, reason: subdomainReason } =
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// WHY: server/client errors used to survive until the next submit, so fixing a
+// short password left the "mínimo 8 caracteres" message on screen.
+function clearFieldError(field: string) {
+    delete errors[field];
+    globalError.value = null;
+}
+
 function resetErrors() {
     for (const key of Object.keys(errors)) {
         delete errors[key];
@@ -48,27 +55,27 @@ function validate(): boolean {
     resetErrors();
 
     if (form.agency_name.trim() === '') {
-        errors.agency_name = 'Ingresá el nombre de tu agencia.';
+        errors.agency_name = 'Ingresa el nombre de tu agencia.';
     }
 
     if (form.subdomain.trim() === '') {
-        errors.subdomain = 'Elegí un subdominio.';
+        errors.subdomain = 'Elige un subdominio.';
     } else if (subdomainStatus.value === 'unavailable') {
-        errors.subdomain = 'Elegí un subdominio disponible.';
+        errors.subdomain = 'Elige un subdominio disponible.';
     }
 
     if (form.founder_name.trim() === '') {
-        errors.founder_name = 'Ingresá tu nombre.';
+        errors.founder_name = 'Ingresa tu nombre.';
     }
 
     if (form.email.trim() === '') {
-        errors.email = 'Ingresá tu correo electrónico.';
+        errors.email = 'Ingresa tu correo electrónico.';
     } else if (!EMAIL_PATTERN.test(form.email)) {
-        errors.email = 'Ingresá un correo electrónico válido.';
+        errors.email = 'Ingresa un correo electrónico válido.';
     }
 
     if (form.password === '') {
-        errors.password = 'Ingresá una contraseña.';
+        errors.password = 'Ingresa una contraseña.';
     } else if (form.password.length < 8) {
         errors.password = 'La contraseña debe tener al menos 8 caracteres.';
     }
@@ -149,6 +156,7 @@ function submit() {
                 :tabindex="1"
                 placeholder="Eco Adventures"
                 :aria-invalid="Boolean(errors.agency_name)"
+                @input="clearFieldError('agency_name')"
             />
             <InputError :message="errors.agency_name" />
         </div>
@@ -158,6 +166,7 @@ function submit() {
             :status="subdomainStatus"
             :reason="subdomainReason"
             :error="errors.subdomain"
+            @update:model-value="clearFieldError('subdomain')"
             :tabindex="2"
         />
 
@@ -171,6 +180,7 @@ function submit() {
                 :tabindex="3"
                 placeholder="Ana Gómez"
                 :aria-invalid="Boolean(errors.founder_name)"
+                @input="clearFieldError('founder_name')"
             />
             <InputError :message="errors.founder_name" />
         </div>
@@ -185,6 +195,7 @@ function submit() {
                 :tabindex="4"
                 placeholder="ana@eco.com"
                 :aria-invalid="Boolean(errors.email)"
+                @input="clearFieldError('email')"
             />
             <InputError :message="errors.email" />
         </div>
@@ -198,6 +209,10 @@ function submit() {
                 :tabindex="5"
                 placeholder="Mínimo 8 caracteres"
                 :aria-invalid="Boolean(errors.password)"
+                @input="
+                    clearFieldError('password');
+                    clearFieldError('password_confirmation');
+                "
             />
             <InputError :message="errors.password" />
         </div>
@@ -209,8 +224,9 @@ function submit() {
                 v-model="form.password_confirmation"
                 autocomplete="new-password"
                 :tabindex="6"
-                placeholder="Repetí la contraseña"
+                placeholder="Repite la contraseña"
                 :aria-invalid="Boolean(errors.password_confirmation)"
+                @input="clearFieldError('password_confirmation')"
             />
             <InputError :message="errors.password_confirmation" />
         </div>

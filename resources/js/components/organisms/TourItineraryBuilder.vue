@@ -84,7 +84,7 @@ function errorFor(index: number, field: string): string | undefined {
             v-if="modelValue.length === 0"
             class="rounded-md border border-dashed border-input p-6 text-center text-sm text-muted-foreground"
         >
-            Aún no agregaste pasos. Empezá con la salida y la actividad
+            Aún no agregaste pasos. Empieza con la salida y la actividad
             principal.
         </div>
 

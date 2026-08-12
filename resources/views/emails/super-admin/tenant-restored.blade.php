@@ -23,7 +23,7 @@
                                 {{ __('Tu agencia :tenant ya está activa nuevamente.', ['tenant' => $tenantName]) }}
                             </p>
                             <p style="margin:0;font-size:15px;line-height:1.6;">
-                                {{ __('Podés acceder normalmente al panel de administración.') }}
+                                {{ __('Puedes acceder normalmente al panel de administración.') }}
                             </p>
                         </td>
                     </tr>

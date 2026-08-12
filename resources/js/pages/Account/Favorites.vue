@@ -73,9 +73,9 @@ function formatPrice(amount: string, currency: string) {
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tenés tours favoritos todavía</p>
+                <p class="font-medium">No tienes tours favoritos todavía</p>
                 <p class="text-sm text-muted-foreground">
-                    Guardá tus tours favoritos para encontrarlos fácilmente.
+                    Guarda tus tours favoritos para encontrarlos fácilmente.
                 </p>
             </div>
             <Link href="/tours">

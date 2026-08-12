@@ -252,7 +252,7 @@ onMounted(() => {
             <div>
                 <h2 class="text-lg font-semibold text-foreground">Salidas</h2>
                 <p class="text-sm text-muted-foreground">
-                    Programá las fechas de este producto con sus condiciones.
+                    Programa las fechas de este producto con sus condiciones.
                 </p>
             </div>
             <Button size="sm" @click="openCreate">
@@ -321,7 +321,7 @@ onMounted(() => {
                 v-if="activeTab === 'upcoming'"
                 class="mt-1 text-sm text-muted-foreground"
             >
-                Creá la primera salida para que aparezca en el catálogo.
+                Crea la primera salida para que aparezca en el catálogo.
             </p>
         </div>
 

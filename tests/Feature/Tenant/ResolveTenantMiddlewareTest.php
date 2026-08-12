@@ -86,7 +86,9 @@ class ResolveTenantMiddlewareTest extends TestCase
 
     public function test_allows_reserved_host_without_tenant(): void
     {
-        $response = $this->get('http://www.montree.test/_test/tenant-context');
+        // WHY: `localhost` is reserved but sits outside the platform apex, so it
+        // is not swallowed by App\Http\Middleware\RedirectToPlatformHost.
+        $response = $this->get('http://localhost/_test/tenant-context');
 
         $response->assertOk();
         $response->assertJsonPath('tenant_id', null);

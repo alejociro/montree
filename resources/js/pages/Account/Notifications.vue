@@ -107,9 +107,9 @@ onMounted(load);
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tenés notificaciones todavía</p>
+                <p class="font-medium">No tienes notificaciones todavía</p>
                 <p class="text-sm text-muted-foreground">
-                    Acá vas a ver las novedades sobre tus reservas y tours.
+                    Aquí vas a ver las novedades sobre tus reservas y tours.
                 </p>
             </div>
         </div>

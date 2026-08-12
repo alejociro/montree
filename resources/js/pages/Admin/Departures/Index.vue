@@ -569,8 +569,8 @@ onMounted(() => {
                         <p class="text-sm text-muted-foreground">
                             {{
                                 hasActiveFilters
-                                    ? 'Probá ajustar o limpiar los filtros.'
-                                    : 'Programá salidas desde el detalle de cada producto.'
+                                    ? 'Prueba ajustar o limpiar los filtros.'
+                                    : 'Programa salidas desde el detalle de cada producto.'
                             }}
                         </p>
                     </div>

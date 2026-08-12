@@ -24,6 +24,7 @@ type Props = {
     minorsCount: number;
     travelers: BookingTraveler[];
     required: boolean;
+    contact?: { name: string; phone: string | null } | null;
 };
 
 const props = defineProps<Props>();
@@ -72,15 +73,35 @@ function slotFromTraveler(traveler: BookingTraveler): TravelerSlot {
     };
 }
 
+/**
+ * WHY: on a group booking the first adult is always the person filling the
+ * form, so retyping their own name and phone is pure friction. Only seeded on
+ * an empty first slot — a saved traveler always wins.
+ */
+function seededFirstAdult(): TravelerSlot {
+    const slot = blankSlot(false);
+
+    if (props.contact) {
+        slot.full_name = props.contact.name;
+        slot.phone = props.contact.phone ?? '';
+    }
+
+    return slot;
+}
+
 function buildSlots(): TravelerSlot[] {
     const existingAdults = props.travelers.filter((t) => !t.is_minor);
     const existingMinors = props.travelers.filter((t) => t.is_minor);
 
-    const adultSlots = Array.from({ length: props.adultsCount }, (_, index) =>
-        existingAdults[index]
-            ? slotFromTraveler(existingAdults[index])
-            : blankSlot(false),
-    );
+    const adultSlots = Array.from({ length: props.adultsCount }, (_, index) => {
+        if (existingAdults[index]) {
+            return slotFromTraveler(existingAdults[index]);
+        }
+
+        return index === 0 && existingAdults.length === 0
+            ? seededFirstAdult()
+            : blankSlot(false);
+    });
 
     const minorSlots = Array.from({ length: props.minorsCount }, (_, index) =>
         existingMinors[index]
