@@ -8,7 +8,7 @@ const highlights = [
     {
         icon: CalendarCheck,
         title: 'Reservas 24/7',
-        body: 'Recibí y confirmá reservas automáticamente, sin responder un solo WhatsApp.',
+        body: 'Recibe y confirma reservas automáticamente, sin responder un solo WhatsApp.',
     },
     {
         icon: BarChart3,
@@ -25,7 +25,7 @@ const highlights = [
 
 <template>
     <div class="min-h-svh bg-background text-foreground lg:grid lg:grid-cols-2">
-        <Head title="Creá tu agencia — Montree" />
+        <Head title="Crea tu agencia — Montree" />
 
         <aside
             class="relative hidden overflow-hidden bg-emerald-900 px-10 py-12 text-emerald-50 lg:flex lg:flex-col lg:justify-between"
@@ -61,7 +61,7 @@ const highlights = [
                 <h1
                     class="text-3xl font-semibold tracking-tight text-white sm:text-4xl"
                 >
-                    Poné tu agencia de ecoturismo en línea en minutos.
+                    Pon tu agencia de ecoturismo en línea en minutos.
                 </h1>
 
                 <ul class="space-y-5">
@@ -113,10 +113,10 @@ const highlights = [
 
                 <div class="mb-8 space-y-2">
                     <h2 class="text-2xl font-semibold tracking-tight">
-                        Creá tu agencia
+                        Crea tu agencia
                     </h2>
                     <p class="text-sm text-muted-foreground">
-                        Completá tus datos y empezá tu prueba gratis. Activás tu
+                        Completa tus datos y empieza tu prueba gratis. Activas tu
                         cuenta confirmando tu email.
                     </p>
                 </div>
@@ -124,12 +124,12 @@ const highlights = [
                 <AgencySignupForm />
 
                 <p class="mt-6 text-center text-sm text-muted-foreground">
-                    ¿Ya tenés una agencia?
+                    ¿Ya tienes una agencia?
                     <Link
                         :href="login().url"
                         class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                     >
-                        Iniciá sesión
+                        Inicia sesión
                     </Link>
                 </p>
             </div>

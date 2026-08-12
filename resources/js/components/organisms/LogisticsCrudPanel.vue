@@ -160,7 +160,7 @@ function submit(): void {
         },
         onError: (received: ApiErrors) => {
             errors.value = received;
-            toast.error(received._global ?? 'Revisá los campos marcados.');
+            toast.error(received._global ?? 'Revisa los campos marcados.');
         },
         onFinish: () => {
             processing.value = false;
@@ -242,7 +242,7 @@ onMounted(load);
         >
             <p class="font-medium text-foreground">{{ emptyLabel }}</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Creá el primero para reutilizarlo en tus salidas.
+                Crea el primero para reutilizarlo en tus salidas.
             </p>
         </div>
 

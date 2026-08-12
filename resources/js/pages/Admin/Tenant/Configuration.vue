@@ -146,7 +146,7 @@ function submit(): void {
 
             form.setError(errors);
             toast.error(
-                'No se pudieron guardar los cambios. Revisá los campos marcados.',
+                'No se pudieron guardar los cambios. Revisa los campos marcados.',
             );
         },
         onFinish: () => {
@@ -168,7 +168,7 @@ function resetForm(): void {
     <div class="px-4 py-6 md:px-8">
         <Heading
             title="Configuración de la agencia"
-            description="Personalizá la identidad visual, configuración operativa y enlaces de tu agencia."
+            description="Personaliza la identidad visual, configuración operativa y enlaces de tu agencia."
         />
 
         <div v-if="!tenant" class="mt-6">
@@ -176,7 +176,7 @@ function resetForm(): void {
                 <AlertCircle class="size-4" />
                 <AlertTitle>No hay tenant resuelto</AlertTitle>
                 <AlertDescription>
-                    No se pudo identificar la agencia. Verificá que estás
+                    No se pudo identificar la agencia. Verifica que estás
                     accediendo desde el subdominio correcto.
                 </AlertDescription>
             </Alert>
@@ -255,7 +255,7 @@ function resetForm(): void {
                         v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
-                        Tenés cambios sin guardar.
+                        Tienes cambios sin guardar.
                     </span>
                 </div>
             </form>

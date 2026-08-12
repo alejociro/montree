@@ -29,7 +29,7 @@
                         <td style="padding:32px;">
                             <p style="margin:0 0 16px 0;font-size:16px;">{{ __('Hola :name,', ['name' => $recipientName]) }}</p>
                             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
-                                {{ __('Gracias por sumarte a :tenant. Para activar tu cuenta y poder reservar tus próximas aventuras, confirmá tu correo electrónico haciendo clic en el botón.', ['tenant' => $tenantName]) }}
+                                {{ __('Gracias por sumarte a :tenant. Para activar tu cuenta y poder reservar tus próximas aventuras, confirma tu correo electrónico haciendo clic en el botón.', ['tenant' => $tenantName]) }}
                             </p>
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
                                 <tr>
@@ -44,10 +44,10 @@
                                 {{ __('Este enlace expira en :minutes minutos.', ['minutes' => $expiresInMinutes]) }}
                             </p>
                             <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">
-                                {{ __('Si no creaste esta cuenta, podés ignorar este mensaje.') }}
+                                {{ __('Si no creaste esta cuenta, puedes ignorar este mensaje.') }}
                             </p>
                             <p style="margin:24px 0 0 0;font-size:13px;color:#6b7280;word-break:break-all;">
-                                {{ __('¿No funciona el botón? Copiá y pegá este enlace en tu navegador:') }}<br>
+                                {{ __('¿No funciona el botón? Copia y pega este enlace en tu navegador:') }}<br>
                                 <a href="{{ $verificationUrl }}" style="color:{{ $primaryColor }};">{{ $verificationUrl }}</a>
                             </p>
                         </td>

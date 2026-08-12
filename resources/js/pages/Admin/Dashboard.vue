@@ -186,7 +186,7 @@ watch(period, () => {
         >
             <h3 class="text-base font-semibold">Bienvenido al dashboard</h3>
             <p class="mt-2 text-sm text-muted-foreground">
-                Cuando empieces a recibir reservas vas a ver acá tus métricas.
+                Cuando empieces a recibir reservas vas a ver aquí tus métricas.
             </p>
         </div>
     </div>

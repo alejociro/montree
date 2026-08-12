@@ -473,8 +473,8 @@ function dateOptionLabel(date: TourDetailDate): string {
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{
                                 tour.future_dates.length === 0
-                                    ? 'Todavía no hay salidas programadas para esta experiencia. Volvé pronto para reservar.'
-                                    : 'Por ahora no quedan cupos abiertos. Volvé pronto para nuevas salidas.'
+                                    ? 'Todavía no hay salidas programadas para esta experiencia. Vuelve pronto para reservar.'
+                                    : 'Por ahora no quedan cupos abiertos. Vuelve pronto para nuevas salidas.'
                             }}
                         </p>
                     </div>

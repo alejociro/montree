@@ -29,7 +29,7 @@
                                 <strong>{{ __('Plan actual: :new', ['new' => $newPlan]) }}</strong>
                             </p>
                             <p style="margin:24px 0 0 0;font-size:13px;color:#6b7280;">
-                                {{ __('Los nuevos límites aplican de inmediato. Si tenés dudas, escribinos.') }}
+                                {{ __('Los nuevos límites aplican de inmediato. Si tienes dudas, escríbenos.') }}
                             </p>
                         </td>
                     </tr>

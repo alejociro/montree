@@ -176,7 +176,7 @@ function removeImage(): void {
             <ImagePlus v-else class="size-8 text-muted-foreground" />
 
             <p class="text-sm text-muted-foreground">
-                Arrastrá una imagen acá o usá el botón.
+                Arrastra una imagen aquí o usa el botón.
             </p>
             <Button
                 type="button"
@@ -240,7 +240,7 @@ function removeImage(): void {
         </div>
 
         <p v-else class="text-xs text-muted-foreground">
-            Aún no hay imágenes. Subí al menos una para activar el tour.
+            Aún no hay imágenes. Sube al menos una para activar el tour.
         </p>
 
         <Dialog v-model:open="deleteDialog">
@@ -248,7 +248,7 @@ function removeImage(): void {
                 <DialogHeader>
                     <DialogTitle>Eliminar imagen</DialogTitle>
                     <DialogDescription>
-                        ¿Estás seguro de que querés eliminar esta imagen? Esta
+                        ¿Estás seguro de que quieres eliminar esta imagen? Esta
                         acción no se puede deshacer.
                     </DialogDescription>
                 </DialogHeader>

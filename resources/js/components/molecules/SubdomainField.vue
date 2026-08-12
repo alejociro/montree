@@ -75,15 +75,15 @@ const statusMessage = computed(() => {
             case 'taken':
                 return 'Ese subdominio ya fue reclamado.';
             case 'reserved':
-                return 'Ese subdominio está reservado, elegí otro.';
+                return 'Ese subdominio está reservado, elige otro.';
             case 'invalid_format':
-                return 'Usá solo minúsculas, números y guiones.';
+                return 'Usa solo minúsculas, números y guiones.';
             default:
                 return 'Ese subdominio no está disponible.';
         }
     }
 
-    return 'Podés usar letras minúsculas, números y guiones.';
+    return 'Puedes usar letras minúsculas, números y guiones.';
 });
 
 const statusTone = computed(() => {

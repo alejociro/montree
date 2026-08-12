@@ -51,7 +51,7 @@ final class VerifyAgencyEmail extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Activá tu agencia en MONTREE'))
+            ->subject(__('Activa tu agencia en MONTREE'))
             ->view('emails.verify-agency', [
                 'agencyName' => $this->agencyName,
                 'primaryColor' => $this->primaryColor,

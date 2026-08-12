@@ -59,7 +59,7 @@ function buildExportUrl(): string {
 
 async function submit(): Promise<void> {
     if (!from.value || !to.value) {
-        toast.error('Seleccioná un rango de fechas.');
+        toast.error('Selecciona un rango de fechas.');
 
         return;
     }
@@ -123,7 +123,7 @@ function handleFormatChange(value: AcceptableValue): void {
             <DialogHeader>
                 <DialogTitle>Exportar reporte de ingresos</DialogTitle>
                 <DialogDescription>
-                    Seleccioná el rango y formato del reporte.
+                    Selecciona el rango y formato del reporte.
                 </DialogDescription>
             </DialogHeader>
 

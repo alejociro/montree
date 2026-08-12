@@ -91,7 +91,7 @@ function submit(): void {
             <DialogHeader>
                 <DialogTitle>Agregar usuario</DialogTitle>
                 <DialogDescription>
-                    Sumá un miembro al equipo de esta agencia. Recibirá un correo
+                    Agrega un miembro al equipo de esta agencia. Recibirá un correo
                     para establecer su contraseña.
                 </DialogDescription>
             </DialogHeader>

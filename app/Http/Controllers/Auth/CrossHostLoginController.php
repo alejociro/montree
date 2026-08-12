@@ -22,7 +22,7 @@ final class CrossHostLoginController extends Controller
 
         if ($payload === null) {
             return redirect()->route('login')->withErrors([
-                'email' => __('El enlace de acceso expiró o ya fue usado. Iniciá sesión de nuevo.'),
+                'email' => __('El enlace de acceso expiró o ya fue usado. Inicia sesión de nuevo.'),
             ]);
         }
 

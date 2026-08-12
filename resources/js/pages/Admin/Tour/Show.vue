@@ -336,7 +336,7 @@ const mapsUrl = computed(() => {
                         Sin salidas programadas
                     </p>
                     <p class="text-sm text-muted-foreground">
-                        Programá una salida para empezar a recibir reservas.
+                        Programa una salida para empezar a recibir reservas.
                     </p>
                 </div>
                 <Link :href="editPage({ tour: props.tour.id }).url">

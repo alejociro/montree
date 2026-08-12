@@ -37,7 +37,7 @@ const { isResolved, displayName } = useTenant();
     <Form
         v-bind="store.form()"
         :reset-on-success="['password', 'password_confirmation']"
-        v-slot="{ errors, processing }"
+        v-slot="{ errors, processing, clearErrors }"
         class="flex flex-col gap-6"
     >
         <div class="grid gap-6">
@@ -52,6 +52,7 @@ const { isResolved, displayName } = useTenant();
                     autocomplete="name"
                     name="name"
                     placeholder="Tu nombre completo"
+                    @input="clearErrors('name')"
                 />
                 <InputError :message="errors.name" />
             </div>
@@ -66,6 +67,7 @@ const { isResolved, displayName } = useTenant();
                     autocomplete="email"
                     name="email"
                     placeholder="tu@correo.com"
+                    @input="clearErrors('email')"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -80,6 +82,7 @@ const { isResolved, displayName } = useTenant();
                     name="password"
                     placeholder="Contraseña"
                     :passwordrules="passwordRules"
+                    @input="clearErrors('password', 'password_confirmation')"
                 />
                 <InputError :message="errors.password" />
             </div>
@@ -94,6 +97,7 @@ const { isResolved, displayName } = useTenant();
                     name="password_confirmation"
                     placeholder="Confirmar contraseña"
                     :passwordrules="passwordRules"
+                    @input="clearErrors('password_confirmation')"
                 />
                 <InputError :message="errors.password_confirmation" />
             </div>

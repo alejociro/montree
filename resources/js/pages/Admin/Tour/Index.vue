@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Eye, Pencil, Plus } from 'lucide-vue-next';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    Pencil,
+    Plus,
+} from 'lucide-vue-next';
 import { onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import {
@@ -49,6 +55,7 @@ const filters = ref<FilterValue>({
 const tours = ref<TourSummary[]>([]);
 const meta = ref<PaginatedTours['meta'] | null>(null);
 const loading = ref(false);
+const page = ref(1);
 const { currency } = useTenant();
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -57,7 +64,7 @@ async function fetchTours(): Promise<void> {
     loading.value = true;
 
     try {
-        const params: Record<string, string> = {};
+        const params: Record<string, string> = { page: String(page.value) };
 
         if (filters.value.status !== 'all') {
             params.status = filters.value.status;
@@ -91,6 +98,24 @@ async function fetchTours(): Promise<void> {
     }
 }
 
+// WHY: any filter change invalidates the current page — staying on page 4 of a
+// narrower result set would render an empty list.
+function resetAndFetch(): void {
+    page.value = 1;
+    void fetchTours();
+}
+
+function goToPage(target: number): void {
+    const lastPage = meta.value?.last_page ?? 1;
+
+    if (target < 1 || target > lastPage || target === page.value) {
+        return;
+    }
+
+    page.value = target;
+    void fetchTours();
+}
+
 watch(
     () => filters.value.search,
     () => {
@@ -98,12 +123,12 @@ watch(
             clearTimeout(searchDebounce);
         }
 
-        searchDebounce = setTimeout(fetchTours, 300);
+        searchDebounce = setTimeout(resetAndFetch, 300);
     },
 );
 
-watch(() => filters.value.status, fetchTours);
-watch(() => filters.value.category_id, fetchTours);
+watch(() => filters.value.status, resetAndFetch);
+watch(() => filters.value.category_id, resetAndFetch);
 
 onMounted(fetchTours);
 
@@ -129,7 +154,7 @@ function formatPrice(amount: string, code: string): string {
         <div class="flex items-start justify-between gap-4">
             <Heading
                 title="Productos"
-                description="Gestioná el catálogo de experiencias de tu agencia."
+                description="Gestiona el catálogo de experiencias de tu agencia."
             />
             <Link :href="createPage().url">
                 <Button>
@@ -181,7 +206,7 @@ function formatPrice(amount: string, code: string): string {
                 <div class="space-y-1">
                     <p class="font-medium">Aún no hay productos</p>
                     <p class="text-sm text-muted-foreground">
-                        Creá tu primer producto para empezar a recibir reservas.
+                        Crea tu primer producto para empezar a recibir reservas.
                     </p>
                 </div>
                 <Link :href="createPage().url">
@@ -267,10 +292,36 @@ function formatPrice(amount: string, code: string): string {
 
             <div
                 v-if="meta && meta.total > 0"
-                class="mt-6 text-xs text-muted-foreground"
+                class="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
-                Mostrando {{ meta.from ?? 0 }} – {{ meta.to ?? 0 }} de
-                {{ meta.total }} productos
+                <p class="text-xs text-muted-foreground">
+                    Mostrando {{ meta.from ?? 0 }} – {{ meta.to ?? 0 }} de
+                    {{ meta.total }} productos
+                </p>
+
+                <div v-if="meta.last_page > 1" class="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="loading || meta.current_page <= 1"
+                        @click="goToPage(meta.current_page - 1)"
+                    >
+                        <ChevronLeft class="size-4" />
+                        Anterior
+                    </Button>
+                    <span class="text-xs text-muted-foreground">
+                        Página {{ meta.current_page }} de {{ meta.last_page }}
+                    </span>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="loading || meta.current_page >= meta.last_page"
+                        @click="goToPage(meta.current_page + 1)"
+                    >
+                        Siguiente
+                        <ChevronRight class="size-4" />
+                    </Button>
+                </div>
             </div>
         </div>
     </div>

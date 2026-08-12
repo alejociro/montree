@@ -25,7 +25,7 @@ function resend() {
     emailError.value = null;
 
     if (!EMAIL_PATTERN.test(email.value)) {
-        emailError.value = 'Ingresá un correo electrónico válido.';
+        emailError.value = 'Ingresa un correo electrónico válido.';
 
         return;
     }
@@ -84,7 +84,7 @@ function resend() {
                 Este enlace de verificación expiró
             </h1>
             <p class="mt-3 text-sm text-muted-foreground">
-                Los enlaces de confirmación caducan por seguridad. Ingresá tu
+                Los enlaces de confirmación caducan por seguridad. Ingresa tu
                 correo y te enviamos uno nuevo.
             </p>
 
@@ -133,7 +133,7 @@ function resend() {
                     :href="login().url"
                     class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                 >
-                    Iniciá sesión
+                    Inicia sesión
                 </Link>
             </p>
         </div>

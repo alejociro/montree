@@ -19,8 +19,8 @@ const resent = ref(false);
 
 const heading = computed(() =>
     props.agencyName
-        ? `Revisá tu email para activar ${props.agencyName}`
-        : 'Revisá tu email para activar tu agencia',
+        ? `Revisa tu email para activar ${props.agencyName}`
+        : 'Revisa tu email para activar tu agencia',
 );
 
 function resend() {
@@ -51,7 +51,7 @@ function resend() {
     <div
         class="flex min-h-svh flex-col items-center justify-center bg-background px-6 py-12 text-foreground"
     >
-        <Head title="Revisá tu email — Montree" />
+        <Head title="Revisa tu email — Montree" />
 
         <Link :href="home().url" class="mb-10 inline-flex items-center gap-2">
             <span
@@ -93,7 +93,7 @@ function resend() {
 
             <div class="mt-8 space-y-3">
                 <p class="text-sm text-muted-foreground">
-                    ¿No lo recibiste? Revisá spam o volvé a enviarlo.
+                    ¿No lo recibiste? Revisa spam o vuelve a enviarlo.
                 </p>
                 <Button
                     v-if="email"
@@ -114,7 +114,7 @@ function resend() {
                     :href="login().url"
                     class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                 >
-                    Iniciá sesión
+                    Inicia sesión
                 </Link>
             </p>
         </div>

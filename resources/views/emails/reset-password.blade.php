@@ -44,10 +44,10 @@
                                 {{ __('Este enlace expira en :minutes minutos.', ['minutes' => $expiresInMinutes]) }}
                             </p>
                             <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">
-                                {{ __('Si no hiciste esta reserva, ignorá este mensaje.') }}
+                                {{ __('Si no hiciste esta reserva, ignora este mensaje.') }}
                             </p>
                             <p style="margin:24px 0 0 0;font-size:13px;color:#6b7280;word-break:break-all;">
-                                {{ __('¿No funciona el botón? Copiá y pegá este enlace en tu navegador:') }}<br>
+                                {{ __('¿No funciona el botón? Copia y pega este enlace en tu navegador:') }}<br>
                                 <a href="{{ $resetUrl }}" style="color:{{ $primaryColor }};">{{ $resetUrl }}</a>
                             </p>
                         </td>

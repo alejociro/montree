@@ -19,6 +19,8 @@ use App\Http\Middleware\EnsureTenantGuide;
 use App\Http\Middleware\EnsureTenantMember;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectRegistrationToOnboarding;
+use App\Http\Middleware\RedirectToPlatformHost;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -53,7 +55,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(prepend: [
+            RedirectToPlatformHost::class,
             ResolveTenant::class,
+            RedirectRegistrationToOnboarding::class,
         ]);
 
         $middleware->web(append: [

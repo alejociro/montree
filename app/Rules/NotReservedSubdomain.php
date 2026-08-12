@@ -18,7 +18,7 @@ final class NotReservedSubdomain implements ValidationRule
         }
 
         $slug = mb_strtolower($value);
-        $platformHost = (string) Config::get('montree.super_admin_host', 'montree.test');
+        $platformHost = (string) Config::get('montree.platform_host', 'montree.test');
 
         if (SubdomainTenantFinder::isReservedSlug($slug) || SubdomainTenantFinder::isReservedHost($slug.'.'.$platformHost)) {
             $fail(__('Ese subdominio no está disponible.'));

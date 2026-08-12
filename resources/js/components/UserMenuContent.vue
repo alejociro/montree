@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { Bell, Heart, LogOut, Settings, Ticket } from 'lucide-vue-next';
+import {
+    Bell,
+    CalendarDays,
+    Heart,
+    LayoutDashboard,
+    LogOut,
+    Settings,
+    Ticket,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -9,6 +18,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
 import { logout } from '@/routes';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import { schedule as guideSchedule } from '@/routes/guide';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -20,7 +31,30 @@ const handleLogout = () => {
     router.flushAll();
 };
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+// WHY: the traveller area (`/account/*`) and the agency panel share this menu.
+// Without this entry a tenant admin who opens "Mis reservas" has no way back to
+// their panel and looks demoted to a plain customer.
+const workspace = computed(() => {
+    if (props.user.tenantRole === 'admin' || props.user.tenantRole === 'operator') {
+        return {
+            href: adminDashboard().url,
+            label: 'Panel de la agencia',
+            icon: LayoutDashboard,
+        };
+    }
+
+    if (props.user.tenantRole === 'guide') {
+        return {
+            href: guideSchedule().url,
+            label: 'Mi agenda de salidas',
+            icon: CalendarDays,
+        };
+    }
+
+    return null;
+});
 </script>
 
 <template>
@@ -30,6 +64,17 @@ defineProps<Props>();
         </div>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
+    <template v-if="workspace">
+        <DropdownMenuGroup>
+            <DropdownMenuItem :as-child="true">
+                <Link class="block w-full cursor-pointer" :href="workspace.href">
+                    <component :is="workspace.icon" class="mr-2 h-4 w-4" />
+                    {{ workspace.label }}
+                </Link>
+            </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+    </template>
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" href="/account/bookings">

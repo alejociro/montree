@@ -47,7 +47,7 @@ final class RegisterAgencyAction
         $tenant = Tenant::query()->create([
             'name' => $data['agency_name'],
             'slug' => $slug,
-            'domain' => $slug.'.'.Config::get('montree.super_admin_host'),
+            'domain' => $slug.'.'.Config::get('montree.platform_host'),
             'contact_email' => $email,
             'status' => TenantStatus::Pending,
             'plan' => $this->defaultPlan(),

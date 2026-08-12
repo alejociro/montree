@@ -95,7 +95,7 @@ function formatTime(date: string): string {
             v-else-if="items.length === 0"
             class="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
         >
-            No tenés tours asignados próximamente.
+            No tienes tours asignados próximamente.
         </div>
         <ul v-else class="space-y-3">
             <li

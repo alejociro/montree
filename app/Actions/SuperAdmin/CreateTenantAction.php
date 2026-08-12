@@ -31,7 +31,7 @@ final class CreateTenantAction
             $tenant = Tenant::query()->create([
                 'name' => $data['name'],
                 'slug' => $slug,
-                'domain' => $slug.'.'.Config::get('montree.super_admin_host'),
+                'domain' => $slug.'.'.Config::get('montree.platform_host'),
                 'contact_email' => $adminEmail,
                 'status' => TenantStatus::Active,
                 'plan' => TenantPlan::from($data['plan']),

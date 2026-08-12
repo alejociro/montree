@@ -122,7 +122,7 @@ function submit(): void {
             <DialogHeader>
                 <DialogTitle>Crear tenant</DialogTitle>
                 <DialogDescription>
-                    Registrá una nueva agencia y su administrador inicial. El
+                    Registra una nueva agencia y su administrador inicial. El
                     admin recibirá un correo para establecer su contraseña.
                 </DialogDescription>
             </DialogHeader>

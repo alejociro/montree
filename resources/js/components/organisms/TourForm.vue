@@ -193,7 +193,7 @@ const meetingErrors = computed(() => ({
             <Heading
                 variant="small"
                 title="Precio y capacidad"
-                description="Configurá la economía del tour."
+                description="Configura la economía del tour."
             />
 
             <div class="grid gap-6 md:grid-cols-2">

@@ -202,7 +202,7 @@ function submit(): void {
         onError: (received: ApiErrors) => {
             errors.value = received;
             toast.error(
-                received._global ?? 'Revisá los campos marcados.',
+                received._global ?? 'Revisa los campos marcados.',
             );
         },
         onFinish: () => {
@@ -239,7 +239,7 @@ function submit(): void {
                     {{ isEditing ? 'Editar salida' : 'Nueva salida' }}
                 </DialogTitle>
                 <DialogDescription>
-                    Definí la fecha, la capacidad y las condiciones especiales de
+                    Define la fecha, la capacidad y las condiciones especiales de
                     esta salida.
                 </DialogDescription>
             </DialogHeader>

@@ -53,7 +53,7 @@ final class EnsureTenantMember
     private function denyMembership(Request $request): Response
     {
         if ($request->expectsJson()) {
-            abort(403, __('No tenés acceso a esta agencia.'));
+            abort(403, __('No tienes acceso a esta agencia.'));
         }
 
         Auth::guard('web')->logout();
@@ -61,7 +61,7 @@ final class EnsureTenantMember
         $request->session()->regenerateToken();
 
         return redirect()->route('login')->withErrors([
-            'email' => __('No tenés una cuenta activa en esta agencia.'),
+            'email' => __('No tienes una cuenta activa en esta agencia.'),
         ]);
     }
 }
