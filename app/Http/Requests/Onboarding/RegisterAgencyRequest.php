@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Onboarding;
 
+use App\Concerns\LowercasesInput;
 use App\Concerns\PasswordValidationRules;
 use App\Models\User;
 use App\Rules\NotReservedSubdomain;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
 
 final class RegisterAgencyRequest extends FormRequest
 {
+    use LowercasesInput;
     use PasswordValidationRules;
 
     public function authorize(): bool
@@ -22,10 +24,7 @@ final class RegisterAgencyRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'subdomain' => is_string($this->input('subdomain')) ? mb_strtolower($this->input('subdomain')) : $this->input('subdomain'),
-            'email' => is_string($this->input('email')) ? mb_strtolower($this->input('email')) : $this->input('email'),
-        ]);
+        $this->lowercaseInput('subdomain', 'email');
     }
 
     public function rules(): array

@@ -70,6 +70,35 @@ class TenantStoreControllerTest extends TestCase
         Notification::assertSentTo($admin, TenantUserInvitationNotification::class);
     }
 
+    public function test_normalizes_slug_and_admin_email_before_persisting(): void
+    {
+        Notification::fake();
+        Role::findOrCreate(UserRole::Admin->value, 'web');
+
+        $superAdmin = $this->superAdmin();
+
+        $response = $this->actingAs($superAdmin)->postJson(
+            'http://montree.test/api/v1/super-admin/tenants',
+            [
+                'name' => 'Eco Adventures',
+                'slug' => 'Eco-Adventures',
+                'plan' => 'professional',
+                'admin_name' => 'Jane Owner',
+                'admin_email' => 'JANE@Eco.test',
+            ],
+        );
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.slug', 'eco-adventures');
+
+        $tenant = Tenant::query()->sole();
+        $this->assertSame('eco-adventures', $tenant->slug);
+        $this->assertSame('eco-adventures.montree.test', $tenant->domain);
+        $this->assertSame('jane@eco.test', $tenant->contact_email);
+
+        $this->assertSame('jane@eco.test', User::query()->whereKeyNot($superAdmin->id)->sole()->email);
+    }
+
     public function test_duplicate_slug_is_rejected(): void
     {
         Tenant::factory()->create(['slug' => 'taken']);

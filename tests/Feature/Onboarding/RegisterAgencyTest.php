@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Onboarding;
 
+use App\Actions\Onboarding\RegisterAgencyAction;
 use App\Enums\TenantStatus;
 use App\Exceptions\SubdomainTakenException;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\Onboarding\VerifyAgencyEmail;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +91,23 @@ class RegisterAgencyTest extends TestCase
         $this->assertTrue($founder->hasRole('admin'));
 
         Notification::assertSentTo($founder, VerifyAgencyEmail::class);
+    }
+
+    public function test_normalizes_subdomain_and_email_before_persisting(): void
+    {
+        Notification::fake();
+
+        $this->register([
+            'subdomain' => 'Eco-Adventures',
+            'email' => 'ANA@Eco.com',
+        ])->assertRedirect(route('onboarding.check-email'));
+
+        $tenant = Tenant::query()->sole();
+        $this->assertSame('eco-adventures', $tenant->slug);
+        $this->assertSame('eco-adventures.montree.test', $tenant->domain);
+        $this->assertSame('ana@eco.com', $tenant->contact_email);
+
+        $this->assertSame('ana@eco.com', User::query()->sole()->email);
     }
 
     public function test_rejects_taken_subdomain(): void
@@ -192,6 +211,24 @@ class RegisterAgencyTest extends TestCase
         $response->assertRedirect('http://montree.test/start');
         $response->assertSessionHasErrors(['subdomain' => 'Ese subdominio ya fue reclamado.']);
         $response->assertSessionMissing('_old_input');
+    }
+
+    public function test_translates_a_unique_slug_violation_into_a_subdomain_error(): void
+    {
+        Tenant::factory()->create(['slug' => 'eco-adventures']);
+
+        $this->expectException(SubdomainTakenException::class);
+
+        app(RegisterAgencyAction::class)->handle($this->payload());
+    }
+
+    public function test_does_not_report_a_duplicate_email_as_a_taken_subdomain(): void
+    {
+        User::factory()->create(['email' => 'ana@eco.com']);
+
+        $this->expectException(QueryException::class);
+
+        app(RegisterAgencyAction::class)->handle($this->payload(['subdomain' => 'eco']));
     }
 
     public function test_check_email_page_reads_the_pending_registration_from_the_session(): void

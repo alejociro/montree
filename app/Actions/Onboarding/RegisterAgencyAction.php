@@ -16,6 +16,7 @@ use App\Services\Tenant\AttachUserToTenant;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class RegisterAgencyAction
 {
@@ -23,13 +24,10 @@ final class RegisterAgencyAction
 
     public function handle(array $data): Tenant
     {
-        $slug = mb_strtolower($data['subdomain']);
-        $email = mb_strtolower($data['email']);
-
         try {
-            [$tenant, $founder] = DB::transaction(fn (): array => $this->provision($data, $slug, $email));
+            [$tenant, $founder] = DB::transaction(fn (): array => $this->provision($data));
         } catch (QueryException $e) {
-            throw $this->translateSlugCollision($e, $slug);
+            throw $this->translateSlugCollision($e);
         }
 
         AgencyRegistered::dispatch($tenant, $founder);
@@ -37,13 +35,13 @@ final class RegisterAgencyAction
         return $tenant;
     }
 
-    private function provision(array $data, string $slug, string $email): array
+    private function provision(array $data): array
     {
         $tenant = Tenant::query()->create([
             'name' => $data['agency_name'],
-            'slug' => $slug,
-            'domain' => $slug.'.'.Config::get('montree.platform_host'),
-            'contact_email' => $email,
+            'slug' => $data['subdomain'],
+            'domain' => $data['subdomain'].'.'.Config::get('montree.platform_host'),
+            'contact_email' => $data['email'],
             'status' => TenantStatus::Pending,
             'plan' => $this->defaultPlan(),
         ]);
@@ -52,7 +50,7 @@ final class RegisterAgencyAction
 
         $user = User::query()->create([
             'name' => $data['founder_name'],
-            'email' => $email,
+            'email' => $data['email'],
             'password' => $data['password'],
         ]);
         $user->forceFill(['password_set_at' => now()])->save();
@@ -69,9 +67,12 @@ final class RegisterAgencyAction
         return $plan instanceof TenantPlan ? $plan : TenantPlan::Professional;
     }
 
-    private function translateSlugCollision(QueryException $e, string $slug): QueryException|SubdomainTakenException
+    private function translateSlugCollision(QueryException $e): QueryException|SubdomainTakenException
     {
-        if (str_contains($e->getMessage(), $slug) || str_contains(mb_strtolower($e->getMessage()), 'slug')) {
+        $isIntegrityViolation = (string) $e->getCode() === '23000';
+        $hitTheTenantsTable = Str::contains(Str::lower($e->getMessage()), (new Tenant)->getTable());
+
+        if ($isIntegrityViolation && $hitTheTenantsTable) {
             return new SubdomainTakenException;
         }
 

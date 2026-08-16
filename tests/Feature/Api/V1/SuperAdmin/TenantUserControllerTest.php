@@ -57,6 +57,25 @@ class TenantUserControllerTest extends TestCase
         Notification::assertSentTo($user, TenantUserInvitationNotification::class);
     }
 
+    public function test_normalizes_the_email_before_persisting(): void
+    {
+        Notification::fake();
+        Role::findOrCreate(UserRole::Operator->value, 'web');
+
+        $tenant = Tenant::factory()->create(['slug' => 'demo']);
+        $superAdmin = $this->superAdmin();
+
+        $response = $this->actingAs($superAdmin)->postJson(
+            "http://montree.test/api/v1/super-admin/tenants/{$tenant->id}/users",
+            ['name' => 'New Guide', 'email' => 'GUIDE@Demo.test', 'role' => 'operator'],
+        );
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.email', 'guide@demo.test');
+
+        $this->assertSame('guide@demo.test', User::query()->whereKeyNot($superAdmin->id)->sole()->email);
+    }
+
     public function test_existing_member_is_rejected(): void
     {
         Role::findOrCreate(UserRole::Guide->value, 'web');

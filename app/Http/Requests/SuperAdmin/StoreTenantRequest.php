@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\SuperAdmin;
 
+use App\Concerns\LowercasesInput;
 use App\Enums\TenantPlan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreTenantRequest extends FormRequest
 {
+    use LowercasesInput;
+
     public function authorize(): bool
     {
         return $this->user()?->isSuperAdmin() ?? false;
@@ -39,13 +42,7 @@ class StoreTenantRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('slug')) {
-            $this->merge(['slug' => mb_strtolower(trim((string) $this->input('slug')))]);
-        }
-
-        if ($this->has('admin_email')) {
-            $this->merge(['admin_email' => mb_strtolower(trim((string) $this->input('admin_email')))]);
-        }
+        $this->lowercaseInput('slug', 'admin_email');
     }
 
     public function plan(): TenantPlan

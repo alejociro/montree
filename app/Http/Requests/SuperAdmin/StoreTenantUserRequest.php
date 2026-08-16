@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\SuperAdmin;
 
+use App\Concerns\LowercasesInput;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class StoreTenantUserRequest extends FormRequest
 {
+    use LowercasesInput;
+
     public function authorize(): bool
     {
         $tenant = $this->route('tenant');
@@ -40,8 +43,6 @@ class StoreTenantUserRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('email')) {
-            $this->merge(['email' => mb_strtolower(trim((string) $this->input('email')))]);
-        }
+        $this->lowercaseInput('email');
     }
 }
