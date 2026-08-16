@@ -44,6 +44,24 @@ class DashboardControllerTest extends TestCase
         $this->assertSame(3, $response->json('data.totals.tenants'));
     }
 
+    public function test_metrics_reflect_tenants_created_between_requests(): void
+    {
+        Tenant::factory()->count(2)->create();
+        $superAdmin = $this->superAdmin();
+
+        $first = $this->actingAs($superAdmin)->getJson(
+            'http://admin.montree.test/api/v1/super-admin/dashboard',
+        );
+        $this->assertSame(2, $first->json('data.totals.tenants'));
+
+        Tenant::factory()->create();
+
+        $second = $this->actingAs($superAdmin)->getJson(
+            'http://admin.montree.test/api/v1/super-admin/dashboard',
+        );
+        $this->assertSame(3, $second->json('data.totals.tenants'));
+    }
+
     public function test_regular_authenticated_user_receives_403(): void
     {
         $user = User::factory()->create();
