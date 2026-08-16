@@ -23,4 +23,23 @@ final class UpdateMemberRoleRequest extends FormRequest
             'role' => ['required', 'in:'.implode(',', array_map(fn ($c) => $c->value, [UserRole::Admin, UserRole::Operator, UserRole::Guide, UserRole::Customer]))],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'role.required' => 'Elige un rol.',
+            'role.in' => 'Ese rol no es válido.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['role' => 'rol'];
+    }
 }

@@ -63,6 +63,6 @@ class SubdomainAvailabilityTest extends TestCase
     {
         $this->getJson('http://montree.test/onboarding/subdomain-availability')
             ->assertStatus(422)
-            ->assertJsonValidationErrors('slug');
+            ->assertJsonValidationErrors(['slug' => 'Elige un subdominio.']);
     }
 }

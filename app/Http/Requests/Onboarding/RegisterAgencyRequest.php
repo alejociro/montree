@@ -71,16 +71,10 @@ final class RegisterAgencyRequest extends FormRequest
             'email.email' => 'Correo inválido.',
             'email.unique' => 'No pudimos crear la cuenta con esos datos.',
 
-            'password.required' => 'Ingresa una contraseña.',
-            'password.min' => 'Mínimo :min caracteres.',
-            'password.password.mixed' => 'Combina mayúsculas y minúsculas.',
-            'password.password.letters' => 'Incluye al menos una letra.',
-            'password.password.numbers' => 'Incluye al menos un número.',
-            'password.password.symbols' => 'Incluye al menos un símbolo.',
-            'password.password.uncompromised' => 'Esa contraseña apareció en una filtración. Elige otra.',
-
             'password_confirmation.required' => 'Confirma tu contraseña.',
             'password_confirmation.same' => 'Las contraseñas no coinciden.',
+
+            ...$this->passwordMessages(),
         ];
     }
 

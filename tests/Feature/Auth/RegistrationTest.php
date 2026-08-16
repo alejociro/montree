@@ -103,7 +103,11 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'b',
         ]);
 
-        $response->assertSessionHasErrors(['name', 'email', 'password']);
+        $response->assertSessionHasErrors([
+            'name' => 'Ingresa tu nombre.',
+            'email' => 'Correo inválido.',
+            'password' => 'Las contraseñas no coinciden.',
+        ]);
         $this->assertGuest();
     }
 

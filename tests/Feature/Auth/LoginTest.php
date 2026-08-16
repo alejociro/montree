@@ -109,6 +109,16 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_login_reports_invalid_credentials_in_spanish(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post('http://demo.montree.test/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors(['email' => 'Las credenciales no son válidas.']);
+    }
+
     public function test_login_rate_limit_blocks_after_five_attempts(): void
     {
         $user = User::factory()->create();

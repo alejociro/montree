@@ -27,6 +27,26 @@ final class CheckSubdomainRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'slug.required' => 'Elige un subdominio.',
+            'slug.string' => 'Debe ser texto.',
+            'slug.max' => 'Máximo :max caracteres.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['slug' => 'subdominio'];
+    }
+
     public function slug(): string
     {
         return (string) $this->validated('slug');

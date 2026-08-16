@@ -35,4 +35,20 @@ class PasswordSetupRequest extends FormRequest
             'password' => $this->passwordRules(),
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->passwordMessages();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['password' => 'contraseña'];
+    }
 }

@@ -25,4 +25,32 @@ final class InviteMemberRequest extends FormRequest
             'role' => ['required', 'in:'.implode(',', [UserRole::Admin->value, UserRole::Operator->value, UserRole::Guide->value])],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Ingresa el correo de la persona a invitar.',
+            'email.email' => 'Correo inválido.',
+            'email.max' => 'Máximo :max caracteres.',
+            'name.string' => 'Debe ser texto.',
+            'name.max' => 'Máximo :max caracteres.',
+            'role.required' => 'Elige un rol.',
+            'role.in' => 'Ese rol no es válido.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'email' => 'correo electrónico',
+            'name' => 'nombre',
+            'role' => 'rol',
+        ];
+    }
 }

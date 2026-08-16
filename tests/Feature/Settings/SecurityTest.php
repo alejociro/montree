@@ -126,4 +126,21 @@ class SecurityTest extends TestCase
             ->assertSessionHasErrors('current_password')
             ->assertRedirect(route('security.edit'));
     }
+
+    public function test_password_update_reports_validation_failures_in_spanish()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('security.edit'))
+            ->put(route('user-password.update'), [
+                'current_password' => 'wrong-password',
+                'password' => 'nueva-clave-123',
+                'password_confirmation' => 'otra-cosa-456',
+            ])
+            ->assertSessionHasErrors([
+                'current_password' => 'La contraseña actual no es correcta.',
+                'password' => 'Las contraseñas no coinciden.',
+            ]);
+    }
 }
