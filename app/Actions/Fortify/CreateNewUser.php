@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
+use App\Concerns\ProfileValidationRules;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
@@ -17,6 +18,7 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
+    use ProfileValidationRules;
 
     public function __construct(private AttachUserToTenant $attachUserToTenant) {}
 
@@ -32,14 +34,16 @@ class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => $this->passwordRules(),
         ], [
-            'email.unique' => __('Las credenciales no son válidas.'),
-        ])->validate();
+            ...$this->profileMessages(),
+            ...$this->passwordMessages(),
+            'email.unique' => 'Las credenciales no son válidas.',
+        ], $this->profileAttributes() + ['password' => 'contraseña'])->validate();
 
         $tenant = Tenant::current();
 
         if ($tenant === null) {
             throw ValidationException::withMessages([
-                'email' => __('No se pudo determinar la agencia actual.'),
+                'email' => 'No se pudo determinar la agencia actual.',
             ]);
         }
 

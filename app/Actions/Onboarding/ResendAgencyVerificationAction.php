@@ -17,8 +17,6 @@ final class ResendAgencyVerificationAction
      */
     public function handle(string $email): void
     {
-        $email = mb_strtolower($email);
-
         $tenant = Tenant::query()
             ->where('contact_email', $email)
             ->where('status', TenantStatus::Pending->value)

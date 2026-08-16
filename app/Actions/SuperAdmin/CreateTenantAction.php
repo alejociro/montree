@@ -24,15 +24,12 @@ final class CreateTenantAction
      */
     public function handle(array $data): Tenant
     {
-        $slug = mb_strtolower($data['slug']);
-        $adminEmail = mb_strtolower($data['admin_email']);
-
-        $tenant = DB::transaction(function () use ($data, $slug, $adminEmail): Tenant {
+        $tenant = DB::transaction(function () use ($data): Tenant {
             $tenant = Tenant::query()->create([
                 'name' => $data['name'],
-                'slug' => $slug,
-                'domain' => $slug.'.'.Config::get('montree.platform_host'),
-                'contact_email' => $adminEmail,
+                'slug' => $data['slug'],
+                'domain' => $data['slug'].'.'.Config::get('montree.platform_host'),
+                'contact_email' => $data['admin_email'],
                 'status' => TenantStatus::Active,
                 'plan' => TenantPlan::from($data['plan']),
             ]);
@@ -44,7 +41,7 @@ final class CreateTenantAction
 
         $this->createUser->handle($tenant, [
             'name' => $data['admin_name'],
-            'email' => $adminEmail,
+            'email' => $data['admin_email'],
             'role' => UserRole::Admin->value,
         ]);
 

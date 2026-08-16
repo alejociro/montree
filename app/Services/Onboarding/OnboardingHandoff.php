@@ -68,7 +68,7 @@ final class OnboardingHandoff
     private function signedClaimUrl(Tenant $tenant, Request $request, string $nonce): string
     {
         $root = $this->subdomainRoot($tenant, $request);
-        URL::forceRootUrl($root);
+        URL::useOrigin($root);
 
         try {
             return URL::temporarySignedRoute(
@@ -77,7 +77,7 @@ final class OnboardingHandoff
                 ['nonce' => $nonce],
             );
         } finally {
-            URL::forceRootUrl(null);
+            URL::useOrigin(null);
         }
     }
 

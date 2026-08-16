@@ -12,10 +12,9 @@ use App\Http\Controllers\Guide\GuidePagesController;
 use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\NewsletterPagesController;
 use App\Http\Controllers\NotificationPagesController;
+use App\Http\Controllers\Onboarding\AgencyOnboardingController;
 use App\Http\Controllers\Onboarding\ClaimAgencyController;
-use App\Http\Controllers\Onboarding\OnboardingPageController;
-use App\Http\Controllers\Onboarding\ResendVerificationController;
-use App\Http\Controllers\Onboarding\VerifyAgencyController;
+use App\Http\Controllers\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
@@ -35,21 +34,29 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
 
 Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
 
-// WHY: self-serve onboarding (F016). `/start` + check-email + verify run on the
-// platform host; `claim` runs on the tenant subdomain and produces the founder's
-// host-scoped session. verify/claim are gated by signed URLs (the signature is the
-// credential); onboarding.claim additionally consumes a one-shot nonce.
-Route::get('start', [OnboardingPageController::class, 'start'])->name('onboarding.start');
-Route::get('onboarding/check-email', [OnboardingPageController::class, 'checkEmail'])->name('onboarding.check-email');
-Route::get('onboarding/verify/{tenant}/{user}', VerifyAgencyController::class)
+// WHY: self-serve onboarding (F016). `/start` + check-email + resend + verify run
+// on the platform host; `claim` runs on the tenant subdomain and produces the
+// founder's host-scoped session. verify/claim are gated by signed URLs (the
+// signature is the credential); onboarding.claim additionally consumes a one-shot
+// nonce. These are web routes on purpose: this is a same-origin Inertia monolith,
+// so a JSON layer between the form and the action would buy nothing.
+Route::get('start', [AgencyOnboardingController::class, 'create'])->name('onboarding.start');
+Route::post('onboarding/agencies', [AgencyOnboardingController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('onboarding.agencies.store');
+Route::get('onboarding/check-email', [AgencyOnboardingController::class, 'checkEmail'])->name('onboarding.check-email');
+Route::post('onboarding/resend-verification', [AgencyOnboardingController::class, 'resendVerification'])
+    ->middleware('throttle:3,10')
+    ->name('onboarding.resend-verification');
+Route::get('onboarding/verify/{tenant}/{user}', [AgencyOnboardingController::class, 'verify'])
     ->middleware('signed')
     ->name('onboarding.verify');
+Route::get('onboarding/subdomain-availability', SubdomainAvailabilityController::class)
+    ->middleware('throttle:30,1')
+    ->name('onboarding.subdomain-availability');
 Route::get('onboarding/claim', ClaimAgencyController::class)
     ->middleware('signed')
     ->name('onboarding.claim');
-Route::post('onboarding/resend-verification', ResendVerificationController::class)
-    ->middleware('throttle:3,10')
-    ->name('onboarding.resend-verification');
 
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');

@@ -20,15 +20,3 @@ export type AgencyRegistrationPayload = {
     password: string;
     password_confirmation: string;
 };
-
-export type AgencyRegistrationResponse = {
-    data: {
-        tenant: {
-            slug: string;
-            domain: string;
-            status: string;
-        };
-        next: 'verify_email';
-        email: string;
-    };
-};

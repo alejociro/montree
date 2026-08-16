@@ -22,7 +22,7 @@ class SubdomainAvailabilityTest extends TestCase
 
     private function check(string $slug): TestResponse
     {
-        return $this->getJson('http://montree.test/api/v1/onboarding/subdomain-availability?slug='.$slug);
+        return $this->getJson('http://montree.test/onboarding/subdomain-availability?slug='.$slug);
     }
 
     public function test_reports_available_for_a_free_slug(): void
@@ -61,8 +61,8 @@ class SubdomainAvailabilityTest extends TestCase
 
     public function test_requires_a_slug(): void
     {
-        $this->getJson('http://montree.test/api/v1/onboarding/subdomain-availability')
+        $this->getJson('http://montree.test/onboarding/subdomain-availability')
             ->assertStatus(422)
-            ->assertJsonValidationErrors('slug');
+            ->assertJsonValidationErrors(['slug' => 'Elige un subdominio.']);
     }
 }

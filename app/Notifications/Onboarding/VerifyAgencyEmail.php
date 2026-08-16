@@ -10,16 +10,16 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-/**
- * Branded email sent to an agency founder. The signed link verifies their email
- * and activates the agency on the platform host, then hands them off to their own
- * subdomain already logged in.
- */
-final class VerifyAgencyEmail extends Notification implements ShouldQueue
+final class VerifyAgencyEmail extends Notification implements NotTenantAware, ShouldQueue
 {
     use Queueable;
+
+    private const EXPIRES_IN_MINUTES = 60;
 
     public function __construct(
         private readonly int $tenantId,
@@ -57,17 +57,42 @@ final class VerifyAgencyEmail extends Notification implements ShouldQueue
                 'primaryColor' => $this->primaryColor,
                 'recipientName' => $this->recipientName($notifiable),
                 'verificationUrl' => $this->verificationUrl(),
-                'expiresInMinutes' => 60,
+                'expiresInMinutes' => self::EXPIRES_IN_MINUTES,
             ]);
     }
 
     private function verificationUrl(): string
     {
-        return URL::temporarySignedRoute(
-            'onboarding.verify',
-            now()->addMinutes(60),
-            ['tenant' => $this->tenantId, 'user' => $this->userId],
-        );
+        $scheme = $this->scheme();
+
+        URL::useOrigin($scheme.'://'.$this->platformHost());
+        URL::forceScheme($scheme);
+
+        try {
+            return URL::temporarySignedRoute(
+                'onboarding.verify',
+                now()->addMinutes(self::EXPIRES_IN_MINUTES),
+                ['tenant' => $this->tenantId, 'user' => $this->userId],
+            );
+        } finally {
+            URL::forceScheme(null);
+            URL::useOrigin(null);
+        }
+    }
+
+    private function scheme(): string
+    {
+        $scheme = (string) parse_url((string) Config::get('app.url'), PHP_URL_SCHEME);
+
+        return App::isLocal() && $scheme !== '' ? $scheme : 'https';
+    }
+
+    private function platformHost(): string
+    {
+        $host = (string) Config::get('montree.platform_host');
+        $port = parse_url((string) Config::get('app.url'), PHP_URL_PORT);
+
+        return is_int($port) ? $host.':'.$port : $host;
     }
 
     private function recipientName(object $notifiable): string

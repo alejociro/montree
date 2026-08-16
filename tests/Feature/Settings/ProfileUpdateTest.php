@@ -107,10 +107,24 @@ class ProfileUpdateTest extends TestCase
             ]);
 
         $response
-            ->assertSessionHasErrors('password')
+            ->assertSessionHasErrors(['password' => 'La contraseña actual no es correcta.'])
             ->assertRedirect(route('profile.edit'));
 
         $this->assertNotNull($superAdmin->fresh());
+    }
+
+    public function test_profile_update_reports_validation_failures_in_spanish()
+    {
+        $taken = User::factory()->create(['email' => 'ocupado@ejemplo.com']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('profile.edit'))
+            ->patch(route('profile.update'), ['name' => '', 'email' => $taken->email])
+            ->assertSessionHasErrors([
+                'name' => 'Ingresa tu nombre.',
+                'email' => 'Ese correo ya está en uso.',
+            ]);
     }
 
     private function createSuperAdmin(): User

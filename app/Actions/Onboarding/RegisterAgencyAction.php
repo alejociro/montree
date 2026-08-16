@@ -16,39 +16,32 @@ use App\Services\Tenant\AttachUserToTenant;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class RegisterAgencyAction
 {
-    public function __construct(private AttachUserToTenant $attachUserToTenant) {}
+    public function __construct(private readonly AttachUserToTenant $attachUserToTenant) {}
 
-    /**
-     * Provision a pending agency plus its founder in a single transaction. The
-     * tenant stays `pending` until the founder verifies their email.
-     *
-     * @param  array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}  $data
-     */
     public function handle(array $data): Tenant
     {
-        $slug = mb_strtolower($data['subdomain']);
-        $email = mb_strtolower($data['email']);
-
         try {
-            return DB::transaction(fn (): Tenant => $this->provision($data, $slug, $email));
+            [$tenant, $founder] = DB::transaction(fn (): array => $this->provision($data));
         } catch (QueryException $e) {
-            throw $this->translateSlugCollision($e, $slug);
+            throw $this->translateSlugCollision($e);
         }
+
+        AgencyRegistered::dispatch($tenant, $founder);
+
+        return $tenant;
     }
 
-    /**
-     * @param  array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}  $data
-     */
-    private function provision(array $data, string $slug, string $email): Tenant
+    private function provision(array $data): array
     {
         $tenant = Tenant::query()->create([
             'name' => $data['agency_name'],
-            'slug' => $slug,
-            'domain' => $slug.'.'.Config::get('montree.platform_host'),
-            'contact_email' => $email,
+            'slug' => $data['subdomain'],
+            'domain' => $data['subdomain'].'.'.Config::get('montree.platform_host'),
+            'contact_email' => $data['email'],
             'status' => TenantStatus::Pending,
             'plan' => $this->defaultPlan(),
         ]);
@@ -57,16 +50,14 @@ final class RegisterAgencyAction
 
         $user = User::query()->create([
             'name' => $data['founder_name'],
-            'email' => $email,
+            'email' => $data['email'],
             'password' => $data['password'],
         ]);
         $user->forceFill(['password_set_at' => now()])->save();
 
         $this->attachUserToTenant->handle($user, $tenant, UserRole::Admin, 'onboarding');
 
-        AgencyRegistered::dispatch($tenant, $user);
-
-        return $tenant;
+        return [$tenant, $user];
     }
 
     private function defaultPlan(): TenantPlan
@@ -76,9 +67,12 @@ final class RegisterAgencyAction
         return $plan instanceof TenantPlan ? $plan : TenantPlan::Professional;
     }
 
-    private function translateSlugCollision(QueryException $e, string $slug): QueryException|SubdomainTakenException
+    private function translateSlugCollision(QueryException $e): QueryException|SubdomainTakenException
     {
-        if (str_contains($e->getMessage(), $slug) || str_contains(mb_strtolower($e->getMessage()), 'slug')) {
+        $isIntegrityViolation = (string) $e->getCode() === '23000';
+        $hitTheTenantsTable = Str::contains(Str::lower($e->getMessage()), (new Tenant)->getTable());
+
+        if ($isIntegrityViolation && $hitTheTenantsTable) {
             return new SubdomainTakenException;
         }
 

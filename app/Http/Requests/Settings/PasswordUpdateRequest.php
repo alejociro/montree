@@ -22,4 +22,26 @@ class PasswordUpdateRequest extends FormRequest
             'password' => $this->passwordRules(),
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            ...$this->currentPasswordMessages(),
+            ...$this->passwordMessages(),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'current_password' => 'contraseña actual',
+            'password' => 'contraseña nueva',
+        ];
+    }
 }

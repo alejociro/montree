@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue';
 import type { Ref } from 'vue';
-import SubdomainAvailabilityController from '@/actions/App/Http/Controllers/Api/V1/Onboarding/SubdomainAvailabilityController';
+import SubdomainAvailabilityController from '@/actions/App/Http/Controllers/Onboarding/SubdomainAvailabilityController';
 import type {
     SubdomainAvailability,
     SubdomainAvailabilityReason,

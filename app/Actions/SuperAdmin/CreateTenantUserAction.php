@@ -25,7 +25,7 @@ final class CreateTenantUserAction
      */
     public function handle(Tenant $tenant, array $data): User
     {
-        $email = mb_strtolower($data['email']);
+        $email = $data['email'];
         $role = UserRole::from($data['role']);
 
         $user = User::query()->where('email', $email)->first();
