@@ -8,6 +8,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Models\User;
 use App\Rules\NotReservedSubdomain;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 final class RegisterAgencyRequest extends FormRequest
@@ -27,9 +28,6 @@ final class RegisterAgencyRequest extends FormRequest
         ]);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [
@@ -42,29 +40,30 @@ final class RegisterAgencyRequest extends FormRequest
             ],
             'founder_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
-            'password' => $this->passwordRules(),
+            'password' => $this->passwordRulesWithoutConfirmation(),
+            'password_confirmation' => ['required', 'same:password'],
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
+    private function passwordRulesWithoutConfirmation(): array
+    {
+        return array_values(array_filter(
+            $this->passwordRules(),
+            static fn (mixed $rule): bool => $rule !== 'confirmed',
+        ));
+    }
+
     public function messages(): array
     {
         return [
             'email.unique' => __('No pudimos crear la cuenta con esos datos.'),
             'subdomain.unique' => __('Ese subdominio ya fue reclamado.'),
+            'password_confirmation.same' => __('Las contraseñas no coinciden.'),
         ];
     }
 
-    /**
-     * @return array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}
-     */
     public function agencyData(): array
     {
-        /** @var array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string} $data */
-        $data = $this->only(['agency_name', 'subdomain', 'founder_name', 'email', 'password']);
-
-        return $data;
+        return Arr::except($this->validated(), 'password_confirmation');
     }
 }

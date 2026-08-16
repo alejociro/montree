@@ -30,8 +30,6 @@ use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\GuideController;
 use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\Onboarding\AgencyRegistrationController;
-use App\Http\Controllers\Api\V1\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
@@ -49,17 +47,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('tenant', [TenantController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('api.v1.tenant.show');
-
-// WHY: self-serve onboarding (F016) runs on the platform host (no tenant). These
-// endpoints must NOT sit inside any group that requires a current tenant.
-Route::prefix('onboarding')->name('api.v1.onboarding.')->group(function (): void {
-    Route::get('subdomain-availability', SubdomainAvailabilityController::class)
-        ->middleware('throttle:30,1')
-        ->name('subdomain-availability');
-    Route::post('agencies', [AgencyRegistrationController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('agencies.store');
-});
 
 Route::middleware('throttle:5,1')->group(function (): void {
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('api.v1.newsletter.subscribe');

@@ -19,30 +19,25 @@ use Illuminate\Support\Facades\DB;
 
 final class RegisterAgencyAction
 {
-    public function __construct(private AttachUserToTenant $attachUserToTenant) {}
+    public function __construct(private readonly AttachUserToTenant $attachUserToTenant) {}
 
-    /**
-     * Provision a pending agency plus its founder in a single transaction. The
-     * tenant stays `pending` until the founder verifies their email.
-     *
-     * @param  array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}  $data
-     */
     public function handle(array $data): Tenant
     {
         $slug = mb_strtolower($data['subdomain']);
         $email = mb_strtolower($data['email']);
 
         try {
-            return DB::transaction(fn (): Tenant => $this->provision($data, $slug, $email));
+            [$tenant, $founder] = DB::transaction(fn (): array => $this->provision($data, $slug, $email));
         } catch (QueryException $e) {
             throw $this->translateSlugCollision($e, $slug);
         }
+
+        AgencyRegistered::dispatch($tenant, $founder);
+
+        return $tenant;
     }
 
-    /**
-     * @param  array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}  $data
-     */
-    private function provision(array $data, string $slug, string $email): Tenant
+    private function provision(array $data, string $slug, string $email): array
     {
         $tenant = Tenant::query()->create([
             'name' => $data['agency_name'],
@@ -64,9 +59,7 @@ final class RegisterAgencyAction
 
         $this->attachUserToTenant->handle($user, $tenant, UserRole::Admin, 'onboarding');
 
-        AgencyRegistered::dispatch($tenant, $user);
-
-        return $tenant;
+        return [$tenant, $user];
     }
 
     private function defaultPlan(): TenantPlan

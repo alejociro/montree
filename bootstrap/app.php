@@ -101,7 +101,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
         $exceptions->render(fn (TourDateException $e) => $e->toResponse());
         $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
-        $exceptions->render(fn (SubdomainTakenException $e) => $e->toResponse());
+        // WHY: this is the only domain exception reachable from an Inertia form
+        // (the signup POST moved off /api/v1). It fires on a race against the
+        // tenants.slug unique index, which is semantically the same failure as the
+        // `subdomain.unique` rule — so browsers get it back as a field error
+        // instead of a 409 that Inertia would surface as an error modal.
+        $exceptions->render(function (SubdomainTakenException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return $e->toResponse();
+            }
+
+            // WHY: no withInput() here. Laravel only strips password fields inside
+            // its ValidationException path, so flashing input from a custom handler
+            // would write the founder's plaintext password to the session store.
+            // Inertia's useForm keeps its own state client-side, so it buys nothing.
+            return back()->withErrors(['subdomain' => $e->getMessage()]);
+        });
 
         // WHY: onboarding signed links diverge from the default 403 page. An expired
         // verify link shows a branded Inertia page with a resend CTA; an expired

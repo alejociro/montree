@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { AlertCircle } from 'lucide-vue-next';
-import { reactive, ref, toRef } from 'vue';
-import { store } from '@/actions/App/Http/Controllers/Api/V1/Onboarding/AgencyRegistrationController';
+import { useForm } from '@inertiajs/vue3';
+import { toRef } from 'vue';
+import { store } from '@/actions/App/Http/Controllers/Onboarding/AgencyOnboardingController';
 import InputError from '@/components/InputError.vue';
 import SubdomainField from '@/components/molecules/SubdomainField.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -10,13 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
 import { useSubdomainAvailability } from '@/composables/useSubdomainAvailability';
-import { checkEmail } from '@/routes/onboarding';
-import type { AgencyRegistrationResponse } from '@/types/onboarding.types';
 
-const form = reactive({
+// WHY: no client-side mirror of the rules — RegisterAgencyRequest is the single
+// source of truth and its errors come back on the redirect. The typeahead below
+// is a different mechanism: live feedback while typing, not validation.
+const form = useForm({
     agency_name: '',
     subdomain: '',
     founder_name: '',
@@ -25,127 +23,18 @@ const form = reactive({
     password_confirmation: '',
 });
 
-const errors = reactive<Record<string, string>>({});
-const globalError = ref<string | null>(null);
-const processing = ref(false);
-
-const api = useApi();
-
 const { status: subdomainStatus, reason: subdomainReason } =
     useSubdomainAvailability(toRef(form, 'subdomain'));
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// WHY: server/client errors used to survive until the next submit, so fixing a
-// short password left the "mínimo 8 caracteres" message on screen.
-function clearFieldError(field: string) {
-    delete errors[field];
-    globalError.value = null;
-}
-
-function resetErrors() {
-    for (const key of Object.keys(errors)) {
-        delete errors[key];
-    }
-
-    globalError.value = null;
-}
-
-function validate(): boolean {
-    resetErrors();
-
-    if (form.agency_name.trim() === '') {
-        errors.agency_name = 'Ingresa el nombre de tu agencia.';
-    }
-
-    if (form.subdomain.trim() === '') {
-        errors.subdomain = 'Elige un subdominio.';
-    } else if (subdomainStatus.value === 'unavailable') {
-        errors.subdomain = 'Elige un subdominio disponible.';
-    }
-
-    if (form.founder_name.trim() === '') {
-        errors.founder_name = 'Ingresa tu nombre.';
-    }
-
-    if (form.email.trim() === '') {
-        errors.email = 'Ingresa tu correo electrónico.';
-    } else if (!EMAIL_PATTERN.test(form.email)) {
-        errors.email = 'Ingresa un correo electrónico válido.';
-    }
-
-    if (form.password === '') {
-        errors.password = 'Ingresa una contraseña.';
-    } else if (form.password.length < 8) {
-        errors.password = 'La contraseña debe tener al menos 8 caracteres.';
-    }
-
-    if (form.password_confirmation !== form.password) {
-        errors.password_confirmation = 'Las contraseñas no coinciden.';
-    }
-
-    return Object.keys(errors).length === 0;
-}
-
-function applyServerErrors(serverErrors: ApiErrors) {
-    for (const [field, message] of Object.entries(serverErrors)) {
-        if (field === '_global') {
-            globalError.value = message;
-
-            continue;
-        }
-
-        errors[field] = message;
-    }
-}
-
 function submit() {
-    if (processing.value) {
-        return;
-    }
-
-    if (!validate()) {
-        return;
-    }
-
-    processing.value = true;
-
-    api.post<AgencyRegistrationResponse>(
-        store.url(),
-        { ...form },
-        {
-            onSuccess: (data) => {
-                router.visit(
-                    checkEmail.url({
-                        query: {
-                            email: data.data.email,
-                            agency: form.agency_name,
-                        },
-                    }),
-                );
-            },
-            onError: (serverErrors) => {
-                applyServerErrors(serverErrors);
-            },
-            onFinish: () => {
-                processing.value = false;
-            },
-        },
-    );
+    form.submit(store(), {
+        onError: () => form.reset('password', 'password_confirmation'),
+    });
 }
 </script>
 
 <template>
     <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
-        <div
-            v-if="globalError"
-            role="alert"
-            class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
-        >
-            <AlertCircle class="mt-0.5 size-4 shrink-0" />
-            <span>{{ globalError }}</span>
-        </div>
-
         <div class="grid gap-2">
             <Label for="agency_name">Nombre de la agencia</Label>
             <Input
@@ -155,18 +44,18 @@ function submit() {
                 autocomplete="organization"
                 :tabindex="1"
                 placeholder="Eco Adventures"
-                :aria-invalid="Boolean(errors.agency_name)"
-                @input="clearFieldError('agency_name')"
+                :aria-invalid="Boolean(form.errors.agency_name)"
+                @input="form.clearErrors('agency_name')"
             />
-            <InputError :message="errors.agency_name" />
+            <InputError :message="form.errors.agency_name" />
         </div>
 
         <SubdomainField
             v-model="form.subdomain"
             :status="subdomainStatus"
             :reason="subdomainReason"
-            :error="errors.subdomain"
-            @update:model-value="clearFieldError('subdomain')"
+            :error="form.errors.subdomain"
+            @update:model-value="form.clearErrors('subdomain')"
             :tabindex="2"
         />
 
@@ -179,10 +68,10 @@ function submit() {
                 autocomplete="name"
                 :tabindex="3"
                 placeholder="Ana Gómez"
-                :aria-invalid="Boolean(errors.founder_name)"
-                @input="clearFieldError('founder_name')"
+                :aria-invalid="Boolean(form.errors.founder_name)"
+                @input="form.clearErrors('founder_name')"
             />
-            <InputError :message="errors.founder_name" />
+            <InputError :message="form.errors.founder_name" />
         </div>
 
         <div class="grid gap-2">
@@ -194,10 +83,10 @@ function submit() {
                 autocomplete="email"
                 :tabindex="4"
                 placeholder="ana@eco.com"
-                :aria-invalid="Boolean(errors.email)"
-                @input="clearFieldError('email')"
+                :aria-invalid="Boolean(form.errors.email)"
+                @input="form.clearErrors('email')"
             />
-            <InputError :message="errors.email" />
+            <InputError :message="form.errors.email" />
         </div>
 
         <div class="grid gap-2">
@@ -208,13 +97,10 @@ function submit() {
                 autocomplete="new-password"
                 :tabindex="5"
                 placeholder="Mínimo 8 caracteres"
-                :aria-invalid="Boolean(errors.password)"
-                @input="
-                    clearFieldError('password');
-                    clearFieldError('password_confirmation');
-                "
+                :aria-invalid="Boolean(form.errors.password)"
+                @input="form.clearErrors('password', 'password_confirmation')"
             />
-            <InputError :message="errors.password" />
+            <InputError :message="form.errors.password" />
         </div>
 
         <div class="grid gap-2">
@@ -225,20 +111,20 @@ function submit() {
                 autocomplete="new-password"
                 :tabindex="6"
                 placeholder="Repite la contraseña"
-                :aria-invalid="Boolean(errors.password_confirmation)"
-                @input="clearFieldError('password_confirmation')"
+                :aria-invalid="Boolean(form.errors.password_confirmation)"
+                @input="form.clearErrors('password_confirmation')"
             />
-            <InputError :message="errors.password_confirmation" />
+            <InputError :message="form.errors.password_confirmation" />
         </div>
 
         <Button
             type="submit"
             class="mt-1 w-full"
             :tabindex="7"
-            :disabled="processing"
+            :disabled="form.processing"
             data-test="create-agency-button"
         >
-            <Spinner v-if="processing" />
+            <Spinner v-if="form.processing" />
             Crear mi agencia
         </Button>
 
