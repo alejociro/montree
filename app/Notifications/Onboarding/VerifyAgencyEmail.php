@@ -11,13 +11,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
  * Branded email sent to an agency founder. The signed link verifies their email
  * and activates the agency on the platform host, then hands them off to their own
  * subdomain already logged in.
+ *
+ * WHY NotTenantAware: onboarding runs on the platform host, where ResolveTenant
+ * forgets the current tenant, so the queued job carries no `tenantId`. With
+ * `queues_are_tenant_aware_by_default` the worker would delete it and throw
+ * before it ever runs — silently, without a `failed_jobs` row. Nothing here
+ * needs a current tenant: the payload is scalars, `User` has no tenant global
+ * scope, and every `switch_tenant_task` is disabled.
  */
-final class VerifyAgencyEmail extends Notification implements ShouldQueue
+final class VerifyAgencyEmail extends Notification implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
