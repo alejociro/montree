@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -113,6 +114,37 @@ class RegisterAgencyTest extends TestCase
         $this->register(['password_confirmation' => 'something-else-456'])
             ->assertSessionHasErrors(['password_confirmation' => 'Las contraseñas no coinciden.'])
             ->assertSessionDoesntHaveErrors('password');
+    }
+
+    public function test_reports_every_validation_failure_in_spanish(): void
+    {
+        $response = $this->post('http://montree.test/onboarding/agencies', [
+            'agency_name' => '',
+            'subdomain' => 'Eco Adventures!',
+            'founder_name' => '',
+            'email' => 'no-es-un-correo',
+            'password' => '',
+            'password_confirmation' => '',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'agency_name' => 'Ingresa el nombre de tu agencia.',
+            'subdomain' => 'Solo minúsculas, números y guiones, sin empezar por guion.',
+            'founder_name' => 'Ingresa tu nombre.',
+            'email' => 'Correo inválido.',
+            'password' => 'Ingresa una contraseña.',
+            'password_confirmation' => 'Confirma tu contraseña.',
+        ]);
+    }
+
+    public function test_reports_password_strength_failures_in_spanish(): void
+    {
+        Password::defaults(fn (): Password => Password::min(12)->mixedCase()->letters()->numbers()->symbols());
+
+        $this->register(['password' => 'abcdefghijkl', 'password_confirmation' => 'abcdefghijkl'])
+            ->assertSessionHasErrors([
+                'password' => 'Combina mayúsculas y minúsculas.',
+            ]);
     }
 
     public function test_rejects_already_registered_email_with_generic_message(): void

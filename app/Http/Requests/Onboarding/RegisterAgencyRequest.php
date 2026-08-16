@@ -56,9 +56,43 @@ final class RegisterAgencyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.unique' => __('No pudimos crear la cuenta con esos datos.'),
-            'subdomain.unique' => __('Ese subdominio ya fue reclamado.'),
-            'password_confirmation.same' => __('Las contraseñas no coinciden.'),
+            'string' => 'Debe ser texto.',
+            'max' => 'Máximo :max caracteres.',
+
+            'agency_name.required' => 'Ingresa el nombre de tu agencia.',
+
+            'subdomain.required' => 'Elige un subdominio.',
+            'subdomain.regex' => 'Solo minúsculas, números y guiones, sin empezar por guion.',
+            'subdomain.unique' => 'Ese subdominio ya fue reclamado.',
+
+            'founder_name.required' => 'Ingresa tu nombre.',
+
+            'email.required' => 'Ingresa tu correo.',
+            'email.email' => 'Correo inválido.',
+            'email.unique' => 'No pudimos crear la cuenta con esos datos.',
+
+            'password.required' => 'Ingresa una contraseña.',
+            'password.min' => 'Mínimo :min caracteres.',
+            'password.password.mixed' => 'Combina mayúsculas y minúsculas.',
+            'password.password.letters' => 'Incluye al menos una letra.',
+            'password.password.numbers' => 'Incluye al menos un número.',
+            'password.password.symbols' => 'Incluye al menos un símbolo.',
+            'password.password.uncompromised' => 'Esa contraseña apareció en una filtración. Elige otra.',
+
+            'password_confirmation.required' => 'Confirma tu contraseña.',
+            'password_confirmation.same' => 'Las contraseñas no coinciden.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'agency_name' => 'nombre de la agencia',
+            'subdomain' => 'subdominio',
+            'founder_name' => 'nombre',
+            'email' => 'correo electrónico',
+            'password' => 'contraseña',
+            'password_confirmation' => 'confirmación de contraseña',
         ];
     }
 
