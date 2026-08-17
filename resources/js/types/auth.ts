@@ -1,5 +1,3 @@
-export type TenantRole = 'admin' | 'operator' | 'guide' | 'customer';
-
 export type User = {
     id: number;
     name: string;
@@ -24,6 +22,13 @@ export type Auth = {
     user: User;
     permissions: string[];
 };
+
+/**
+ * Chequeo de permisos para la UI. Con un array la semantica es "alguno de" (OR),
+ * que es lo que necesita el menu: un item se muestra si el usuario puede abrir
+ * al menos una de las acciones que representa.
+ */
+export type PermissionCheck = (permission: string | string[]) => boolean;
 
 export type TwoFactorConfigContent = {
     title: string;

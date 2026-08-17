@@ -21,6 +21,7 @@ use App\Http\Middleware\EnsureTenantMember;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectRegistrationToOnboarding;
+use App\Http\Middleware\RedirectStaffFromTravelerArea;
 use App\Http\Middleware\RedirectToPlatformHost;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -89,6 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant_admin.only' => EnsureTenantAdmin::class,
             'tenant_guide.only' => EnsureTenantGuide::class,
             'tenant_member.only' => EnsureTenantMember::class,
+            'traveler.only' => RedirectStaffFromTravelerArea::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

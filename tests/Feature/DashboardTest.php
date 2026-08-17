@@ -40,7 +40,12 @@ class DashboardTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    public function test_active_members_are_redirected_to_account_bookings()
+    /**
+     * F018 A3: `/dashboard` dejó de redirigir fijo a `/account/bookings` y usa el home de
+     * rol. Un miembro sin permisos de panel es un viajero, y su home es la landing de la
+     * agencia. El reparto por rol vive en Rbac\TravelerAreaAccessTest.
+     */
+    public function test_active_members_without_panel_permissions_are_redirected_to_the_agency_home()
     {
         $user = User::factory()->create();
         $this->tenant->users()->attach($user->id, [
@@ -50,7 +55,7 @@ class DashboardTest extends TestCase
 
         $response = $this->actingAs($user)->get('http://demo.montree.test/dashboard');
 
-        $response->assertRedirect('/account/bookings');
+        $response->assertRedirect('/');
     }
 
     public function test_non_members_cannot_reach_the_dashboard()

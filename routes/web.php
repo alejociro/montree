@@ -16,6 +16,7 @@ use App\Http\Controllers\Onboarding\AgencyOnboardingController;
 use App\Http\Controllers\Onboarding\ClaimAgencyController;
 use App\Http\Controllers\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\PublicTourPageController;
+use App\Http\Controllers\RoleHomeRedirectController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
 use Illuminate\Support\Facades\Route;
@@ -59,14 +60,18 @@ Route::get('onboarding/claim', ClaimAgencyController::class)
     ->name('onboarding.claim');
 
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
-    Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
+    Route::get('dashboard', RoleHomeRedirectController::class)->name('dashboard');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 
-    Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
-    Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
-    Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
-    Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
-    Route::get('account/bookings/{bookingNumber}/review', [AccountPagesController::class, 'review'])->name('account.bookings.review');
+    // WHY: F018 B4 — la zona de viajero es solo del cliente. Quien tiene permisos de
+    // panel (`dashboard.view` o `guide.schedule.view`) vuelve a su home de rol.
+    Route::middleware('traveler.only')->group(function () {
+        Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
+        Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
+        Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
+        Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
+        Route::get('account/bookings/{bookingNumber}/review', [AccountPagesController::class, 'review'])->name('account.bookings.review');
+    });
 });
 
 // WHY: mismo criterio que routes/api.php — `dashboard.view` abre el panel y cada pantalla

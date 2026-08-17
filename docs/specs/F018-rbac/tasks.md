@@ -35,12 +35,48 @@
 - [x] `php artisan test --compact --filter=Rbac`
 - [x] `php artisan test --compact` (suite completa, no solo el filtro)
 
+## Backend — Fase 2 (`montree-backend-dev`): bugs B4 y A3
+
+> Barrera real de "quién ve la zona de viajero" y home de rol de `/dashboard`. El frontend
+> de Fase 2 (menús por permiso) es UX sobre esta misma regla, no la reemplaza.
+
+- [x] `app/Services/Auth/RoleHomeResolver.php` — extraer `LoginResponse::roleHome()` privado a un colaborador con tres llamadores; resuelve por permiso (`dashboard.view` → `/admin/dashboard`, `guide.schedule.view` → `/guide/schedule`, resto → `/`)
+- [x] `app/Http/Responses/LoginResponse.php` — delega en `RoleHomeResolver`; se borran `roleHome()` y `tenantRole()` privados (última lectura de rol del archivo)
+- [x] `app/Http/Middleware/RedirectStaffFromTravelerArea.php` + alias `traveler.only` en `bootstrap/app.php` — B4: el staff que entra a `/account/*` se redirige a su home de rol
+- [x] `routes/web.php` — las 5 rutas `account.*` quedan bajo `traveler.only` (dentro de `tenant_member.only`, que no se tocó)
+- [x] `app/Http/Controllers/RoleHomeRedirectController.php` — A3: `GET /dashboard` deja de redirigir fijo a `/account/bookings` y usa el mismo resolutor
+- [x] `tests/Feature/Rbac/TravelerAreaAccessTest.php` — 21 tests: staff (admin/sales/operator/guide) fuera de las 5 rutas de `/account/*`, cliente adentro, `/dashboard` por rol, miembro sin roles, aislamiento por tenant
+- [x] `tests/Feature/DashboardTest.php` — expectativa actualizada (`/account/bookings` → `/`) por el cambio de A3
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --compact` (511/511 verde)
+
 ## Frontend (`montree-frontend-dev`)
 
 - [x] `resources/js/types/auth.ts` — `AuthUser.tenantRole: string` → `AuthUser.permissions: string[]`
 - [x] `npm run types:check` (va a fallar en los 4 sidebars que leen `tenantRole` — esperado, se resuelve en Fase 2; documentar el fallo esperado en el reporte, no silenciarlo) — **no falló; ver nota `2026-08-16` (`montree-frontend-dev`) abajo: son 3 archivos, no 4, y ninguno rompe la compilación por dos razones acumuladas**
 
 Nada más de frontend en este feature — composable `can()` y reescritura de sidebars quedan en Fase 2 (`spec.md` §"Out of scope").
+
+## Frontend — Fase 2 (`montree-frontend-dev`): menú por permiso y bugs A1-A9
+
+> Items 2.1, 2.2, 2.3, 2.5, 2.6 y A6-A9 de `planfase.md` Fase 2. 2.4 y 2.7 son
+> backend (sección de arriba). Nada aquí autoriza: la UI solo deja de mostrar lo
+> que el backend ya bloquea.
+
+- [x] **2.1** `resources/js/composables/usePermissions.ts` — `can(permiso | permisos[])` ("alguno de") y `canAll()`, leyendo `auth.permissions` (la prop que existe siempre, también para invitados); tipo `PermissionCheck` en `types/auth.ts`
+- [x] **2.2** `resources/js/config/navigation.ts` — constructor único: tabla declarativa `{ title, href, icon, anyOf?, requiresPanel?, exact? }` + funciones puras `buildNavSections()`, `buildPanelItems()`, `resolveHomeUrl()`, `resolveWorkspaceLink()`, `isStaff()`
+- [x] **2.2** `resources/js/composables/useNavigation.ts` — envoltorio reactivo del constructor; único consumidor de `usePermissions` en la navegación
+- [x] **2.2** `requiresPanel` aplica el gate de grupo `dashboard.view` ANTES del permiso del ítem (`contracts.md` §1): `guide` tiene `tours.view` y aun así no ve ningún ítem de `admin/*`
+- [x] **2.2** Los 4 sitios con `switch` por rol pasan a consumir el constructor: `AppSidebar.vue`, `AdminSidebar.vue`, `UserMenuContent.vue`, `PublicLayout.vue` — cero lecturas de `tenantRole` en `resources/js`
+- [x] **2.3 / A2** Logo del sidebar e ítem "Inicio" apuntan al home del rol (`resolveHomeUrl`, espejo exacto de `App\Services\Auth\RoleHomeResolver`)
+- [x] **2.5 / A5** `isCurrentOrParentUrl` para marcar el ítem activo en subrutas, con `exact` para los destinos que son prefijo de sus hermanos (`/`, `/account`)
+- [x] **2.6 / A4 / A1** El staff conserva su menú de administración fuera del panel (`/settings/*`, `/guide/*`) y ya no cae al menú de cliente
+- [x] **A6** "Productos"/"Tours" contradictorios → `/admin/tours` es **Tours** y `/admin/departures` es **Salidas**, mismo nombre en los dos menús
+- [x] **A7** `NavMain.vue` deja de rotular "Platform"; la etiqueta del grupo es un prop y `AdminNavMain.vue` (duplicado exacto) se borra
+- [x] **A8** Submenú de `/settings/*` y sus breadcrumbs a español (Perfil / Seguridad / Apariencia)
+- [x] **A9** `AppSidebarHeader.vue` deduce breadcrumbs del menú cuando la página no los declara — cubre las 12 páginas de `pages/Admin/` sin tocarlas
+- [x] `npm run types:check` (6 errores, los 6 preexistentes de `AppHeader.vue`/`Notifications.vue`), `npx eslint .` (3 errores preexistentes), `npx tsc --noEmit` semántico limpio, `npm run build` verde
+- [ ] Verificación en navegador — **no hecha**: sin herramienta de navegador en el entorno del agente. En su lugar, matriz de menú por rol ejecutada sobre las funciones puras del constructor (ver nota abajo)
 
 ## DB (`montree-db-architect`, solo si hay cambios de schema)
 
@@ -72,6 +108,22 @@ Nada más de frontend en este feature — composable `can()` y reescritura de si
 
 ## Notas durante implementación
 
+- `2026-08-16` (`montree-frontend-dev`, Fase 2 frontend): menú por permiso. Decisiones que no estaban en la instrucción:
+  - **El menú se reduce a datos + funciones puras.** `config/navigation.ts` no importa Vue: `buildNavSections(can)` recibe el chequeo de permisos y devuelve el menú. `useNavigation()` solo lo envuelve en `computed`. Motivo práctico además del diseño: el gate de tipos de este repo no detecta errores semánticos (hallazgo de Fase 1) y no hay runner de tests de JS, así que la única verificación posible era ejecutar la lógica; siendo pura se pudo correr contra la matriz real del seeder sin montar Vue ni navegador. Resultado por rol (admin/sales/operator/`sales+operator`/guide/customer/invitado) en el reporte de la tarea.
+  - **`config/` es un directorio nuevo**, no listado en la constitución §4.1. La tabla de navegación no es un "util puro" (`lib/`) ni un tipo (`types/`) ni lógica reactiva (`composables/`): es configuración declarativa. Si el revisor prefiere no ampliar la estructura, el archivo se mueve a `lib/navigation.ts` sin cambiar una línea de su contenido.
+  - **`AdminNavMain.vue` se borró en vez de arreglarlo.** El item 2.5 pedía cambiar `isCurrentUrl` → `isCurrentOrParentUrl` en su línea 27, pero era copia carácter a carácter de `NavMain.vue` salvo la etiqueta del grupo (que es justo el bug A7). Quedó un solo renderer con la etiqueta como prop; el arreglo de A5 se hizo una vez y sirve para los dos sidebars.
+  - **`exact` como propiedad del ítem de menú.** Con matching por prefijo, `/` marca activo todo el menú y `/account` se marca junto con `/account/bookings`. Se declara `exact: true` en esos dos destinos en vez de tratar `/` como caso especial dentro del renderer.
+  - **La zona de viajero se oculta al staff** (`travelerOnly` en la sección "Mi cuenta" + `isStaffMember` en `UserMenuContent` y `PublicLayout`). Es consecuencia directa de B4/2.7, cerrado en paralelo por `montree-backend-dev` mientras corría esta tarea: con `traveler.only` montado, "Mis Reservas" para un admin es un enlace que rebota a `/admin/dashboard`. **Si 2.7 se revierte, hay que quitar `travelerOnly: true` de `accountSection` y los dos `v-if="!isStaffMember"`** — está aislado en esos tres puntos. Efecto lateral: A4 ("al operador le falta Mis Reservas en la zona de cuenta") queda cerrado por la vía opuesta a la que describía el bug — el operador no tiene zona de cuenta; lo que se le arregló es que conserva el menú del panel en `/settings/*`.
+  - **A9 se resolvió en `AppSidebarHeader.vue`, no página por página.** Las 12 páginas de `pages/Admin/` no declaran breadcrumbs; en vez de escribir 12 `defineOptions`, la barra deduce "home del rol / sección actual" del mismo menú (match más largo gana) cuando la página no manda los suyos. Lo que la página declare sigue mandando.
+  - **`TenantRole` se borró de `types/auth.ts`.** Fase 1 lo dejó "para que Fase 2 decida": ya no lo importa nadie y desde el rol `sales` la unión era incorrecta. Los strings de rol que quedan vivos están en `pages/Admin/Team/Index.vue`, que es alcance de Fase 3.
+  - **Sin verificación en navegador**: el entorno de este agente no tiene herramienta de navegador ni el sitio levantado en un host de tenant. Cubierto con: matriz de menú por rol sobre las funciones puras, `npm run build` verde (compila las 4 plantillas reescritas), `npx tsc --noEmit` limpio y el test `InertiaAuthUserPropTest` que confirma que `auth.permissions` llega. Falta un par de ojos sobre el render real.
+  - **Deuda que se ve desde acá, no tocada:** `AppHeader.vue` + `layouts/app/AppHeaderLayout.vue` están muertos (ningún layout los importa desde `app.ts`) y ahí viven 3 de los 6 errores preexistentes de `types:check`; las páginas de `pages/settings/*` siguen en inglés por dentro (A8 pedía el submenú, no el contenido).
+- `2026-08-16` (`montree-backend-dev`, Fase 2 backend): bugs **B4** y **A3** cerrados. Suite completa **511/511 verde, 1825 assertions** (partía de 490; +21 del test nuevo); Pint verde. Decisiones que no estaban escritas en la instrucción:
+  - **`roleHome()` se resuelve por permiso, no por rol.** La instrucción decía "reusá `roleHome()`, ya resuelve admin/operator/sales → `/admin/dashboard`", pero el `match` por rol solo contemplaba `admin`, `operator` y `guide`: un `sales` (rol nuevo de Fase 1) caía en `default` y terminaba en la landing pública, tanto al loguearse como al ser expulsado de `/account/*`. En vez de agregarle un case, el resolutor pregunta `dashboard.view` y después `guide.schedule.view`. Tres razones: (1) F018 sacó `hasRole()` del backend y esto lo reintroducía; (2) el destino queda garantizado como una ruta que el usuario puede abrir, porque son exactamente los gates de `admin/*` y `guide/*` — con roles propios por tenant (Fase 3B) el `match` por nombre habría mandado gente a un 403; (3) `tenantRole()` leía **el primer rol** de la lista, y desde el corte de Fase 1 los `operator` existentes tienen dos (`operator` + `sales`). Cambio de comportamiento observable: solo el `sales`, que ahora aterriza en el panel.
+  - **El corte vive en un middleware propio (`traveler.only`), no en `EnsureTenantMember`.** Son dos preguntas distintas: "sos miembro activo" (sigue igual) y "esta zona es tuya". `EnsureTenantMember` no se tocó; el middleware nuevo corre después y por eso puede dar por hecho el contexto de equipo de spatie y el caso `super_admin` (ya redirigido a `/`).
+  - **`GET /dashboard` pasó de closure a `RoleHomeRedirectController`** (controller de acción única, constitución §3.2) para poder inyectar el resolutor. La URL y el nombre de ruta no cambian: Wayfinder no necesita regenerarse.
+  - **`DashboardTest::test_active_members_are_redirected_to_account_bookings` cambió de expectativa** (`/account/bookings` → `/`). Es consecuencia directa de A3: un miembro activo sin permisos de panel es un viajero y su home es la landing de la agencia, igual que al loguearse. Renombrado a `..._without_panel_permissions_are_redirected_to_the_agency_home`.
+  - **Fuera de alcance a propósito, para que Fase 2 frontend lo sepa:** (1) `GET /bookings/{bookingNumber}` (`booking.show`) NO quedó bajo `traveler.only` — el corte pedido era `/account/*`, y esa pantalla es el detalle de reserva al que llega también quien acaba de comprar; (2) los endpoints JSON `/api/v1/account/*` siguen abiertos al staff — un redirect 302 no es respuesta válida para XHR y bloquearlos con 403 excede lo pedido, pero hoy son la puerta de atrás de la misma data; (3) `resources/js/pages/Dashboard.vue` sigue existiendo aunque ya nadie la renderiza (borrarla es item 2.4 de frontend).
 - `2026-08-16` (`montree-backend-dev`): sección Backend completa. Suite: **490 tests / 1786 assertions verde**; `--filter=Rbac`: 61/349 verde; Pint verde. Decisiones de implementación que no estaban en `plan.md`:
   - **`can:dashboard.view` como gate de grupo de `admin/*`** (api y web). La matriz le da a `guide` los permisos `tours.view` y `departures.view` (para sus propias salidas) y `contracts.md` §1 mapea `GET /admin/tours` → `tours.view`: aplicados al pie de la letra, el guía entraba al panel de producto. `dashboard.view` es exactamente el conjunto "quien trabaja en el panel" (admin, vendedor, operador; no guía), así que se usó como llave de entrada en vez de inventar un permiso 39 que rompería el conteo del catálogo. Cada ruta conserva además el `can:` de su módulo.
   - **`EnsureTenantAdmin`/`EnsureTenantGuide` siguen montados, sin el chequeo de rol.** Se les quitó el `hasAnyRole()` (era la causa de B1 y B2) pero NO se retiraron de las rutas: un miembro suspendido conserva sus filas en `model_has_roles`, así que sin la validación de membresía activa seguiría pasando el `can:` después de que el equipo lo suspendiera. Quedaron con cuerpos casi idénticos; con dos usos la constitución §2.1 no pide abstraerlos.

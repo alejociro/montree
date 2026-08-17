@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import {
-    Bell,
-    CalendarDays,
-    Heart,
-    LayoutDashboard,
-    LogOut,
-    Settings,
-    Ticket,
-} from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Bell, Heart, LogOut, Settings, Ticket } from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -17,9 +8,13 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
+import { useNavigation } from '@/composables/useNavigation';
 import { logout } from '@/routes';
-import { dashboard as adminDashboard } from '@/routes/admin';
-import { schedule as guideSchedule } from '@/routes/guide';
+import {
+    bookings as accountBookings,
+    favorites as accountFavorites,
+    notifications as accountNotifications,
+} from '@/routes/account';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -31,30 +26,16 @@ const handleLogout = () => {
     router.flushAll();
 };
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
-// WHY: the traveller area (`/account/*`) and the agency panel share this menu.
-// Without this entry a tenant admin who opens "Mis reservas" has no way back to
-// their panel and looks demoted to a plain customer.
-const workspace = computed(() => {
-    if (props.user.tenantRole === 'admin' || props.user.tenantRole === 'operator') {
-        return {
-            href: adminDashboard().url,
-            label: 'Panel de la agencia',
-            icon: LayoutDashboard,
-        };
-    }
-
-    if (props.user.tenantRole === 'guide') {
-        return {
-            href: guideSchedule().url,
-            label: 'Mi agenda de salidas',
-            icon: CalendarDays,
-        };
-    }
-
-    return null;
-});
+// WHY: `/settings/*`, el sitio publico y el panel comparten este menu. Sin la
+// entrada al puesto de trabajo, un admin que abre "Configuración" se queda sin
+// vuelta al panel y parece degradado a cliente. El destino se resuelve por
+// permiso en `@/config/navigation`, no con un `switch` por rol propio.
+//
+// `isStaffMember` oculta la zona de viajero a quien el middleware
+// `traveler.only` devolveria a su home: enlaces que rebotan, no se muestran.
+const { workspace, isStaffMember } = useNavigation();
 </script>
 
 <template>
@@ -67,7 +48,10 @@ const workspace = computed(() => {
     <template v-if="workspace">
         <DropdownMenuGroup>
             <DropdownMenuItem :as-child="true">
-                <Link class="block w-full cursor-pointer" :href="workspace.href">
+                <Link
+                    class="block w-full cursor-pointer"
+                    :href="workspace.href"
+                >
                     <component :is="workspace.icon" class="mr-2 h-4 w-4" />
                     {{ workspace.label }}
                 </Link>
@@ -76,27 +60,35 @@ const workspace = computed(() => {
         <DropdownMenuSeparator />
     </template>
     <DropdownMenuGroup>
-        <DropdownMenuItem :as-child="true">
-            <Link class="block w-full cursor-pointer" href="/account/bookings">
-                <Ticket class="mr-2 h-4 w-4" />
-                Mis reservas
-            </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem :as-child="true">
-            <Link class="block w-full cursor-pointer" href="/account/favorites">
-                <Heart class="mr-2 h-4 w-4" />
-                Favoritos
-            </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem :as-child="true">
-            <Link
-                class="block w-full cursor-pointer"
-                href="/account/notifications"
-            >
-                <Bell class="mr-2 h-4 w-4" />
-                Notificaciones
-            </Link>
-        </DropdownMenuItem>
+        <template v-if="!isStaffMember">
+            <DropdownMenuItem :as-child="true">
+                <Link
+                    class="block w-full cursor-pointer"
+                    :href="accountBookings()"
+                >
+                    <Ticket class="mr-2 h-4 w-4" />
+                    Mis reservas
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem :as-child="true">
+                <Link
+                    class="block w-full cursor-pointer"
+                    :href="accountFavorites()"
+                >
+                    <Heart class="mr-2 h-4 w-4" />
+                    Favoritos
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem :as-child="true">
+                <Link
+                    class="block w-full cursor-pointer"
+                    :href="accountNotifications()"
+                >
+                    <Bell class="mr-2 h-4 w-4" />
+                    Notificaciones
+                </Link>
+            </DropdownMenuItem>
+        </template>
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />

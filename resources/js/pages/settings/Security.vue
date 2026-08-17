@@ -31,7 +31,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Security settings',
+                title: 'Seguridad',
                 href: edit(),
             },
         ],
