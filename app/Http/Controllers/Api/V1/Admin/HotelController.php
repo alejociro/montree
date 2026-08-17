@@ -13,11 +13,14 @@ use App\Models\Hotel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class HotelController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        Gate::authorize('logistics.view');
+
         $hotels = Hotel::query()
             ->withCount('tourDates')
             ->when($request->filled('search'), fn ($query) => $query->where('name', 'like', '%'.$request->string('search')->toString().'%'))
@@ -44,6 +47,8 @@ final class HotelController extends Controller
 
     public function destroy(Hotel $hotel): JsonResponse
     {
+        Gate::authorize('logistics.manage');
+
         $usage = $hotel->tourDates()->count();
 
         if ($usage > 0) {

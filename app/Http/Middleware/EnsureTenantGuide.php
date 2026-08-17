@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * WHY: desde F018 este middleware ya NO pregunta por rol — quien entra a `guide/*` lo
+ * decide `can:guide.*` por ruta (bug B2: antes dejaba pasar a admin y operator sin que
+ * fueran guías). Queda a cargo de la membresía activa, que el permiso no valida.
+ */
 final class EnsureTenantGuide
 {
     public function handle(Request $request, Closure $next): Response
@@ -33,14 +37,6 @@ final class EnsureTenantGuide
         }
 
         $user->loadRolesForTeam($tenant->id);
-
-        if (! $user->hasAnyRole([
-            UserRole::Admin->value,
-            UserRole::Operator->value,
-            UserRole::Guide->value,
-        ])) {
-            abort(403);
-        }
 
         return $next($request);
     }

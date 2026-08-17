@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Team;
 
 use App\Enums\UserRole;
+use App\Exceptions\CrossTenantAccessException;
 use App\Exceptions\TeamException;
 use App\Models\Tenant;
 use App\Models\User;
@@ -13,6 +14,10 @@ final class UpdateMemberRoleAction
 {
     public function handle(Tenant $tenant, User $user, UserRole $role): User
     {
+        if (! $user->belongsToTenant($tenant)) {
+            throw CrossTenantAccessException::forMember();
+        }
+
         setPermissionsTeamId($tenant->id);
         $user->unsetRelation('roles');
         $currentRoles = $user->getRoleNames()->all();

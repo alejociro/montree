@@ -19,6 +19,7 @@ p2p-kits) y huecos confirmados en `CurrentAdminAccessMatrixTest.php`.
 
 | Método | Ruta | Permiso |
 |---|---|---|
+| *(todas)* | **`/admin/*` — grupo completo, api y web** | **`dashboard.view`** (gate de entrada, se evalúa ANTES del permiso de la fila) |
 | GET | `/admin/dashboard` | `dashboard.view` |
 | GET | `/admin/reports` | `reports.view` |
 | GET/POST | `/admin/reports/export` | `reports.export` |
@@ -60,6 +61,25 @@ p2p-kits) y huecos confirmados en `CurrentAdminAccessMatrixTest.php`.
 `super_admin` no se lista: `Gate::before` lo autoriza siempre, antes de
 llegar al chequeo `can:`.
 
+**Gate de grupo `can:dashboard.view`** (agregado al contrato el `2026-08-16`;
+ya implementado en Fase 1, decisión de producto ratificada). Toda ruta del
+grupo `admin/*` — **tanto la de API como la web/Inertia** — exige **dos**
+chequeos, en este orden:
+
+1. `can:dashboard.view` — llave de entrada al panel, aplicada al grupo.
+2. El `can:<permiso>` específico de su fila en la tabla de arriba.
+
+Es decir, `dashboard.view` no es solo el permiso de `GET /admin/dashboard`:
+es el conjunto "quien trabaja en el panel" (`admin`, `sales`, `operator`; **no**
+`guide`). Sin él, `guide` —que por matriz tiene `tours.view` y `departures.view`
+para sus propias salidas— entraba a `GET /admin/tours` y `GET /admin/tour-dates`,
+contra la user story "guide … sin acceso a ninguna pantalla de administración"
+(`spec.md`). Se usó un permiso ya existente en vez de inventar un permiso 39
+que habría vuelto a mover el conteo del catálogo.
+
+Las rutas `guide/*` (últimas dos filas) **no** pasan por este gate: siguen con
+su `can:` propio y la comprobación de propiedad por `guide_id` en el controller.
+
 ## 2. `HandleInertiaRequests` — prop compartida `auth.permissions`
 
 **Hoy** (`resources/js/types/auth.ts`):
@@ -84,7 +104,7 @@ interface AuthUser {
 - `permissions` es la unión de los permisos de **todos** los roles activos
   del usuario en el tenant actual (`$user->getAllPermissions()->pluck('name')`,
   ya resuelto por Spatie con `teams` activo).
-- Para `super_admin`: `permissions` se llena con **los 37 nombres completos**
+- Para `super_admin`: `permissions` se llena con **los 38 nombres completos**
   (no un flag `is_super_admin` aparte) para que el frontend pueda usar el
   mismo helper `can()` sin caso especial. El backend sigue autorizando
   server-side vía `Gate::before`, este array es solo para UI.
@@ -129,5 +149,22 @@ existía chequeo, ver `plan.md` §2 Actions / B3).
 
 ## Cambios al contrato
 
+- `2026-08-16` — **BREAKING para backend y frontend** (documenta lo ya
+  implementado en Fase 1, no pide código nuevo): §1 agrega el gate de grupo
+  `can:dashboard.view` sobre **todo** `admin/*` (api y web), que se evalúa antes
+  del permiso específico de cada ruta. Razón: sin él `guide` entraba al panel de
+  administración vía `tours.view`/`departures.view`, contra la user story de
+  `spec.md`. **Endpoints afectados: todas las filas de `admin/*` de la tabla de §1**
+  (dashboard, reports, tours, tour-dates, logistics, bookings, promotions,
+  newsletter, reviews, team, tenant) — todos pasan de exigir 1 permiso a exigir
+  2. **No afectadas**: `GET /guide/schedule` y
+  `GET /guide/tour-dates/{tourDate}/travelers`. Impacto en frontend: un usuario
+  sin `dashboard.view` recibe 403 en cualquier pantalla de `admin/*`, así que el
+  menú de Fase 2 debe filtrar por `dashboard.view` **y** por el permiso del ítem.
+- `2026-08-16` — §2: "los 37 nombres completos" → **38**. Razón: el catálogo real
+  (`spec.md` §"Catálogo de permisos", enumeración sin cambios) y la tabla
+  `permissions` de la DB tienen 38 filas; "37" era un error de conteo del
+  documento original. Sin impacto en el shape: `permissions` sigue siendo
+  `string[]`.
 - `2026-08-16` — Creación inicial. Deriva de la matriz cerrada (`rbacbase.md`)
   y de los huecos confirmados por `CurrentAdminAccessMatrixTest.php`.

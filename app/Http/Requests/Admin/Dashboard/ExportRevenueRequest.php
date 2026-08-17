@@ -14,6 +14,8 @@ class ExportRevenueRequest extends FormRequest
 {
     public const MAX_RANGE_DAYS = 366;
 
+    // WHY: una sola ruta sirve la lectura del reporte y su descarga. `reports.view` deja
+    // leer; bajar el CSV es la acción de exportar y exige `reports.export` (contracts §1).
     public function authorize(): bool
     {
         $user = $this->user();
@@ -22,7 +24,11 @@ class ExportRevenueRequest extends FormRequest
             return false;
         }
 
-        return (new DashboardPolicy)->exportReports($user);
+        if ($this->string('format')->toString() === 'csv') {
+            return (new DashboardPolicy)->exportReports($user);
+        }
+
+        return (new DashboardPolicy)->viewReports($user);
     }
 
     /**

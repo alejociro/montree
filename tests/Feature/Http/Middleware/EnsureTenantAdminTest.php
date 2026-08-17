@@ -27,6 +27,9 @@ class EnsureTenantAdminTest extends TestCase
         Route::middleware(['web', 'auth', 'tenant_admin.only'])
             ->get('_test/admin-only', fn () => ['ok' => true]);
 
+        Route::middleware(['web', 'auth', 'tenant_admin.only', 'can:dashboard.view'])
+            ->get('_test/admin-panel', fn () => ['ok' => true]);
+
         $this->tenant = Tenant::factory()->create([
             'slug' => 'demo',
             'domain' => 'demo.montree.test',
@@ -74,12 +77,20 @@ class EnsureTenantAdminTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_active_customer_without_admin_role_is_forbidden(): void
+    /**
+     * WHY: desde F018 el middleware ya no filtra por rol, solo por membresía activa. Quien
+     * deja fuera al cliente es el `can:` de la ruta, y eso es lo que se verifica acá.
+     */
+    public function test_active_customer_passes_the_membership_gate_but_not_the_permission_gate(): void
     {
         $customer = $this->memberWithRole(UserRole::Customer, TenantMembershipStatus::Active);
 
         $this->actingAs($customer)
             ->getJson('http://demo.montree.test/_test/admin-only')
+            ->assertOk();
+
+        $this->actingAs($customer)
+            ->getJson('http://demo.montree.test/_test/admin-panel')
             ->assertForbidden();
     }
 }

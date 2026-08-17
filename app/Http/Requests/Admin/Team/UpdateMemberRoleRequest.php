@@ -11,7 +11,7 @@ final class UpdateMemberRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('admin') ?? false;
+        return $this->user()?->can('team.role.update') ?? false;
     }
 
     /**
@@ -20,7 +20,7 @@ final class UpdateMemberRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', 'in:'.implode(',', array_map(fn ($c) => $c->value, [UserRole::Admin, UserRole::Operator, UserRole::Guide, UserRole::Customer]))],
+            'role' => ['required', 'in:'.implode(',', array_map(fn (UserRole $role): string => $role->value, [UserRole::Admin, UserRole::Sales, UserRole::Operator, UserRole::Guide, UserRole::Customer]))],
         ];
     }
 

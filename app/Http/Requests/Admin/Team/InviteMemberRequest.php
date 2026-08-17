@@ -11,7 +11,7 @@ final class InviteMemberRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('admin') ?? false;
+        return $this->user()?->can('team.invite') ?? false;
     }
 
     /**
@@ -22,7 +22,7 @@ final class InviteMemberRequest extends FormRequest
         return [
             'email' => ['required', 'email', 'max:255'],
             'name' => ['nullable', 'string', 'max:120'],
-            'role' => ['required', 'in:'.implode(',', [UserRole::Admin->value, UserRole::Operator->value, UserRole::Guide->value])],
+            'role' => ['required', 'in:'.implode(',', [UserRole::Admin->value, UserRole::Sales->value, UserRole::Operator->value, UserRole::Guide->value])],
         ];
     }
 

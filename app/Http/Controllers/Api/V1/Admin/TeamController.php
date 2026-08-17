@@ -28,6 +28,7 @@ final class TeamController extends Controller
 
     private const STAFF_ROLES = [
         UserRole::Admin->value,
+        UserRole::Sales->value,
         UserRole::Operator->value,
         UserRole::Guide->value,
     ];
@@ -75,10 +76,6 @@ final class TeamController extends Controller
 
     public function suspend(Request $request, User $user): JsonResponse
     {
-        if (! $request->user()?->hasRole('admin')) {
-            abort(403);
-        }
-
         if ($user->id === $request->user()?->id) {
             abort(422, 'No puedes suspenderte a ti mismo.');
         }
@@ -88,11 +85,8 @@ final class TeamController extends Controller
         return new JsonResponse(['data' => ['id' => $user->id, 'status' => 'suspended']]);
     }
 
-    public function reactivate(Request $request, User $user): JsonResponse
+    public function reactivate(User $user): JsonResponse
     {
-        if (! $request->user()?->hasRole('admin')) {
-            abort(403);
-        }
         $this->updateStatus->handle(Tenant::current(), $user, TenantMembershipStatus::Active);
 
         return new JsonResponse(['data' => ['id' => $user->id, 'status' => 'active']]);

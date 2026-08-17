@@ -7,7 +7,7 @@
 
 ## Descripción
 
-Reemplaza la autorización actual de `admin/*` — hoy escrita rol por rol en 11+ sitios distintos (policies, middlewares, form requests y `hasRole()` inline en controllers, ver §"Huecos" abajo) — por un catálogo de 37 permisos `modulo.accion` gestionado con `spatie/laravel-permission`. Los roles dejan de ser la unidad de autorización y pasan a ser un empaque comercial de permisos: nada en el código pregunta por rol, todo pregunta por permiso (`can('tours.delete')`), salvo `super_admin`, que usa `Gate::before`.
+Reemplaza la autorización actual de `admin/*` — hoy escrita rol por rol en 11+ sitios distintos (policies, middlewares, form requests y `hasRole()` inline en controllers, ver §"Huecos" abajo) — por un catálogo de 38 permisos `modulo.accion` gestionado con `spatie/laravel-permission`. Los roles dejan de ser la unidad de autorización y pasan a ser un empaque comercial de permisos: nada en el código pregunta por rol, todo pregunta por permiso (`can('tours.delete')`), salvo `super_admin`, que usa `Gate::before`.
 
 El cambio introduce además un rol nuevo, `sales` (Vendedor), separando lo que hoy hace `operator` en dos: quien vende (reservas, promociones, newsletter, reseñas) y quien opera producto (tours, salidas, logística). Un mismo usuario puede tener ambos roles.
 
@@ -24,9 +24,9 @@ Es el primer feature de la Fase 1 del plan de trabajo (`proyectos/montree/tabler
 
 ## Acceptance criteria
 
-### Catálogo de permisos (37, `modulo.accion`)
+### Catálogo de permisos (38, `modulo.accion`)
 
-- **Given** el seeder de roles y permisos corre, **when** se listan los permisos, **then** existen exactamente estos 37, agrupados por módulo:
+- **Given** el seeder de roles y permisos corre, **when** se listan los permisos, **then** existen exactamente estos 38, agrupados por módulo:
   - Dashboard: `dashboard.view`, `reports.view`, `reports.export`
   - Productos: `tours.view`, `tours.create`, `tours.update`, `tours.publish`, `tours.delete`, `tours.images.manage`
   - Salidas: `departures.view`, `departures.create`, `departures.update`, `departures.cancel`, `departures.delete`, `departures.assign_guide`
@@ -41,7 +41,7 @@ Es el primer feature de la Fase 1 del plan de trabajo (`proyectos/montree/tabler
 
 ### Matriz rol × permiso (aprobada, ver `rbacbase.md` §5 en el kit p2p-kits para el detalle completo con evidencia de código)
 
-- **Given** el seeder corre, **when** se listan los permisos de `admin`, **then** tiene los 37 (todos).
+- **Given** el seeder corre, **when** se listan los permisos de `admin`, **then** tiene los 38 (todos).
 - **Given** el seeder corre, **when** se listan los permisos de `sales`, **then** tiene: `dashboard.view`, `reports.view`, `tours.view`, `departures.view`, `bookings.view`, `bookings.update`, `promotions.*` (view/create/update, no delete), `newsletter.*` (view/send), `reviews.*` (view/moderate/respond).
 - **Given** el seeder corre, **when** se listan los permisos de `operator`, **then** tiene: `tours.view/create/update/publish/images.manage` (no `delete`), `departures.*` (todos incluido `assign_guide`, no `delete`), `logistics.*` (view/manage).
 - **Given** el seeder corre, **when** se listan los permisos de `guide`, **then** tiene solo: `tours.view`, `departures.view`, `guide.schedule.view`, `guide.travelers.view`.
@@ -58,7 +58,12 @@ Hoy `operator` pasa sin ninguna Policy propia (solo el middleware de grupo) en: 
 - **Given** un usuario con solo `sales`, **when** intenta `GET /admin/logistics/*` o `DELETE /admin/tour-dates/{id}`, **then** recibe 403 (hoy pasaría como operator; ya no aplica porque sales no tiene esos permisos).
 - **Given** un usuario con solo `operator`, **when** intenta `GET /admin/users` o `GET /admin/newsletter/subscribers`, **then** recibe 403 (hoy pasa; deja de pasar porque operator no tiene `team.view` ni `newsletter.view`).
 - **Given** un usuario con `operator` pero no `sales`, **when** intenta `GET /admin/reviews` o `GET /admin/bookings`, **then** recibe 403 (bug B1 del panel, cerrado).
-- **Given** un usuario con `admin` o `operator`, **when** accede a `guide/schedule` o `guide/tour-dates/{id}/travelers`, **then** recibe 403 salvo que también tenga el permiso `guide.schedule.view` / `guide.travelers.view` — hoy `tenant_guide.only` deja pasar a `admin` y `operator` aunque no sean guías (bug B2), y esto se cierra reemplazando el middleware por `can:`.
+- **Given** un usuario con solo `guide`, **when** intenta cualquier ruta de `admin/*` — incluidas `GET /admin/tours` y `GET /admin/tour-dates`, para las que la matriz sí le da `tours.view` y `departures.view` —, **then** recibe 403, porque todo el grupo `admin/*` exige además `can:dashboard.view` como gate de entrada (ver `contracts.md` §1). Agregado el `2026-08-16`: sin ese gate, el guía entraba al panel de producto, contra la user story "guide … sin acceso a ninguna pantalla de administración".
+- ~~**Given** un usuario con `admin` o `operator`, **when** accede a `guide/schedule` o `guide/tour-dates/{id}/travelers`, **then** recibe 403 salvo que también tenga el permiso `guide.schedule.view` / `guide.travelers.view` — hoy `tenant_guide.only` deja pasar a `admin` y `operator` aunque no sean guías (bug B2), y esto se cierra reemplazando el middleware por `can:`.~~ **Reemplazado el `2026-08-16`** (ver Changelog) por los dos criterios de abajo, que describen el comportamiento realmente implementado.
+- **Given** un usuario con `operator` (sin el rol `guide`), **when** accede a `GET /guide/schedule` o `GET /guide/tour-dates/{id}/travelers`, **then** recibe 403: la matriz no le da `guide.schedule.view` ni `guide.travelers.view`, y el gate de esas rutas ya es `can:` y no `tenant_guide.only` (bug B2 cerrado para `operator`).
+- **Given** un usuario con `admin`, **when** accede a `GET /guide/schedule`, **then** recibe **200 con la agenda vacía** — no 403. `admin` tiene los 38 permisos, incluidos `guide.schedule.view` y `guide.travelers.view`, así que pasa el `can:`; lo que lo deja sin datos es la comprobación de **propiedad** (`guide_id` del usuario autenticado), no el permiso. Sobre `guide/tour-dates/{id}/travelers` la misma comprobación de propiedad en `GuideController::travelers` devuelve 403 cuando la salida no es suya.
+  - **Decisión ratificada el `2026-08-16`**: se acepta ese 200-con-lista-vacía en vez de quitarle a `admin` los dos permisos de guía, porque la regla "admin = todos los permisos" es la que mantiene el seeder en una sola línea (`rbacbase.md` §5) y el dato sensible ya está protegido por propiedad.
+  - **Deuda registrada (feature futuro, NO este)**: el problema de fondo es que `tours.view`, `departures.view`, `guide.schedule.view` y `guide.travelers.view` para el rol `guide` deberían ser permisos **scoped a sus propias salidas**, no permisos globales. Mientras el modelo de permisos no tenga scope, la propiedad se seguirá chequeando aparte, en el controller. Nota del revisor al cerrar Fase 1.
 
 ## Edge cases
 
@@ -85,7 +90,7 @@ Los 31 endpoints de `routes/api.php:93-135` bajo el grupo `admin/*` más `guide/
 
 ## Datos requeridos
 
-Tablas: `permissions`, `roles`, `role_has_permissions`, `model_has_roles`, `model_has_permissions` (todas ya existen vía `spatie/laravel-permission`, hoy con `permissions = 0` filas y `roles = 5`). Este feature puebla `permissions` (37 filas), agrega el rol `sales` (6 roles totales) y llena `role_has_permissions` según la matriz de arriba. No requiere migraciones de schema nuevas.
+Tablas: `permissions`, `roles`, `role_has_permissions`, `model_has_roles`, `model_has_permissions` (todas ya existen vía `spatie/laravel-permission`, hoy con `permissions = 0` filas y `roles = 5`). Este feature puebla `permissions` (38 filas), agrega el rol `sales` (6 roles totales) y llena `role_has_permissions` según la matriz de arriba. No requiere migraciones de schema nuevas.
 
 ---
 
@@ -105,4 +110,5 @@ Tablas: `permissions`, `roles`, `role_has_permissions`, `model_has_roles`, `mode
 
 ## Changelog
 
+- `2026-08-16` — Alineación con lo implementado al cerrar Fase 1 (490/490 tests verde, revisión GO). Cuatro correcciones, todas **ratificadas por el usuario final del proyecto como decisión de producto** al cerrar la fase, sobre las divergencias que `montree-backend-dev` dejó anotadas en `tasks.md` §"Bloqueos / Decisiones pendientes": (1) el catálogo son **38 permisos, no 37** — manda la enumeración, que no se tocó, y la DB real tiene 38; corregido también en `rbacbase.md` §4, `contracts.md` §2 y `plan.md`. (2) Se documenta el gate de grupo `can:dashboard.view` de todo `admin/*` en `contracts.md` §1, y se agrega el criterio de aceptación de `guide` → 403 en `admin/*` que ese gate sostiene. (3) El 4º Given/When/Then de "Cierre de huecos de autorización" decía que `admin` recibe 403 en `guide/schedule`; el comportamiento real y aceptado es **200 con agenda vacía**, porque `admin` sí tiene el permiso y el filtro es por propiedad (`guide_id`) — se tachó el criterio viejo y se escribieron los dos que lo reemplazan, con la deuda de permisos scoped anotada para un feature futuro. (4) Las dos celdas en que `rbacbase.md` §5 contradecía a esta spec (`operator` con `bookings.*`/`reviews.view`; `admin` sin `guide.travelers.view`) se resolvieron **a favor de `spec.md`**, que es lo implementado y validado por el revisor; la matriz del kit se corrigió, esta spec no cambió en esos puntos.
 - `2026-08-16` — Creación inicial. Contenido derivado de la matriz cerrada en `rbacbase.md` (kit p2p-kits, confirmada 2026-08-16) y de la congelación de comportamiento actual en `tests/Feature/Rbac/CurrentAdminAccessMatrixTest.php` (48 tests, 240 assertions, verde).

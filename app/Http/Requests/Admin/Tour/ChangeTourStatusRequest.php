@@ -26,7 +26,7 @@ class ChangeTourStatusRequest extends FormRequest
             return false;
         }
 
-        if (! $user->can('update', $tour)) {
+        if (! $user->can('publish', $tour)) {
             return false;
         }
 

@@ -10,7 +10,7 @@
 
 ## 1. Resumen
 
-Puebla el catálogo de 37 permisos y el rol `sales` vía seeder, reemplaza todo
+Puebla el catálogo de 38 permisos y el rol `sales` vía seeder, reemplaza todo
 `hasRole()`/rol-hardcodeado en Policies, Form Requests, middlewares y rutas
 por `can('modulo.accion')`, cierra los huecos de autorización confirmados por
 `CurrentAdminAccessMatrixTest.php`, y expone los permisos del usuario al
@@ -123,6 +123,10 @@ F018 no agrega lógica a controllers, la saca de ellos.
 
 - `routes/api.php:93-135` y las de `guide/*`: cada ruta recibe `->middleware('can:<permiso>')`
   según el mapa de `contracts.md` §1, en vez del gate de grupo actual.
+- **El grupo `admin/*` (api y web) conserva un gate de grupo, pero por permiso:
+  `can:dashboard.view`** (agregado al plan el `2026-08-16`, ya implementado).
+  Corre antes del `can:` de cada ruta. Sin él, `guide` —con `tours.view` y
+  `departures.view` por matriz— entraba al panel. Ver `contracts.md` §1.
 - `Gate::before` en `AppServiceProvider::boot()`:
   ```php
   Gate::before(fn (User $user) => $user->isSuperAdmin() ? true : null);
@@ -159,7 +163,7 @@ el switch por rol son Fase 2 del plan (`planfase.md`), feature aparte.
   comentario `// WHY:` solo donde el cambio no es obvio por el nombre del
   test [constitución §2.3, comentarios solo si el WHY no es obvio].
 - `tests/Feature/Rbac/PermissionCatalogSeederTest.php` (nuevo) — 1 happy:
-  corre el seeder, cuenta 37 permisos agrupados por módulo; 1 edge: corre
+  corre el seeder, cuenta 38 permisos agrupados por módulo; 1 edge: corre
   el seeder dos veces (`idempotente`, no duplica filas).
 - `tests/Feature/Rbac/RoleMigrationSeederTest.php` (nuevo) — 1 happy: el
   usuario `operator` local recibe ambos roles tras el seeder de corte;
@@ -184,7 +188,7 @@ el switch por rol son Fase 2 del plan (`planfase.md`), feature aparte.
 
 - **Seeder de permisos separado del seeder de asignaciones rol→permiso**:
   como pidió el usuario explícitamente. `RolesAndPermissionsSeeder` gana un
-  método privado `seedPermissions()` (37 filas) y otro `seedRolePermissions()`
+  método privado `seedPermissions()` (38 filas) y otro `seedRolePermissions()`
   (matriz rol→permiso), llamados en orden desde `run()`. Un solo archivo,
   dos responsabilidades separadas en métodos — no dos seeders, porque
   `DatabaseSeeder` ya los orquesta juntos y partirlos en clases separadas
@@ -216,3 +220,18 @@ el switch por rol son Fase 2 del plan (`planfase.md`), feature aparte.
   decisión pendiente sobre `role_has_permissions` sin `tenant_id`).
 - Vista propia de operación para `operator` en el dashboard (decisión de
   producto pendiente).
+- **Permisos con scope** (`guide` limitado a *sus* salidas en vez de
+  `tours.view`/`departures.view`/`guide.*.view` globales). Registrado como deuda
+  al cerrar Fase 1; hoy la propiedad se chequea aparte, en el controller, por
+  `guide_id`. Feature futuro, ver `spec.md` §"Cierre de huecos de autorización".
+
+---
+
+## Changelog
+
+- `2026-08-16` — "37 permisos" → **38** en §1, §4 y §5 (conteo real del catálogo
+  y de la tabla `permissions`; la enumeración de `spec.md` no cambió). §2 Rutas:
+  documentado el gate de grupo `can:dashboard.view` sobre `admin/*`, que se
+  implementó y no estaba planificado. §7: agregada la deuda de permisos con
+  scope. Razón: alinear el plan con lo implementado y revisado (GO, 490/490) al
+  cerrar Fase 1. Sin cambios funcionales a la spec.

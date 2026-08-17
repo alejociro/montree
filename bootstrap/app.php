@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\BookingException;
+use App\Exceptions\CrossTenantAccessException;
 use App\Exceptions\InvalidTourStatusTransitionException;
 use App\Exceptions\LogisticsException;
 use App\Exceptions\NewsletterException;
@@ -28,6 +29,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
@@ -35,6 +37,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -101,6 +104,23 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
         $exceptions->render(fn (TourDateException $e) => $e->toResponse());
         $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
+        $exceptions->render(fn (CrossTenantAccessException $e) => $e->toResponse());
+
+        // WHY: desde F018 un 403 de autorización siempre significa "te falta el permiso X",
+        // no "tu rol no es Y". Se normaliza el shape para el frontend (contracts.md §4);
+        // las páginas Inertia siguen con el 403 por defecto de Laravel. Se engancha en
+        // AccessDeniedHttpException, no en AuthorizationException: el handler ya convirtió
+        // la segunda en la primera antes de consultar estos callbacks.
+        $exceptions->render(function (AccessDeniedHttpException $e, Request $request): ?JsonResponse {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            return new JsonResponse([
+                'message' => __('No tienes permiso para realizar esta acción.'),
+                'error_code' => 'INSUFFICIENT_PERMISSION',
+            ], 403);
+        });
         // WHY: this is the only domain exception reachable from an Inertia form
         // (the signup POST moved off /api/v1). It fires on a race against the
         // tenants.slug unique index, which is semantically the same failure as the

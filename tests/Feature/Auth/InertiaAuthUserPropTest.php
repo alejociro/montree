@@ -11,9 +11,11 @@ use App\Models\User;
 use App\Services\Tenant\AttachUserToTenant;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Feature\Rbac\PermissionCatalogSeederTest;
 use Tests\TestCase;
 
 class InertiaAuthUserPropTest extends TestCase
@@ -46,11 +48,11 @@ class InertiaAuthUserPropTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_authenticated_user_inertia_props_include_tenant_role(): void
+    public function test_authenticated_user_inertia_props_include_the_permissions_of_their_roles(): void
     {
         $user = User::factory()->create();
         $this->tenant->makeCurrent();
-        app(AttachUserToTenant::class)->handle($user, $this->tenant, UserRole::Customer, 'manual');
+        app(AttachUserToTenant::class)->handle($user, $this->tenant, UserRole::Operator, 'manual');
         Tenant::forgetCurrent();
 
         $response = $this->actingAs($user)
@@ -60,12 +62,15 @@ class InertiaAuthUserPropTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.id', $user->id)
             ->where('auth.user.email', $user->email)
-            ->where('auth.user.tenantRole', UserRole::Customer->value)
             ->where('auth.user.isSuperAdmin', false)
+            ->has('auth.user.permissions', 13)
+            ->where('auth.permissions', fn (Collection $permissions): bool => $permissions->contains('tours.create')
+                && ! $permissions->contains('team.view')
+            )
         );
     }
 
-    public function test_super_admin_props_have_is_super_admin_true_and_null_tenant_role(): void
+    public function test_super_admin_props_carry_the_whole_permission_catalog(): void
     {
         $superAdmin = User::factory()->create();
         setPermissionsTeamId(0);
@@ -76,11 +81,11 @@ class InertiaAuthUserPropTest extends TestCase
 
         $response->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.isSuperAdmin', true)
-            ->where('auth.user.tenantRole', null)
+            ->has('auth.user.permissions', PermissionCatalogSeederTest::CATALOG_SIZE)
         );
     }
 
-    public function test_user_without_tenant_relation_has_null_tenant_role(): void
+    public function test_user_without_tenant_relation_has_no_permissions(): void
     {
         $user = User::factory()->create();
 
@@ -88,7 +93,7 @@ class InertiaAuthUserPropTest extends TestCase
             ->get('http://demo.montree.test/_test/auth-shared');
 
         $response->assertInertia(fn (Assert $page) => $page
-            ->where('auth.user.tenantRole', null)
+            ->where('auth.user.permissions', [])
             ->where('auth.user.isSuperAdmin', false)
         );
     }

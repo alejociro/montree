@@ -99,6 +99,25 @@ class RevenueReportControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
+    /**
+     * WHY: una sola ruta cubre las dos filas de `contracts.md` §1 — leer el reporte pide
+     * `reports.view` (que el vendedor tiene) y bajar el CSV pide `reports.export` (que no).
+     */
+    public function test_sales_reads_the_report_but_cannot_download_the_csv(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'sales-split', 'domain' => 'sales-split.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $sales = $this->memberFor($tenant, UserRole::Sales);
+
+        $this->actingAs($sales)->getJson(
+            'http://sales-split.montree.test/api/v1/admin/reports/revenue?from=2026-04-01&to=2026-04-30',
+        )->assertOk();
+
+        $this->actingAs($sales)->getJson(
+            'http://sales-split.montree.test/api/v1/admin/reports/revenue?from=2026-04-01&to=2026-04-30&format=csv',
+        )->assertForbidden();
+    }
+
     public function test_range_greater_than_max_returns_validation_error(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'too-big', 'domain' => 'too-big.montree.test']);
