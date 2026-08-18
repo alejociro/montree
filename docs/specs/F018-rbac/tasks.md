@@ -81,6 +81,15 @@
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `php artisan test --compact` (549/549 verde)
 
+## Backend — Remediación review (`montree-backend-dev`): los 2 bloqueos del NO-GO
+
+- [x] `Admin/Team/TeamIndexRequest` — `authorize()` con `team.view` (el mismo permiso que gobierna la ruta), `status` con `Rule::enum(TenantMembershipStatus::class)`, `role` con `Rule::in(TenantRoleCatalog::assignableNames($tenant))`, `search` `max:100`, `per_page` `integer|min:1|max:100`; accessors `status()`/`role()`/`search()`/`perPage()` (default 15) espejo de `TourDateIndexRequest`
+- [x] `TeamController::index` — consume `TeamIndexRequest`, sin `Request::query()` ni clamp a mano; se borró el `perPage()` privado
+- [x] `tests/Feature/Team/TeamDirectoryTest.php` — 3 tests de failure: filtros fuera de catálogo (422 en `status`+`role`+`per_page`), `search` > 100, rol de otra agencia (422, no 200 silencioso)
+- [x] `tests/Feature/Rbac/GuideRouteAccessTest.php` — 6º Given/When/Then de "Cierre de huecos de autorización": `admin` → `GET /guide/schedule` 200 con `data` vacío, y 403 sobre los viajeros de una salida ajena
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --compact` (558/558 verde)
+
 ## Frontend (`montree-frontend-dev`)
 
 - [x] `resources/js/types/auth.ts` — `AuthUser.tenantRole: string` → `AuthUser.permissions: string[]`
@@ -168,6 +177,15 @@ Nada más de frontend en este feature — composable `can()` y reescritura de si
   4. ~~**Falta en `contracts.md` §1 el gate de grupo `can:dashboard.view`.**…~~ → hecho: fila + nota en `contracts.md` §1 (gate de entrada de **todo** `admin/*`, api y web, evaluado antes del `can:` de cada ruta), marcado **BREAKING** en "Cambios al contrato", replicado en `plan.md` §2 Rutas y como criterio de aceptación nuevo en `spec.md` (`guide` → 403 en `admin/*`).
 
 ## Notas durante implementación
+
+- `2026-08-18` (`montree-backend-dev`, remediación de los 2 bloqueos del NO-GO): suite **558/558 verde, 1970 assertions** (partía de 553; +5 tests), Pint verde. Nada más de RBAC se tocó.
+  - **El permiso de `TeamIndexRequest::authorize()` es `team.view`**, el mismo que ya tenía la ruta `GET /admin/users` en `routes/api.php` (`middleware('can:team.view')`). No se creó ninguno: el catálogo de 38 queda intacto. La doble puerta (middleware + `authorize()`) es la misma redundancia que ya tienen `TourDateIndexRequest` y `AdminBookingIndexRequest`, y sirve para que el Form Request siga siendo seguro si mañana se monta en otra ruta.
+  - **`TenantRoleCatalog::assignableNames(Tenant $tenant): array<string>` calzó tal cual**, sin ajustes: es la misma llamada que ya hacían `UpdateMemberRoleRequest` y el propio `TeamController::index`. El filtro `role` valida contra ella, así que un rol propio de la agencia (creado en runtime desde `/admin/roles`) sigue siendo un filtro válido y el de **otra** agencia da 422, no un listado vacío.
+  - **Cambio de comportamiento observable**: `?status=nope`, `?role=zzz` o `?per_page=500` pasan de 200-silencioso (filtro ignorado / `per_page` clampeado a 100) a **422**. La UI (`pages/Admin/Team/Index.vue`) no manda esos valores — omite el parámetro cuando el selector está en "all" (`buildQuery()`), y `per_page` es la constante 15 —, así que el contrato con el frontend no cambia.
+  - **`sometimes|nullable` en los 4 filtros** a propósito: `nullable` cubre un `?status=` vacío que hoy nadie manda pero que un enlace pegado a mano sí produce, y evita convertir en 422 algo que antes era "sin filtro".
+  - **El catálogo de roles se consulta solo si vino el filtro `role`** (`roleRules()`, la única lógica condicional del `rules()`): `rules()` se arma en cada request y `Rule::in` necesita la lista materializada, así que hacerlo siempre le sumaba una query al listado sin filtrar. **Query count medido con 13 miembros: 11 sin filtros — idéntico al que midió Fase 3A — y 7 con `role`+`status`+`search`+`per_page`** (menos porque el caché de permisos de spatie ya viene tibio). Sin N+1.
+  - **La búsqueda se fue a un método privado del controller** (`searchByNameOrEmail`, pasado como first-class callable a `when()`) para que `index` quede en el orden de líneas de sus hermanos. El resto de la query no cambió: sigue el `where('tenant_user.status', ...)` calificado, con su WHY sobre `wherePivot()` dentro de un `when()`.
+  - **El 6º Given/When/Then ya se comportaba bien; lo que faltaba era la red.** Los dos tests nuevos pasaron en verde sin tocar `GuideController`, confirmando que `admin` pasa el `can:guide.schedule.view` y se queda sin datos por propiedad (`guide_id`), y que `travelers` corta con 403 sobre una salida ajena. Si algún día se le quitan a `admin` los dos permisos de guía, estos dos tests son los que se pondrán rojos y hay que actualizar junto con `spec.md`.
 
 - `2026-08-16` (`montree-frontend-dev`, Fase 3A + 3B frontend): pantallas de equipo y de roles. Decisiones que no estaban en la instrucción:
   - **Las 4 divergencias ⚠️ del backend se resolvieron a favor del código, no del contrato.** La instrucción traía el contrato previo (`/admin/team`, `roles: string[]`, sin catálogo de permisos); las rutas y resources reales llegaron a mitad de la tarea. El frontend consume lo implementado: `api/v1/admin/users/*`, `roles: [{id,name,label,is_base}]` normalizado a `{name,label}` para pintar y a `string[]` para enviar, y `meta.available_permissions` como catálogo del selector. **El espejo local (`config/permissions.ts`) no es la fuente**: se usa solo si esa respuesta no trae catálogo, y `groupPermissions()` prefiere el `module_label` del backend, así que agregar un permiso 39 no exige tocar el frontend.

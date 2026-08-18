@@ -92,6 +92,43 @@ final class TeamDirectoryTest extends TestCase
         $response->assertJsonPath('meta.per_page', 2);
     }
 
+    public function test_rejects_filters_outside_the_catalog_instead_of_ignoring_them(): void
+    {
+        $tenant = $this->makeTenant();
+        $admin = $this->memberFor($tenant, UserRole::Admin, ['name' => 'Ana Admin']);
+
+        $response = $this->actingAs($admin)->getJson($this->url('?status=nope&role=zzz&per_page=500'));
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['status', 'role', 'per_page']);
+    }
+
+    public function test_rejects_a_search_longer_than_the_allowed_length(): void
+    {
+        $tenant = $this->makeTenant();
+        $admin = $this->memberFor($tenant, UserRole::Admin, ['name' => 'Ana Admin']);
+
+        $response = $this->actingAs($admin)->getJson($this->url('?search='.str_repeat('a', 101)));
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['search']);
+    }
+
+    public function test_rejects_a_role_that_belongs_to_another_agency(): void
+    {
+        $tenant = $this->makeTenant();
+        $other = $this->makeTenant(['slug' => 'otra', 'domain' => 'otra.montree.test']);
+        $this->tenantRole($other, 'coordinacion');
+
+        $admin = $this->memberFor($tenant, UserRole::Admin, ['name' => 'Ana Admin']);
+        Tenant::forgetCurrent();
+
+        $response = $this->actingAs($admin)->getJson($this->url('?role=coordinacion'));
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['role']);
+    }
+
     public function test_exposes_the_last_access_and_every_role_of_a_member(): void
     {
         $tenant = $this->makeTenant();

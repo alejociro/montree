@@ -100,6 +100,36 @@ final class GuideRouteAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * WHY: `admin` tiene `guide.schedule.view` (se lleva el catálogo completo), así que el
+     * `can:` lo deja pasar; lo que lo deja sin datos es la propiedad (`guide_id`), no el
+     * permiso. Criterio aceptado en `spec.md` — 200 con lista vacía, no 403.
+     */
+    public function test_admin_sees_the_guide_schedule_empty_because_no_departure_is_theirs(): void
+    {
+        $guide = $this->memberFor(UserRole::Guide);
+        $admin = $this->memberFor(UserRole::Admin);
+        $this->tourDateFor($guide);
+        Tenant::forgetCurrent();
+
+        $response = $this->actingAs($admin)->getJson(self::HOST.'/api/v1/guide/schedule');
+
+        $response->assertOk();
+        $response->assertJsonCount(0, 'data');
+    }
+
+    public function test_admin_cannot_read_the_travelers_of_a_departure_that_is_not_theirs(): void
+    {
+        $guide = $this->memberFor(UserRole::Guide);
+        $admin = $this->memberFor(UserRole::Admin);
+        $tourDate = $this->tourDateFor($guide);
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)
+            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/travelers")
+            ->assertForbidden();
+    }
+
     public function test_guide_cannot_reach_the_admin_panel(): void
     {
         $guide = $this->memberFor(UserRole::Guide);

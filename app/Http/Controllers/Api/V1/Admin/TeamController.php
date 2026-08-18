@@ -11,6 +11,7 @@ use App\Actions\Team\UpdateMemberStatusAction;
 use App\Enums\TenantMembershipStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Team\InviteMemberRequest;
+use App\Http\Requests\Admin\Team\TeamIndexRequest;
 use App\Http\Requests\Admin\Team\UpdateMemberRoleRequest;
 use App\Http\Resources\Team\TeamMemberResource;
 use App\Models\Tenant;
@@ -32,7 +33,7 @@ final class TeamController extends Controller
         private TenantRoleCatalog $roles,
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(TeamIndexRequest $request): AnonymousResourceCollection
     {
         $tenant = Tenant::current();
         setPermissionsTeamId($tenant->id);
@@ -44,25 +45,11 @@ final class TeamController extends Controller
             // WHY: `tenant_user.status` calificado y no `wherePivot()` — dentro de un
             // `when()` la relación entrega el query builder, y ahí `wherePivot` cae en el
             // manejo de `whereXxx` dinámico (filtra por una columna llamada "pivot").
-            ->when(
-                TenantMembershipStatus::tryFrom((string) $request->query('status')),
-                fn (Builder $query, TenantMembershipStatus $status) => $query->where('tenant_user.status', $status->value),
-            )
-            ->when(
-                $request->filled('role'),
-                fn (Builder $query) => $query->whereHas(
-                    'roles',
-                    fn (Builder $roles) => $roles->where('name', $request->string('role')->toString()),
-                ),
-            )
-            ->when($request->filled('search'), function (Builder $query) use ($request): void {
-                $term = '%'.$request->string('search')->toString().'%';
-                $query->where(fn (Builder $match) => $match
-                    ->where('users.name', 'like', $term)
-                    ->orWhere('users.email', 'like', $term));
-            })
+            ->when($request->status(), fn (Builder $query, TenantMembershipStatus $status) => $query->where('tenant_user.status', $status->value))
+            ->when($request->role(), fn (Builder $query, string $role) => $query->whereHas('roles', fn (Builder $roles) => $roles->where('name', $role)))
+            ->when($request->search(), $this->searchByNameOrEmail(...))
             ->orderBy('users.name')
-            ->paginate($this->perPage($request))
+            ->paginate($request->perPage())
             ->withQueryString();
 
         return TeamMemberResource::collection($members);
@@ -108,8 +95,15 @@ final class TeamController extends Controller
         return new JsonResponse(['data' => ['id' => $user->id, 'status' => 'active']]);
     }
 
-    private function perPage(Request $request): int
+    /**
+     * @param  Builder<User>  $query
+     */
+    private function searchByNameOrEmail(Builder $query, string $term): void
     {
-        return min(max($request->integer('per_page', 15), 1), 100);
+        $like = '%'.$term.'%';
+
+        $query->where(fn (Builder $match) => $match
+            ->where('users.name', 'like', $like)
+            ->orWhere('users.email', 'like', $like));
     }
 }
