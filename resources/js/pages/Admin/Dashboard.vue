@@ -12,6 +12,7 @@ import TopToursTable from '@/components/organisms/TopToursTable.vue';
 import UpcomingDatesTable from '@/components/organisms/UpcomingDatesTable.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { useTenant } from '@/composables/useTenant';
 import type {
     DashboardPeriodKey,
@@ -37,11 +38,9 @@ const sparklinePoints = computed<number[]>(() => {
         return [];
     }
 
-    const current = Number.parseFloat(snapshot.value.revenue.gross) || 0;
-    const previous =
-        Number.parseFloat(snapshot.value.revenue.previous_gross) || 0;
-
-    return [previous, current];
+    return snapshot.value.revenue.series.map(
+        (point) => Number.parseFloat(point.amount) || 0,
+    );
 });
 
 const rangeLabel = computed(() => {
@@ -59,6 +58,14 @@ const rangeLabel = computed(() => {
     );
 
     return `${start} – ${end}`;
+});
+
+const isRefreshing = computed(() => isLoading.value && snapshot.value !== null);
+
+const pendingReviewsLabel = computed(() => {
+    const count = snapshot.value?.pending_reviews_count ?? 0;
+
+    return count === 1 ? '1 reseña pendiente' : `${count} reseñas pendientes`;
 });
 
 async function loadDashboard(): Promise<void> {
@@ -102,6 +109,7 @@ watch(period, () => {
             />
 
             <div class="flex flex-wrap items-center gap-2">
+                <Spinner v-if="isRefreshing" class="text-muted-foreground" />
                 <PeriodSelector v-model="period" />
                 <ExportRevenueButton
                     v-if="snapshot?.permissions.can_export_reports"
@@ -125,7 +133,11 @@ watch(period, () => {
             </div>
         </div>
 
-        <div v-else-if="snapshot" class="mt-6 space-y-6">
+        <div
+            v-else-if="snapshot"
+            class="mt-6 space-y-6 transition-opacity"
+            :class="{ 'opacity-60': isRefreshing }"
+        >
             <div v-if="userName" class="text-sm text-muted-foreground">
                 Hola, {{ userName }}. Esto pasó en {{ rangeLabel }}.
             </div>
@@ -168,11 +180,10 @@ watch(period, () => {
                         <Inbox class="size-5 flex-none" />
                         <div>
                             <p class="font-medium">
-                                {{ snapshot.pending_reviews_count }} reseñas
-                                pendientes
+                                {{ pendingReviewsLabel }}
                             </p>
                             <p class="mt-1 text-xs">
-                                Revisalas para mantener tu reputación al día.
+                                Revísalas para mantener tu reputación al día.
                             </p>
                         </div>
                     </div>
@@ -181,7 +192,7 @@ watch(period, () => {
         </div>
 
         <div
-            v-else-if="!isLoading"
+            v-else-if="!isLoading && !errorMessage"
             class="mt-12 rounded-xl border border-dashed border-border p-12 text-center"
         >
             <h3 class="text-base font-semibold">Bienvenido al dashboard</h3>

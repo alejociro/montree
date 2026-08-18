@@ -102,6 +102,9 @@ class DashboardControllerTest extends TestCase
         $response->assertJsonPath('data.period.key', 'last_30_days');
         $response->assertJsonPath('data.revenue.gross', '240.00');
         $response->assertJsonPath('data.revenue.currency', 'COP');
+        $response->assertJsonPath('data.revenue.series', [
+            ['date' => '2026-05-01', 'amount' => '240.00'],
+        ]);
         $response->assertJsonPath('data.bookings.total', 3);
         $response->assertJsonPath('data.bookings.confirmed', 2);
         $response->assertJsonPath('data.bookings.pending_payment', 1);
