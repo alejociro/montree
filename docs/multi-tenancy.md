@@ -73,6 +73,12 @@ tenants, users, tenant_user (pivote)
 
 `users` es global: un mismo usuario puede pertenecer a varios tenants vía `tenant_user`.
 
+Consecuencia para F018: `users.last_login_at` también es **global, no por tenant**. Si un
+usuario pertenece a los tenants A y B, la pantalla de equipo de ambos muestra el mismo
+"último acceso" — el de su última autenticación en cualquier subdominio. Si el negocio
+llegara a exigir último acceso *por tenant*, la columna correcta sería
+`tenant_user.last_login_at` (el pivote), no `users`.
+
 ---
 
 ## 4. Roles y permisos
@@ -345,6 +351,10 @@ invariantes del sistema:
   `tour_dates.provider_id` nullable con `restrictOnDelete` (la BD refuerza el 409
   `RESOURCE_IN_USE` de la app). Tests de aislamiento en `TenantIsolationTest`
   (ahora 17 modelos cubiertos).
+- `2026-08-16` — F018 (fase 3, equipo): columna `users.last_login_at` (timestamp nullable,
+  sin backfill). §3.2 documenta que es global, no por tenant, y cuál sería la alternativa
+  (`tenant_user.last_login_at`) si el requisito cambiara. No es fillable: se escribe con
+  `forceFill()`, igual que `password_set_at`.
 - `2026-08-01` — F016 (onboarding): §2 documenta que un tenant `status = 'pending'`
   resuelve a `Errors/TenantPending` (`503`), no al catálogo. §9.1 documenta los slugs
   de marca reservados (`SubdomainTenantFinder::RESERVED_SLUGS` + `isReservedSlug()`,

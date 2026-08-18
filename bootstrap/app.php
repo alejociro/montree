@@ -10,6 +10,7 @@ use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
 use App\Exceptions\ReviewException;
+use App\Exceptions\RoleException;
 use App\Exceptions\SubdomainTakenException;
 use App\Exceptions\TeamException;
 use App\Exceptions\TourDateException;
@@ -107,6 +108,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (TourDateException $e) => $e->toResponse());
         $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
         $exceptions->render(fn (CrossTenantAccessException $e) => $e->toResponse());
+        $exceptions->render(fn (RoleException $e) => $e->toResponse());
 
         // WHY: desde F018 un 403 de autorización siempre significa "te falta el permiso X",
         // no "tu rol no es Y". Se normaliza el shape para el frontend (contracts.md §4);

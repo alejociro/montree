@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->middleware('can:newsletter.view')->name('newsletter.index');
     Route::get('reviews', [ReviewPagesController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
     Route::get('team', [TeamPagesController::class, 'index'])->middleware('can:team.view')->name('team.index');
+    Route::inertia('roles', 'Admin/Roles/Index')->middleware('can:team.role.update')->name('roles.index');
     Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->middleware('can:tenant.view')->name('tenant.configuration');
 });
 

@@ -50,6 +50,37 @@
 - [x] `vendor/bin/pint --dirty --format agent`
 - [x] `php artisan test --compact` (511/511 verde)
 
+## Backend — Fase 3A (`montree-backend-dev`): módulo de usuarios
+
+> Amplía `/admin/users` (el prefijo real de `/admin/team`, ver nota de divergencia abajo).
+
+- [x] `App\Services\Rbac\TenantRoleCatalog` — roles visibles/asignables de una agencia (base staff + propios del tenant), `isBase()`, `labelFor()`, `isReservedName()`, `nameTaken()`; `STAFF_ROLES` se muda acá desde `TeamController`
+- [x] `App\Actions\Team\UpdateMemberRoleAction` — recibe `array<string>` de roles y hace `syncRoles()` (multi-rol real); conserva el chequeo de pertenencia (B3) y el de último admin
+- [x] `Admin/Team/UpdateMemberRoleRequest` — `roles: array|min:1`, cada elemento validado contra el catálogo del tenant (`Rule::in`, no lista fija)
+- [x] `Admin/Team/InviteMemberRequest` — mismo catálogo dinámico, para poder invitar directo a un rol propio
+- [x] `TeamController::index` — filtros `status`/`role`, búsqueda `search` (nombre/email), `paginate()` con `per_page` (default 15, máx 100)
+- [x] `App\Http\Resources\Team\TeamMemberResource` — `roles[]`, `status`, `invited_at`, `joined_at`, `last_login_at`
+- [x] `App\Listeners\RecordLastLogin` — escucha `Illuminate\Auth\Events\Login`, `forceFill(['last_login_at' => now()])->save()`; ignora el segundo evento del handoff cross-host (`auth.handoff`)
+- [x] `App\Actions\Team\SendTeamInvitationAction` — token + `TenantUserInvitationNotification`, compartida por super admin / invitación / reenvío (regla del 3)
+- [x] `InviteMemberAction` — deja la membresía en `invited` y manda la invitación cuando la persona todavía no fijó contraseña
+- [x] `App\Listeners\ActivateInvitedMemberships` — `PasswordReset` → la membresía `invited` pasa a `active`
+- [x] `App\Actions\Team\ResendInvitationAction` + `POST /admin/users/{user}/resend-invitation` (`can:team.invite`)
+- [x] `tests/Feature/Team/MultiRoleAssignmentTest.php` (7), `TeamDirectoryTest.php` (7), `InvitationTest.php` (5), `tests/Feature/Auth/LastLoginTest.php` (3)
+
+## Backend — Fase 3B (`montree-backend-dev`): módulo de roles y permisos
+
+- [x] `App\Services\Rbac\PermissionCatalog` — módulo + etiqueta de cada permiso, leyendo el catálogo de `RolesAndPermissionsSeeder::PERMISSIONS` (no lo reescribe)
+- [x] `App\Http\Controllers\Api\V1\Admin\RoleController` — index/show/store/update/destroy
+- [x] `App\Actions\Role\{Create,Update,Delete}TenantRoleAction`
+- [x] `Admin/Role/StoreRoleRequest` + `UpdateRoleRequest` — nombre único por tenant (case-insensitive), no reservado, permisos ⊆ catálogo de 38
+- [x] `App\Http\Resources\Role\{RoleResource,RoleDetailResource,RoleSummaryResource}`
+- [x] `App\Exceptions\RoleException` — `BASE_ROLE_READ_ONLY` (403) y `ROLE_IN_USE` (409, con el conteo en el mensaje), registrada en `bootstrap/app.php`
+- [x] `AppServiceProvider::configureRouteBindings()` — `{role}` se resuelve dentro del catálogo visible del tenant (404 si es de otra agencia)
+- [x] `routes/api.php` — `Route::apiResource('roles')` bajo `can:team.role.update`; `routes/web.php` — página `admin/roles`
+- [x] `tests/Feature/Admin/RoleManagementTest.php` (16: listado, detalle, creación, edición, borrado, base de solo lectura, rol en uso, aislamiento por tenant, 403 sin permiso)
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --compact` (549/549 verde)
+
 ## Frontend (`montree-frontend-dev`)
 
 - [x] `resources/js/types/auth.ts` — `AuthUser.tenantRole: string` → `AuthUser.permissions: string[]`
@@ -77,6 +108,36 @@ Nada más de frontend en este feature — composable `can()` y reescritura de si
 - [x] **A9** `AppSidebarHeader.vue` deduce breadcrumbs del menú cuando la página no los declara — cubre las 12 páginas de `pages/Admin/` sin tocarlas
 - [x] `npm run types:check` (6 errores, los 6 preexistentes de `AppHeader.vue`/`Notifications.vue`), `npx eslint .` (3 errores preexistentes), `npx tsc --noEmit` semántico limpio, `npm run build` verde
 - [ ] Verificación en navegador — **no hecha**: sin herramienta de navegador en el entorno del agente. En su lugar, matriz de menú por rol ejecutada sobre las funciones puras del constructor (ver nota abajo)
+
+## Frontend — Fase 3A (`montree-frontend-dev`): módulo de usuarios
+
+> Pantalla `/admin/team` (`pages/Admin/Team/Index.vue`), que consume
+> `api/v1/admin/users/*`. Nada de esto autoriza: la UI solo deja de mostrar lo
+> que el backend ya bloquea (`team.invite` / `team.role.update` / `team.suspend`).
+
+- [x] **Multi-rol**: el `<select>` de rol único se reemplaza por un diálogo con checkboxes (uno por rol asignable, incluidos los propios de la agencia); envía `{ roles: string[] }` a `PATCH /admin/users/{user}/role`
+- [x] **Confirmación de cambios sensibles conservada** (promover a admin / quitarle el admin), en un diálogo aparte que al cancelar devuelve el borrador intacto al selector. La tercera regla anterior —degradar a `customer`— desaparece: `customer` ya no es asignable (divergencia ⚠️ del backend)
+- [x] **Filtros + búsqueda + paginación**: `search` con debounce (350 ms), selects de `status` y `role`, controles de página; mismo patrón que `pages/Admin/Departures/Index.vue` (query params por Wayfinder, `meta` del paginador, "Limpiar filtros")
+- [x] **Columna "Último acceso"**: `formatRelativeDate()` nuevo en `lib/format.ts` ("hace 3 días", fecha absoluta a más de un mes) y "Nunca" si `last_login_at` es `null`
+- [x] **Botón "Reenviar invitación"** solo en filas `invited`, contra `POST /admin/users/{user}/resend-invitation`, con toast de confirmación
+- [x] Estados de la pantalla: skeleton de carga, error con "Reintentar", vacío distinguiendo "sin filtros" de "sin resultados"
+- [x] `types/team.ts` + `types/pagination.ts` (el shape del paginador de Laravel sale de `types/logistics.ts`, que lo reexporta)
+- [x] `config/roles.ts` — etiquetas de los roles base (espejo de `UserRole::label()`) y juego asignable de respaldo
+- [x] `pages/Admin/Departures/Index.vue` — el filtro de guías dejaba de funcionar con `roles[]`: pasa a leer la lista de roles del miembro
+- [ ] Apunte #3 del equipo ("al agregar el usuario puedo poner…") — **PENDIENTE, sin tocar**: el formulario de invitación conserva sus 3 campos (email, nombre, rol). Lo único que cambió es de dónde salen las opciones de rol
+
+## Frontend — Fase 3B (`montree-frontend-dev`): módulo de roles y permisos
+
+- [x] `pages/Admin/Roles/Index.vue` — listado con "Roles del sistema" (badge "Solo lectura") separado de "Roles propios de la agencia", con conteo de permisos y de miembros por rol y botón "Crear rol"
+- [x] `components/organisms/RoleFormDialog.vue` — un solo componente para crear / editar / ver: carga el detalle (`GET /admin/roles/{role}`), valida en espejo del Form Request (nombre obligatorio, `max:60`, ≥1 permiso) y guarda con POST o PATCH
+- [x] `components/organisms/PermissionPicker.vue` — matriz de 38 permisos agrupada por módulo, con "seleccionar todo el módulo" en tres estados (vacío / mixto / completo) y deshabilitada entera para roles base
+- [x] Eliminar rol propio con confirmación; deshabilitado y con tooltip explicativo cuando `users_count > 0`
+- [x] `config/permissions.ts` — agrupado y etiquetas de respaldo, espejo de `RolesAndPermissionsSeeder::PERMISSIONS`; la fuente real es `meta.available_permissions` del listado
+- [x] `types/role.ts` — `RoleListItem`, `RoleDetail`, `RoleSummary`, `PermissionSummary`, `RoleListResponse`
+- [x] **Nav**: ítem "Roles y permisos" en `config/navigation.ts`, junto a "Equipo", gateado por `team.role.update` + el gate de panel
+- [x] **Wayfinder**: cero URLs a mano — `@/routes/admin/roles` y `@/actions/.../Api/V1/Admin/RoleController` (`php artisan wayfinder:generate --with-form`)
+- [x] `npm run types:check` (6 errores, los 6 preexistentes), `npx eslint .` (2 errores preexistentes; el tercero vivía en la pantalla de equipo reescrita), `vue-tsc@3` semántico sin errores nuevos, `npm run build` verde
+- [x] Verificación en navegador (Playwright headless sobre `demo.montree.test`): golden path y edge cases de las dos pantallas, cero errores de consola — detalle en la nota de abajo
 
 ## DB (`montree-db-architect`, solo si hay cambios de schema)
 
@@ -107,6 +168,37 @@ Nada más de frontend en este feature — composable `can()` y reescritura de si
   4. ~~**Falta en `contracts.md` §1 el gate de grupo `can:dashboard.view`.**…~~ → hecho: fila + nota en `contracts.md` §1 (gate de entrada de **todo** `admin/*`, api y web, evaluado antes del `can:` de cada ruta), marcado **BREAKING** en "Cambios al contrato", replicado en `plan.md` §2 Rutas y como criterio de aceptación nuevo en `spec.md` (`guide` → 403 en `admin/*`).
 
 ## Notas durante implementación
+
+- `2026-08-16` (`montree-frontend-dev`, Fase 3A + 3B frontend): pantallas de equipo y de roles. Decisiones que no estaban en la instrucción:
+  - **Las 4 divergencias ⚠️ del backend se resolvieron a favor del código, no del contrato.** La instrucción traía el contrato previo (`/admin/team`, `roles: string[]`, sin catálogo de permisos); las rutas y resources reales llegaron a mitad de la tarea. El frontend consume lo implementado: `api/v1/admin/users/*`, `roles: [{id,name,label,is_base}]` normalizado a `{name,label}` para pintar y a `string[]` para enviar, y `meta.available_permissions` como catálogo del selector. **El espejo local (`config/permissions.ts`) no es la fuente**: se usa solo si esa respuesta no trae catálogo, y `groupPermissions()` prefiere el `module_label` del backend, así que agregar un permiso 39 no exige tocar el frontend.
+  - **`customer` fuera del selector, y con él la tercera regla de confirmación.** La pantalla vieja confirmaba tres cambios sensibles: promover a admin, quitar admin y degradar a cliente. El tercero ya no puede ocurrir (`customer` no es asignable, mínimo 1 rol), así que se borró en vez de dejar código muerto; los otros dos siguen con el mismo texto. Si producto recupera la degradación, el sitio donde vuelve es `sensitiveMessage()`.
+  - **Un diálogo, no un dropdown, para el multi-rol**, y **un solo componente** (`RoleFormDialog`) para crear / editar / ver permisos. El diálogo de confirmación se mantiene como paso aparte (lo pedía la instrucción): al abrirse cierra el selector y, si se cancela, lo reabre con el borrador intacto — dos diálogos abiertos a la vez pelean por el foco.
+  - **El picker de permisos son botones `role="checkbox"`, no `<label for>`.** El `Checkbox` de `ui/` es un `<button>` de reka, y un `<label for>` no dispara clics sobre un botón; el patrón de fila-botón con el checkbox decorativo (`aria-hidden`, `tabindex="-1"`) ya se usaba en `TourDateFormDialog`. Cada fila queda enfocable con teclado y con `aria-checked` real (`mixed` para el módulo a medias). **El indicador del estado mixto se pinta con un guion**: el `Checkbox` siempre dibuja un tilde, así que "2 de 3 permisos" se veía idéntico a "los 3" — encontrado mirando la pantalla, no el tipo.
+  - **`types/pagination.ts` es nuevo**: el shape del paginador de Laravel vivía en `types/logistics.ts` porque el primer listado paginado fue el de salidas. Se extrajo y `logistics.ts` lo reexporta, así que ningún import existente cambió.
+  - **`pages/Admin/Departures/Index.vue` se tocó sin estar en el encargo**: filtraba guías con `member.role === 'guide'`, campo que el backend de Fase 3A eliminó. Sin ese arreglo el selector de guía de una salida quedaba vacío. Es el único consumidor del listado de equipo fuera de la pantalla de equipo (verificado por grep).
+  - **Hallazgo de tooling 1 — `php artisan wayfinder:generate` sin `--with-form` rompe la app.** `vite.config.ts` genera con `formVariants: true`; el comando de artisan por defecto NO, y al regenerar para tomar las rutas nuevas desaparecieron los `.form` de todas las acciones: login, registro, recuperación de contraseña y ajustes quedaron con `TypeError: store.form is not a function` (visto en el navegador, no por el gate de tipos). El comando correcto en este repo es `php artisan wayfinder:generate --with-form`. Vale la pena dejarlo escrito en `local-setup.md`.
+  - **Hallazgo de tooling 2 — el gate de tipos sigue ciego, y esta vez costó.** `vue-tsc@2` (el del repo) no reporta errores semánticos, confirmado otra vez: un `aria-checked` con un tipo imposible pasó `npm run types:check` y `npm run build`. Se verificó con `vue-tsc@3.0.9` instalado **fuera del repo** (`/tmp`, sin tocar `package.json`): encontró 1 error real en código nuevo (corregido) y 10 preexistentes en `Tour/Create.vue`, `Tour/Edit.vue` y `Promotion/Index.vue`. Sigue en pie la recomendación de Fase 1 de subir `vue-tsc` a la línea 3.x.
+  - **Verificación en navegador, esta vez sí** (Playwright headless contra `demo.montree.test`, sesión de `admin@demo.montree.test`): listado de roles, detalle de rol base de solo lectura (11 módulos, 49 checkboxes, sin botón Guardar), creación con validación y selección por módulo, edición, eliminación con confirmación, tooltip del botón deshabilitado con 1 miembro asignado, multi-rol en equipo con su confirmación y su cancelación, búsqueda con debounce (1 sola request), estado vacío, "Limpiar filtros", "Último acceso" relativo y "Nunca". Cero errores de consola. Antes se recorrió la API con `curl` (crear/leer/editar/borrar rol, asignar dos roles, reenviar invitación, y los rechazos: nombre reservado 422, rol base 403, rol en uso 409, roles vacíos 422). **El estado de la base local quedó como estaba**: el rol y el usuario de prueba se borraron.
+  - **`useApi` pisa el mensaje de los 403.** Reemplaza el cuerpo por "No tienes permisos para esta acción", así que `BASE_ROLE_READ_ONLY` —que el backend agregó justamente para distinguirlo— nunca llega a la UI. Hoy no se nota (la UI no ofrece guardar un rol base), pero si mañana se ofrece, hay que dejar pasar el `message` del backend cuando venga con `error_code`.
+
+- `2026-08-16` (`montree-backend-dev`, Fase 3A + 3B): módulo de usuarios y módulo de roles. Suite **549/549 verde, 1951 assertions** (partía de 511; +38 tests nuevos), Pint verde. Decisiones que no estaban en la instrucción, y **divergencias respecto al contrato que se le pasó al frontend** (marcadas ⚠️):
+  - ⚠️ **El prefijo real es `/admin/users`, no `/admin/team`.** El contrato hablaba de `POST /admin/team/{user}/resend-invitation`; las rutas de este repo son `api/v1/admin/users/*` (`api.v1.admin.users.*`) desde F014. El endpoint nuevo quedó en `POST /api/v1/admin/users/{user}/resend-invitation` (`TeamController::resend`) por consistencia con las 5 rutas hermanas. La página web sí es `/admin/team`.
+  - ⚠️ **`TeamMemberResource` ya no expone `role` (singular).** El listado devuelve `roles: [{id, name, label, is_base}]`. Se quitó en vez de dejarlo como alias porque el campo mentía apenas un miembro tiene dos roles (`getRoleNames()->first()` era arbitrario). El `TeamMemberPayload` del frontend ya lo trata como opcional.
+  - ⚠️ **`customer` dejó de ser asignable desde el equipo.** `STAFF_ROLES` (admin/sales/operator/guide) es ahora la única fuente, así que "bajar a cliente" —que la pantalla vieja ofrecía— ya no existe: un miembro del equipo necesita ≥1 rol de equipo. Para sacarle acceso a alguien se lo suspende. Si producto quiere recuperar la degradación, hay que decidir si es "quitar la membresía" o "reasignar a customer", no volver a meter `customer` en el selector de roles.
+  - ⚠️ **`GET /admin/roles` devuelve además `meta.available_permissions`** (los 38 con `slug`/`module`/`module_label`/`label`). No estaba en el contrato, pero sin eso el formulario de creación no puede pintar el selector y habría que inventar un segundo endpoint. Es aditivo.
+  - ⚠️ **`module_label`** se agregó a cada permiso (además de `slug`/`module`/`label`) para que el front no duplique la traducción de los 11 módulos.
+  - **El estado `invited` existía en el enum pero no lo escribía nadie**, y la invitación del equipo **no mandaba ningún correo** (`InviteMemberAction` marcaba `active` y no notificaba: la persona nunca se enteraba y no podía entrar, porque su contraseña es un `Str::random(40)`). Sin cerrar eso, "reenviar invitación" no tenía qué reenviar. Ahora: invitar a alguien que nunca fijó contraseña → membresía `invited` + `TenantUserInvitationNotification` (la misma del alta por super admin, extraída a `SendTeamInvitationAction`); fijar la contraseña (`PasswordReset`) → `active` con `joined_at`. Invitar a alguien que ya tiene cuenta sigue entrando como `active`: no hay nada que aceptar. `LoginResponse` ya tenía el mensaje "Tu invitación está pendiente de aceptación" esperando este estado.
+  - **`ActivateInvitedMemberships` activa TODAS las membresías `invited` del usuario**, no solo la de la agencia del enlace. `invited` significa "no probó que ese correo es suyo"; el enlace de recuperación lo prueba, y esa prueba no es por agencia.
+  - **El handoff cross-host se descarta por nombre de ruta** (`auth.handoff`), no por guard ni por sesión: los dos eventos `Login` son idénticos salvo el request que los origina. Verificado a la inversa (quitando el guard el test falla), y el test viaja solo 30s entre los dos porque el token de handoff vive 60s.
+  - **`wherePivot()` dentro de un `when()` no funciona.** La relación delega `when()` en el query builder, así que la clausura recibe el *Builder*: ahí `wherePivot('status', X)` cae en el manejo de `whereXxx` dinámico y filtra por una columna llamada `pivot` (0 resultados, sin error). El filtro de estado usa `where('tenant_user.status', ...)` calificado. Vale para cualquier filtro futuro sobre el pivote.
+  - **Sin `RolePolicy`.** El gate es uniforme (`can:team.role.update` en la ruta, mismo criterio que logística/reportes en Fase 1) y `Spatie\Permission\Models\Role` no es un modelo del dominio. Lo único que no es "tener el permiso" —el rol base es de solo lectura— es regla de negocio y vive en las Actions como `RoleException::baseRoleIsReadOnly()` (403, `BASE_ROLE_READ_ONLY`). **No se reusó `INSUFFICIENT_PERMISSION`** a propósito: a quien edita no le falta el permiso, el recurso es inmutable; con el código genérico el frontend no podía distinguir "pedile permiso a tu admin" de "creá un rol propio".
+  - **El aislamiento de `{role}` es un route binding**, no un chequeo en el controller: `roles` no es tenant-scoped (no tiene global scope), así que el binding implícito habría resuelto el rol de cualquier agencia por id. Un rol de otra agencia da **404**, no 403 (api-conventions §4: "no existe o no en este tenant").
+  - **`users_count` de un rol se cuenta scopeado al tenant.** Los roles base son filas globales compartidas por las 8 agencias: sin `where model_has_roles.tenant_id`, "admin" mostraría los admins de la plataforma entera.
+  - **Nombre de rol propio: único por agencia sin distinguir mayúsculas, comparado con `lower(name)` a mano.** MySQL ya lo hace por collation, pero SQLite (la BD de la suite) no: sin el `lower()` explícito el test de duplicados pasaba en verde y producción se comportaba distinto. Reservados los 6 nombres de `UserRole`, no solo los 4 asignables.
+  - **`permissions` exige `min:1`** al crear/editar un rol propio. Un rol sin permisos es indistinguible de no tener rol y ensucia el listado; no estaba en el contrato.
+  - **Query count medido** en `GET /admin/users` con 13 miembros: **11 queries, constantes** (los roles de todos los miembros salen en un solo eager load). 5 de las 11 son el warm-up de permisos de spatie + la resolución del tenant, iguales en cualquier request del panel.
+  - **`GET /admin/roles` no pagina**: una agencia tiene 4 roles base + los propios que cree. Devuelve `{data, meta}`, no el shape paginado.
+  - **Ruta web `admin/roles`** (`Route::inertia('roles', 'Admin/Roles/Index')`, gate `can:team.role.update`) agregada acá aunque el item hablaba solo de `routes/api.php`: sin ella la página del frontend no tiene URL.
 
 - `2026-08-16` (`montree-frontend-dev`, Fase 2 frontend): menú por permiso. Decisiones que no estaban en la instrucción:
   - **El menú se reduce a datos + funciones puras.** `config/navigation.ts` no importa Vue: `buildNavSections(can)` recibe el chequeo de permisos y devuelve el menú. `useNavigation()` solo lo envuelve en `computed`. Motivo práctico además del diseño: el gate de tipos de este repo no detecta errores semánticos (hallazgo de Fase 1) y no hay runner de tests de JS, así que la única verificación posible era ejecutar la lógica; siendo pura se pudo correr contra la matriz real del seeder sin montar Vue ni navegador. Resultado por rol (admin/sales/operator/`sales+operator`/guide/customer/invitado) en el reporte de la tarea.

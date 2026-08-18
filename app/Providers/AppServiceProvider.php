@@ -17,12 +17,16 @@ use App\Policies\SuperAdminTenantPolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\TourDatePolicy;
 use App\Policies\TourPolicy;
+use App\Services\Rbac\TenantRoleCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\Response;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +47,26 @@ class AppServiceProvider extends ServiceProvider
         $this->configureObservers();
         $this->configurePolicies();
         $this->configureGates();
+        $this->configureRouteBindings();
+    }
+
+    /**
+     * WHY: `roles` no es una tabla tenant-scoped (no tiene global scope), así que el
+     * binding implícito de `{role}` resolvería el rol propio de cualquier agencia por id.
+     * Se restringe al catálogo visible del tenant actual: lo de otra agencia es un 404.
+     */
+    protected function configureRouteBindings(): void
+    {
+        Route::bind('role', function (string $value): Role {
+            $tenant = Tenant::current();
+
+            abort_if($tenant === null, Response::HTTP_NOT_FOUND);
+
+            /** @var Role $role */
+            $role = app(TenantRoleCatalog::class)->visibleQuery($tenant)->findOrFail($value);
+
+            return $role;
+        });
     }
 
     /**

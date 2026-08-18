@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionContr
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
@@ -151,9 +152,16 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
 
     Route::get('users', [AdminTeamController::class, 'index'])->middleware('can:team.view')->name('users.index');
     Route::post('users', [AdminTeamController::class, 'store'])->middleware('can:team.invite')->name('users.store');
+    Route::post('users/{user}/resend-invitation', [AdminTeamController::class, 'resend'])->middleware('can:team.invite')->name('users.resend-invitation');
     Route::patch('users/{user}/role', [AdminTeamController::class, 'updateRole'])->middleware('can:team.role.update')->name('users.role');
     Route::patch('users/{user}/suspend', [AdminTeamController::class, 'suspend'])->middleware('can:team.suspend')->name('users.suspend');
     Route::patch('users/{user}/reactivate', [AdminTeamController::class, 'reactivate'])->middleware('can:team.suspend')->name('users.reactivate');
+
+    // WHY: gobernar roles propios es la misma potestad que cambiarle el rol a un miembro,
+    // así que reusa `team.role.update` en vez de sumar un permiso 39 al catálogo cerrado.
+    Route::apiResource('roles', AdminRoleController::class)
+        ->names('roles')
+        ->middleware('can:team.role.update');
 });
 
 // WHY: super-admin API routes intentionally do NOT use Route::domain().

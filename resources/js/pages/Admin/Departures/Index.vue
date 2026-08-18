@@ -55,6 +55,7 @@ import type {
     TourDateGlobalAdmin,
     TourDatesGlobalResponse,
 } from '@/types/logistics';
+import type { TeamListResponse, TeamMemberPayload } from '@/types/team';
 
 const api = useApi();
 
@@ -158,7 +159,16 @@ async function loadDates(): Promise<void> {
     }
 }
 
-type TeamMember = { id: number; name: string; role: string | null };
+/**
+ * Desde F018 Fase 3A un miembro tiene varios roles (`roles`); `role` era el
+ * campo unico anterior y se sigue leyendo para no depender del orden de
+ * despliegue entre backend y frontend.
+ */
+function isGuide(member: TeamMemberPayload): boolean {
+    return (
+        member.roles ?? (member.role != null ? [member.role] : [])
+    ).includes('guide');
+}
 
 async function loadTours(): Promise<void> {
     try {
@@ -178,14 +188,14 @@ async function loadOptions(): Promise<void> {
     try {
         const [teamJson, routesJson, providersJson, hotelsJson] =
             await Promise.all([
-                fetchJson<{ data: TeamMember[] }>(teamIndex().url),
+                fetchJson<TeamListResponse>(teamIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(routesIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(providersIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(hotelsIndex().url),
             ]);
 
         guides.value = teamJson.data
-            .filter((member) => member.role === 'guide')
+            .filter(isGuide)
             .map((member) => ({ id: member.id, name: member.name }));
         routes.value = routesJson.data.map((route) => ({
             id: route.id,

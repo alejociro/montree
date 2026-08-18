@@ -48,6 +48,6 @@ class TeamRequestMessagesTest extends TestCase
 
         $validator = Validator::make([], $request->rules(), $request->messages(), $request->attributes());
 
-        $this->assertSame('Elige un rol.', $validator->errors()->first('role'));
+        $this->assertSame('Elige al menos un rol.', $validator->errors()->first('roles'));
     }
 }

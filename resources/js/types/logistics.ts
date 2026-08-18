@@ -1,3 +1,5 @@
+import type { PaginationLinks, PaginationMeta } from './pagination';
+
 export type TourDateStatus = 'open' | 'full' | 'closed' | 'cancelled';
 
 export type TourDateDisplayStatus =
@@ -54,21 +56,9 @@ export interface TourDatesGlobalFilters {
     direction: 'asc' | 'desc';
 }
 
-export interface PaginationLinks {
-    first: string | null;
-    last: string | null;
-    prev: string | null;
-    next: string | null;
-}
-
-export interface PaginationMeta {
-    current_page: number;
-    from: number | null;
-    to: number | null;
-    total: number;
-    per_page: number;
-    last_page: number;
-}
+// Reexportados desde `types/pagination.ts`: el shape de paginador de Laravel no
+// es propio de logistica, lo comparten todos los listados del panel.
+export type { PaginationLinks, PaginationMeta };
 
 export interface TourDatesGlobalResponse {
     data: TourDateGlobalAdmin[];

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Team;
 
-use App\Enums\UserRole;
+use App\Models\Tenant;
+use App\Services\Rbac\TenantRoleCatalog;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class InviteMemberRequest extends FormRequest
 {
@@ -22,8 +24,24 @@ final class InviteMemberRequest extends FormRequest
         return [
             'email' => ['required', 'email', 'max:255'],
             'name' => ['nullable', 'string', 'max:120'],
-            'role' => ['required', 'in:'.implode(',', [UserRole::Admin->value, UserRole::Sales->value, UserRole::Operator->value, UserRole::Guide->value])],
+            // WHY: incluye los roles propios de la agencia (F018 fase 3B), que no son una
+            // lista fija — se crean en runtime desde `/admin/roles`.
+            'role' => ['required', Rule::in($this->assignableRoles())],
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function assignableRoles(): array
+    {
+        $tenant = Tenant::current();
+
+        if ($tenant === null) {
+            return [];
+        }
+
+        return app(TenantRoleCatalog::class)->assignableNames($tenant);
     }
 
     /**

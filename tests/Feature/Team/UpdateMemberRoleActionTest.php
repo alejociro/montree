@@ -35,7 +35,7 @@ final class UpdateMemberRoleActionTest extends TestCase
         $tenant = $this->makeTenant('demo');
         $member = $this->memberFor($tenant, UserRole::Guide);
 
-        app(UpdateMemberRoleAction::class)->handle($tenant, $member, UserRole::Sales);
+        app(UpdateMemberRoleAction::class)->handle($tenant, $member, [UserRole::Sales->value]);
 
         setPermissionsTeamId($tenant->id);
         $member->unsetRelation('roles');
@@ -51,7 +51,7 @@ final class UpdateMemberRoleActionTest extends TestCase
         $this->expectException(CrossTenantAccessException::class);
 
         try {
-            app(UpdateMemberRoleAction::class)->handle($tenantA, $foreigner, UserRole::Admin);
+            app(UpdateMemberRoleAction::class)->handle($tenantA, $foreigner, [UserRole::Admin->value]);
         } catch (CrossTenantAccessException $exception) {
             $this->assertSame('CROSS_TENANT_ACCESS', $exception->errorCode);
             $this->assertSame(403, $exception->getStatusCode());
@@ -67,7 +67,7 @@ final class UpdateMemberRoleActionTest extends TestCase
         $foreigner = $this->memberFor($tenantB, UserRole::Guide);
 
         try {
-            app(UpdateMemberRoleAction::class)->handle($tenantA, $foreigner, UserRole::Admin);
+            app(UpdateMemberRoleAction::class)->handle($tenantA, $foreigner, [UserRole::Admin->value]);
         } catch (CrossTenantAccessException) {
             // La aserción es el estado, no la excepción: ver el test anterior.
         }
@@ -90,7 +90,7 @@ final class UpdateMemberRoleActionTest extends TestCase
 
         $response = $this->actingAs($admin)->patchJson(
             "http://demo.montree.test/api/v1/admin/users/{$foreigner->id}/role",
-            ['role' => UserRole::Admin->value],
+            ['roles' => [UserRole::Admin->value]],
         );
 
         $response->assertForbidden();

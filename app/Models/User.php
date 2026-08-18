@@ -40,6 +40,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'password_set_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
+            // WHY: NO va en #[Fillable] — es un timestamp que fija el sistema al autenticar,
+            // nunca input del usuario (mismo criterio que `password_set_at` y
+            // `email_verified_at`). Escribirlo con `forceFill(['last_login_at' => now()])->save()`;
+            // un `update()` sin forceFill se descarta en silencio por mass-assignment.
+            'last_login_at' => 'datetime',
         ];
     }
 

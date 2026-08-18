@@ -186,7 +186,11 @@ php artisan migrate:fresh --seed                    # reset + seed
 php artisan tinker                                   # REPL
 
 # Wayfinder (regenerar tipos de rutas para frontend)
-php artisan wayfinder:generate
+# --with-form es obligatorio: sin él desaparecen los .form usados por
+# login/registro/recuperación/ajustes y la app rompe en runtime (no en
+# types:check). vite.config.ts ya lo genera así en cada build; a mano hay
+# que pasarlo siempre.
+php artisan wayfinder:generate --with-form
 
 # Logs
 php artisan pail                                     # logs en vivo

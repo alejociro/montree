@@ -9,6 +9,7 @@ import {
     Megaphone,
     Mountain,
     Settings,
+    ShieldCheck,
     Star,
     Truck,
     User,
@@ -28,6 +29,7 @@ import { index as logisticsIndex } from '@/routes/admin/logistics';
 import { index as newsletterIndex } from '@/routes/admin/newsletter';
 import { index as promotionsIndex } from '@/routes/admin/promotions';
 import { index as reviewsIndex } from '@/routes/admin/reviews';
+import { index as rolesIndex } from '@/routes/admin/roles';
 import { index as teamIndex } from '@/routes/admin/team';
 import { configuration as tenantConfiguration } from '@/routes/admin/tenant';
 import { index as toursIndex } from '@/routes/admin/tours';
@@ -158,6 +160,15 @@ const panelSection: NavSectionDefinition = {
             icon: Users,
             requiresPanel: true,
             anyOf: ['team.view'],
+        },
+        // F018 Fase 3B. Mismo permiso que gobierna la pantalla en el backend:
+        // quien puede cambiarle el rol a alguien es quien define los roles.
+        {
+            title: 'Roles y permisos',
+            href: rolesIndex().url,
+            icon: ShieldCheck,
+            requiresPanel: true,
+            anyOf: ['team.role.update'],
         },
         {
             title: 'Configuración',
