@@ -29,6 +29,7 @@ import type {
     Tour,
     TourCategory,
     TourFormPayload,
+    TourSubmitPayload,
     TourStatus as TourStatusType,
 } from '@/types/tour';
 
@@ -73,7 +74,7 @@ const formErrors = computed(
 );
 const saving = ref(false);
 
-function normalizePayload(data: TourFormPayload): TourFormPayload {
+function normalizePayload(data: TourFormPayload): TourSubmitPayload {
     return {
         ...data,
         meeting_latitude:

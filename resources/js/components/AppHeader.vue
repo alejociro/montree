@@ -62,6 +62,12 @@ type NotifItem = {
 };
 
 const notifications = ref<NotifItem[]>([]);
+
+function notificationTitle(item: NotifItem): string {
+    const data = item.data as { tour_name?: string };
+
+    return data.tour_name ?? item.type;
+}
 const unreadCount = ref(0);
 const api = useApi();
 
@@ -269,10 +275,7 @@ const mainNavItems: NavItem[] = [
                             >
                                 <div class="flex-1">
                                     <p class="font-medium">
-                                        {{
-                                            (n.data as { tour_name?: string })
-                                                .tour_name ?? n.type
-                                        }}
+                                        {{ notificationTitle(n) }}
                                     </p>
                                     <p class="text-xs text-muted-foreground">
                                         {{

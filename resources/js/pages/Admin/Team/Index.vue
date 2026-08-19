@@ -118,19 +118,14 @@ function toStatus(value: string): TeamMemberStatus {
 }
 
 /**
- * Normaliza el item del listado a `{ name, label }`. `roles` es una lista de
- * objetos (`RoleSummaryResource`) desde Fase 3A; `role` era el string unico
- * anterior y se sigue aceptando para no depender del orden de despliegue.
+ * Normaliza el item del listado a `{ name, label }`. Desde Fase 3A `roles` es
+ * una lista de objetos (`RoleSummaryResource`).
  */
 function toRoleOptions(payload: TeamMemberPayload): RoleOption[] {
-    const raw = payload.roles ?? (payload.role != null ? [payload.role] : []);
+    const raw = payload.roles ?? [];
 
     return raw
-        .map((role) =>
-            typeof role === 'string'
-                ? { name: role, label: roleLabels([role]) }
-                : { name: role.name, label: role.label },
-        )
+        .map((role) => ({ name: role.name, label: role.label }))
         .filter((role) => role.name !== '');
 }
 

@@ -14,7 +14,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
-import type { Tour, TourCategory, TourFormPayload } from '@/types/tour';
+import type {
+    Tour,
+    TourCategory,
+    TourFormPayload,
+    TourSubmitPayload,
+} from '@/types/tour';
 
 type StoreTourResponse = {
     data?: Tour;
@@ -54,7 +59,7 @@ const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
 
-function normalizePayload(data: TourFormPayload): TourFormPayload {
+function normalizePayload(data: TourFormPayload): TourSubmitPayload {
     return {
         ...data,
         meeting_latitude:

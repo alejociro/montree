@@ -160,14 +160,11 @@ async function loadDates(): Promise<void> {
 }
 
 /**
- * Desde F018 Fase 3A un miembro tiene varios roles (`roles`); `role` era el
- * campo unico anterior y se sigue leyendo para no depender del orden de
- * despliegue entre backend y frontend.
+ * Desde F018 Fase 3A un miembro tiene varios roles y cada uno viaja como objeto
+ * (`RoleSummaryResource`), no como string: hay que mirar `name`.
  */
 function isGuide(member: TeamMemberPayload): boolean {
-    return (
-        member.roles ?? (member.role != null ? [member.role] : [])
-    ).includes('guide');
+    return (member.roles ?? []).some((role) => role.name === 'guide');
 }
 
 async function loadTours(): Promise<void> {

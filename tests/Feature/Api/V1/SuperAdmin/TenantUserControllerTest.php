@@ -98,6 +98,32 @@ class TenantUserControllerTest extends TestCase
         $response->assertJsonPath('error_code', 'TEAM_ALREADY_MEMBER');
     }
 
+    /**
+     * `sales` entro al catalogo en F018 Fase 1 y quedo fuera de la regla de este
+     * endpoint: el super admin no podia dar de alta un vendedor.
+     */
+    public function test_sales_is_an_assignable_role(): void
+    {
+        Notification::fake();
+        Role::findOrCreate(UserRole::Sales->value, 'web');
+
+        $tenant = Tenant::factory()->create(['slug' => 'demo']);
+        $superAdmin = $this->superAdmin();
+
+        $response = $this->actingAs($superAdmin)->postJson(
+            "http://montree.test/api/v1/super-admin/tenants/{$tenant->id}/users",
+            ['name' => 'New Sales', 'email' => 'sales@demo.test', 'role' => 'sales'],
+        );
+
+        $response->assertCreated();
+
+        $user = User::query()->where('email', 'sales@demo.test')->firstOrFail();
+
+        setPermissionsTeamId($tenant->id);
+        $user->unsetRelation('roles');
+        $this->assertTrue($user->hasRole(UserRole::Sales->value));
+    }
+
     public function test_invalid_role_is_rejected(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'demo']);

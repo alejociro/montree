@@ -86,7 +86,12 @@ async function loadDates(): Promise<void> {
     }
 }
 
-type TeamMember = { id: number; name: string; role: string | null };
+/** Recorte del item de `TeamMemberResource`: `roles` viaja como objetos. */
+type TeamMember = {
+    id: number;
+    name: string;
+    roles: { name: string }[];
+};
 
 async function loadOptions(): Promise<void> {
     try {
@@ -99,7 +104,9 @@ async function loadOptions(): Promise<void> {
             ]);
 
         guides.value = teamJson.data
-            .filter((member) => member.role === 'guide')
+            .filter((member) =>
+                (member.roles ?? []).some((role) => role.name === 'guide'),
+            )
             .map((member) => ({ id: member.id, name: member.name }));
         routes.value = routesJson.data.map((route) => ({
             id: route.id,

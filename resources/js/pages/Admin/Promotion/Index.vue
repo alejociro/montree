@@ -177,6 +177,14 @@ function promotionState(p: Promotion): {
     return { label: 'Activa', variant: 'default' };
 }
 
+/**
+ * `max_uses` es opcional: el input entrega '' al vaciarse y el backend espera
+ * `null`, no 0. `Input` no admite `null` como model-value, de ahi el puente.
+ */
+function setMaxUses(value: string | number): void {
+    form.value.max_uses = value === '' ? null : Number(value);
+}
+
 function usagePercent(p: Promotion): number {
     if (!p.max_uses || p.max_uses === 0) {
         return 0;
@@ -252,7 +260,8 @@ onMounted(load);
                     <Label for="max">Máx. usos (opcional)</Label>
                     <Input
                         id="max"
-                        v-model.number="form.max_uses"
+                        :model-value="form.max_uses ?? ''"
+                        @update:model-value="setMaxUses"
                         type="number"
                         min="1"
                     />
@@ -376,7 +385,8 @@ onMounted(load);
                         <Label for="edit-max">Máx. usos (opcional)</Label>
                         <Input
                             id="edit-max"
-                            v-model.number="form.max_uses"
+                            :model-value="form.max_uses ?? ''"
+                            @update:model-value="setMaxUses"
                             type="number"
                             min="1"
                         />
