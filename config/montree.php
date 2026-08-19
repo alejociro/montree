@@ -41,6 +41,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default tour categories
+    |--------------------------------------------------------------------------
+    |
+    | Catalogue seeded into every newly provisioned tenant so the tour form
+    | never opens with an empty category select. Consumed by
+    | App\Actions\Tenant\SeedDefaultCategoriesAction. Order in this array
+    | becomes `display_order`.
+    |
+    */
+    'default_categories' => [
+        ['name' => 'Senderismo', 'icon' => 'mountain'],
+        ['name' => 'Aventura', 'icon' => 'compass'],
+        ['name' => 'Cultural', 'icon' => 'palette'],
+        ['name' => 'Gastronomía', 'icon' => 'utensils'],
+        ['name' => 'Avistamiento', 'icon' => 'binoculars'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Self-serve onboarding (F016)
     |--------------------------------------------------------------------------
     |

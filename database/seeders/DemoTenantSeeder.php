@@ -139,6 +139,10 @@ class DemoTenantSeeder extends Seeder
         ));
 
         foreach (range(1, 5) as $i) {
+            if (Tour::query()->where('slug', "tour-demo-$i")->exists()) {
+                continue;
+            }
+
             $tour = Tour::factory()
                 ->state([
                     'category_id' => $categories->random()->id,
