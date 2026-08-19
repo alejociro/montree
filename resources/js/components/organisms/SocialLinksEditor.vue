@@ -5,7 +5,10 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 import type { TenantSocialLinks } from '@/types/tenant';
+
+const { t } = useTranslations();
 
 type Props = {
     modelValue: TenantSocialLinks;
@@ -28,31 +31,31 @@ type SocialField = {
 const fields: SocialField[] = [
     {
         key: 'instagram',
-        label: 'Instagram',
+        label: t('Instagram'),
         icon: Instagram,
         placeholder: 'https://instagram.com/tu-agencia',
     },
     {
         key: 'facebook',
-        label: 'Facebook',
+        label: t('Facebook'),
         icon: Facebook,
         placeholder: 'https://facebook.com/tu-agencia',
     },
     {
         key: 'twitter',
-        label: 'Twitter / X',
+        label: t('Twitter / X'),
         icon: Twitter,
         placeholder: 'https://twitter.com/tu-agencia',
     },
     {
         key: 'youtube',
-        label: 'YouTube',
+        label: t('YouTube'),
         icon: Youtube,
         placeholder: 'https://youtube.com/@tu-agencia',
     },
     {
         key: 'tiktok',
-        label: 'TikTok',
+        label: t('TikTok'),
         icon: Music2,
         placeholder: 'https://tiktok.com/@tu-agencia',
     },
@@ -73,8 +76,10 @@ function update(key: keyof TenantSocialLinks, value: string | number): void {
     <section class="space-y-6">
         <Heading
             variant="small"
-            title="Redes sociales"
-            description="Enlaces opcionales que aparecen en el footer del sitio."
+            :title="$t('Redes sociales')"
+            :description="
+                $t('Enlaces opcionales que aparecen en el footer del sitio.')
+            "
         />
 
         <div class="grid gap-4">

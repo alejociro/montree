@@ -8,7 +8,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
 import type { TenantPlan } from '@/types';
+
+const { t } = useTranslations();
 
 const props = defineProps<{
     currentPlan: TenantPlan;
@@ -29,9 +32,9 @@ watch(
 );
 
 const plans: { value: TenantPlan; label: string }[] = [
-    { value: 'basic', label: 'Basic' },
-    { value: 'professional', label: 'Professional' },
-    { value: 'enterprise', label: 'Enterprise' },
+    { value: 'basic', label: t('Basic') },
+    { value: 'professional', label: t('Professional') },
+    { value: 'enterprise', label: t('Enterprise') },
 ];
 
 function submit(): void {
@@ -47,7 +50,7 @@ function submit(): void {
     <div class="flex flex-wrap items-center gap-2">
         <Select v-model="selected" :disabled="processing">
             <SelectTrigger class="w-44">
-                <SelectValue placeholder="Seleccionar plan" />
+                <SelectValue :placeholder="$t('Seleccionar plan')" />
             </SelectTrigger>
             <SelectContent>
                 <SelectItem

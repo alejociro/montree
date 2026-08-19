@@ -14,12 +14,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     Tour,
     TourCategory,
     TourFormPayload,
     TourSubmitPayload,
 } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type StoreTourResponse = {
     data?: Tour;
@@ -84,7 +87,7 @@ function submit(): void {
             onSuccess: (response) => {
                 const tour = response?.data;
 
-                toast.success('Tour creado en borrador.');
+                toast.success(t('Tour creado en borrador.'));
 
                 if (tour) {
                     router.visit(editPage({ tour: tour.id }).url);
@@ -96,14 +99,15 @@ function submit(): void {
             },
             onError: (errors) => {
                 if (errors.error_code === 'PLAN_LIMIT_TOURS_REACHED') {
-                    planError.value =
-                        'Alcanzaste el límite de tours de tu plan. Actualiza tu plan para crear más.';
+                    planError.value = t(
+                        'Alcanzaste el límite de tours de tu plan. Actualiza tu plan para crear más.',
+                    );
 
                     return;
                 }
 
                 form.setError(errors);
-                toast.error('Revisa los campos marcados.');
+                toast.error(t('Revisa los campos marcados.'));
             },
             onFinish: () => {
                 saving.value = false;
@@ -114,7 +118,7 @@ function submit(): void {
 </script>
 
 <template>
-    <Head title="Nuevo tour" />
+    <Head :title="$t('Nuevo tour')" />
 
     <div class="px-4 py-6 md:px-8">
         <div class="mb-6 flex items-center gap-3">
@@ -124,13 +128,17 @@ function submit(): void {
                 </Button>
             </Link>
             <Heading
-                title="Nuevo tour"
-                description="Empieza creando un borrador. Podrás publicarlo cuando tenga al menos una imagen; las salidas se agregan después."
+                :title="$t('Nuevo tour')"
+                :description="
+                    $t(
+                        'Empieza creando un borrador. Podrás publicarlo cuando tenga al menos una imagen; las salidas se agregan después.',
+                    )
+                "
             />
         </div>
 
         <Alert v-if="planError" variant="destructive" class="mb-6">
-            <AlertTitle>Límite del plan alcanzado</AlertTitle>
+            <AlertTitle>{{ $t('Límite del plan alcanzado') }}</AlertTitle>
             <AlertDescription>{{ planError }}</AlertDescription>
         </Alert>
 
@@ -147,7 +155,9 @@ function submit(): void {
                     {{ saving ? 'Creando…' : 'Crear borrador' }}
                 </Button>
                 <Link :href="indexPage().url">
-                    <Button type="button" variant="ghost">Cancelar</Button>
+                    <Button type="button" variant="ghost">{{
+                        $t('Cancelar')
+                    }}</Button>
                 </Link>
             </div>
         </form>

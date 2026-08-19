@@ -1,3 +1,5 @@
+import { translate } from '@/composables/useTranslations';
+
 export function formatCurrency(
     amount: string | number,
     currency: string,
@@ -92,7 +94,7 @@ export function formatRelativeDate(
     }
 
     if (absolute < 60) {
-        return 'hace un momento';
+        return translate('hace un momento');
     }
 
     const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
@@ -151,5 +153,7 @@ const bookingStatusLabels: Record<string, string> = {
 };
 
 export function formatBookingStatus(status: string): string {
-    return bookingStatusLabels[status] ?? status;
+    const label = bookingStatusLabels[status];
+
+    return label !== undefined ? translate(label) : status;
 }

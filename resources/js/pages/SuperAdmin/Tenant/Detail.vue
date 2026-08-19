@@ -10,11 +10,14 @@ import { update as updateStatus } from '@/actions/App/Http/Controllers/Api/V1/Su
 import TenantDetailPanel from '@/components/organisms/TenantDetailPanel.vue';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     SuperAdminTenantSummary,
     TenantPlan,
     TenantStatus,
 } from '@/types';
+
+const { t } = useTranslations();
 
 const props = defineProps<{
     tenantId: number;
@@ -37,7 +40,7 @@ async function loadTenant(): Promise<void> {
         };
         tenant.value = response.data;
     } catch {
-        toast.error('No se pudo cargar el tenant.');
+        toast.error(t('No se pudo cargar el tenant.'));
     } finally {
         loading.value = false;
     }
@@ -68,14 +71,14 @@ function handleStatusChange(next: TenantStatus, reason: string | null): void {
         { status: next, reason },
         {
             onSuccess: () => {
-                toast.success('Estado actualizado correctamente.');
+                toast.success(t('Estado actualizado correctamente.'));
                 void loadTenant();
             },
             onError: (errors) => {
                 reportError(
                     firstErrorMessage(
                         errors,
-                        'No se pudo actualizar el estado.',
+                        t('No se pudo actualizar el estado.'),
                     ),
                 );
             },
@@ -98,12 +101,15 @@ function handlePlanChange(next: TenantPlan): void {
         { plan: next },
         {
             onSuccess: () => {
-                toast.success('Plan actualizado correctamente.');
+                toast.success(t('Plan actualizado correctamente.'));
                 void loadTenant();
             },
             onError: (errors) => {
                 reportError(
-                    firstErrorMessage(errors, 'No se pudo actualizar el plan.'),
+                    firstErrorMessage(
+                        errors,
+                        t('No se pudo actualizar el plan.'),
+                    ),
                 );
             },
             onFinish: () => {
@@ -122,14 +128,14 @@ function handleConfigurationUpdate(formData: FormData): void {
 
     void api.post(updateConfiguration(tenant.value.id).url, formData, {
         onSuccess: () => {
-            toast.success('Configuración actualizada correctamente.');
+            toast.success(t('Configuración actualizada correctamente.'));
             void loadTenant();
         },
         onError: (errors) => {
             reportError(
                 firstErrorMessage(
                     errors,
-                    'No se pudo guardar la configuración.',
+                    t('No se pudo guardar la configuración.'),
                 ),
             );
         },
@@ -151,7 +157,7 @@ onMounted(() => {
         <Button as-child variant="ghost" size="sm">
             <Link href="/super-admin/tenants">
                 <ArrowLeft class="mr-1 size-4" />
-                Volver al listado
+                {{ $t('Volver al listado') }}
             </Link>
         </Button>
 

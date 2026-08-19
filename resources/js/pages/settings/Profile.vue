@@ -34,15 +34,15 @@ const user = computed(() => page.props.auth.user);
 </script>
 
 <template>
-    <Head title="Configuración de perfil" />
+    <Head :title="$t('Configuración de perfil')" />
 
-    <h1 class="sr-only">Configuración de perfil</h1>
+    <h1 class="sr-only">{{ $t('Configuración de perfil') }}</h1>
 
     <div class="flex flex-col space-y-6">
         <Heading
             variant="small"
-            title="Datos de tu perfil"
-            description="Actualiza tu nombre y tu correo electrónico"
+            :title="$t('Datos de tu perfil')"
+            :description="$t('Actualiza tu nombre y tu correo electrónico')"
         />
 
         <Form
@@ -51,7 +51,7 @@ const user = computed(() => page.props.auth.user);
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="name">Nombre</Label>
+                <Label for="name">{{ $t('Nombre') }}</Label>
                 <Input
                     id="name"
                     class="mt-1 block w-full"
@@ -59,13 +59,13 @@ const user = computed(() => page.props.auth.user);
                     :default-value="user.name"
                     required
                     autocomplete="name"
-                    placeholder="Nombre completo"
+                    :placeholder="$t('Nombre completo')"
                 />
                 <InputError class="mt-2" :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+                <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -74,20 +74,20 @@ const user = computed(() => page.props.auth.user);
                     :default-value="user.email"
                     required
                     autocomplete="username"
-                    placeholder="Correo electrónico"
+                    :placeholder="$t('Correo electrónico')"
                 />
                 <InputError class="mt-2" :message="errors.email" />
             </div>
 
             <div v-if="mustVerifyEmail && !user.email_verified_at">
                 <p class="-mt-4 text-sm text-muted-foreground">
-                    Tu correo electrónico no está verificado.
+                    {{ $t('Tu correo electrónico no está verificado.') }}
                     <Link
                         :href="send()"
                         as="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                     >
-                        Reenviar el correo de verificación.
+                        {{ $t('Reenviar el correo de verificación.') }}
                     </Link>
                 </p>
 
@@ -95,13 +95,19 @@ const user = computed(() => page.props.auth.user);
                     v-if="status === 'verification-link-sent'"
                     class="mt-2 text-sm font-medium text-green-600"
                 >
-                    Te enviamos un nuevo enlace de verificación a tu correo.
+                    {{
+                        $t(
+                            'Te enviamos un nuevo enlace de verificación a tu correo.',
+                        )
+                    }}
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
-                <Button :disabled="processing" data-test="update-profile-button"
-                    >Guardar</Button
+                <Button
+                    :disabled="processing"
+                    data-test="update-profile-button"
+                    >{{ $t('Guardar') }}</Button
                 >
             </div>
         </Form>

@@ -55,14 +55,14 @@ trait ProfileValidationRules
     protected function profileMessages(): array
     {
         return [
-            'name.required' => 'Ingresa tu nombre.',
-            'name.string' => 'Debe ser texto.',
-            'name.max' => 'Máximo :max caracteres.',
-            'email.required' => 'Ingresa tu correo.',
-            'email.string' => 'Debe ser texto.',
-            'email.email' => 'Correo inválido.',
-            'email.max' => 'Máximo :max caracteres.',
-            'email.unique' => 'Ese correo ya está en uso.',
+            'name.required' => __('Ingresa tu nombre.'),
+            'name.string' => __('Debe ser texto.'),
+            'name.max' => __('Máximo :max caracteres.'),
+            'email.required' => __('Ingresa tu correo.'),
+            'email.string' => __('Debe ser texto.'),
+            'email.email' => __('Correo inválido.'),
+            'email.max' => __('Máximo :max caracteres.'),
+            'email.unique' => __('Ese correo ya está en uso.'),
         ];
     }
 
@@ -73,7 +73,7 @@ trait ProfileValidationRules
     {
         return [
             'name' => 'nombre',
-            'email' => 'correo electrónico',
+            'email' => __('correo electrónico'),
         ];
     }
 }

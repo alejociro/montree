@@ -34,8 +34,8 @@ class StoreTourImageRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'image.max' => 'Image must not exceed 5MB.',
-            'image.mimes' => 'Image must be a JPG, PNG, or WebP file.',
+            'image.max' => __('Image must not exceed 5MB.'),
+            'image.mimes' => __('Image must be a JPG, PNG, or WebP file.'),
         ];
     }
 }

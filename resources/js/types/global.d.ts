@@ -1,4 +1,9 @@
 import type { Auth } from '@/types/auth';
+import type {
+    LocaleOption,
+    PluralTranslator,
+    Translator,
+} from '@/types/locale';
 import type { Tenant, TenantConfiguration } from '@/types/tenant';
 
 // Extend ImportMeta interface for Vite...
@@ -19,6 +24,9 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            locale: string;
+            locales: LocaleOption[];
+            translations: Record<string, string>;
             sidebarOpen: boolean;
             tenant: Tenant | null;
             tenantConfiguration: TenantConfiguration | null;
@@ -34,6 +42,8 @@ declare module '@inertiajs/core' {
 declare module 'vue' {
     interface ComponentCustomProperties {
         $inertia: typeof Router;
+        $t: Translator;
+        $tc: PluralTranslator;
         $page: Page;
         $headManager: ReturnType<typeof createHeadManager>;
     }

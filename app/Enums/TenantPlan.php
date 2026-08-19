@@ -13,9 +13,9 @@ enum TenantPlan: string
     public function label(): string
     {
         return match ($this) {
-            self::Basic => 'Basic',
-            self::Professional => 'Professional',
-            self::Enterprise => 'Enterprise',
+            self::Basic => __('Basic'),
+            self::Professional => __('Professional'),
+            self::Enterprise => __('Enterprise'),
         };
     }
 

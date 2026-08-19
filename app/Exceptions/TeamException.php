@@ -40,21 +40,21 @@ final class TeamException extends \Exception implements HttpExceptionInterface
 
     public static function alreadyMember(): self
     {
-        return new self('TEAM_ALREADY_MEMBER', 'Este usuario ya es miembro del equipo.', 409);
+        return new self('TEAM_ALREADY_MEMBER', __('Este usuario ya es miembro del equipo.'), 409);
     }
 
     public static function lastAdmin(): self
     {
-        return new self('TEAM_LAST_ADMIN', 'No puedes remover al último admin del equipo.', 422);
+        return new self('TEAM_LAST_ADMIN', __('No puedes remover al último admin del equipo.'), 422);
     }
 
     public static function rolesRequired(): self
     {
-        return new self('TEAM_ROLES_REQUIRED', 'Un miembro del equipo necesita al menos un rol.', 422);
+        return new self('TEAM_ROLES_REQUIRED', __('Un miembro del equipo necesita al menos un rol.'), 422);
     }
 
     public static function invitationAlreadyAccepted(): self
     {
-        return new self('TEAM_INVITATION_ALREADY_ACCEPTED', 'Esta persona ya aceptó su invitación.', 422);
+        return new self('TEAM_INVITATION_ALREADY_ACCEPTED', __('Esta persona ya aceptó su invitación.'), 422);
     }
 }

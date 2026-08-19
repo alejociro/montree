@@ -237,7 +237,7 @@ function goToPage(url: string | null): void {
                     <h1
                         class="text-2xl font-semibold tracking-tight text-foreground"
                     >
-                        Resultados de Búsqueda
+                        {{ $t('Resultados de Búsqueda') }}
                     </h1>
                     <CatalogSearchBar v-model="local.search" />
                 </div>
@@ -257,12 +257,12 @@ function goToPage(url: string | null): void {
                                     class="lg:hidden"
                                 >
                                     <SlidersHorizontal class="mr-2 size-4" />
-                                    Filtros
+                                    {{ $t('Filtros') }}
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="left" class="w-80">
                                 <SheetHeader>
-                                    <SheetTitle>Filtros</SheetTitle>
+                                    <SheetTitle>{{ $t('Filtros') }}</SheetTitle>
                                 </SheetHeader>
                                 <div class="mt-6 px-4 pb-8">
                                     <Deferred data="categories">
@@ -270,7 +270,7 @@ function goToPage(url: string | null): void {
                                             <p
                                                 class="text-sm text-muted-foreground"
                                             >
-                                                Cargando filtros...
+                                                {{ $t('Cargando filtros...') }}
                                             </p>
                                         </template>
                                         <FilterSidebar
@@ -333,11 +333,14 @@ function goToPage(url: string | null): void {
                         <h3
                             class="text-base font-semibold tracking-tight text-foreground"
                         >
-                            No encontramos tours con esos filtros
+                            {{ $t('No encontramos tours con esos filtros') }}
                         </h3>
                         <p class="mt-2 text-sm text-muted-foreground">
-                            Intenta relajar los filtros o probar con otra
-                            búsqueda.
+                            {{
+                                $t(
+                                    'Intenta relajar los filtros o probar con otra búsqueda.',
+                                )
+                            }}
                         </p>
                         <Button
                             v-if="hasActiveFilters"
@@ -345,7 +348,7 @@ function goToPage(url: string | null): void {
                             variant="outline"
                             @click="resetFilters"
                         >
-                            Limpiar filtros
+                            {{ $t('Limpiar filtros') }}
                         </Button>
                     </div>
 
@@ -355,7 +358,7 @@ function goToPage(url: string | null): void {
                         <nav
                             v-if="(tours?.meta.last_page ?? 1) > 1"
                             class="flex items-center justify-between border-t border-border/60 pt-4"
-                            aria-label="Paginación"
+                            :aria-label="$t('Paginación')"
                         >
                             <Button
                                 variant="outline"
@@ -363,11 +366,15 @@ function goToPage(url: string | null): void {
                                 :disabled="!tours?.links.prev"
                                 @click="goToPage(tours?.links.prev ?? null)"
                             >
-                                Anterior
+                                {{ $t('Anterior') }}
                             </Button>
                             <span class="text-xs text-muted-foreground">
-                                Página {{ tours?.meta.current_page }} de
-                                {{ tours?.meta.last_page }}
+                                {{
+                                    $t('Página :current de :last', {
+                                        current: tours?.meta.current_page ?? 1,
+                                        last: tours?.meta.last_page ?? 1,
+                                    })
+                                }}
                             </span>
                             <Button
                                 variant="outline"
@@ -375,7 +382,7 @@ function goToPage(url: string | null): void {
                                 :disabled="!tours?.links.next"
                                 @click="goToPage(tours?.links.next ?? null)"
                             >
-                                Siguiente
+                                {{ $t('Siguiente') }}
                             </Button>
                         </nav>
                     </template>

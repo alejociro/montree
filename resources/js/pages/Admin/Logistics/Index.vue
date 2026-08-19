@@ -3,60 +3,85 @@ import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import LogisticsCrudPanel from '@/components/organisms/LogisticsCrudPanel.vue';
+import { useTranslations } from '@/composables/useTranslations';
 import type { LogisticsField, LogisticsResourceKind } from '@/types/logistics';
+
+const { t } = useTranslations();
 
 type TabKey = LogisticsResourceKind;
 
 const activeTab = ref<TabKey>('routes');
 
 const tabs: { key: TabKey; label: string }[] = [
-    { key: 'routes', label: 'Rutas' },
-    { key: 'providers', label: 'Proveedores' },
-    { key: 'hotels', label: 'Hoteles' },
+    { key: 'routes', label: t('Rutas') },
+    { key: 'providers', label: t('Proveedores') },
+    { key: 'hotels', label: t('Hoteles') },
 ];
 
 const routeFields: LogisticsField[] = [
-    { key: 'name', label: 'Nombre', type: 'text', required: true, fullWidth: true },
+    {
+        key: 'name',
+        label: t('Nombre'),
+        type: 'text',
+        required: true,
+        fullWidth: true,
+    },
     {
         key: 'description',
-        label: 'Descripción',
+        label: t('Descripción'),
         type: 'textarea',
-        placeholder: 'Detalles de la ruta',
+        placeholder: t('Detalles de la ruta'),
     },
-    { key: 'distance_km', label: 'Distancia (km)', type: 'number' },
-    { key: 'duration_hours', label: 'Duración (horas)', type: 'number' },
+    { key: 'distance_km', label: t('Distancia (km)'), type: 'number' },
+    { key: 'duration_hours', label: t('Duración (horas)'), type: 'number' },
 ];
 
 const providerFields: LogisticsField[] = [
-    { key: 'name', label: 'Nombre', type: 'text', required: true, fullWidth: true },
+    {
+        key: 'name',
+        label: t('Nombre'),
+        type: 'text',
+        required: true,
+        fullWidth: true,
+    },
     {
         key: 'service_type',
-        label: 'Tipo de servicio',
+        label: t('Tipo de servicio'),
         type: 'text',
-        placeholder: 'Transporte, alimentación…',
+        placeholder: t('Transporte, alimentación…'),
     },
-    { key: 'contact_name', label: 'Contacto', type: 'text' },
-    { key: 'contact_phone', label: 'Teléfono', type: 'text' },
-    { key: 'contact_email', label: 'Email', type: 'email' },
-    { key: 'notes', label: 'Notas', type: 'textarea' },
+    { key: 'contact_name', label: t('Contacto'), type: 'text' },
+    { key: 'contact_phone', label: t('Teléfono'), type: 'text' },
+    { key: 'contact_email', label: t('Email'), type: 'email' },
+    { key: 'notes', label: t('Notas'), type: 'textarea' },
 ];
 
 const hotelFields: LogisticsField[] = [
-    { key: 'name', label: 'Nombre', type: 'text', required: true, fullWidth: true },
-    { key: 'address', label: 'Dirección', type: 'text', fullWidth: true },
-    { key: 'contact_phone', label: 'Teléfono', type: 'text' },
-    { key: 'contact_email', label: 'Email', type: 'email' },
-    { key: 'notes', label: 'Notas', type: 'textarea' },
+    {
+        key: 'name',
+        label: t('Nombre'),
+        type: 'text',
+        required: true,
+        fullWidth: true,
+    },
+    { key: 'address', label: t('Dirección'), type: 'text', fullWidth: true },
+    { key: 'contact_phone', label: t('Teléfono'), type: 'text' },
+    { key: 'contact_email', label: t('Email'), type: 'email' },
+    { key: 'notes', label: t('Notas'), type: 'textarea' },
 ];
 </script>
 
 <template>
-    <Head title="Logística" />
+    <Head :title="$t('Logística')" />
 
     <div class="px-4 py-6 md:px-8">
         <Heading
-            title="Logística"
-            description="Administra las rutas, proveedores y hoteles que reutilizás en tus salidas."
+            :title="$t('Logística')"
+            :description="
+                $t(
+                    'Administra las rutas, proveedores y hoteles que reutilizás en tus salidas.',
+                )
+            "
         />
 
         <div class="mt-6 max-w-3xl space-y-6">

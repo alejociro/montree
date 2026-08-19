@@ -19,7 +19,7 @@ final class TenantController extends Controller
     {
         $tenant = Tenant::current();
 
-        abort_if($tenant === null, 404, 'No tenant for this host.');
+        abort_if($tenant === null, 404, __('No tenant for this host.'));
 
         $updated = $this->action->handle($tenant, $request->validated());
 

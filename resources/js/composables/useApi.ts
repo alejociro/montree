@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/vue3';
+import { translate } from '@/composables/useTranslations';
 
 export type ApiErrors = Record<string, string>;
 
@@ -104,7 +105,7 @@ async function request<TResponse>(
 
         if (response.status === 403) {
             options.onError?.({
-                _global: 'No tienes permisos para esta acción.',
+                _global: translate('No tienes permisos para esta acción.'),
             });
 
             return null;
@@ -146,7 +147,7 @@ async function request<TResponse>(
 
         return json as TResponse;
     } catch {
-        options.onError?.({ _global: 'Error de conexión.' });
+        options.onError?.({ _global: translate('Error de conexión.') });
 
         return null;
     } finally {

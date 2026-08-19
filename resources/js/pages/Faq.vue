@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ChevronDown } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { useTranslations } from '@/composables/useTranslations';
 import PlatformShell from '@/layouts/PlatformShell.vue';
+
+const { t } = useTranslations();
 
 const openFaq = ref<number | null>(0);
 
@@ -11,45 +14,63 @@ const toggleFaq = (index: number) => {
 
 const faqs = [
     {
-        q: '¿Necesito saber de tecnología para usar Montree?',
-        a: 'No. Si sabes usar WhatsApp y Excel, puedes usar Montree. Está diseñado para operadores de campo, no para programadores.',
+        q: t('¿Necesito saber de tecnología para usar Montree?'),
+        a: t(
+            'No. Si sabes usar WhatsApp y Excel, puedes usar Montree. Está diseñado para operadores de campo, no para programadores.',
+        ),
     },
     {
-        q: '¿Cuánto tarda en estar lista mi agencia?',
-        a: 'La mayoría publica su primer tour en menos de 10 minutos. Sin configuraciones complicadas, sin técnicos y sin esperas.',
+        q: t('¿Cuánto tarda en estar lista mi agencia?'),
+        a: t(
+            'La mayoría publica su primer tour en menos de 10 minutos. Sin configuraciones complicadas, sin técnicos y sin esperas.',
+        ),
     },
     {
-        q: '¿Cómo recibo el dinero de las reservas?',
-        a: 'Tus clientes pagan en línea con Bre-B o PSE y el dinero se transfiere a la cuenta bancaria de tu agencia. Montree descuenta una comisión por reserva confirmada; los detalles están en la política de pago.',
+        q: t('¿Cómo recibo el dinero de las reservas?'),
+        a: t(
+            'Tus clientes pagan en línea con Bre-B o PSE y el dinero se transfiere a la cuenta bancaria de tu agencia. Montree descuenta una comisión por reserva confirmada; los detalles están en la política de pago.',
+        ),
     },
     {
-        q: '¿Cuánto cobra Montree por reserva?',
-        a: 'Entre 3% y 5% del valor de cada reserva confirmada, según el volumen de tu agencia. No cobramos por reservas canceladas ni por cupos que no se vendieron.',
+        q: t('¿Cuánto cobra Montree por reserva?'),
+        a: t(
+            'Entre 3% y 5% del valor de cada reserva confirmada, según el volumen de tu agencia. No cobramos por reservas canceladas ni por cupos que no se vendieron.',
+        ),
     },
     {
-        q: '¿Puedo migrar desde Excel o WhatsApp?',
-        a: 'Sí. Nuestro equipo te ayuda a migrar toda la información sin costo adicional durante los primeros 30 días.',
+        q: t('¿Puedo migrar desde Excel o WhatsApp?'),
+        a: t(
+            'Sí. Nuestro equipo te ayuda a migrar toda la información sin costo adicional durante los primeros 30 días.',
+        ),
     },
     {
-        q: '¿Qué pasa si quiero cancelar?',
-        a: 'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima. Exportas tu información y listo.',
+        q: t('¿Qué pasa si quiero cancelar?'),
+        a: t(
+            'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima. Exportas tu información y listo.',
+        ),
     },
     {
-        q: '¿Qué pasa si un viajero cancela su reserva?',
-        a: 'Cada agencia define su propia política de cancelación y los reembolsos se procesan según esas reglas. Puedes revisar el marco general en nuestra política de cancelación.',
+        q: t('¿Qué pasa si un viajero cancela su reserva?'),
+        a: t(
+            'Cada agencia define su propia política de cancelación y los reembolsos se procesan según esas reglas. Puedes revisar el marco general en nuestra política de cancelación.',
+        ),
     },
 ];
 </script>
 
 <template>
-    <PlatformShell title="Preguntas frecuentes — Montree">
+    <PlatformShell :title="$t('Preguntas frecuentes — Montree')">
         <section class="section-pale">
             <div class="container--narrow container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill">FAQ</span>
-                    <h2 class="section-title">Preguntas frecuentes</h2>
+                    <span class="eyebrow-pill">{{ $t('FAQ') }}</span>
+                    <h2 class="section-title">
+                        {{ $t('Preguntas frecuentes') }}
+                    </h2>
                     <p class="section-sub">
-                        Todo lo que necesitas saber antes de empezar.
+                        {{
+                            $t('Todo lo que necesitas saber antes de empezar.')
+                        }}
                     </p>
                 </div>
                 <div class="faq-list">
@@ -77,8 +98,10 @@ const faqs = [
                 </div>
 
                 <p class="faq-footnote">
-                    ¿Te quedó una duda que no está aquí?
-                    <a href="mailto:hola@montree.co">Escríbenos →</a>
+                    {{ $t('¿Te quedó una duda que no está aquí?') }}
+                    <a href="mailto:hola@montree.co">{{
+                        $t('Escríbenos →')
+                    }}</a>
                 </p>
             </div>
         </section>

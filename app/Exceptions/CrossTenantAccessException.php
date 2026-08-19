@@ -40,6 +40,6 @@ final class CrossTenantAccessException extends \Exception implements HttpExcepti
 
     public static function forMember(): self
     {
-        return new self('CROSS_TENANT_ACCESS', 'El usuario no pertenece a esta agencia.');
+        return new self('CROSS_TENANT_ACCESS', __('El usuario no pertenece a esta agencia.'));
     }
 }

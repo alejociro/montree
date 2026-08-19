@@ -33,9 +33,9 @@ final class CheckSubdomainRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'slug.required' => 'Elige un subdominio.',
-            'slug.string' => 'Debe ser texto.',
-            'slug.max' => 'Máximo :max caracteres.',
+            'slug.required' => __('Elige un subdominio.'),
+            'slug.string' => __('Debe ser texto.'),
+            'slug.max' => __('Máximo :max caracteres.'),
         ];
     }
 

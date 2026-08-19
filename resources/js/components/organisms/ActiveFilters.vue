@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency } from '@/lib/format';
 import type { CatalogCategory } from '@/types/catalog';
 import type { TourDifficulty } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     search: string | null;
@@ -25,9 +28,9 @@ const emit = defineEmits<{
 }>();
 
 const difficultyLabel: Record<TourDifficulty, string> = {
-    easy: 'Fácil',
+    easy: t('Fácil'),
     moderate: 'Moderado',
-    hard: 'Difícil',
+    hard: t('Difícil'),
     extreme: 'Extremo',
 };
 
@@ -76,14 +79,16 @@ function emitClear(
 
 <template>
     <div v-if="hasAny" class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-muted-foreground">Filtros activos:</span>
+        <span class="text-xs text-muted-foreground">{{
+            $t('Filtros activos:')
+        }}</span>
         <button
             v-if="search"
             type="button"
             class="inline-flex items-center gap-1 rounded-full border border-border bg-accent px-2.5 py-1 text-xs text-accent-foreground transition hover:bg-accent/80"
             @click="emitClear('search')"
         >
-            <span>Búsqueda: "{{ search }}"</span>
+            <span>{{ $t('Búsqueda: ":term"', { term: search }) }}</span>
             <X class="size-3" />
         </button>
         <button

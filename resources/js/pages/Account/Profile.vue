@@ -10,7 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
 import { getInitials } from '@/composables/useInitials';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatTourDate } from '@/lib/format';
+
+const { t } = useTranslations();
 
 type NextBooking = {
     booking_number: string;
@@ -70,12 +73,12 @@ function submit() {
 
     void api.put('/api/v1/account/profile', formData.value, {
         onSuccess: () => {
-            toast.success('Perfil actualizado');
+            toast.success(t('Perfil actualizado'));
             router.reload({ only: ['auth'] });
         },
         onError: (e) => {
             errors.value = e;
-            toast.error('No pudimos actualizar el perfil');
+            toast.error(t('No pudimos actualizar el perfil'));
         },
         onFinish: () => {
             processing.value = false;
@@ -87,7 +90,7 @@ onMounted(loadStats);
 </script>
 
 <template>
-    <Head title="Mi perfil" />
+    <Head :title="$t('Mi perfil')" />
     <div class="container mx-auto max-w-3xl space-y-8 px-4 py-8">
         <SetPasswordCard />
 
@@ -120,7 +123,7 @@ onMounted(loadStats);
                         class="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                         <CalendarCheck class="size-4" />
-                        Reservas
+                        {{ $t('Reservas') }}
                     </div>
                     <p class="mt-1 text-2xl font-bold">
                         {{ statsLoading ? '—' : bookingsCount }}
@@ -134,7 +137,7 @@ onMounted(loadStats);
                         class="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                         <Heart class="size-4" />
-                        Favoritos
+                        {{ $t('Favoritos') }}
                     </div>
                     <p class="mt-1 text-2xl font-bold">
                         {{ statsLoading ? '—' : favoritesCount }}
@@ -145,7 +148,9 @@ onMounted(loadStats);
                     :href="`/bookings/${nextBooking.booking_number}`"
                     class="rounded-lg border p-4 transition hover:border-primary hover:bg-muted/30"
                 >
-                    <p class="text-sm text-muted-foreground">Próxima reserva</p>
+                    <p class="text-sm text-muted-foreground">
+                        {{ $t('Próxima reserva') }}
+                    </p>
                     <p class="mt-1 line-clamp-1 font-semibold">
                         {{ nextBooking.tour.name }}
                     </p>
@@ -162,24 +167,29 @@ onMounted(loadStats);
                     class="rounded-lg border border-dashed p-4 text-center"
                 >
                     <p class="text-sm text-muted-foreground">
-                        Sin próximas reservas
+                        {{ $t('Sin próximas reservas') }}
                     </p>
                 </div>
             </div>
         </section>
 
         <section class="space-y-4 rounded-xl border bg-card p-6">
-            <h2 class="text-lg font-semibold">Datos personales</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Datos personales') }}</h2>
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="space-y-2">
-                    <Label for="name">Nombre</Label>
-                    <Input id="name" name="name" v-model="formData.name" required />
+                    <Label for="name">{{ $t('Nombre') }}</Label>
+                    <Input
+                        id="name"
+                        name="name"
+                        v-model="formData.name"
+                        required
+                    />
                     <p v-if="errors.name" class="text-sm text-destructive">
                         {{ errors.name }}
                     </p>
                 </div>
                 <div class="space-y-2">
-                    <Label for="email">Email</Label>
+                    <Label for="email">{{ $t('Email') }}</Label>
                     <Input
                         id="email"
                         name="email"
@@ -192,7 +202,7 @@ onMounted(loadStats);
                     </p>
                 </div>
                 <div class="space-y-2">
-                    <Label for="phone">Teléfono</Label>
+                    <Label for="phone">{{ $t('Teléfono') }}</Label>
                     <Input id="phone" name="phone" v-model="formData.phone" />
                     <p v-if="errors.phone" class="text-sm text-destructive">
                         {{ errors.phone }}

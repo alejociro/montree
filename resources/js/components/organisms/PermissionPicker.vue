@@ -128,7 +128,11 @@ function clearAll(): void {
                 <span class="font-medium text-foreground tabular-nums">
                     {{ modelValue.length }}
                 </span>
-                de {{ totalCount }} permisos seleccionados
+                {{
+                    $t('de :total permisos seleccionados', {
+                        total: totalCount,
+                    })
+                }}
             </p>
             <div v-if="!disabled" class="flex gap-2">
                 <Button
@@ -138,7 +142,7 @@ function clearAll(): void {
                     :disabled="modelValue.length === totalCount"
                     @click="selectAll"
                 >
-                    Seleccionar todo
+                    {{ $t('Seleccionar todo') }}
                 </Button>
                 <Button
                     type="button"
@@ -147,7 +151,7 @@ function clearAll(): void {
                     :disabled="modelValue.length === 0"
                     @click="clearAll"
                 >
-                    Limpiar
+                    {{ $t('Limpiar') }}
                 </Button>
             </div>
         </div>
@@ -159,7 +163,7 @@ function clearAll(): void {
                 class="rounded-xl border border-border p-3"
                 :disabled="disabled"
             >
-                <legend class="sr-only">{{ group.label }}</legend>
+                <legend class="sr-only">{{ $t(group.label) }}</legend>
 
                 <button
                     type="button"
@@ -184,7 +188,9 @@ function clearAll(): void {
                         />
                         <Check v-else class="size-3.5" />
                     </Checkbox>
-                    <span class="text-sm font-semibold">{{ group.label }}</span>
+                    <span class="text-sm font-semibold">{{
+                        $t(group.label)
+                    }}</span>
                     <span
                         class="ml-auto text-xs text-muted-foreground tabular-nums"
                     >
@@ -215,7 +221,7 @@ function clearAll(): void {
                             />
                             <span class="min-w-0">
                                 <span class="block text-sm">
-                                    {{ permission.label }}
+                                    {{ $t(permission.label) }}
                                 </span>
                                 <span
                                     class="block truncate font-mono text-[11px] text-muted-foreground"

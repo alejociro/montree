@@ -45,13 +45,13 @@ final class UpdateRoleRequest extends FormRequest
                 }
 
                 if (TenantRoleCatalog::isReservedName($name)) {
-                    $validator->errors()->add('name', 'Ese nombre pertenece a un rol base. Elegí otro.');
+                    $validator->errors()->add('name', __('Ese nombre pertenece a un rol base. Elegí otro.'));
 
                     return;
                 }
 
                 if ($this->nameTaken($name)) {
-                    $validator->errors()->add('name', 'Ya tenés un rol con ese nombre.');
+                    $validator->errors()->add('name', __('Ya tenés un rol con ese nombre.'));
                 }
             },
         ];
@@ -63,11 +63,11 @@ final class UpdateRoleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Ponle un nombre al rol.',
-            'name.max' => 'Máximo :max caracteres.',
-            'permissions.required' => 'Elige al menos un permiso.',
-            'permissions.min' => 'Elige al menos un permiso.',
-            'permissions.*.in' => 'Ese permiso no existe.',
+            'name.required' => __('Ponle un nombre al rol.'),
+            'name.max' => __('Máximo :max caracteres.'),
+            'permissions.required' => __('Elige al menos un permiso.'),
+            'permissions.min' => __('Elige al menos un permiso.'),
+            'permissions.*.in' => __('Ese permiso no existe.'),
         ];
     }
 

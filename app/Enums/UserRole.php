@@ -16,12 +16,12 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
-            self::SuperAdmin => 'Super Admin',
-            self::Admin => 'Administrador',
-            self::Sales => 'Vendedor',
-            self::Operator => 'Operador',
-            self::Guide => 'Guía',
-            self::Customer => 'Viajero',
+            self::SuperAdmin => __('Super Admin'),
+            self::Admin => __('Administrador'),
+            self::Sales => __('Vendedor'),
+            self::Operator => __('Operador'),
+            self::Guide => __('Guía'),
+            self::Customer => __('Viajero'),
         };
     }
 

@@ -10,7 +10,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+
+const { t } = useTranslations();
 
 defineOptions({ layout: PublicLayout });
 
@@ -103,36 +106,38 @@ const formattedTotal = computed(() =>
 function validateLocally(): string | null {
     if (props.prefill === null) {
         if (!personal.email.trim()) {
-            return 'El correo electrónico es obligatorio.';
+            return t('El correo electrónico es obligatorio.');
         }
 
         if (personal.email !== personal.email_confirmation) {
-            return 'Los correos electrónicos no coinciden.';
+            return t('Los correos electrónicos no coinciden.');
         }
 
         if (!personal.full_name.trim()) {
-            return 'Los nombres y apellidos son obligatorios.';
+            return t('Los nombres y apellidos son obligatorios.');
         }
 
         if (!personal.phone.trim()) {
-            return 'El número celular es obligatorio.';
+            return t('El número celular es obligatorio.');
         }
     }
 
     if (adultsCount.value < 1) {
-        return 'Debe viajar al menos un adulto.';
+        return t('Debe viajar al menos un adulto.');
     }
 
     if (totalTravelers.value > seatCap.value) {
-        return 'No hay suficientes cupos disponibles para esa cantidad de viajeros.';
+        return t(
+            'No hay suficientes cupos disponibles para esa cantidad de viajeros.',
+        );
     }
 
     if (!emergency.name.trim() || !emergency.phone.trim()) {
-        return 'El contacto de emergencia es obligatorio.';
+        return t('El contacto de emergencia es obligatorio.');
     }
 
     if (!acceptedTerms.value) {
-        return 'Debes aceptar los términos y condiciones.';
+        return t('Debes aceptar los términos y condiciones.');
     }
 
     return null;
@@ -169,7 +174,7 @@ async function payBooking(bookingNumber: string): Promise<void> {
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ?? 'No pudimos procesar el pago.');
+                toast.error(firstError ?? t('No pudimos procesar el pago.'));
             },
             onFinish: () => {
                 submitting.value = false;
@@ -199,7 +204,7 @@ async function submit(): Promise<void> {
 
             if (bookingNumber === null) {
                 submitting.value = false;
-                toast.error('No pudimos crear la reserva.');
+                toast.error(t('No pudimos crear la reserva.'));
 
                 return;
             }
@@ -209,7 +214,7 @@ async function submit(): Promise<void> {
         onError: (errors) => {
             submitting.value = false;
             const firstError = Object.values(errors)[0];
-            toast.error(firstError ?? 'No pudimos crear la reserva.');
+            toast.error(firstError ?? t('No pudimos crear la reserva.'));
         },
     });
 }
@@ -225,21 +230,30 @@ async function submit(): Promise<void> {
                 class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition hover:text-foreground"
             >
                 <span aria-hidden="true">&larr;</span>
-                Volver
+                {{ $t('Volver') }}
             </Link>
 
             <header class="mb-6 space-y-1">
                 <h1 class="text-2xl font-bold text-foreground">
-                    Formulario de reserva
+                    {{ $t('Formulario de reserva') }}
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Para completar la reserva es necesario que diligencies el
-                    siguiente formulario
+                    {{
+                        $t(
+                            'Para completar la reserva es necesario que diligencies el siguiente formulario',
+                        )
+                    }}
                 </p>
                 <p class="pt-1 text-sm text-muted-foreground">
-                    {{ tour.name }} ·
-                    {{ new Date(tourDate.starts_at).toLocaleString('es-CO') }} ·
-                    {{ formattedPrice }} por persona
+                    {{
+                        $t(':tour · :date · :price por persona', {
+                            tour: tour.name,
+                            date: new Date(tourDate.starts_at).toLocaleString(
+                                'es-CO',
+                            ),
+                            price: formattedPrice,
+                        })
+                    }}
                 </p>
             </header>
 
@@ -253,7 +267,7 @@ async function submit(): Promise<void> {
                             1
                         </span>
                         <h2 class="text-lg font-semibold text-foreground">
-                            Información personal
+                            {{ $t('Información personal') }}
                         </h2>
                     </div>
 
@@ -261,13 +275,18 @@ async function submit(): Promise<void> {
                         v-if="prefill === null"
                         class="rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground/70"
                     >
-                        Al reservar crearemos una cuenta con tu correo para que
-                        puedas gestionar tus reservas y recibir actualizaciones.
+                        {{
+                            $t(
+                                'Al reservar crearemos una cuenta con tu correo para que puedas gestionar tus reservas y recibir actualizaciones.',
+                            )
+                        }}
                     </p>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">
-                            <Label for="email">Correo electrónico *</Label>
+                            <Label for="email">{{
+                                $t('Correo electrónico *')
+                            }}</Label>
                             <Input
                                 id="email"
                                 v-model="personal.email"
@@ -278,7 +297,7 @@ async function submit(): Promise<void> {
                         </div>
                         <div class="space-y-1.5">
                             <Label for="email_confirmation">
-                                Confirmación de correo electrónico *
+                                {{ $t('Confirmación de correo electrónico *') }}
                             </Label>
                             <Input
                                 id="email_confirmation"
@@ -289,18 +308,24 @@ async function submit(): Promise<void> {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label for="full_name">Nombres y apellidos *</Label>
+                            <Label for="full_name">{{
+                                $t('Nombres y apellidos *')
+                            }}</Label>
                             <Input
                                 id="full_name"
                                 v-model="personal.full_name"
                                 type="text"
-                                placeholder="Como aparece en tu documento"
+                                :placeholder="
+                                    $t('Como aparece en tu documento')
+                                "
                                 autocomplete="name"
                                 required
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label for="phone">Número celular *</Label>
+                            <Label for="phone">{{
+                                $t('Número celular *')
+                            }}</Label>
                             <Input
                                 id="phone"
                                 v-model="personal.phone"
@@ -322,22 +347,22 @@ async function submit(): Promise<void> {
                             2
                         </span>
                         <h2 class="text-lg font-semibold text-foreground">
-                            ¿Cuántos van a viajar? *
+                            {{ $t('¿Cuántos van a viajar? *') }}
                         </h2>
                     </div>
 
                     <div class="space-y-3">
                         <CounterStepper
                             v-model="adultsCount"
-                            label="Adultos"
-                            description="Mayores de edad"
+                            :label="$t('Adultos')"
+                            :description="$t('Mayores de edad')"
                             :min="1"
                             :max="adultsMax"
                         />
                         <CounterStepper
                             v-model="minorsCount"
-                            label="Menores"
-                            description="Menores de edad"
+                            :label="$t('Menores')"
+                            :description="$t('Menores de edad')"
                             :min="0"
                             :max="minorsMax"
                         />
@@ -346,9 +371,11 @@ async function submit(): Promise<void> {
                     <p
                         class="rounded-md bg-primary/10 px-3 py-2 text-xs text-foreground/70"
                     >
-                        Los datos de cada viajero (nombre, documento, etc.) se
-                        completan después de reservar, desde el detalle de tu
-                        reserva.
+                        {{
+                            $t(
+                                'Los datos de cada viajero (nombre, documento, etc.) se completan después de reservar, desde el detalle de tu reserva.',
+                            )
+                        }}
                     </p>
 
                     <div
@@ -374,14 +401,14 @@ async function submit(): Promise<void> {
                             3
                         </span>
                         <h2 class="text-lg font-semibold text-foreground">
-                            Contacto de emergencia
+                            {{ $t('Contacto de emergencia') }}
                         </h2>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">
                             <Label for="emergency_name">
-                                Nombres y apellidos *
+                                {{ $t('Nombres y apellidos *') }}
                             </Label>
                             <Input
                                 id="emergency_name"
@@ -392,7 +419,7 @@ async function submit(): Promise<void> {
                         </div>
                         <div class="space-y-1.5">
                             <Label for="emergency_phone">
-                                Número celular *
+                                {{ $t('Número celular *') }}
                             </Label>
                             <Input
                                 id="emergency_phone"
@@ -417,14 +444,14 @@ async function submit(): Promise<void> {
                             "
                         />
                         <span>
-                            Acepto los
+                            {{ $t('Acepto los') }}
                             <a
                                 href="/terms"
                                 target="_blank"
                                 rel="noopener"
                                 class="text-primary underline underline-offset-2"
                             >
-                                términos y condiciones
+                                {{ $t('términos y condiciones') }}
                             </a>
                         </span>
                     </label>

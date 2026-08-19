@@ -12,8 +12,8 @@ enum PromotionType: string
     public function label(): string
     {
         return match ($this) {
-            self::Percentage => 'Percentage',
-            self::Fixed => 'Fixed amount',
+            self::Percentage => __('Percentage'),
+            self::Fixed => __('Fixed amount'),
         };
     }
 }

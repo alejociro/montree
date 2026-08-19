@@ -33,15 +33,15 @@ trait PasswordValidationRules
     protected function passwordMessages(string $attribute = 'password'): array
     {
         return [
-            $attribute.'.required' => 'Ingresa una contraseña.',
-            $attribute.'.string' => 'Debe ser texto.',
-            $attribute.'.min' => 'Mínimo :min caracteres.',
-            $attribute.'.confirmed' => 'Las contraseñas no coinciden.',
-            $attribute.'.password.mixed' => 'Combina mayúsculas y minúsculas.',
-            $attribute.'.password.letters' => 'Incluye al menos una letra.',
-            $attribute.'.password.numbers' => 'Incluye al menos un número.',
-            $attribute.'.password.symbols' => 'Incluye al menos un símbolo.',
-            $attribute.'.password.uncompromised' => 'Esa contraseña apareció en una filtración. Elige otra.',
+            $attribute.'.required' => __('Ingresa una contraseña.'),
+            $attribute.'.string' => __('Debe ser texto.'),
+            $attribute.'.min' => __('Mínimo :min caracteres.'),
+            $attribute.'.confirmed' => __('Las contraseñas no coinciden.'),
+            $attribute.'.password.mixed' => __('Combina mayúsculas y minúsculas.'),
+            $attribute.'.password.letters' => __('Incluye al menos una letra.'),
+            $attribute.'.password.numbers' => __('Incluye al menos un número.'),
+            $attribute.'.password.symbols' => __('Incluye al menos un símbolo.'),
+            $attribute.'.password.uncompromised' => __('Esa contraseña apareció en una filtración. Elige otra.'),
         ];
     }
 
@@ -51,9 +51,9 @@ trait PasswordValidationRules
     protected function currentPasswordMessages(string $attribute = 'current_password'): array
     {
         return [
-            $attribute.'.required' => 'Ingresa tu contraseña actual.',
-            $attribute.'.string' => 'Debe ser texto.',
-            $attribute.'.current_password' => 'La contraseña actual no es correcta.',
+            $attribute.'.required' => __('Ingresa tu contraseña actual.'),
+            $attribute.'.string' => __('Debe ser texto.'),
+            $attribute.'.current_password' => __('La contraseña actual no es correcta.'),
         ];
     }
 }

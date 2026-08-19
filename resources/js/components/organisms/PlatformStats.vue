@@ -35,26 +35,26 @@ function formatCurrency(value: string | undefined): string {
 <template>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <PlatformStatCard
-            title="Tenants activos"
+            :title="$t('Tenants activos')"
             :value="formatNumber(totals?.active_tenants)"
             :description="`de ${formatNumber(totals?.tenants)} totales`"
             :icon="Building2"
         />
         <PlatformStatCard
-            title="Usuarios"
+            :title="$t('Usuarios')"
             :value="formatNumber(totals?.users)"
-            description="Cuentas registradas"
+            :description="$t('Cuentas registradas')"
             :icon="Users"
         />
         <PlatformStatCard
-            title="Bookings del mes"
+            :title="$t('Bookings del mes')"
             :value="formatNumber(totals?.bookings_this_month)"
-            description="vs. mes anterior"
+            :description="$t('vs. mes anterior')"
             :icon="ShoppingBag"
             :trend="growth?.bookings_growth_pct ?? null"
         />
         <PlatformStatCard
-            title="Comisión plataforma"
+            :title="$t('Comisión plataforma')"
             :value="formatCurrency(totals?.platform_commission_this_month)"
             :description="`Sobre ${formatCurrency(totals?.revenue_this_month)} facturados`"
             :icon="DollarSign"

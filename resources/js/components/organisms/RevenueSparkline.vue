@@ -82,7 +82,7 @@ const areaPath = computed(() => {
             dominant-baseline="middle"
             class="fill-muted-foreground text-xs"
         >
-            Sin datos
+            {{ $t('Sin datos') }}
         </text>
     </svg>
 </template>

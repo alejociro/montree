@@ -16,7 +16,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type { BookingTraveler, TravelerSyncInput } from '@/types/booking';
+
+const { t } = useTranslations();
 
 type Props = {
     bookingNumber: string;
@@ -42,11 +45,11 @@ type TravelerSlot = {
 };
 
 const DOCUMENT_TYPES = [
-    { value: 'cc', label: 'Cédula de ciudadanía' },
-    { value: 'ce', label: 'Cédula de extranjería' },
-    { value: 'ti', label: 'Tarjeta de identidad' },
-    { value: 'passport', label: 'Pasaporte' },
-    { value: 'other', label: 'Otro' },
+    { value: 'cc', label: t('Cédula de ciudadanía') },
+    { value: 'ce', label: t('Cédula de extranjería') },
+    { value: 'ti', label: t('Tarjeta de identidad') },
+    { value: 'passport', label: t('Pasaporte') },
+    { value: 'other', label: t('Otro') },
 ];
 
 function blankSlot(isMinor: boolean): TravelerSlot {
@@ -201,8 +204,9 @@ function save(): void {
     const payload = buildPayload();
 
     if (payload.length === 0) {
-        generalError.value =
-            'Completa el nombre de al menos un viajero para guardar.';
+        generalError.value = t(
+            'Completa el nombre de al menos un viajero para guardar.',
+        );
         toast.error(generalError.value);
 
         return;
@@ -216,13 +220,13 @@ function save(): void {
         { travelers: payload },
         {
             onSuccess: () => {
-                toast.success('Datos de los viajeros guardados.');
+                toast.success(t('Datos de los viajeros guardados.'));
                 router.reload({ only: ['booking'] });
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0] ?? null;
                 generalError.value =
-                    firstError ?? 'No pudimos guardar los datos.';
+                    firstError ?? t('No pudimos guardar los datos.');
                 toast.error(generalError.value);
             },
             onFinish: () => {
@@ -250,17 +254,22 @@ function slotLabel(slot: TravelerSlot, index: number): string {
             <div class="flex items-center gap-2">
                 <Users class="size-5 text-primary" />
                 <h2 class="text-base font-semibold text-foreground">
-                    Viajeros
+                    {{ $t('Viajeros') }}
                 </h2>
                 <Badge v-if="required" variant="destructive">
-                    Requerido antes del tour
+                    {{ $t('Requerido antes del tour') }}
                 </Badge>
-                <Badge v-else variant="outline">Opcional</Badge>
+                <Badge v-else variant="outline">{{ $t('Opcional') }}</Badge>
             </div>
             <div class="flex items-center gap-2 text-sm">
                 <CheckCircle2 v-if="allCompleted" class="size-4 text-primary" />
                 <span class="text-muted-foreground">
-                    {{ totalCompleted }} de {{ totalSlots }} completados
+                    {{
+                        $t(':done de :total completados', {
+                            done: totalCompleted,
+                            total: totalSlots,
+                        })
+                    }}
                 </span>
             </div>
         </div>
@@ -274,8 +283,11 @@ function slotLabel(slot: TravelerSlot, index: number): string {
             v-if="required && !allCompleted"
             class="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
         >
-            Debes completar los datos de todos los viajeros antes de la fecha
-            del tour.
+            {{
+                $t(
+                    'Debes completar los datos de todos los viajeros antes de la fecha del tour.',
+                )
+            }}
         </p>
 
         <form class="space-y-4" @submit.prevent="save">
@@ -291,19 +303,19 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="space-y-1.5 sm:col-span-2">
                         <Label :for="`traveler-name-${index}`">
-                            Nombre completo *
+                            {{ $t('Nombre completo *') }}
                         </Label>
                         <Input
                             :id="`traveler-name-${index}`"
                             v-model="slot.full_name"
                             type="text"
-                            placeholder="Como aparece en el documento"
+                            :placeholder="$t('Como aparece en el documento')"
                         />
                     </div>
 
                     <div class="space-y-1.5">
                         <Label :for="`traveler-phone-${index}`">
-                            Teléfono
+                            {{ $t('Teléfono') }}
                         </Label>
                         <Input
                             :id="`traveler-phone-${index}`"
@@ -315,7 +327,7 @@ function slotLabel(slot: TravelerSlot, index: number): string {
 
                     <div class="space-y-1.5">
                         <Label :for="`traveler-birth-${index}`">
-                            Fecha de nacimiento
+                            {{ $t('Fecha de nacimiento') }}
                         </Label>
                         <Input
                             :id="`traveler-birth-${index}`"
@@ -326,11 +338,11 @@ function slotLabel(slot: TravelerSlot, index: number): string {
 
                     <div class="space-y-1.5">
                         <Label :for="`traveler-doc-type-${index}`">
-                            Tipo de documento
+                            {{ $t('Tipo de documento') }}
                         </Label>
                         <Select v-model="slot.document_type">
                             <SelectTrigger :id="`traveler-doc-type-${index}`">
-                                <SelectValue placeholder="Seleccionar" />
+                                <SelectValue :placeholder="$t('Seleccionar')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -346,7 +358,7 @@ function slotLabel(slot: TravelerSlot, index: number): string {
 
                     <div class="space-y-1.5">
                         <Label :for="`traveler-doc-number-${index}`">
-                            Número de documento
+                            {{ $t('Número de documento') }}
                         </Label>
                         <Input
                             :id="`traveler-doc-number-${index}`"

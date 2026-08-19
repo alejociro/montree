@@ -46,15 +46,19 @@ function onDescription(value: string | number): void {
     <section class="space-y-6">
         <Heading
             variant="small"
-            title="Identidad visual"
-            description="Colores y mensajes que ven los viajeros en tu tienda."
+            :title="$t('Identidad visual')"
+            :description="
+                $t('Colores y mensajes que ven los viajeros en tu tienda.')
+            "
         />
 
         <div class="grid gap-6 md:grid-cols-2">
             <ColorPicker
                 id="primary_color"
-                label="Color primario"
-                description="Usado para botones de acción y enlaces destacados."
+                :label="$t('Color primario')"
+                :description="
+                    $t('Usado para botones de acción y enlaces destacados.')
+                "
                 :model-value="modelValue.primary_color"
                 :error="errors?.primary_color"
                 @update:model-value="(v) => update('primary_color', v)"
@@ -62,8 +66,8 @@ function onDescription(value: string | number): void {
 
             <ColorPicker
                 id="secondary_color"
-                label="Color secundario"
-                description="Acentos, bordes y elementos de soporte."
+                :label="$t('Color secundario')"
+                :description="$t('Acentos, bordes y elementos de soporte.')"
                 :model-value="modelValue.secondary_color"
                 :error="errors?.secondary_color"
                 @update:model-value="(v) => update('secondary_color', v)"
@@ -71,29 +75,35 @@ function onDescription(value: string | number): void {
         </div>
 
         <div class="grid gap-2">
-            <Label for="tagline">Tagline</Label>
+            <Label for="tagline">{{ $t('Tagline') }}</Label>
             <Input
                 id="tagline"
                 :model-value="modelValue.tagline"
-                placeholder="Aventuras inolvidables en Colombia"
+                :placeholder="$t('Aventuras inolvidables en Colombia')"
                 maxlength="160"
                 @update:model-value="onTagline"
             />
-            <p class="text-xs text-muted-foreground">Máximo 160 caracteres.</p>
+            <p class="text-xs text-muted-foreground">
+                {{ $t('Máximo 160 caracteres.') }}
+            </p>
             <InputError :message="errors?.tagline" />
         </div>
 
         <div class="grid gap-2">
-            <Label for="description">Descripción</Label>
+            <Label for="description">{{ $t('Descripción') }}</Label>
             <Textarea
                 id="description"
                 :model-value="modelValue.description"
-                placeholder="Cuenta brevemente qué hace única a tu agencia"
+                :placeholder="
+                    $t('Cuenta brevemente qué hace única a tu agencia')
+                "
                 rows="4"
                 maxlength="2000"
                 @update:model-value="onDescription"
             />
-            <p class="text-xs text-muted-foreground">Máximo 2000 caracteres.</p>
+            <p class="text-xs text-muted-foreground">
+                {{ $t('Máximo 2000 caracteres.') }}
+            </p>
             <InputError :message="errors?.description" />
         </div>
     </section>

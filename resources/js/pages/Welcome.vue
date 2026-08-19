@@ -13,7 +13,7 @@ withDefaults(
 </script>
 
 <template>
-    <Head title="Welcome">
+    <Head :title="$t('Welcome')">
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
@@ -29,21 +29,21 @@ withDefaults(
                     :href="dashboard()"
                     class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                 >
-                    Dashboard
+                    {{ $t('Dashboard') }}
                 </Link>
                 <template v-else>
                     <Link
                         :href="login()"
                         class="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                     >
-                        Log in
+                        {{ $t('Log in') }}
                     </Link>
                     <Link
                         v-if="canRegister"
                         :href="register()"
                         class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                     >
-                        Register
+                        {{ $t('Register') }}
                     </Link>
                 </template>
             </nav>
@@ -57,10 +57,14 @@ withDefaults(
                 <div
                     class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
                 >
-                    <h1 class="mb-1 font-medium">Let's get started</h1>
+                    <h1 class="mb-1 font-medium">
+                        {{ $t("Let's get started") }}
+                    </h1>
                     <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
-                        Laravel has an incredibly rich ecosystem. <br />We
-                        suggest starting with the following.
+                        {{ $t('Laravel has an incredibly rich ecosystem.') }}
+                        <br />{{
+                            $t('We suggest starting with the following.')
+                        }}
                     </p>
                     <ul class="mb-4 flex flex-col lg:mb-6">
                         <li
@@ -78,13 +82,13 @@ withDefaults(
                                 </span>
                             </span>
                             <span>
-                                Read the
+                                {{ $t('Read the') }}
                                 <a
                                     href="https://laravel.com/docs"
                                     target="_blank"
                                     class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                 >
-                                    <span>Documentation</span>
+                                    <span>{{ $t('Documentation') }}</span>
                                     <svg
                                         width="10"
                                         height="11"
@@ -117,13 +121,13 @@ withDefaults(
                                 </span>
                             </span>
                             <span>
-                                Watch video tutorials at
+                                {{ $t('Watch video tutorials at') }}
                                 <a
                                     href="https://laracasts.com"
                                     target="_blank"
                                     class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                 >
-                                    <span>Laracasts</span>
+                                    <span>{{ $t('Laracasts') }}</span>
                                     <svg
                                         width="10"
                                         height="11"
@@ -149,7 +153,7 @@ withDefaults(
                                 target="_blank"
                                 class="inline-block rounded-sm border border-black bg-[#1b1b18] px-5 py-1.5 text-sm leading-normal text-white hover:border-black hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:border-white dark:hover:bg-white"
                             >
-                                Deploy now
+                                {{ $t('Deploy now') }}
                             </a>
                         </li>
                     </ul>

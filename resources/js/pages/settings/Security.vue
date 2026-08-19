@@ -45,15 +45,19 @@ onUnmounted(() => clearTwoFactorAuthData());
 </script>
 
 <template>
-    <Head title="Seguridad" />
+    <Head :title="$t('Seguridad')" />
 
-    <h1 class="sr-only">Seguridad</h1>
+    <h1 class="sr-only">{{ $t('Seguridad') }}</h1>
 
     <div class="space-y-6">
         <Heading
             variant="small"
-            title="Cambiar contraseña"
-            description="Usa una contraseña larga y aleatoria para mantener tu cuenta segura"
+            :title="$t('Cambiar contraseña')"
+            :description="
+                $t(
+                    'Usa una contraseña larga y aleatoria para mantener tu cuenta segura',
+                )
+            "
         />
 
         <Form
@@ -71,38 +75,42 @@ onUnmounted(() => clearTwoFactorAuthData());
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="current_password">Contraseña actual</Label>
+                <Label for="current_password">{{
+                    $t('Contraseña actual')
+                }}</Label>
                 <PasswordInput
                     id="current_password"
                     name="current_password"
                     class="mt-1 block w-full"
                     autocomplete="current-password"
-                    placeholder="Contraseña actual"
+                    :placeholder="$t('Contraseña actual')"
                 />
                 <InputError :message="errors.current_password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Contraseña nueva</Label>
+                <Label for="password">{{ $t('Contraseña nueva') }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="Contraseña nueva"
+                    :placeholder="$t('Contraseña nueva')"
                     :passwordrules="props.passwordRules"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirmar contraseña</Label>
+                <Label for="password_confirmation">{{
+                    $t('Confirmar contraseña')
+                }}</Label>
                 <PasswordInput
                     id="password_confirmation"
                     name="password_confirmation"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="Confirmar contraseña"
+                    :placeholder="$t('Confirmar contraseña')"
                     :passwordrules="props.passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -113,7 +121,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     :disabled="processing"
                     data-test="update-password-button"
                 >
-                    Guardar contraseña
+                    {{ $t('Guardar contraseña') }}
                 </Button>
             </div>
         </Form>
@@ -122,8 +130,10 @@ onUnmounted(() => clearTwoFactorAuthData());
     <div v-if="canManageTwoFactor" class="space-y-6">
         <Heading
             variant="small"
-            title="Autenticación en dos pasos"
-            description="Administra la verificación en dos pasos de tu cuenta"
+            :title="$t('Autenticación en dos pasos')"
+            :description="
+                $t('Administra la verificación en dos pasos de tu cuenta')
+            "
         />
 
         <div
@@ -131,14 +141,16 @@ onUnmounted(() => clearTwoFactorAuthData());
             class="flex flex-col items-start justify-start space-y-4"
         >
             <p class="text-sm text-muted-foreground">
-                Al activar la autenticación en dos pasos, el ingreso te pedirá
-                un código temporal. Ese código lo genera una aplicación
-                compatible con TOTP en tu teléfono.
+                {{
+                    $t(
+                        'Al activar la autenticación en dos pasos, el ingreso te pedirá un código temporal. Ese código lo genera una aplicación compatible con TOTP en tu teléfono.',
+                    )
+                }}
             </p>
 
             <div>
                 <Button v-if="hasSetupData" @click="showSetupModal = true">
-                    <ShieldCheck />Continuar configuración
+                    <ShieldCheck />{{ $t('Continuar configuración') }}
                 </Button>
                 <Form
                     v-else
@@ -147,7 +159,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     #default="{ processing }"
                 >
                     <Button type="submit" :disabled="processing">
-                        Activar 2FA
+                        {{ $t('Activar 2FA') }}
                     </Button>
                 </Form>
             </div>
@@ -155,9 +167,11 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <div v-else class="flex flex-col items-start justify-start space-y-4">
             <p class="text-sm text-muted-foreground">
-                Al ingresar te vamos a pedir un código temporal, que podés
-                consultar en la aplicación compatible con TOTP de tu
-                teléfono.
+                {{
+                    $t(
+                        'Al ingresar te vamos a pedir un código temporal, que podés consultar en la aplicación compatible con TOTP de tu teléfono.',
+                    )
+                }}
             </p>
 
             <div class="relative inline">
@@ -167,7 +181,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                         type="submit"
                         :disabled="processing"
                     >
-                        Desactivar 2FA
+                        {{ $t('Desactivar 2FA') }}
                     </Button>
                 </Form>
             </div>

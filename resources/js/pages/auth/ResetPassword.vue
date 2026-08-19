@@ -26,7 +26,7 @@ const inputEmail = ref(props.email);
 </script>
 
 <template>
-    <Head title="Restablecer contraseña" />
+    <Head :title="$t('Restablecer contraseña')" />
 
     <Form
         v-bind="update.form()"
@@ -36,7 +36,7 @@ const inputEmail = ref(props.email);
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+                <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -50,27 +50,29 @@ const inputEmail = ref(props.email);
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Nueva contraseña</Label>
+                <Label for="password">{{ $t('Nueva contraseña') }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     autofocus
-                    placeholder="Nueva contraseña"
+                    :placeholder="$t('Nueva contraseña')"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirmar contraseña</Label>
+                <Label for="password_confirmation">{{
+                    $t('Confirmar contraseña')
+                }}</Label>
                 <PasswordInput
                     id="password_confirmation"
                     name="password_confirmation"
                     autocomplete="new-password"
                     class="mt-1 block w-full"
-                    placeholder="Confirmar contraseña"
+                    :placeholder="$t('Confirmar contraseña')"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -83,7 +85,7 @@ const inputEmail = ref(props.email);
                 data-test="reset-password-button"
             >
                 <Spinner v-if="processing" />
-                Restablecer contraseña
+                {{ $t('Restablecer contraseña') }}
             </Button>
         </div>
     </Form>

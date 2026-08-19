@@ -13,11 +13,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     TenantConfigurationPayload,
     TenantLocale,
     TenantSocialLinks,
 } from '@/types/tenant';
+
+const { t } = useTranslations();
 
 type ConfigurationForm = {
     primary_color: string;
@@ -130,7 +133,7 @@ function submit(): void {
 
     void api.put(updateConfigAction().url, buildPayload(form.data()), {
         onSuccess: () => {
-            toast.success('Configuración guardada.');
+            toast.success(t('Configuración guardada.'));
             recentlySaved.value = true;
             router.reload({ only: ['tenant'] });
         },
@@ -138,15 +141,18 @@ function submit(): void {
             const cssError = errors.custom_css ?? errors.error_code ?? '';
 
             if (cssError.toLowerCase().includes('enterprise')) {
-                enterpriseOnlyError.value =
-                    'El CSS personalizado solo está disponible en el plan Enterprise.';
+                enterpriseOnlyError.value = t(
+                    'El CSS personalizado solo está disponible en el plan Enterprise.',
+                );
 
                 return;
             }
 
             form.setError(errors);
             toast.error(
-                'No se pudieron guardar los cambios. Revisa los campos marcados.',
+                t(
+                    'No se pudieron guardar los cambios. Revisa los campos marcados.',
+                ),
             );
         },
         onFinish: () => {
@@ -163,21 +169,28 @@ function resetForm(): void {
 </script>
 
 <template>
-    <Head title="Configuración del tenant" />
+    <Head :title="$t('Configuración del tenant')" />
 
     <div class="px-4 py-6 md:px-8">
         <Heading
-            title="Configuración de la agencia"
-            description="Personaliza la identidad visual, configuración operativa y enlaces de tu agencia."
+            :title="$t('Configuración de la agencia')"
+            :description="
+                $t(
+                    'Personaliza la identidad visual, configuración operativa y enlaces de tu agencia.',
+                )
+            "
         />
 
         <div v-if="!tenant" class="mt-6">
             <Alert variant="destructive">
                 <AlertCircle class="size-4" />
-                <AlertTitle>No hay tenant resuelto</AlertTitle>
+                <AlertTitle>{{ $t('No hay tenant resuelto') }}</AlertTitle>
                 <AlertDescription>
-                    No se pudo identificar la agencia. Verifica que estás
-                    accediendo desde el subdominio correcto.
+                    {{
+                        $t(
+                            'No se pudo identificar la agencia. Verifica que estás accediendo desde el subdominio correcto.',
+                        )
+                    }}
                 </AlertDescription>
             </Alert>
         </div>
@@ -189,15 +202,15 @@ function resetForm(): void {
                     class="border-primary/30 bg-primary/5 text-primary"
                 >
                     <CheckCircle2 class="size-4" />
-                    <AlertTitle>Cambios guardados</AlertTitle>
+                    <AlertTitle>{{ $t('Cambios guardados') }}</AlertTitle>
                     <AlertDescription>
-                        Tu nueva configuración ya está activa.
+                        {{ $t('Tu nueva configuración ya está activa.') }}
                     </AlertDescription>
                 </Alert>
 
                 <Alert v-if="enterpriseOnlyError" variant="destructive">
                     <AlertCircle class="size-4" />
-                    <AlertTitle>Función Enterprise</AlertTitle>
+                    <AlertTitle>{{ $t('Función Enterprise') }}</AlertTitle>
                     <AlertDescription>
                         {{ enterpriseOnlyError }}
                     </AlertDescription>
@@ -248,14 +261,14 @@ function resetForm(): void {
                         :disabled="saving || !form.isDirty"
                         @click="resetForm"
                     >
-                        Descartar
+                        {{ $t('Descartar') }}
                     </Button>
 
                     <span
                         v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
-                        Tienes cambios sin guardar.
+                        {{ $t('Tienes cambios sin guardar.') }}
                     </span>
                 </div>
             </form>

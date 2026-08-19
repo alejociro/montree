@@ -10,6 +10,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 type Props = {
     id: string;
@@ -30,14 +33,14 @@ type CurrencyOption = {
 };
 
 const currencies: CurrencyOption[] = [
-    { code: 'USD', label: 'USD — US Dollar' },
-    { code: 'COP', label: 'COP — Peso Colombiano' },
-    { code: 'EUR', label: 'EUR — Euro' },
-    { code: 'MXN', label: 'MXN — Peso Mexicano' },
-    { code: 'ARS', label: 'ARS — Peso Argentino' },
-    { code: 'PEN', label: 'PEN — Sol Peruano' },
-    { code: 'CLP', label: 'CLP — Peso Chileno' },
-    { code: 'BRL', label: 'BRL — Real Brasileño' },
+    { code: 'USD', label: t('USD — US Dollar') },
+    { code: 'COP', label: t('COP — Peso Colombiano') },
+    { code: 'EUR', label: t('EUR — Euro') },
+    { code: 'MXN', label: t('MXN — Peso Mexicano') },
+    { code: 'ARS', label: t('ARS — Peso Argentino') },
+    { code: 'PEN', label: t('PEN — Sol Peruano') },
+    { code: 'CLP', label: t('CLP — Peso Chileno') },
+    { code: 'BRL', label: t('BRL — Real Brasileño') },
 ];
 
 function handleChange(value: AcceptableValue): void {
@@ -57,7 +60,7 @@ function handleChange(value: AcceptableValue): void {
             @update:model-value="handleChange"
         >
             <SelectTrigger :id="id" class="w-full">
-                <SelectValue placeholder="Seleccionar moneda" />
+                <SelectValue :placeholder="$t('Seleccionar moneda')" />
             </SelectTrigger>
             <SelectContent>
                 <SelectGroup>

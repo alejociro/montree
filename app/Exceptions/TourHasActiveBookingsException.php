@@ -12,7 +12,7 @@ final class TourHasActiveBookingsException extends RuntimeException implements H
 {
     public function __construct()
     {
-        parent::__construct('Tour has active or future bookings. Archive it instead.');
+        parent::__construct(__('Tour has active or future bookings. Archive it instead.'));
     }
 
     public function getStatusCode(): int

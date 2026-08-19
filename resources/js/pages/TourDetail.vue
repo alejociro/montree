@@ -17,6 +17,7 @@ import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import ReviewCard from '@/components/molecules/ReviewCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
@@ -27,6 +28,8 @@ import type {
     TourDetailDate,
     TourDetailImage,
 } from '@/types/tour-detail';
+
+const { t } = useTranslations();
 
 defineOptions({ layout: PublicLayout });
 
@@ -63,9 +66,9 @@ const mapUrl = computed(() => {
 
 const difficultyLabel = computed(() => {
     const map: Record<string, string> = {
-        easy: 'Fácil',
+        easy: t('Fácil'),
         moderate: 'Moderado',
-        hard: 'Difícil',
+        hard: t('Difícil'),
         extreme: 'Extremo',
     };
 
@@ -79,7 +82,9 @@ const reviewsLastPage = ref(1);
 const reviewsPage = ref(1);
 const loadingMoreReviews = ref(false);
 
-const hasMoreReviews = computed(() => reviewsPage.value < reviewsLastPage.value);
+const hasMoreReviews = computed(
+    () => reviewsPage.value < reviewsLastPage.value,
+);
 
 type ReviewsPageResponse = {
     data: ReviewSummary[];
@@ -212,7 +217,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                 :href="catalogIndex().url"
                 class="transition hover:text-foreground"
             >
-                Tours
+                {{ $t('Tours') }}
             </Link>
             <ChevronLeft class="size-3.5 rotate-180" />
             <span v-if="tour.category" class="transition hover:text-foreground">
@@ -276,8 +281,12 @@ function dateOptionLabel(date: TourDetailDate): string {
 
                 <!-- Includes -->
                 <div v-if="tour.includes.length > 0" class="space-y-3 pt-2">
-                    <h2 class="text-base font-semibold">¿Qué incluye?</h2>
-                    <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                    <h2 class="text-base font-semibold">
+                        {{ $t('¿Qué incluye?') }}
+                    </h2>
+                    <ul
+                        class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground"
+                    >
                         <li
                             v-for="(item, i) in tour.includes"
                             :key="i"
@@ -291,7 +300,9 @@ function dateOptionLabel(date: TourDetailDate): string {
 
                 <!-- Requirements -->
                 <div v-if="tour.requirements.length > 0" class="space-y-3">
-                    <h2 class="text-base font-semibold">Requisitos</h2>
+                    <h2 class="text-base font-semibold">
+                        {{ $t('Requisitos') }}
+                    </h2>
                     <ul class="space-y-1.5 text-sm text-muted-foreground">
                         <li
                             v-for="(item, i) in tour.requirements"
@@ -331,7 +342,11 @@ function dateOptionLabel(date: TourDetailDate): string {
                     </span>
                     <span class="flex items-center gap-1.5">
                         <Users class="size-4" />
-                        Hasta {{ tour.default_capacity }} personas
+                        {{
+                            $t('Hasta :count personas', {
+                                count: tour.default_capacity,
+                            })
+                        }}
                     </span>
                     <span
                         v-if="tour.rating_count > 0"
@@ -356,7 +371,9 @@ function dateOptionLabel(date: TourDetailDate): string {
 
                 <!-- Itinerary timeline -->
                 <div v-if="tour.itinerary.length > 0" class="space-y-3">
-                    <h2 class="text-lg font-semibold">Itinerario</h2>
+                    <h2 class="text-lg font-semibold">
+                        {{ $t('Itinerario') }}
+                    </h2>
                     <div class="relative space-y-0 pl-6">
                         <div
                             class="absolute top-2 bottom-2 left-[9px] w-0.5 bg-primary/20"
@@ -394,7 +411,9 @@ function dateOptionLabel(date: TourDetailDate): string {
 
                 <!-- Availability / booking -->
                 <div class="space-y-3 rounded-2xl border bg-muted/30 p-5">
-                    <h2 class="text-lg font-semibold">Disponibilidad</h2>
+                    <h2 class="text-lg font-semibold">
+                        {{ $t('Disponibilidad') }}
+                    </h2>
 
                     <template v-if="selectableDates.length > 0">
                         <div class="space-y-1.5">
@@ -402,7 +421,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 for="tour-date-select"
                                 class="text-sm font-medium text-foreground"
                             >
-                                Selecciona una fecha
+                                {{ $t('Selecciona una fecha') }}
                             </label>
                             <select
                                 id="tour-date-select"
@@ -410,7 +429,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 class="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm capitalize shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
                             >
                                 <option :value="null" disabled>
-                                    Seleccionar fecha
+                                    {{ $t('Seleccionar fecha') }}
                                 </option>
                                 <option
                                     v-for="date in selectableDates"
@@ -441,9 +460,9 @@ function dateOptionLabel(date: TourDetailDate): string {
                                         tour.currency,
                                     )
                                 }}</span>
-                                <span class="text-xs text-muted-foreground"
-                                    >por persona</span
-                                >
+                                <span class="text-xs text-muted-foreground">{{
+                                    $t('por persona')
+                                }}</span>
                             </span>
                         </div>
 
@@ -453,10 +472,12 @@ function dateOptionLabel(date: TourDetailDate): string {
                             size="lg"
                             class="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                         >
-                            <Link :href="bookingUrl">Reservar ahora</Link>
+                            <Link :href="bookingUrl">{{
+                                $t('Reservar ahora')
+                            }}</Link>
                         </Button>
                         <Button v-else size="lg" class="w-full" disabled>
-                            Reservar ahora
+                            {{ $t('Reservar ahora') }}
                         </Button>
                     </template>
 
@@ -468,7 +489,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                             class="mx-auto size-8 text-muted-foreground/40"
                         />
                         <p class="mt-3 font-medium text-foreground">
-                            Sin fechas disponibles
+                            {{ $t('Sin fechas disponibles') }}
                         </p>
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{
@@ -482,7 +503,9 @@ function dateOptionLabel(date: TourDetailDate): string {
 
                 <!-- Meeting point -->
                 <div v-if="tour.meeting_point || mapUrl" class="space-y-2">
-                    <h2 class="text-lg font-semibold">Punto de encuentro</h2>
+                    <h2 class="text-lg font-semibold">
+                        {{ $t('Punto de encuentro') }}
+                    </h2>
                     <div
                         class="flex items-start gap-2 text-sm text-muted-foreground"
                     >
@@ -498,12 +521,11 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 rel="noopener"
                                 class="text-primary hover:underline"
                             >
-                                Ver en Google Maps →
+                                {{ $t('Ver en Google Maps →') }}
                             </a>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -511,7 +533,9 @@ function dateOptionLabel(date: TourDetailDate): string {
     <!-- Reviews section -->
     <section class="border-t bg-muted/30">
         <div class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <h2 class="mb-8 text-2xl font-bold">Calificaciones y reseñas</h2>
+            <h2 class="mb-8 text-2xl font-bold">
+                {{ $t('Calificaciones y reseñas') }}
+            </h2>
 
             <div v-if="tour.rating_count > 0" class="grid gap-8 lg:grid-cols-3">
                 <div class="lg:col-span-1">
@@ -540,7 +564,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                         class="rounded-lg border border-dashed p-6 text-center"
                     >
                         <p class="text-sm text-muted-foreground">
-                            No se pudieron cargar las reseñas.
+                            {{ $t('No se pudieron cargar las reseñas.') }}
                         </p>
                         <Button
                             variant="outline"
@@ -548,7 +572,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                             class="mt-3"
                             @click="loadReviews(1)"
                         >
-                            Reintentar
+                            {{ $t('Reintentar') }}
                         </Button>
                     </div>
 
@@ -577,10 +601,13 @@ function dateOptionLabel(date: TourDetailDate): string {
 
             <div v-else class="rounded-xl border border-dashed p-8 text-center">
                 <Star class="mx-auto size-10 text-muted-foreground/30" />
-                <p class="mt-3 font-medium">Aún no hay reseñas</p>
+                <p class="mt-3 font-medium">{{ $t('Aún no hay reseñas') }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Sé el primero en compartir tu experiencia después de
-                    completar el tour.
+                    {{
+                        $t(
+                            'Sé el primero en compartir tu experiencia después de completar el tour.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -593,7 +620,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                 class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
             >
                 <h2 class="mb-6 text-2xl font-bold">
-                    Otras actividades que te podrían gustar
+                    {{ $t('Otras actividades que te podrían gustar') }}
                 </h2>
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div v-for="n in 4" :key="n" class="space-y-3">
@@ -613,13 +640,13 @@ function dateOptionLabel(date: TourDetailDate): string {
         >
             <div class="mb-6 flex items-center justify-between">
                 <h2 class="text-2xl font-bold">
-                    Otras actividades que te podrían gustar
+                    {{ $t('Otras actividades que te podrían gustar') }}
                 </h2>
                 <Link
                     :href="catalogIndex().url"
                     class="text-sm font-medium text-primary transition hover:underline"
                 >
-                    Ver todos →
+                    {{ $t('Ver todos →') }}
                 </Link>
             </div>
 

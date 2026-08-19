@@ -59,14 +59,14 @@ onMounted(() => {
             <div class="header-inner container">
                 <a href="/" class="brand">
                     <div class="brand-icon"><Leaf class="size-4" /></div>
-                    <span class="brand-name">Montree</span>
-                    <span class="brand-tag">Beta</span>
+                    <span class="brand-name">{{ $t('Montree') }}</span>
+                    <span class="brand-tag">{{ $t('Beta') }}</span>
                 </a>
                 <nav class="main-nav">
-                    <a href="/#features">Funciones</a>
-                    <a href="/#how-it-works">Cómo funciona</a>
-                    <a href="/#pricing">Precios</a>
-                    <a href="/faq">FAQ</a>
+                    <a href="/#features">{{ $t('Funciones') }}</a>
+                    <a href="/#how-it-works">{{ $t('Cómo funciona') }}</a>
+                    <a href="/#pricing">{{ $t('Precios') }}</a>
+                    <a href="/faq">{{ $t('FAQ') }}</a>
                 </nav>
                 <div class="flex items-center gap-3">
                     <template v-if="user">
@@ -75,7 +75,7 @@ onMounted(() => {
                             href="/super-admin/dashboard"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                         >
-                            Ir al panel
+                            {{ $t('Ir al panel') }}
                         </Link>
                     </template>
                     <template v-else>
@@ -83,13 +83,13 @@ onMounted(() => {
                             href="/login"
                             class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
                         >
-                            Iniciar sesión
+                            {{ $t('Iniciar sesión') }}
                         </Link>
                         <Link
                             :href="start().url"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                         >
-                            Comenzar gratis
+                            {{ $t('Comenzar gratis') }}
                         </Link>
                     </template>
                 </div>
@@ -105,38 +105,46 @@ onMounted(() => {
                 <div class="footer-brand-col">
                     <div class="brand">
                         <div class="brand-icon"><Leaf class="size-4" /></div>
-                        <span class="brand-name" style="color: #f2ede4"
-                            >Montree</span
-                        >
+                        <span class="brand-name" style="color: #f2ede4">{{
+                            $t('Montree')
+                        }}</span>
                     </div>
                     <p class="footer-desc">
-                        La plataforma digital para agencias de ecoturismo que
-                        quieren crecer sin el caos administrativo.
+                        {{
+                            $t(
+                                'La plataforma digital para agencias de ecoturismo que quieren crecer sin el caos administrativo.',
+                            )
+                        }}
                     </p>
                     <a href="mailto:hola@montree.co" class="footer-email"
-                        ><Mail class="size-4" />hola@montree.co</a
+                        ><Mail class="size-4" />{{ $t('hola@montree.co') }}</a
                     >
                 </div>
                 <div class="footer-links-col">
-                    <h4>Producto</h4>
-                    <a href="/#features">Funciones</a>
-                    <a href="/#pricing">Precios</a>
-                    <a href="/faq">Preguntas frecuentes</a>
+                    <h4>{{ $t('Producto') }}</h4>
+                    <a href="/#features">{{ $t('Funciones') }}</a>
+                    <a href="/#pricing">{{ $t('Precios') }}</a>
+                    <a href="/faq">{{ $t('Preguntas frecuentes') }}</a>
                 </div>
                 <div class="footer-links-col">
-                    <h4>Legal</h4>
-                    <a href="/politica-de-pago">Política de pago</a>
+                    <h4>{{ $t('Legal') }}</h4>
+                    <a href="/politica-de-pago">{{ $t('Política de pago') }}</a>
                     <a href="/politica-de-cancelacion">
-                        Política de cancelación
+                        {{ $t('Política de cancelación') }}
                     </a>
                 </div>
             </div>
             <div class="footer-bottom container">
                 <p>
-                    © {{ new Date().getFullYear() }} Montree. Todos los derechos
-                    reservados.
+                    {{
+                        $t('© :year Montree. Todos los derechos reservados.', {
+                            year: new Date().getFullYear(),
+                        })
+                    }}
                 </p>
-                <p>Hecho con amor para el ecoturismo colombiano 🌿</p>
+                <p>
+                    {{ $t('Hecho con amor para el ecoturismo colombiano 🌿') }}
+                </p>
             </div>
         </footer>
     </div>

@@ -1,5 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import { createApp, h } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
+import { translate, translateChoice } from '@/composables/useTranslations';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -11,6 +13,18 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    setup({ el, App, props, plugin }) {
+        const app = createApp({ render: () => h(App, props) }).use(plugin);
+
+        // WHY: `$t` global en vez de un import por archivo. Son 265 componentes; hacer
+        // que cada template dependa de importar el composable correcto es la diferencia
+        // entre traducir la app y traducir la mitad. En `<script setup>` sigue usandose
+        // `useTranslations()`.
+        app.config.globalProperties.$t = translate;
+        app.config.globalProperties.$tc = translateChoice;
+
+        app.mount(el!);
+    },
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':

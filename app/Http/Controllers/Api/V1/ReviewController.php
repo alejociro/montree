@@ -22,7 +22,7 @@ final class ReviewController extends Controller
         $booking = Booking::query()->find((int) $request->validated('booking_id'));
 
         if ($booking === null) {
-            throw new NotFoundHttpException('Booking not found.');
+            throw new NotFoundHttpException(__('Booking not found.'));
         }
 
         $review = $this->create->handle($request->user(), $booking, $request->validated());

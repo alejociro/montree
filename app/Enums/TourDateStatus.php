@@ -14,10 +14,10 @@ enum TourDateStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Open => 'Open',
-            self::Full => 'Full',
-            self::Cancelled => 'Cancelled',
-            self::Closed => 'Closed',
+            self::Open => __('Open'),
+            self::Full => __('Full'),
+            self::Cancelled => __('Cancelled'),
+            self::Closed => __('Closed'),
         };
     }
 }

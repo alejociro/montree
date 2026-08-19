@@ -21,9 +21,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useApi  } from '@/composables/useApi';
-import type {ApiErrors} from '@/composables/useApi';
+import { useApi } from '@/composables/useApi';
+import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type { TenantPlan } from '@/types';
+
+const { t } = useTranslations();
 
 const emit = defineEmits<{
     created: [tenantId: number];
@@ -94,7 +97,9 @@ function submit(): void {
         },
         {
             onSuccess: (response) => {
-                toast.success('Tenant creado. Se envió la invitación al admin.');
+                toast.success(
+                    t('Tenant creado. Se envió la invitación al admin.'),
+                );
                 open.value = false;
 
                 if (response?.data?.id) {
@@ -103,7 +108,7 @@ function submit(): void {
             },
             onError: (e) => {
                 errors.value = e;
-                toast.error(e._global ?? 'No se pudo crear el tenant.');
+                toast.error(e._global ?? t('No se pudo crear el tenant.'));
             },
             onFinish: () => {
                 processing.value = false;
@@ -116,24 +121,29 @@ function submit(): void {
 <template>
     <Dialog v-model:open="open">
         <DialogTrigger as-child>
-            <Button>Nuevo tenant</Button>
+            <Button>{{ $t('Nuevo tenant') }}</Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>Crear tenant</DialogTitle>
+                <DialogTitle>{{ $t('Crear tenant') }}</DialogTitle>
                 <DialogDescription>
-                    Registra una nueva agencia y su administrador inicial. El
-                    admin recibirá un correo para establecer su contraseña.
+                    {{
+                        $t(
+                            'Registra una nueva agencia y su administrador inicial. El admin recibirá un correo para establecer su contraseña.',
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="space-y-2">
-                    <Label for="tenant-name">Nombre de la agencia</Label>
+                    <Label for="tenant-name">{{
+                        $t('Nombre de la agencia')
+                    }}</Label>
                     <Input
                         id="tenant-name"
                         v-model="form.name"
-                        placeholder="Eco Adventures"
+                        :placeholder="$t('Eco Adventures')"
                         autocomplete="off"
                     />
                     <p v-if="errors.name" class="text-xs text-red-600">
@@ -142,17 +152,19 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-2">
-                    <Label for="tenant-slug">Slug (subdominio)</Label>
+                    <Label for="tenant-slug">{{
+                        $t('Slug (subdominio)')
+                    }}</Label>
                     <Input
                         id="tenant-slug"
                         v-model="form.slug"
-                        placeholder="eco-adventures"
+                        :placeholder="$t('eco-adventures')"
                         class="font-mono"
                         autocomplete="off"
                         @input="slugTouched = true"
                     />
                     <p class="text-xs text-zinc-400">
-                        La agencia vivirá en
+                        {{ $t('La agencia vivirá en') }}
                         <span class="font-mono">{{ form.slug || 'slug' }}</span
                         >.montree.app
                     </p>
@@ -162,18 +174,22 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-2">
-                    <Label>Plan</Label>
+                    <Label>{{ $t('Plan') }}</Label>
                     <Select v-model="form.plan">
                         <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar plan" />
+                            <SelectValue
+                                :placeholder="$t('Seleccionar plan')"
+                            />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="basic">{{
+                                $t('Basic')
+                            }}</SelectItem>
                             <SelectItem value="professional">
-                                Professional
+                                {{ $t('Professional') }}
                             </SelectItem>
                             <SelectItem value="enterprise">
-                                Enterprise
+                                {{ $t('Enterprise') }}
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -184,11 +200,13 @@ function submit(): void {
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="space-y-2">
-                        <Label for="admin-name">Nombre del admin</Label>
+                        <Label for="admin-name">{{
+                            $t('Nombre del admin')
+                        }}</Label>
                         <Input
                             id="admin-name"
                             v-model="form.admin_name"
-                            placeholder="Jane Pérez"
+                            :placeholder="$t('Jane Pérez')"
                             autocomplete="off"
                         />
                         <p
@@ -199,12 +217,14 @@ function submit(): void {
                         </p>
                     </div>
                     <div class="space-y-2">
-                        <Label for="admin-email">Email del admin</Label>
+                        <Label for="admin-email">{{
+                            $t('Email del admin')
+                        }}</Label>
                         <Input
                             id="admin-email"
                             v-model="form.admin_email"
                             type="email"
-                            placeholder="jane@agencia.com"
+                            :placeholder="$t('jane@agencia.com')"
                             autocomplete="off"
                         />
                         <p
@@ -223,7 +243,7 @@ function submit(): void {
                         :disabled="processing"
                         @click="open = false"
                     >
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button type="submit" :disabled="processing">
                         {{ processing ? 'Creando…' : 'Crear tenant' }}

@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import { home, login } from '@/routes';
 import { resendVerification } from '@/routes/onboarding';
+
+const { t } = useTranslations();
 
 const email = ref('');
 const emailError = ref<string | null>(null);
@@ -25,7 +28,7 @@ function resend() {
     emailError.value = null;
 
     if (!EMAIL_PATTERN.test(email.value)) {
-        emailError.value = 'Ingresa un correo electrónico válido.';
+        emailError.value = t('Ingresa un correo electrónico válido.');
 
         return;
     }
@@ -43,7 +46,7 @@ function resend() {
             },
             onError: (errors) => {
                 emailError.value =
-                    errors.email ?? 'No pudimos reenviar el email.';
+                    errors.email ?? t('No pudimos reenviar el email.');
             },
             onFinish: () => {
                 resending.value = false;
@@ -57,7 +60,7 @@ function resend() {
     <div
         class="flex min-h-svh flex-col items-center justify-center bg-background px-6 py-12 text-foreground"
     >
-        <Head title="Enlace expirado — Montree" />
+        <Head :title="$t('Enlace expirado — Montree')" />
 
         <Link :href="home().url" class="mb-10 inline-flex items-center gap-2">
             <span
@@ -65,7 +68,9 @@ function resend() {
             >
                 <Leaf class="size-4" />
             </span>
-            <span class="text-base font-semibold tracking-tight">Montree</span>
+            <span class="text-base font-semibold tracking-tight">{{
+                $t('Montree')
+            }}</span>
         </Link>
 
         <div class="w-full max-w-md text-center">
@@ -78,14 +83,17 @@ function resend() {
             <p
                 class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
             >
-                Enlace no válido
+                {{ $t('Enlace no válido') }}
             </p>
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">
-                Este enlace de verificación expiró
+                {{ $t('Este enlace de verificación expiró') }}
             </h1>
             <p class="mt-3 text-sm text-muted-foreground">
-                Los enlaces de confirmación caducan por seguridad. Ingresa tu
-                correo y te enviamos uno nuevo.
+                {{
+                    $t(
+                        'Los enlaces de confirmación caducan por seguridad. Ingresa tu correo y te enviamos uno nuevo.',
+                    )
+                }}
             </p>
 
             <div
@@ -94,7 +102,9 @@ function resend() {
                 class="mt-6 flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
                 <CheckCircle2 class="size-4 shrink-0" />
-                <span>Si la cuenta existe, te reenviamos el email.</span>
+                <span>{{
+                    $t('Si la cuenta existe, te reenviamos el email.')
+                }}</span>
             </div>
 
             <form
@@ -104,13 +114,13 @@ function resend() {
                 @submit.prevent="resend"
             >
                 <div class="grid gap-2">
-                    <Label for="email">Correo electrónico</Label>
+                    <Label for="email">{{ $t('Correo electrónico') }}</Label>
                     <Input
                         id="email"
                         v-model="email"
                         type="email"
                         autocomplete="email"
-                        placeholder="tu@correo.com"
+                        :placeholder="$t('tu@correo.com')"
                         :aria-invalid="Boolean(emailError)"
                     />
                     <InputError :message="emailError ?? undefined" />
@@ -123,17 +133,17 @@ function resend() {
                     data-test="resend-verification-button"
                 >
                     <Spinner v-if="resending" />
-                    Reenviar email de verificación
+                    {{ $t('Reenviar email de verificación') }}
                 </Button>
             </form>
 
             <p class="mt-8 text-center text-sm text-muted-foreground">
-                ¿Ya confirmaste?
+                {{ $t('¿Ya confirmaste?') }}
                 <Link
                     :href="login().url"
                     class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                 >
-                    Inicia sesión
+                    {{ $t('Inicia sesión') }}
                 </Link>
             </p>
         </div>

@@ -24,7 +24,7 @@ final class BookingPagesController extends Controller
             ->find($tourDateId);
 
         if ($tourDate === null) {
-            throw new NotFoundHttpException('Tour date not found.');
+            throw new NotFoundHttpException(__('Tour date not found.'));
         }
 
         $authUser = $request->user();
@@ -57,7 +57,7 @@ final class BookingPagesController extends Controller
             ->first();
 
         if ($booking === null) {
-            throw new NotFoundHttpException('Booking not found.');
+            throw new NotFoundHttpException(__('Booking not found.'));
         }
 
         $coverImageUrl = $booking->tour->coverImage?->url;

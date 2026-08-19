@@ -14,10 +14,10 @@ enum TourStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Draft => 'Draft',
-            self::Active => 'Active',
-            self::Paused => 'Paused',
-            self::Archived => 'Archived',
+            self::Draft => __('Draft'),
+            self::Active => __('Active'),
+            self::Paused => __('Paused'),
+            self::Archived => __('Archived'),
         };
     }
 }

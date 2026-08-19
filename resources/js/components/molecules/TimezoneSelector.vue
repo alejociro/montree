@@ -10,6 +10,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 type Props = {
     id: string;
@@ -30,17 +33,17 @@ type TimezoneOption = {
 };
 
 const timezones: TimezoneOption[] = [
-    { value: 'America/Bogota', label: 'Bogotá (GMT-5)' },
-    { value: 'America/Mexico_City', label: 'Ciudad de México (GMT-6)' },
+    { value: 'America/Bogota', label: t('Bogotá (GMT-5)') },
+    { value: 'America/Mexico_City', label: t('Ciudad de México (GMT-6)') },
     {
         value: 'America/Argentina/Buenos_Aires',
-        label: 'Buenos Aires (GMT-3)',
+        label: t('Buenos Aires (GMT-3)'),
     },
-    { value: 'America/Lima', label: 'Lima (GMT-5)' },
-    { value: 'America/Santiago', label: 'Santiago (GMT-4)' },
-    { value: 'America/Sao_Paulo', label: 'São Paulo (GMT-3)' },
-    { value: 'Europe/Madrid', label: 'Madrid (GMT+1)' },
-    { value: 'UTC', label: 'UTC' },
+    { value: 'America/Lima', label: t('Lima (GMT-5)') },
+    { value: 'America/Santiago', label: t('Santiago (GMT-4)') },
+    { value: 'America/Sao_Paulo', label: t('São Paulo (GMT-3)') },
+    { value: 'Europe/Madrid', label: t('Madrid (GMT+1)') },
+    { value: 'UTC', label: t('UTC') },
 ];
 
 function handleChange(value: AcceptableValue): void {
@@ -60,7 +63,7 @@ function handleChange(value: AcceptableValue): void {
             @update:model-value="handleChange"
         >
             <SelectTrigger :id="id" class="w-full">
-                <SelectValue placeholder="Seleccionar zona horaria" />
+                <SelectValue :placeholder="$t('Seleccionar zona horaria')" />
             </SelectTrigger>
             <SelectContent>
                 <SelectGroup>

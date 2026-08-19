@@ -3,8 +3,11 @@ import { Activity, Flame, Mountain, Trees } from 'lucide-vue-next';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 import type { TourDifficulty } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     modelValue: TourDifficulty;
@@ -27,27 +30,27 @@ type Option = {
 const options = computed<Option[]>(() => [
     {
         value: 'easy',
-        label: 'Fácil',
+        label: t('Fácil'),
         icon: Trees,
-        description: 'Apto para todos',
+        description: t('Apto para todos'),
     },
     {
         value: 'moderate',
-        label: 'Moderado',
+        label: t('Moderado'),
         icon: Activity,
-        description: 'Condición media',
+        description: t('Condición media'),
     },
     {
         value: 'hard',
-        label: 'Exigente',
+        label: t('Exigente'),
         icon: Mountain,
-        description: 'Experiencia previa',
+        description: t('Experiencia previa'),
     },
     {
         value: 'extreme',
-        label: 'Extremo',
+        label: t('Extremo'),
         icon: Flame,
-        description: 'Solo expertos',
+        description: t('Solo expertos'),
     },
 ]);
 
@@ -58,7 +61,7 @@ function select(value: TourDifficulty): void {
 
 <template>
     <div class="grid gap-2">
-        <Label>Dificultad</Label>
+        <Label>{{ $t('Dificultad') }}</Label>
         <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
             <button
                 v-for="option in options"

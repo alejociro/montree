@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/card';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     SupportedCurrency,
     Tour,
@@ -33,6 +34,8 @@ import type {
     TourSubmitPayload,
     TourStatus as TourStatusType,
 } from '@/types/tour';
+
+const { t } = useTranslations();
 
 const api = useApi();
 
@@ -97,12 +100,12 @@ function submit(): void {
         normalizePayload(form.data()),
         {
             onSuccess: () => {
-                toast.success('Cambios guardados.');
+                toast.success(t('Cambios guardados.'));
                 router.reload({ only: ['tour'] });
             },
             onError: (errors) => {
                 form.setError(errors);
-                toast.error('Revisa los campos marcados.');
+                toast.error(t('Revisa los campos marcados.'));
             },
             onFinish: () => {
                 saving.value = false;
@@ -142,14 +145,18 @@ function statusLabel(status: TourStatusType): string {
 }
 
 const STATUS_ERROR_MESSAGES: Record<string, string> = {
-    TOUR_NEEDS_IMAGE_TO_ACTIVATE:
+    TOUR_NEEDS_IMAGE_TO_ACTIVATE: t(
         'El tour necesita al menos una imagen antes de activarse.',
-    INVALID_STATUS_TRANSITION:
+    ),
+    INVALID_STATUS_TRANSITION: t(
         'Ese cambio de estado no es válido desde el estado actual del tour.',
-    TOUR_HAS_ACTIVE_BOOKINGS:
+    ),
+    TOUR_HAS_ACTIVE_BOOKINGS: t(
         'El tour tiene reservas activas: archívalo en lugar de cambiarlo de estado.',
-    FEATURE_REQUIRES_ENTERPRISE:
+    ),
+    FEATURE_REQUIRES_ENTERPRISE: t(
         'Esta acción solo está disponible en el plan Enterprise.',
+    ),
 };
 
 function statusErrorMessage(errors: ApiErrors): string {
@@ -165,7 +172,9 @@ function statusErrorMessage(errors: ApiErrors): string {
         return errors._global;
     }
 
-    return 'No se pudo cambiar el estado del tour. Revisa que tenga al menos una imagen y que el cambio sea válido desde su estado actual.';
+    return t(
+        'No se pudo cambiar el estado del tour. Revisa que tenga al menos una imagen y que el cambio sea válido desde su estado actual.',
+    );
 }
 
 function transitionTo(next: TourStatusType): void {
@@ -179,7 +188,7 @@ function transitionTo(next: TourStatusType): void {
         { status: next },
         {
             onSuccess: () => {
-                toast.success('Estado actualizado.');
+                toast.success(t('Estado actualizado.'));
                 router.reload({ only: ['tour'] });
             },
             onError: (errors) => {
@@ -195,7 +204,9 @@ function transitionTo(next: TourStatusType): void {
 function deleteTour(): void {
     if (
         !confirm(
-            '¿Eliminar este tour? Esta acción se puede revertir desde tu base de datos.',
+            t(
+                '¿Eliminar este tour? Esta acción se puede revertir desde tu base de datos.',
+            ),
         )
     ) {
         return;
@@ -203,7 +214,7 @@ function deleteTour(): void {
 
     void api.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
-            toast.success('Tour eliminado.');
+            toast.success(t('Tour eliminado.'));
             router.visit(indexPage().url);
         },
         onError: (errors) => {
@@ -211,13 +222,15 @@ function deleteTour(): void {
 
             if (code === 'TOUR_HAS_ACTIVE_BOOKINGS') {
                 toast.error(
-                    'No se puede eliminar: hay reservas activas. Archivalo en su lugar.',
+                    t(
+                        'No se puede eliminar: hay reservas activas. Archivalo en su lugar.',
+                    ),
                 );
 
                 return;
             }
 
-            toast.error('No se pudo eliminar el tour.');
+            toast.error(t('No se pudo eliminar el tour.'));
         },
     });
 }
@@ -251,7 +264,7 @@ function deleteTour(): void {
                 @click="deleteTour"
             >
                 <Trash2 class="size-4 text-destructive" />
-                Eliminar
+                {{ $t('Eliminar') }}
             </Button>
         </div>
 
@@ -281,7 +294,7 @@ function deleteTour(): void {
                         v-if="form.isDirty && !saving"
                         class="text-xs text-muted-foreground"
                     >
-                        Tienes cambios sin guardar.
+                        {{ $t('Tienes cambios sin guardar.') }}
                     </span>
                 </div>
             </form>
@@ -289,16 +302,22 @@ function deleteTour(): void {
             <aside class="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle class="text-base">Estado</CardTitle>
+                        <CardTitle class="text-base">{{
+                            $t('Estado')
+                        }}</CardTitle>
                         <CardDescription>
-                            Controla la visibilidad del tour en el catálogo.
+                            {{
+                                $t(
+                                    'Controla la visibilidad del tour en el catálogo.',
+                                )
+                            }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
                         <Alert v-if="statusError" variant="destructive">
-                            <AlertTitle
-                                >No se pudo cambiar el estado</AlertTitle
-                            >
+                            <AlertTitle>{{
+                                $t('No se pudo cambiar el estado')
+                            }}</AlertTitle>
                             <AlertDescription>{{
                                 statusError
                             }}</AlertDescription>
@@ -326,8 +345,11 @@ function deleteTour(): void {
                                 v-if="allowedNextStatuses.length === 0"
                                 class="text-xs text-muted-foreground"
                             >
-                                No hay transiciones disponibles desde este
-                                estado.
+                                {{
+                                    $t(
+                                        'No hay transiciones disponibles desde este estado.',
+                                    )
+                                }}
                             </p>
                         </div>
                     </CardContent>

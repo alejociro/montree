@@ -49,6 +49,6 @@ class PasswordSetupRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['password' => 'contraseña'];
+        return ['password' => __('contraseña')];
     }
 }

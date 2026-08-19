@@ -27,11 +27,14 @@ const mustSetPassword = computed(
             </span>
             <div class="space-y-1">
                 <h2 class="text-base font-semibold text-foreground">
-                    Define tu contraseña
+                    {{ $t('Define tu contraseña') }}
                 </h2>
                 <p class="text-sm text-muted-foreground">
-                    Creamos tu cuenta automáticamente al reservar. Establece una
-                    contraseña para poder iniciar sesión cuando quieras.
+                    {{
+                        $t(
+                            'Creamos tu cuenta automáticamente al reservar. Establece una contraseña para poder iniciar sesión cuando quieras.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -44,25 +47,25 @@ const mustSetPassword = computed(
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="setup-password">Nueva contraseña</Label>
+                <Label for="setup-password">{{ $t('Nueva contraseña') }}</Label>
                 <PasswordInput
                     id="setup-password"
                     name="password"
                     autocomplete="new-password"
-                    placeholder="Mínimo 8 caracteres"
+                    :placeholder="$t('Mínimo 8 caracteres')"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="setup-password-confirmation">
-                    Confirmar contraseña
+                    {{ $t('Confirmar contraseña') }}
                 </Label>
                 <PasswordInput
                     id="setup-password-confirmation"
                     name="password_confirmation"
                     autocomplete="new-password"
-                    placeholder="Repite la contraseña"
+                    :placeholder="$t('Repite la contraseña')"
                 />
             </div>
 

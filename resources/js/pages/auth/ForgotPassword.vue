@@ -22,7 +22,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Recuperar contraseña" />
+    <Head :title="$t('Recuperar contraseña')" />
 
     <div
         v-if="status"
@@ -34,14 +34,14 @@ defineProps<{
     <div class="space-y-6">
         <Form v-bind="email.form()" v-slot="{ errors, processing }">
             <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+                <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
                     type="email"
                     name="email"
                     autocomplete="off"
                     autofocus
-                    placeholder="tu@correo.com"
+                    :placeholder="$t('tu@correo.com')"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -54,14 +54,14 @@ defineProps<{
                     data-test="email-password-reset-link-button"
                 >
                     <Spinner v-if="processing" />
-                    Enviar enlace de recuperación
+                    {{ $t('Enviar enlace de recuperación') }}
                 </Button>
             </div>
         </Form>
 
         <div class="space-x-1 text-center text-sm text-muted-foreground">
-            <span>Volver a</span>
-            <TextLink :href="login()">iniciar sesión</TextLink>
+            <span>{{ $t('Volver a') }}</span>
+            <TextLink :href="login()">{{ $t('iniciar sesión') }}</TextLink>
         </div>
     </div>
 </template>

@@ -26,9 +26,12 @@ import TourUpcomingDatesList from '@/components/organisms/TourUpcomingDatesList.
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import { show as publicTourShow } from '@/routes/tours';
 import type { Tour, TourDifficulty, TourShowStats } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     tour: Tour;
@@ -44,9 +47,9 @@ const currency = computed(
 );
 
 const difficultyLabels: Record<TourDifficulty, string> = {
-    easy: 'Fácil',
+    easy: t('Fácil'),
     moderate: 'Moderado',
-    hard: 'Difícil',
+    hard: t('Difícil'),
     extreme: 'Extremo',
 };
 
@@ -78,7 +81,10 @@ const galleryImages = computed(() =>
 const ratingValue = computed(() => Number(props.tour.rating_average) || 0);
 
 const stars = computed(() =>
-    Array.from({ length: 5 }, (_, index) => index + 1 <= Math.round(ratingValue.value)),
+    Array.from(
+        { length: 5 },
+        (_, index) => index + 1 <= Math.round(ratingValue.value),
+    ),
 );
 
 const occupancy = computed(() => props.stats.occupancy_upcoming);
@@ -104,7 +110,7 @@ const mapsUrl = computed(() => {
             class="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
             <ArrowLeft class="size-4" />
-            Volver a tours
+            {{ $t('Volver a tours') }}
         </Link>
 
         <!-- Hero -->
@@ -138,13 +144,13 @@ const mapsUrl = computed(() => {
                 >
                     <Button variant="secondary" size="sm">
                         <ExternalLink class="size-4" />
-                        Ver como viajero
+                        {{ $t('Ver como viajero') }}
                     </Button>
                 </Link>
                 <Link :href="editPage({ tour: props.tour.id }).url">
                     <Button size="sm">
                         <Pencil class="size-4" />
-                        Editar
+                        {{ $t('Editar') }}
                     </Button>
                 </Link>
             </div>
@@ -198,7 +204,7 @@ const mapsUrl = computed(() => {
                 <div
                     class="flex items-center justify-between text-sm text-muted-foreground"
                 >
-                    <span>Reservas</span>
+                    <span>{{ $t('Reservas') }}</span>
                     <TicketCheck class="size-4" />
                 </div>
                 <p
@@ -217,7 +223,7 @@ const mapsUrl = computed(() => {
                 <div
                     class="flex items-center justify-between text-sm text-muted-foreground"
                 >
-                    <span>Viajeros</span>
+                    <span>{{ $t('Viajeros') }}</span>
                     <Users class="size-4" />
                 </div>
                 <p
@@ -226,7 +232,7 @@ const mapsUrl = computed(() => {
                     {{ props.stats.travelers_total }}
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">
-                    En reservas confirmadas y completadas
+                    {{ $t('En reservas confirmadas y completadas') }}
                 </p>
             </div>
 
@@ -234,7 +240,7 @@ const mapsUrl = computed(() => {
                 <div
                     class="flex items-center justify-between text-sm text-muted-foreground"
                 >
-                    <span>Ingresos</span>
+                    <span>{{ $t('Ingresos') }}</span>
                     <DollarSign class="size-4" />
                 </div>
                 <p
@@ -248,7 +254,7 @@ const mapsUrl = computed(() => {
                     }}
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">
-                    Pagos completados
+                    {{ $t('Pagos completados') }}
                 </p>
             </div>
 
@@ -256,11 +262,13 @@ const mapsUrl = computed(() => {
                 <div
                     class="flex items-center justify-between text-sm text-muted-foreground"
                 >
-                    <span>Calificación</span>
+                    <span>{{ $t('Calificación') }}</span>
                     <Star class="size-4" />
                 </div>
                 <div class="mt-2 flex items-center gap-2">
-                    <p class="text-3xl font-semibold tracking-tight tabular-nums">
+                    <p
+                        class="text-3xl font-semibold tracking-tight tabular-nums"
+                    >
                         {{ ratingValue.toFixed(1) }}
                     </p>
                     <div class="flex">
@@ -277,7 +285,9 @@ const mapsUrl = computed(() => {
                     </div>
                 </div>
                 <p class="mt-1 text-xs text-muted-foreground">
-                    {{ props.tour.rating_count }} reseñas
+                    {{
+                        $t(':count reseñas', { count: props.tour.rating_count })
+                    }}
                 </p>
             </div>
         </section>
@@ -288,7 +298,7 @@ const mapsUrl = computed(() => {
         >
             <div class="flex items-center justify-between gap-3">
                 <h2 class="text-base font-semibold text-foreground">
-                    Ocupación próxima
+                    {{ $t('Ocupación próxima') }}
                 </h2>
                 <span
                     v-if="props.stats.upcoming_dates_count > 0"
@@ -309,16 +319,26 @@ const mapsUrl = computed(() => {
                     class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground"
                 >
                     <span>
-                        {{ occupancy.booked_total }} /
-                        {{ occupancy.capacity_total }} cupos reservados
+                        {{
+                            $t(':booked / :capacity cupos reservados', {
+                                booked: occupancy.booked_total,
+                                capacity: occupancy.capacity_total,
+                            })
+                        }}
                     </span>
                     <span>
-                        {{ props.stats.upcoming_dates_count }} salidas próximas
+                        {{
+                            $t(':count salidas próximas', {
+                                count: props.stats.upcoming_dates_count,
+                            })
+                        }}
                         <template v-if="props.stats.next_date_starts_at">
-                            · próxima el
                             {{
-                                formatTourDate(props.stats.next_date_starts_at, {
-                                    withTime: false,
+                                $t('· próxima el :date', {
+                                    date: formatTourDate(
+                                        props.stats.next_date_starts_at,
+                                        { withTime: false },
+                                    ),
                                 })
                             }}
                         </template>
@@ -333,16 +353,20 @@ const mapsUrl = computed(() => {
                 <CalendarPlus class="size-8 text-muted-foreground/40" />
                 <div class="space-y-1">
                     <p class="font-medium text-foreground">
-                        Sin salidas programadas
+                        {{ $t('Sin salidas programadas') }}
                     </p>
                     <p class="text-sm text-muted-foreground">
-                        Programa una salida para empezar a recibir reservas.
+                        {{
+                            $t(
+                                'Programa una salida para empezar a recibir reservas.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Link :href="editPage({ tour: props.tour.id }).url">
                     <Button size="sm">
                         <CalendarPlus class="size-4" />
-                        Programar salida
+                        {{ $t('Programar salida') }}
                     </Button>
                 </Link>
             </div>
@@ -355,7 +379,7 @@ const mapsUrl = computed(() => {
                     class="h-full rounded-2xl border border-border bg-card p-5 md:p-6"
                 >
                     <h2 class="mb-4 text-base font-semibold text-foreground">
-                        Salidas próximas
+                        {{ $t('Salidas próximas') }}
                     </h2>
                     <TourUpcomingDatesList
                         :tour-id="props.tour.id"
@@ -370,14 +394,14 @@ const mapsUrl = computed(() => {
                     class="h-full rounded-2xl border border-border bg-card p-5 md:p-6"
                 >
                     <h2 class="mb-4 text-base font-semibold text-foreground">
-                        Itinerario
+                        {{ $t('Itinerario') }}
                     </h2>
 
                     <p
                         v-if="props.tour.itinerary.length === 0"
                         class="text-sm text-muted-foreground"
                     >
-                        Este tour todavía no tiene itinerario.
+                        {{ $t('Este tour todavía no tiene itinerario.') }}
                     </p>
 
                     <ol v-else class="relative space-y-6">
@@ -393,7 +417,9 @@ const mapsUrl = computed(() => {
                                     {{ step.step_number }}
                                 </span>
                                 <span
-                                    v-if="index < props.tour.itinerary.length - 1"
+                                    v-if="
+                                        index < props.tour.itinerary.length - 1
+                                    "
                                     class="mt-1 w-px flex-1 bg-border"
                                 />
                             </div>
@@ -429,7 +455,9 @@ const mapsUrl = computed(() => {
             v-if="sortedImages.length > 0"
             class="mt-6 rounded-2xl border border-border bg-card p-5 md:p-6"
         >
-            <h2 class="mb-4 text-base font-semibold text-foreground">Galería</h2>
+            <h2 class="mb-4 text-base font-semibold text-foreground">
+                {{ $t('Galería') }}
+            </h2>
             <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div
                     v-if="coverImage"
@@ -461,7 +489,7 @@ const mapsUrl = computed(() => {
             class="mt-6 rounded-2xl border border-border bg-card p-5 md:p-6"
         >
             <h2 class="mb-3 text-base font-semibold text-foreground">
-                Descripción
+                {{ $t('Descripción') }}
             </h2>
             <p class="text-sm whitespace-pre-line text-muted-foreground">
                 {{ props.tour.description }}
@@ -472,7 +500,7 @@ const mapsUrl = computed(() => {
         <section class="mt-6 grid gap-4 md:grid-cols-3">
             <div class="rounded-2xl border border-border bg-card p-5">
                 <h3 class="mb-3 text-sm font-semibold text-foreground">
-                    Incluye
+                    {{ $t('Incluye') }}
                 </h3>
                 <ul
                     v-if="props.tour.includes.length > 0"
@@ -489,12 +517,14 @@ const mapsUrl = computed(() => {
                         <span class="text-foreground">{{ item }}</span>
                     </li>
                 </ul>
-                <p v-else class="text-sm text-muted-foreground">Sin detalle.</p>
+                <p v-else class="text-sm text-muted-foreground">
+                    {{ $t('Sin detalle.') }}
+                </p>
             </div>
 
             <div class="rounded-2xl border border-border bg-card p-5">
                 <h3 class="mb-3 text-sm font-semibold text-foreground">
-                    No incluye
+                    {{ $t('No incluye') }}
                 </h3>
                 <ul
                     v-if="props.tour.excludes.length > 0"
@@ -505,16 +535,20 @@ const mapsUrl = computed(() => {
                         :key="index"
                         class="flex items-start gap-2"
                     >
-                        <X class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <X
+                            class="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                        />
                         <span class="text-muted-foreground">{{ item }}</span>
                     </li>
                 </ul>
-                <p v-else class="text-sm text-muted-foreground">Sin detalle.</p>
+                <p v-else class="text-sm text-muted-foreground">
+                    {{ $t('Sin detalle.') }}
+                </p>
             </div>
 
             <div class="rounded-2xl border border-border bg-card p-5">
                 <h3 class="mb-3 text-sm font-semibold text-foreground">
-                    Requisitos
+                    {{ $t('Requisitos') }}
                 </h3>
                 <ul
                     v-if="props.tour.requirements.length > 0"
@@ -531,7 +565,9 @@ const mapsUrl = computed(() => {
                         <span class="text-foreground">{{ item }}</span>
                     </li>
                 </ul>
-                <p v-else class="text-sm text-muted-foreground">Sin detalle.</p>
+                <p v-else class="text-sm text-muted-foreground">
+                    {{ $t('Sin detalle.') }}
+                </p>
             </div>
         </section>
 
@@ -545,7 +581,7 @@ const mapsUrl = computed(() => {
                     <MapPin class="mt-0.5 size-5 shrink-0 text-primary" />
                     <div>
                         <h3 class="text-sm font-semibold text-foreground">
-                            Punto de encuentro
+                            {{ $t('Punto de encuentro') }}
                         </h3>
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{ props.tour.meeting_point }}
@@ -560,7 +596,7 @@ const mapsUrl = computed(() => {
                 >
                     <Button variant="outline" size="sm">
                         <MapPin class="size-4" />
-                        Ver en el mapa
+                        {{ $t('Ver en el mapa') }}
                     </Button>
                 </a>
             </div>

@@ -87,15 +87,17 @@ function formatTime(date: string): string {
 </script>
 
 <template>
-    <Head title="Mi agenda" />
+    <Head :title="$t('Mi agenda')" />
     <div class="container mx-auto max-w-3xl space-y-4 px-4 py-8">
-        <h1 class="text-2xl font-bold">Mi agenda</h1>
-        <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+        <h1 class="text-2xl font-bold">{{ $t('Mi agenda') }}</h1>
+        <p v-if="loading" class="text-sm text-muted-foreground">
+            {{ $t('Cargando...') }}
+        </p>
         <div
             v-else-if="items.length === 0"
             class="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
         >
-            No tienes tours asignados próximamente.
+            {{ $t('No tienes tours asignados próximamente.') }}
         </div>
         <ul v-else class="space-y-3">
             <li
@@ -138,14 +140,14 @@ function formatTime(date: string): string {
                     v-if="loadingTravelers"
                     class="text-sm text-muted-foreground"
                 >
-                    Cargando viajeros...
+                    {{ $t('Cargando viajeros...') }}
                 </p>
 
                 <div
                     v-else-if="travelers.length === 0"
                     class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground"
                 >
-                    No hay viajeros registrados para esta fecha.
+                    {{ $t('No hay viajeros registrados para esta fecha.') }}
                 </div>
 
                 <ul v-else class="space-y-3">

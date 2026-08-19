@@ -34,16 +34,18 @@ function update<K extends keyof MeetingPointValue>(
     <section class="space-y-4">
         <Heading
             variant="small"
-            title="Punto de encuentro"
-            description="Dónde reciben a los viajeros."
+            :title="$t('Punto de encuentro')"
+            :description="$t('Dónde reciben a los viajeros.')"
         />
 
         <div class="grid gap-2">
-            <Label for="meeting_point">Dirección o referencia</Label>
+            <Label for="meeting_point">{{
+                $t('Dirección o referencia')
+            }}</Label>
             <Input
                 id="meeting_point"
                 :model-value="modelValue.meeting_point"
-                placeholder="Plaza Cocora, frente a la iglesia"
+                :placeholder="$t('Plaza Cocora, frente a la iglesia')"
                 @update:model-value="(v) => update('meeting_point', String(v))"
             />
             <InputError :message="errors?.meeting_point" />
@@ -51,7 +53,7 @@ function update<K extends keyof MeetingPointValue>(
 
         <div class="grid gap-4 md:grid-cols-2">
             <div class="grid gap-2">
-                <Label for="meeting_latitude">Latitud</Label>
+                <Label for="meeting_latitude">{{ $t('Latitud') }}</Label>
                 <Input
                     id="meeting_latitude"
                     type="number"
@@ -68,7 +70,7 @@ function update<K extends keyof MeetingPointValue>(
             </div>
 
             <div class="grid gap-2">
-                <Label for="meeting_longitude">Longitud</Label>
+                <Label for="meeting_longitude">{{ $t('Longitud') }}</Label>
                 <Input
                     id="meeting_longitude"
                     type="number"
@@ -90,7 +92,11 @@ function update<K extends keyof MeetingPointValue>(
             class="flex items-center gap-2 rounded-md border border-dashed border-input bg-muted/30 p-3 text-sm text-muted-foreground"
         >
             <MapPin class="size-4" />
-            Coordenadas listas. El mapa interactivo se mostrará a los viajeros.
+            {{
+                $t(
+                    'Coordenadas listas. El mapa interactivo se mostrará a los viajeros.',
+                )
+            }}
         </div>
     </section>
 </template>

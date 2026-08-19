@@ -59,14 +59,18 @@ function onLocaleChange(value: AcceptableValue): void {
     <section class="space-y-6">
         <Heading
             variant="small"
-            title="Configuración operativa"
-            description="Cómo opera tu agencia: moneda, idioma, zona horaria y reglas."
+            :title="$t('Configuración operativa')"
+            :description="
+                $t(
+                    'Cómo opera tu agencia: moneda, idioma, zona horaria y reglas.',
+                )
+            "
         />
 
         <div class="grid gap-6 md:grid-cols-2">
             <CurrencySelector
                 id="currency"
-                label="Moneda"
+                :label="$t('Moneda')"
                 :model-value="modelValue.currency"
                 :error="errors?.currency"
                 @update:model-value="(v) => update('currency', v)"
@@ -74,25 +78,29 @@ function onLocaleChange(value: AcceptableValue): void {
 
             <TimezoneSelector
                 id="timezone"
-                label="Zona horaria"
+                :label="$t('Zona horaria')"
                 :model-value="modelValue.timezone"
                 :error="errors?.timezone"
                 @update:model-value="(v) => update('timezone', v)"
             />
 
             <div class="grid gap-2">
-                <Label for="locale">Idioma</Label>
+                <Label for="locale">{{ $t('Idioma') }}</Label>
                 <Select
                     :model-value="modelValue.locale"
                     @update:model-value="onLocaleChange"
                 >
                     <SelectTrigger id="locale" class="w-full">
-                        <SelectValue placeholder="Seleccionar idioma" />
+                        <SelectValue :placeholder="$t('Seleccionar idioma')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem value="es">Español</SelectItem>
-                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="es">{{
+                                $t('Español')
+                            }}</SelectItem>
+                            <SelectItem value="en">{{
+                                $t('English')
+                            }}</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
@@ -107,10 +115,14 @@ function onLocaleChange(value: AcceptableValue): void {
                         for="reviews_require_moderation"
                         class="text-sm font-medium"
                     >
-                        Moderar reseñas antes de publicar
+                        {{ $t('Moderar reseñas antes de publicar') }}
                     </Label>
                     <p class="text-xs text-muted-foreground">
-                        Las reseñas quedan en revisión hasta que las aprobás.
+                        {{
+                            $t(
+                                'Las reseñas quedan en revisión hasta que las aprobás.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Switch
@@ -128,11 +140,14 @@ function onLocaleChange(value: AcceptableValue): void {
                         for="require_traveler_details"
                         class="text-sm font-medium"
                     >
-                        Requerir datos de cada viajero
+                        {{ $t('Requerir datos de cada viajero') }}
                     </Label>
                     <p class="text-xs text-muted-foreground">
-                        Solicita nombre, documento y contacto por persona al
-                        reservar.
+                        {{
+                            $t(
+                                'Solicita nombre, documento y contacto por persona al reservar.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Switch

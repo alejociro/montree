@@ -16,12 +16,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     SuperAdminTenantSummary,
     TenantPlan,
     TenantsListPaginated,
     TenantStatus,
 } from '@/types';
+
+const { t } = useTranslations();
 
 const http = useHttp();
 
@@ -59,7 +62,7 @@ async function loadTenants(page: number = 1): Promise<void> {
         tenants.value = response.data;
         meta.value = response.meta;
     } catch {
-        toast.error('No se pudo cargar el listado de tenants.');
+        toast.error(t('No se pudo cargar el listado de tenants.'));
     } finally {
         loading.value = false;
     }
@@ -89,15 +92,19 @@ function handleCreated(tenantId: number): void {
 </script>
 
 <template>
-    <Head title="Super admin · Tenants" />
+    <Head :title="$t('Super admin · Tenants')" />
 
     <div class="space-y-6 px-4 py-6 md:px-8">
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         >
             <Heading
-                title="Tenants de la plataforma"
-                description="Busca, filtra y administra todos los tenants registrados."
+                :title="$t('Tenants de la plataforma')"
+                :description="
+                    $t(
+                        'Busca, filtra y administra todos los tenants registrados.',
+                    )
+                "
             />
             <CreateTenantDialog @created="handleCreated" />
         </div>
@@ -112,32 +119,44 @@ function handleCreated(tenantId: number): void {
                 <Input
                     v-model="search"
                     type="search"
-                    placeholder="Buscar por nombre o slug..."
+                    :placeholder="$t('Buscar por nombre o slug...')"
                     class="pl-9"
                 />
             </div>
 
             <Select v-model="status">
                 <SelectTrigger class="w-full md:w-44">
-                    <SelectValue placeholder="Estado" />
+                    <SelectValue :placeholder="$t('Estado')" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos los estados</SelectItem>
-                    <SelectItem value="active">Activos</SelectItem>
-                    <SelectItem value="suspended">Suspendidos</SelectItem>
-                    <SelectItem value="pending">Pendientes</SelectItem>
+                    <SelectItem value="all">{{
+                        $t('Todos los estados')
+                    }}</SelectItem>
+                    <SelectItem value="active">{{ $t('Activos') }}</SelectItem>
+                    <SelectItem value="suspended">{{
+                        $t('Suspendidos')
+                    }}</SelectItem>
+                    <SelectItem value="pending">{{
+                        $t('Pendientes')
+                    }}</SelectItem>
                 </SelectContent>
             </Select>
 
             <Select v-model="plan">
                 <SelectTrigger class="w-full md:w-44">
-                    <SelectValue placeholder="Plan" />
+                    <SelectValue :placeholder="$t('Plan')" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos los planes</SelectItem>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                    <SelectItem value="all">{{
+                        $t('Todos los planes')
+                    }}</SelectItem>
+                    <SelectItem value="basic">{{ $t('Basic') }}</SelectItem>
+                    <SelectItem value="professional">{{
+                        $t('Professional')
+                    }}</SelectItem>
+                    <SelectItem value="enterprise">{{
+                        $t('Enterprise')
+                    }}</SelectItem>
                 </SelectContent>
             </Select>
         </div>
@@ -149,8 +168,13 @@ function handleCreated(tenantId: number): void {
             class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400"
         >
             <span>
-                Mostrando {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} de
-                {{ meta.total }}
+                {{
+                    $t('Mostrando :from–:to de :total', {
+                        from: meta.from ?? 0,
+                        to: meta.to ?? 0,
+                        total: meta.total,
+                    })
+                }}
             </span>
             <div class="flex gap-2">
                 <Button
@@ -159,7 +183,7 @@ function handleCreated(tenantId: number): void {
                     :disabled="meta.current_page === 1 || loading"
                     @click="loadTenants(meta.current_page - 1)"
                 >
-                    Anterior
+                    {{ $t('Anterior') }}
                 </Button>
                 <Button
                     variant="outline"
@@ -167,7 +191,7 @@ function handleCreated(tenantId: number): void {
                     :disabled="meta.current_page === meta.last_page || loading"
                     @click="loadTenants(meta.current_page + 1)"
                 >
-                    Siguiente
+                    {{ $t('Siguiente') }}
                 </Button>
             </div>
         </div>

@@ -32,12 +32,12 @@ function handleUpdate(value: unknown): void {
 
 <template>
     <Select :model-value="modelValue" @update:model-value="handleUpdate">
-        <SelectTrigger class="w-full sm:w-56" aria-label="Ordenar por">
-            <SelectValue placeholder="Ordenar por" />
+        <SelectTrigger class="w-full sm:w-56" :aria-label="$t('Ordenar por')">
+            <SelectValue :placeholder="$t('Ordenar por')" />
         </SelectTrigger>
         <SelectContent>
             <SelectItem v-for="sort in CATALOG_SORTS" :key="sort" :value="sort">
-                {{ CATALOG_SORT_LABELS[sort] }}
+                {{ $t(CATALOG_SORT_LABELS[sort]) }}
             </SelectItem>
         </SelectContent>
     </Select>

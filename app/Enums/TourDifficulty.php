@@ -14,10 +14,10 @@ enum TourDifficulty: string
     public function label(): string
     {
         return match ($this) {
-            self::Easy => 'Easy',
-            self::Moderate => 'Moderate',
-            self::Hard => 'Hard',
-            self::Extreme => 'Extreme',
+            self::Easy => __('Easy'),
+            self::Moderate => __('Moderate'),
+            self::Hard => __('Hard'),
+            self::Extreme => __('Extreme'),
         };
     }
 }

@@ -2,6 +2,7 @@ export * from './auth';
 export * from './booking';
 export * from './catalog';
 export * from './dashboard';
+export * from './locale';
 export * from './navigation';
 export * from './pagination';
 export * from './role';

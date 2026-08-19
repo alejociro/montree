@@ -22,23 +22,29 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Verificar correo" />
+    <Head :title="$t('Verificar correo')" />
 
     <Alert
         v-if="status === 'verification-link-sent'"
         class="mb-4 border-primary/40 bg-primary/10 text-primary"
     >
         <MailCheck class="size-4" />
-        <AlertTitle>Revisa tu bandeja de entrada</AlertTitle>
+        <AlertTitle>{{ $t('Revisa tu bandeja de entrada') }}</AlertTitle>
         <AlertDescription class="text-primary/90">
-            Te enviamos un nuevo enlace de verificación al correo que indicaste
-            en tu registro.
+            {{
+                $t(
+                    'Te enviamos un nuevo enlace de verificación al correo que indicaste en tu registro.',
+                )
+            }}
         </AlertDescription>
     </Alert>
 
     <p class="mb-6 text-center text-sm text-muted-foreground">
-        Verifica tu correo para poder reservar tours y recibir tus
-        confirmaciones.
+        {{
+            $t(
+                'Verifica tu correo para poder reservar tours y recibir tus confirmaciones.',
+            )
+        }}
     </p>
 
     <Form
@@ -48,11 +54,11 @@ defineProps<{
     >
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
-            Reenviar correo de verificación
+            {{ $t('Reenviar correo de verificación') }}
         </Button>
 
         <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
-            Cerrar sesión
+            {{ $t('Cerrar sesión') }}
         </TextLink>
     </Form>
 </template>

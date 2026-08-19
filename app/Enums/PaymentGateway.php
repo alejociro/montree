@@ -12,8 +12,8 @@ enum PaymentGateway: string
     public function label(): string
     {
         return match ($this) {
-            self::Stripe => 'Stripe',
-            self::Manual => 'Manual',
+            self::Stripe => __('Stripe'),
+            self::Manual => __('Manual'),
         };
     }
 }
