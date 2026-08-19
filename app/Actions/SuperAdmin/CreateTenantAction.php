@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\SuperAdmin;
 
+use App\Actions\Tenant\SeedDefaultCategoriesAction;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
@@ -14,7 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 final class CreateTenantAction
 {
-    public function __construct(private CreateTenantUserAction $createUser) {}
+    public function __construct(
+        private CreateTenantUserAction $createUser,
+        private SeedDefaultCategoriesAction $seedCategories,
+    ) {}
 
     /**
      * Provision a new tenant plus its initial admin user. The tenant is created
@@ -35,6 +39,8 @@ final class CreateTenantAction
             ]);
 
             TenantConfiguration::query()->create(['tenant_id' => $tenant->id]);
+
+            $this->seedCategories->handle($tenant);
 
             return $tenant;
         });
