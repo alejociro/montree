@@ -67,11 +67,11 @@ onMounted(load);
 </script>
 
 <template>
-    <Head title="Notificaciones" />
+    <Head :title="$t('Notificaciones')" />
     <div class="container mx-auto max-w-3xl space-y-4 px-4 py-8">
         <header class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">
-                Notificaciones
+                {{ $t('Notificaciones') }}
                 <span
                     v-if="unreadCount > 0"
                     class="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground"
@@ -85,11 +85,13 @@ onMounted(load);
                 size="sm"
                 @click="markAllRead"
             >
-                Marcar todo como leído
+                {{ $t('Marcar todo como leído') }}
             </Button>
         </header>
 
-        <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+        <p v-if="loading" class="text-sm text-muted-foreground">
+            {{ $t('Cargando...') }}
+        </p>
 
         <div
             v-else-if="items.length === 0"
@@ -113,9 +115,15 @@ onMounted(load);
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tienes notificaciones todavía</p>
+                <p class="font-medium">
+                    {{ $t('No tienes notificaciones todavía') }}
+                </p>
                 <p class="text-sm text-muted-foreground">
-                    Aquí vas a ver las novedades sobre tus reservas y tours.
+                    {{
+                        $t(
+                            'Aquí vas a ver las novedades sobre tus reservas y tours.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -141,7 +149,7 @@ onMounted(load);
                     size="sm"
                     @click="markRead(n.id)"
                 >
-                    Marcar leída
+                    {{ $t('Marcar leída') }}
                 </Button>
             </li>
         </ul>

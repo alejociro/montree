@@ -4,6 +4,9 @@ import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const props = defineProps<{ token: string }>();
 const done = ref(false);
@@ -18,9 +21,9 @@ function confirmUnsubscribe() {
         {
             onSuccess: () => {
                 done.value = true;
-                toast.success('Te diste de baja del newsletter');
+                toast.success(t('Te diste de baja del newsletter'));
             },
-            onError: () => toast.error('No pudimos procesar la baja'),
+            onError: () => toast.error(t('No pudimos procesar la baja')),
             onFinish: () => {
                 processing.value = false;
             },
@@ -30,18 +33,23 @@ function confirmUnsubscribe() {
 </script>
 
 <template>
-    <Head title="Darse de baja" />
+    <Head :title="$t('Darse de baja')" />
     <div class="container mx-auto max-w-md space-y-6 px-4 py-16 text-center">
-        <h1 class="text-2xl font-bold">Darse de baja del newsletter</h1>
+        <h1 class="text-2xl font-bold">
+            {{ $t('Darse de baja del newsletter') }}
+        </h1>
         <p v-if="!done" class="text-muted-foreground">
-            ¿Confirmas que quieres dejar de recibir nuestros emails?
+            {{ $t('¿Confirmas que quieres dejar de recibir nuestros emails?') }}
         </p>
         <Button v-if="!done" :disabled="processing" @click="confirmUnsubscribe">
             {{ processing ? 'Procesando...' : 'Confirmar baja' }}
         </Button>
         <p v-else class="text-primary">
-            Listo. Ya no vas a recibir más correos. Puedes volver a suscribirte
-            cuando quieras.
+            {{
+                $t(
+                    'Listo. Ya no vas a recibir más correos. Puedes volver a suscribirte cuando quieras.',
+                )
+            }}
         </p>
     </div>
 </template>

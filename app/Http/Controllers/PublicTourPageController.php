@@ -23,7 +23,7 @@ final class PublicTourPageController extends Controller
         $tour = $this->resolver->bySlug($slug);
 
         if ($tour === null) {
-            throw new NotFoundHttpException('Tour not found.');
+            throw new NotFoundHttpException(__('Tour not found.'));
         }
 
         $userId = $request->user()?->id;

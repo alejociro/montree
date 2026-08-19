@@ -21,7 +21,7 @@ final class DashboardController extends Controller
     {
         $tenant = Tenant::current();
 
-        abort_if($tenant === null, 404, 'No tenant for this host.');
+        abort_if($tenant === null, 404, __('No tenant for this host.'));
 
         $timezone = $request->timezone($tenant->configuration?->timezone ?? config('app.timezone'));
         $period = PeriodFilter::fromKey($request->periodKey(), $timezone);

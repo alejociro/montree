@@ -14,16 +14,19 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useTranslations } from '@/composables/useTranslations';
 import type { NavItem } from '@/types';
+
+const { t } = useTranslations();
 
 const navItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: t('Dashboard'),
         href: '/super-admin/dashboard',
         icon: Gauge,
     },
     {
-        title: 'Tenants',
+        title: t('Tenants'),
         href: '/super-admin/tenants',
         icon: Building2,
     },
@@ -50,11 +53,11 @@ const { isCurrentUrl } = useCurrentUrl();
                                 <span
                                     class="truncate font-semibold text-zinc-900 dark:text-zinc-100"
                                 >
-                                    MONTREE Platform
+                                    {{ $t('MONTREE Platform') }}
                                 </span>
-                                <span class="truncate text-xs text-zinc-500"
-                                    >Super Admin</span
-                                >
+                                <span class="truncate text-xs text-zinc-500">{{
+                                    $t('Super Admin')
+                                }}</span>
                             </div>
                         </Link>
                     </SidebarMenuButton>
@@ -64,17 +67,17 @@ const { isCurrentUrl } = useCurrentUrl();
 
         <SidebarContent>
             <SidebarGroup class="px-2 py-0">
-                <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
+                <SidebarGroupLabel>{{ $t('Plataforma') }}</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem v-for="item in navItems" :key="item.title">
                         <SidebarMenuButton
                             as-child
                             :is-active="isCurrentUrl(item.href)"
-                            :tooltip="item.title"
+                            :tooltip="$t(item.title)"
                         >
                             <Link :href="item.href">
                                 <component :is="item.icon" />
-                                <span>{{ item.title }}</span>
+                                <span>{{ $t(item.title) }}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

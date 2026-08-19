@@ -11,9 +11,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useTranslations } from '@/composables/useTranslations';
 import type { CatalogCategory } from '@/types/catalog';
 import { TOUR_DIFFICULTIES } from '@/types/tour';
 import type { TourDifficulty } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     categories: CatalogCategory[];
@@ -35,9 +38,9 @@ const emit = defineEmits<{
 }>();
 
 const difficultyLabel: Record<TourDifficulty, string> = {
-    easy: 'Fácil',
+    easy: t('Fácil'),
     moderate: 'Moderado',
-    hard: 'Difícil',
+    hard: t('Difícil'),
     extreme: 'Extremo',
 };
 
@@ -69,7 +72,7 @@ function handleDifficultyUpdate(value: unknown): void {
 <template>
     <aside class="space-y-6">
         <h2 class="text-lg font-semibold tracking-tight text-foreground">
-            Filtros
+            {{ $t('Filtros') }}
         </h2>
 
         <section class="space-y-3" aria-labelledby="filter-categories">
@@ -77,13 +80,13 @@ function handleDifficultyUpdate(value: unknown): void {
                 id="filter-categories"
                 class="text-sm font-medium text-foreground"
             >
-                Categorías
+                {{ $t('Categorías') }}
             </h3>
             <p
                 v-if="categories.length === 0"
                 class="text-xs text-muted-foreground"
             >
-                No hay categorías disponibles.
+                {{ $t('No hay categorías disponibles.') }}
             </p>
             <ul v-else class="space-y-1">
                 <li v-for="category in categories" :key="category.id">
@@ -128,17 +131,19 @@ function handleDifficultyUpdate(value: unknown): void {
 
         <section class="space-y-2" aria-labelledby="filter-difficulty">
             <Label id="filter-difficulty" class="text-sm font-medium">
-                Dificultad
+                {{ $t('Dificultad') }}
             </Label>
             <Select
                 :model-value="selectedDifficulty ?? 'all'"
                 @update:model-value="handleDifficultyUpdate"
             >
                 <SelectTrigger class="w-full">
-                    <SelectValue placeholder="Cualquier dificultad" />
+                    <SelectValue :placeholder="$t('Cualquier dificultad')" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Cualquier dificultad</SelectItem>
+                    <SelectItem value="all">{{
+                        $t('Cualquier dificultad')
+                    }}</SelectItem>
                     <SelectItem
                         v-for="difficulty in TOUR_DIFFICULTIES"
                         :key="difficulty"
@@ -165,7 +170,7 @@ function handleDifficultyUpdate(value: unknown): void {
             :disabled="!hasActiveFilters"
             @click="emit('reset')"
         >
-            Limpiar filtros
+            {{ $t('Limpiar filtros') }}
         </Button>
     </aside>
 </template>

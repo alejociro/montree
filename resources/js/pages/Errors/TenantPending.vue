@@ -13,7 +13,7 @@ defineProps<Props>();
     <div
         class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 text-center text-foreground"
     >
-        <Head title="Agencia pendiente de activación" />
+        <Head :title="$t('Agencia pendiente de activación')" />
 
         <span class="inline-flex items-center gap-2 text-muted-foreground">
             <span
@@ -21,8 +21,9 @@ defineProps<Props>();
             >
                 <Leaf class="size-4" />
             </span>
-            <span class="text-base font-semibold tracking-tight text-foreground"
-                >Montree</span
+            <span
+                class="text-base font-semibold tracking-tight text-foreground"
+                >{{ $t('Montree') }}</span
             >
         </span>
 
@@ -36,14 +37,19 @@ defineProps<Props>();
             <p
                 class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
             >
-                Pendiente de activación
+                {{ $t('Pendiente de activación') }}
             </p>
             <h1 class="text-2xl font-semibold tracking-tight">
-                {{ tenantName }} todavía no está activa
+                {{
+                    $t(':agency todavía no está activa', { agency: tenantName })
+                }}
             </h1>
             <p class="text-sm text-muted-foreground">
-                Esta agencia se creó pero aún no confirmó su correo. En cuanto
-                el equipo verifique su email, el sitio quedará disponible.
+                {{
+                    $t(
+                        'Esta agencia se creó pero aún no confirmó su correo. En cuanto el equipo verifique su email, el sitio quedará disponible.',
+                    )
+                }}
             </p>
         </div>
     </div>

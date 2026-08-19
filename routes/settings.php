@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Controllers\Settings\LocaleController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
+
+// WHY: fuera de `auth`. El selector de idioma vive tambien en el sitio publico del
+// tenant y en las pantallas de login, donde todavia no hay sesion.
+Route::patch('locale', LocaleController::class)->name('locale.update');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', '/settings/profile');

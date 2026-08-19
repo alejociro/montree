@@ -40,8 +40,8 @@ class PasswordUpdateRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'current_password' => 'contraseña actual',
-            'password' => 'contraseña nueva',
+            'current_password' => __('contraseña actual'),
+            'password' => __('contraseña nueva'),
         ];
     }
 }

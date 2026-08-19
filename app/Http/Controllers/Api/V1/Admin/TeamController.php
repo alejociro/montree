@@ -80,7 +80,7 @@ final class TeamController extends Controller
     public function suspend(Request $request, User $user): JsonResponse
     {
         if ($user->id === $request->user()?->id) {
-            abort(422, 'No puedes suspenderte a ti mismo.');
+            abort(422, __('No puedes suspenderte a ti mismo.'));
         }
 
         $this->updateStatus->handle(Tenant::current(), $user, TenantMembershipStatus::Suspended);

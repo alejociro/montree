@@ -137,7 +137,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 <form
                     class="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-background/95 p-2 shadow-2xl ring-1 ring-black/5 backdrop-blur"
                     role="search"
-                    aria-label="Buscar tours"
+                    :aria-label="$t('Buscar tours')"
                     @submit.prevent="handleSearch"
                 >
                     <div class="relative flex-1">
@@ -145,18 +145,20 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                             class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
                         />
                         <label class="sr-only" for="hero-search">
-                            Buscar tours
+                            {{ $t('Buscar tours') }}
                         </label>
                         <input
                             id="hero-search"
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Buscar tours, experiencias o destinos..."
+                            :placeholder="
+                                $t('Buscar tours, experiencias o destinos...')
+                            "
                             class="w-full rounded-full border-0 bg-transparent py-2.5 pr-4 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                         />
                     </div>
                     <Button type="submit" class="rounded-full px-6">
-                        Buscar
+                        {{ $t('Buscar') }}
                         <ArrowRight class="ml-1 size-4" />
                     </Button>
                 </form>
@@ -202,15 +204,15 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 >
                     <span class="inline-flex items-center gap-1.5">
                         <ShieldCheck class="size-4" aria-hidden="true" />
-                        Reserva segura
+                        {{ $t('Reserva segura') }}
                     </span>
                     <span class="inline-flex items-center gap-1.5">
                         <Zap class="size-4" aria-hidden="true" />
-                        Confirmación instantánea
+                        {{ $t('Confirmación instantánea') }}
                     </span>
                     <span class="inline-flex items-center gap-1.5">
                         <Lock class="size-4" aria-hidden="true" />
-                        Pago protegido
+                        {{ $t('Pago protegido') }}
                     </span>
                 </div>
             </div>
@@ -242,7 +244,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 <h2
                     class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                 >
-                    Explora por categoría
+                    {{ $t('Explora por categoría') }}
                 </h2>
                 <div
                     class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
@@ -287,17 +289,19 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                     <h2
                         class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                     >
-                        Tours destacados
+                        {{ $t('Tours destacados') }}
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Nuestras experiencias más reservadas este mes
+                        {{
+                            $t('Nuestras experiencias más reservadas este mes')
+                        }}
                     </p>
                 </div>
                 <Link
                     :href="catalogIndex().url"
                     class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
                 >
-                    Ver todos
+                    {{ $t('Ver todos') }}
                     <ArrowRight class="size-4" />
                 </Link>
             </div>
@@ -349,11 +353,14 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         aria-hidden="true"
                     />
                     <h3 class="mt-4 text-lg font-semibold text-foreground">
-                        Aún no hay tours publicados
+                        {{ $t('Aún no hay tours publicados') }}
                     </h3>
                     <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-                        Muy pronto encontrarás aquí experiencias increíbles para
-                        reservar.
+                        {{
+                            $t(
+                                'Muy pronto encontrarás aquí experiencias increíbles para reservar.',
+                            )
+                        }}
                     </p>
                 </div>
             </Deferred>
@@ -400,10 +407,14 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         <h2
                             class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                         >
-                            Próximas salidas
+                            {{ $t('Próximas salidas') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Reserva tu cupo en las próximas fechas confirmadas
+                            {{
+                                $t(
+                                    'Reserva tu cupo en las próximas fechas confirmadas',
+                                )
+                            }}
                         </p>
                     </div>
                 </div>
@@ -428,9 +439,9 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 v-else
                                 class="flex size-full items-center justify-center bg-muted"
                             >
-                                <span class="text-xs text-muted-foreground"
-                                    >Sin imagen</span
-                                >
+                                <span class="text-xs text-muted-foreground">{{
+                                    $t('Sin imagen')
+                                }}</span>
                             </div>
                             <div
                                 class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
@@ -443,7 +454,11 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 "
                                 class="absolute top-4 left-4 rounded-full bg-destructive px-3.5 py-1.5 text-xs font-extrabold tracking-wide text-destructive-foreground shadow-lg"
                             >
-                                ¡Últimos {{ departure.available_seats }} cupos!
+                                {{
+                                    $t('¡Últimos :count cupos!', {
+                                        count: departure.available_seats,
+                                    })
+                                }}
                             </span>
                         </div>
                         <div class="flex flex-1 flex-col gap-3 p-5">
@@ -480,18 +495,18 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                     aria-hidden="true"
                                 />
                                 <span>
-                                    {{ departure.available_seats }}
                                     {{
-                                        departure.available_seats === 1
-                                            ? 'cupo disponible'
-                                            : 'cupos disponibles'
+                                        $tc(
+                                            ':count cupo disponible|:count cupos disponibles',
+                                            departure.available_seats,
+                                        )
                                     }}
                                 </span>
                             </div>
 
                             <p
                                 class="text-xl font-bold text-foreground"
-                                aria-label="Precio por persona"
+                                :aria-label="$t('Precio por persona')"
                             >
                                 {{
                                     formatCurrency(
@@ -501,7 +516,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 }}
                                 <span
                                     class="text-sm font-normal text-muted-foreground"
-                                    >/ persona</span
+                                    >{{ $t('/ persona') }}</span
                                 >
                             </p>
 
@@ -510,7 +525,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                     <Link
                                         :href="departureBookingHref(departure)"
                                     >
-                                        Reservar
+                                        {{ $t('Reservar') }}
                                         <ArrowRight class="ml-1 size-4" />
                                     </Link>
                                 </Button>
@@ -549,10 +564,10 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         <h2
                             class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                         >
-                            Promociones especiales
+                            {{ $t('Promociones especiales') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Aprovecha nuestras ofertas de temporada
+                            {{ $t('Aprovecha nuestras ofertas de temporada') }}
                         </p>
                     </div>
                 </div>
@@ -577,9 +592,9 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 v-else
                                 class="flex size-full items-center justify-center bg-muted"
                             >
-                                <span class="text-xs text-muted-foreground"
-                                    >Sin imagen</span
-                                >
+                                <span class="text-xs text-muted-foreground">{{
+                                    $t('Sin imagen')
+                                }}</span>
                             </div>
                             <div
                                 class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
@@ -608,7 +623,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                     class="rounded-full px-6"
                                 >
                                     <Link :href="tourShow.url(promo.tour.slug)">
-                                        Reservar ahora
+                                        {{ $t('Reservar ahora') }}
                                         <ArrowRight class="ml-1 size-4" />
                                     </Link>
                                 </Button>
@@ -625,13 +640,13 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 <h2
                     class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                 >
-                    Sugerencias para ti
+                    {{ $t('Sugerencias para ti') }}
                 </h2>
                 <Link
                     :href="catalogIndex().url"
                     class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
                 >
-                    Ver todos
+                    {{ $t('Ver todos') }}
                     <ArrowRight class="size-4" />
                 </Link>
             </div>
@@ -663,7 +678,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                     v-if="(suggestedTours?.length ?? 0) > 0"
                     class="-mx-4 mt-8 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
                     role="list"
-                    aria-label="Tours sugeridos"
+                    :aria-label="$t('Tours sugeridos')"
                 >
                     <HomeTourCard
                         v-for="tour in suggestedTours"
@@ -705,10 +720,14 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         <h2
                             class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                         >
-                            Lo que dicen nuestros viajeros
+                            {{ $t('Lo que dicen nuestros viajeros') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Experiencias reales de quienes viajaron con nosotros
+                            {{
+                                $t(
+                                    'Experiencias reales de quienes viajaron con nosotros',
+                                )
+                            }}
                         </p>
                     </div>
 

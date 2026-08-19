@@ -18,13 +18,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi  } from '@/composables/useApi';
-import type {ApiErrors} from '@/composables/useApi';
+import { useApi } from '@/composables/useApi';
+import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     LogisticsField,
     LogisticsResourceKind,
     LogisticsRow,
 } from '@/types/logistics';
+
+const { t } = useTranslations();
 
 type CrudController = {
     index: (options?: { query?: Record<string, string> }) => { url: string };
@@ -44,7 +47,8 @@ type Props = {
 const props = defineProps<Props>();
 
 const newLabel = computed(
-    () => `${props.feminine ? 'Nueva' : 'Nuevo'} ${props.singular.toLowerCase()}`,
+    () =>
+        `${props.feminine ? t('Nueva') : t('Nuevo')} ${props.singular.toLowerCase()}`,
 );
 const pastSuffix = computed(() => (props.feminine ? 'a' : 'o'));
 
@@ -122,7 +126,8 @@ function openEdit(row: LogisticsRow): void {
 
     for (const field of props.fields) {
         const value = row[field.key];
-        form[field.key] = value === null || value === undefined ? '' : String(value);
+        form[field.key] =
+            value === null || value === undefined ? '' : String(value);
     }
 
     dialogOpen.value = true;
@@ -160,7 +165,7 @@ function submit(): void {
         },
         onError: (received: ApiErrors) => {
             errors.value = received;
-            toast.error(received._global ?? 'Revisa los campos marcados.');
+            toast.error(received._global ?? t('Revisa los campos marcados.'));
         },
         onFinish: () => {
             processing.value = false;
@@ -187,7 +192,7 @@ function remove(row: LogisticsRow): void {
             void load();
         },
         onError: (received) => {
-            toast.error(received._global ?? 'No se pudo eliminar.');
+            toast.error(received._global ?? t('No se pudo eliminar.'));
         },
     });
 }
@@ -205,7 +210,7 @@ onMounted(load);
                 <Input
                     v-model="search"
                     type="search"
-                    placeholder="Buscar por nombre"
+                    :placeholder="$t('Buscar por nombre')"
                     class="pl-9"
                     :aria-label="`Buscar ${singular}`"
                 />
@@ -229,10 +234,10 @@ onMounted(load);
             class="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center"
         >
             <p class="text-sm text-destructive">
-                No se pudo cargar el catálogo.
+                {{ $t('No se pudo cargar el catálogo.') }}
             </p>
             <Button variant="outline" size="sm" class="mt-3" @click="load">
-                Reintentar
+                {{ $t('Reintentar') }}
             </Button>
         </div>
 
@@ -242,7 +247,7 @@ onMounted(load);
         >
             <p class="font-medium text-foreground">{{ emptyLabel }}</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Crea el primero para reutilizarlo en tus salidas.
+                {{ $t('Crea el primero para reutilizarlo en tus salidas.') }}
             </p>
         </div>
 
@@ -262,7 +267,9 @@ onMounted(load);
                         </Badge>
                     </div>
                     <p
-                        v-if="row.description || row.service_type || row.address"
+                        v-if="
+                            row.description || row.service_type || row.address
+                        "
                         class="truncate text-sm text-muted-foreground"
                     >
                         {{ row.description ?? row.service_type ?? row.address }}
@@ -272,7 +279,7 @@ onMounted(load);
                     <Button
                         variant="ghost"
                         size="icon"
-                        title="Editar"
+                        :title="$t('Editar')"
                         @click="openEdit(row)"
                     >
                         <Pencil class="size-4" />
@@ -280,7 +287,7 @@ onMounted(load);
                     <Button
                         variant="ghost"
                         size="icon"
-                        title="Eliminar"
+                        :title="$t('Eliminar')"
                         @click="remove(row)"
                     >
                         <Trash2 class="size-4 text-destructive" />
@@ -300,11 +307,14 @@ onMounted(load);
                         }}
                     </DialogTitle>
                     <DialogDescription>
-                        Los campos marcados con * son obligatorios.
+                        {{ $t('Los campos marcados con * son obligatorios.') }}
                     </DialogDescription>
                 </DialogHeader>
 
-                <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
+                <form
+                    class="grid gap-4 sm:grid-cols-2"
+                    @submit.prevent="submit"
+                >
                     <p
                         v-if="errors._global"
                         class="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive sm:col-span-2"
@@ -354,7 +364,7 @@ onMounted(load);
                             :disabled="processing"
                             @click="dialogOpen = false"
                         >
-                            Cancelar
+                            {{ $t('Cancelar') }}
                         </Button>
                         <Button type="submit" :disabled="processing">
                             <Loader2

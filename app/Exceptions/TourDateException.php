@@ -40,16 +40,16 @@ final class TourDateException extends \Exception implements HttpExceptionInterfa
 
     public static function hasBookings(): self
     {
-        return new self('TOUR_DATE_HAS_BOOKINGS', 'La salida tiene reservas asociadas y no puede modificarse así.', 409);
+        return new self('TOUR_DATE_HAS_BOOKINGS', __('La salida tiene reservas asociadas y no puede modificarse así.'), 409);
     }
 
     public static function alreadyCancelled(): self
     {
-        return new self('TOUR_DATE_ALREADY_CANCELLED', 'La salida ya está cancelada.', 409);
+        return new self('TOUR_DATE_ALREADY_CANCELLED', __('La salida ya está cancelada.'), 409);
     }
 
     public static function cancelled(): self
     {
-        return new self('TOUR_DATE_CANCELLED', 'No es posible editar una salida cancelada.', 409);
+        return new self('TOUR_DATE_CANCELLED', __('No es posible editar una salida cancelada.'), 409);
     }
 }

@@ -49,11 +49,11 @@ final class BookingConfirmedNotification extends Notification implements ShouldQ
     {
         return (new MailMessage)
             ->subject("Reserva confirmada — {$this->tourName}")
-            ->line('Tu reserva ha sido confirmada.')
+            ->line(__('Tu reserva ha sido confirmada.'))
             ->line("Número: {$this->bookingNumber}")
             ->line("Tour: {$this->tourName}")
-            ->action('Ver detalles', url("/bookings/{$this->bookingNumber}"))
-            ->line('¡Gracias por reservar con nosotros!');
+            ->action(__('Ver detalles'), url("/bookings/{$this->bookingNumber}"))
+            ->line(__('¡Gracias por reservar con nosotros!'));
     }
 
     /**

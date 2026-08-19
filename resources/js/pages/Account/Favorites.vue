@@ -44,11 +44,13 @@ function formatPrice(amount: string, currency: string) {
 </script>
 
 <template>
-    <Head title="Mis favoritos" />
+    <Head :title="$t('Mis favoritos')" />
     <div class="container mx-auto max-w-5xl space-y-6 px-4 py-8">
-        <h1 class="text-2xl font-bold">Mis favoritos</h1>
+        <h1 class="text-2xl font-bold">{{ $t('Mis favoritos') }}</h1>
 
-        <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+        <p v-if="loading" class="text-sm text-muted-foreground">
+            {{ $t('Cargando...') }}
+        </p>
 
         <div
             v-else-if="items.length === 0"
@@ -73,13 +75,19 @@ function formatPrice(amount: string, currency: string) {
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tienes tours favoritos todavía</p>
+                <p class="font-medium">
+                    {{ $t('No tienes tours favoritos todavía') }}
+                </p>
                 <p class="text-sm text-muted-foreground">
-                    Guarda tus tours favoritos para encontrarlos fácilmente.
+                    {{
+                        $t(
+                            'Guarda tus tours favoritos para encontrarlos fácilmente.',
+                        )
+                    }}
                 </p>
             </div>
             <Link href="/tours">
-                <Button>Ver catálogo</Button>
+                <Button>{{ $t('Ver catálogo') }}</Button>
             </Link>
         </div>
 
@@ -101,9 +109,9 @@ function formatPrice(amount: string, currency: string) {
                 <div class="space-y-1 p-4">
                     <div class="flex items-start justify-between gap-2">
                         <h3 class="font-medium">{{ f.tour.name }}</h3>
-                        <Badge v-if="!f.tour.is_available" variant="outline"
-                            >No disponible</Badge
-                        >
+                        <Badge v-if="!f.tour.is_available" variant="outline">{{
+                            $t('No disponible')
+                        }}</Badge>
                     </div>
                     <p class="text-sm font-semibold text-primary">
                         {{ formatPrice(f.tour.base_price, f.tour.currency) }}

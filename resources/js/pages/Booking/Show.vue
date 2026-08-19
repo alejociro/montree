@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import {
-    Calendar,
-    CheckCircle,
-    MapPin,
-    X,
-    XCircle,
-} from 'lucide-vue-next';
+import { Calendar, CheckCircle, MapPin, X, XCircle } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
@@ -15,9 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatBookingStatus } from '@/lib/format';
 import type { BookingTraveler } from '@/types/booking';
+
+const { t } = useTranslations();
 
 defineOptions({ layout: PublicLayout });
 
@@ -169,12 +166,12 @@ async function handlePay(): Promise<void> {
         },
         {
             onSuccess: () => {
-                toast.success('Pago procesado correctamente.');
+                toast.success(t('Pago procesado correctamente.'));
                 router.reload({ only: ['booking'] });
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ?? 'No se pudo procesar el pago.');
+                toast.error(firstError ?? t('No se pudo procesar el pago.'));
             },
             onFinish: () => {
                 processing.value = false;
@@ -189,7 +186,7 @@ function goBack(): void {
 </script>
 
 <template>
-    <Head :title="`Reserva ${booking.tour.name}`" />
+    <Head :title="$t('Reserva :tour', { tour: booking.tour.name })" />
 
     <div class="bg-background">
         <!-- Success State -->
@@ -203,10 +200,10 @@ function goBack(): void {
                 <div class="relative space-y-2 px-4 text-center text-white">
                     <CheckCircle class="mx-auto size-10" />
                     <h1 class="text-3xl font-bold">
-                        ¡Tu reserva ha sido aprobada!
+                        {{ $t('¡Tu reserva ha sido aprobada!') }}
                     </h1>
                     <p class="text-sm text-white/90">
-                        Ahora alegra con tu grupo de tu reserva.
+                        {{ $t('Ahora alegra con tu grupo de tu reserva.') }}
                     </p>
                 </div>
             </div>
@@ -220,22 +217,28 @@ function goBack(): void {
                     <span class="mt-0.5 text-lg">✉️</span>
                     <div class="text-sm">
                         <p class="font-medium text-foreground">
-                            ¡Te creamos una cuenta!
+                            {{ $t('¡Te creamos una cuenta!') }}
                         </p>
                         <p class="mt-0.5 text-muted-foreground">
-                            Enviamos un correo a
+                            {{ $t('Enviamos un correo a') }}
                             <strong>{{
                                 booking.contact_snapshot?.email
                             }}</strong>
-                            con un enlace para configurar tu contraseña y
-                            acceder a tus reservas cuando quieras.
+                            {{
+                                $t(
+                                    'con un enlace para configurar tu contraseña y acceder a tus reservas cuando quieras.',
+                                )
+                            }}
                         </p>
                     </div>
                 </div>
 
                 <p class="mb-6 text-sm text-muted-foreground">
-                    Puedes gestionar el pago retentor y consultar los detalles
-                    de tu actividad en Mis viajes.
+                    {{
+                        $t(
+                            'Puedes gestionar el pago retentor y consultar los detalles de tu actividad en Mis viajes.',
+                        )
+                    }}
                 </p>
 
                 <!-- Date + location summary -->
@@ -245,7 +248,7 @@ function goBack(): void {
                     >
                         <Calendar class="size-5 text-primary" />
                         <p class="text-xs text-muted-foreground">
-                            Fecha del viaje
+                            {{ $t('Fecha del viaje') }}
                         </p>
                         <p class="text-sm font-medium text-foreground">
                             {{ formatDate(booking.tour_date.starts_at) }}
@@ -256,7 +259,7 @@ function goBack(): void {
                     >
                         <Calendar class="size-5 text-primary" />
                         <p class="text-xs text-muted-foreground">
-                            Fecha de regreso
+                            {{ $t('Fecha de regreso') }}
                         </p>
                         <p class="text-sm font-medium text-foreground">
                             {{ formatDate(booking.tour_date.ends_at) }}
@@ -267,7 +270,7 @@ function goBack(): void {
                     >
                         <MapPin class="size-5 text-primary" />
                         <p class="text-xs text-muted-foreground">
-                            Punto de encuentro
+                            {{ $t('Punto de encuentro') }}
                         </p>
                         <p class="text-sm font-medium text-foreground">
                             {{ meetingPoint }}
@@ -281,18 +284,20 @@ function goBack(): void {
                         class="space-y-3 rounded-lg border border-border bg-card p-5"
                     >
                         <h2 class="text-base font-semibold text-foreground">
-                            Detalles de la reserva
+                            {{ $t('Detalles de la reserva') }}
                         </h2>
                         <dl class="space-y-2 text-sm">
                             <div class="flex justify-between">
-                                <dt class="text-muted-foreground">Quién va</dt>
+                                <dt class="text-muted-foreground">
+                                    {{ $t('Quién va') }}
+                                </dt>
                                 <dd class="font-medium text-foreground">
                                     {{ booking.travelers_count }} personas
                                 </dd>
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-muted-foreground">
-                                    ID de reserva
+                                    {{ $t('ID de reserva') }}
                                 </dt>
                                 <dd class="font-medium text-foreground">
                                     {{ booking.booking_number }}
@@ -300,7 +305,7 @@ function goBack(): void {
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-muted-foreground">
-                                    ID de pago
+                                    {{ $t('ID de pago') }}
                                 </dt>
                                 <dd class="font-medium text-foreground">—</dd>
                             </div>
@@ -309,14 +314,14 @@ function goBack(): void {
                             type="button"
                             class="text-sm text-primary underline underline-offset-2"
                         >
-                            Agregar al calendario
+                            {{ $t('Agregar al calendario') }}
                         </button>
                         <div class="border-t border-border pt-3">
                             <p class="text-xs text-muted-foreground">
-                                Política de cancelación
+                                {{ $t('Política de cancelación') }}
                             </p>
                             <p class="text-sm text-foreground">
-                                Consulta detalles de políticas aquí
+                                {{ $t('Consulta detalles de políticas aquí') }}
                             </p>
                         </div>
                     </section>
@@ -325,7 +330,7 @@ function goBack(): void {
                         class="space-y-3 rounded-lg border border-border bg-card p-5"
                     >
                         <h2 class="text-base font-semibold text-foreground">
-                            Punto de encuentro
+                            {{ $t('Punto de encuentro') }}
                         </h2>
                         <p class="text-sm text-foreground">
                             {{ meetingPoint }}
@@ -333,10 +338,14 @@ function goBack(): void {
                         <div
                             class="flex h-40 items-center justify-center rounded-md bg-muted text-sm text-muted-foreground"
                         >
-                            Mapa de encuentro
+                            {{ $t('Mapa de encuentro') }}
                         </div>
                         <p class="text-sm text-muted-foreground">
-                            Dirección: {{ meetingPoint }}
+                            {{
+                                $t('Dirección: :address', {
+                                    address: meetingPoint,
+                                })
+                            }}
                         </p>
                     </section>
                 </div>
@@ -349,10 +358,12 @@ function goBack(): void {
                         <h2
                             class="mb-2 text-base font-semibold text-foreground"
                         >
-                            Información de pago
+                            {{ $t('Información de pago') }}
                         </h2>
                         <div class="flex justify-between text-sm">
-                            <span class="text-muted-foreground">Subtotal</span>
+                            <span class="text-muted-foreground">{{
+                                $t('Subtotal')
+                            }}</span>
                             <span class="text-foreground">
                                 {{ formatCurrency(subtotalNumeric) }}
                             </span>
@@ -361,7 +372,9 @@ function goBack(): void {
                             v-if="discountNumeric > 0"
                             class="flex justify-between text-sm"
                         >
-                            <span class="text-muted-foreground">Descuento</span>
+                            <span class="text-muted-foreground">{{
+                                $t('Descuento')
+                            }}</span>
                             <span class="text-foreground">
                                 - {{ formatCurrency(discountNumeric) }}
                             </span>
@@ -370,7 +383,7 @@ function goBack(): void {
                             class="flex justify-between border-t border-border pt-2 text-sm"
                         >
                             <span class="font-semibold text-foreground">
-                                Total
+                                {{ $t('Total') }}
                             </span>
                             <span class="font-bold text-foreground">
                                 {{ formatCurrency(totalNumeric) }}
@@ -384,11 +397,11 @@ function goBack(): void {
                         <h2
                             class="mb-2 text-base font-semibold text-foreground"
                         >
-                            Abonos
+                            {{ $t('Abonos') }}
                         </h2>
                         <div class="flex justify-between text-sm">
                             <span class="text-muted-foreground">
-                                Valor abono
+                                {{ $t('Valor abono') }}
                             </span>
                             <span class="text-foreground">
                                 {{ formatCurrency(paidNumeric) }}
@@ -396,7 +409,7 @@ function goBack(): void {
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-muted-foreground">
-                                Saldo pendiente
+                                {{ $t('Saldo pendiente') }}
                             </span>
                             <span class="font-medium text-foreground">
                                 {{ formatCurrency(pendingBalance) }}
@@ -429,18 +442,23 @@ function goBack(): void {
             >
                 <XCircle class="size-12 text-destructive" />
                 <h2 class="text-xl font-semibold text-foreground">
-                    Reserva
                     {{
-                        booking.status === 'expired' ? 'expirada' : 'cancelada'
+                        booking.status === 'expired'
+                            ? $t('Reserva expirada')
+                            : $t('Reserva cancelada')
                     }}
                 </h2>
                 <p class="text-sm text-muted-foreground">
-                    La reserva <strong>{{ booking.booking_number }}</strong>
+                    <strong>{{ booking.booking_number }}</strong>
                     {{
                         booking.status === 'expired'
-                            ? 'ha expirado'
-                            : 'fue cancelada'
-                    }}. Por favor, crea una nueva reserva si deseas continuar.
+                            ? $t(
+                                  'La reserva ha expirado. Por favor, crea una nueva reserva si deseas continuar.',
+                              )
+                            : $t(
+                                  'La reserva fue cancelada. Por favor, crea una nueva reserva si deseas continuar.',
+                              )
+                    }}
                 </p>
                 <Badge variant="outline">
                     {{ formatBookingStatus(booking.status) }}
@@ -455,12 +473,12 @@ function goBack(): void {
         >
             <div class="mb-6 flex items-center justify-between">
                 <h1 class="text-xl font-bold text-foreground sm:text-2xl">
-                    Resumen de pago
+                    {{ $t('Resumen de pago') }}
                 </h1>
                 <button
                     type="button"
                     class="flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    aria-label="Cerrar"
+                    :aria-label="$t('Cerrar')"
                     @click="goBack"
                 >
                     <X class="size-5" />
@@ -476,17 +494,21 @@ function goBack(): void {
                         <h2
                             class="mb-4 text-base font-semibold text-card-foreground"
                         >
-                            Información de la actividad
+                            {{ $t('Información de la actividad') }}
                         </h2>
                         <dl class="grid gap-3 text-sm">
                             <div class="flex items-center justify-between">
-                                <dt class="text-muted-foreground">Actividad</dt>
+                                <dt class="text-muted-foreground">
+                                    {{ $t('Actividad') }}
+                                </dt>
                                 <dd class="font-medium text-card-foreground">
                                     {{ booking.tour.name }}
                                 </dd>
                             </div>
                             <div class="flex items-center justify-between">
-                                <dt class="text-muted-foreground">Fecha</dt>
+                                <dt class="text-muted-foreground">
+                                    {{ $t('Fecha') }}
+                                </dt>
                                 <dd class="text-card-foreground">
                                     {{
                                         formatDate(booking.tour_date.starts_at)
@@ -494,7 +516,9 @@ function goBack(): void {
                                 </dd>
                             </div>
                             <div class="flex items-center justify-between">
-                                <dt class="text-muted-foreground">Viajeros</dt>
+                                <dt class="text-muted-foreground">
+                                    {{ $t('Viajeros') }}
+                                </dt>
                                 <dd class="text-card-foreground">
                                     {{ booking.travelers_count }}
                                     {{
@@ -508,7 +532,7 @@ function goBack(): void {
                                 class="flex items-center justify-between border-t border-border pt-3"
                             >
                                 <dt class="text-muted-foreground">
-                                    Precio total
+                                    {{ $t('Precio total') }}
                                 </dt>
                                 <dd class="text-lg font-bold text-primary">
                                     {{ formatCurrency(totalNumeric) }}
@@ -535,18 +559,20 @@ function goBack(): void {
                         <h2
                             class="mb-4 text-base font-semibold text-card-foreground"
                         >
-                            Resumen de compra
+                            {{ $t('Resumen de compra') }}
                         </h2>
                         <dl class="grid gap-2 text-sm">
                             <div class="flex items-center justify-between">
-                                <dt class="text-muted-foreground">Subtotal</dt>
+                                <dt class="text-muted-foreground">
+                                    {{ $t('Subtotal') }}
+                                </dt>
                                 <dd class="text-card-foreground">
                                     {{ formatCurrency(subtotalNumeric) }}
                                 </dd>
                             </div>
                             <div class="flex items-center justify-between">
                                 <dt class="text-muted-foreground">
-                                    Descuentos
+                                    {{ $t('Descuentos') }}
                                 </dt>
                                 <dd class="text-card-foreground">
                                     {{
@@ -560,7 +586,7 @@ function goBack(): void {
                                 class="flex items-center justify-between border-t border-border pt-2"
                             >
                                 <dt class="font-semibold text-card-foreground">
-                                    Total
+                                    {{ $t('Total') }}
                                 </dt>
                                 <dd
                                     class="text-lg font-bold text-card-foreground"
@@ -577,7 +603,7 @@ function goBack(): void {
                         <h2
                             class="mb-4 text-base font-semibold text-card-foreground"
                         >
-                            Detalles del pago
+                            {{ $t('Detalles del pago') }}
                         </h2>
 
                         <div class="space-y-3">
@@ -601,7 +627,7 @@ function goBack(): void {
                                     <span
                                         class="text-sm font-medium text-card-foreground"
                                     >
-                                        Pago total
+                                        {{ $t('Pago total') }}
                                     </span>
                                     <p class="text-xs text-muted-foreground">
                                         {{ formatCurrency(totalNumeric) }}
@@ -629,16 +655,21 @@ function goBack(): void {
                                     <span
                                         class="text-sm font-medium text-card-foreground"
                                     >
-                                        Valor mínimo de reserva
+                                        {{ $t('Valor mínimo de reserva') }}
                                     </span>
                                     <p
                                         class="mt-0.5 text-xs text-muted-foreground"
                                     >
-                                        Paga al menos el
-                                        {{ PARTIAL_PAYMENT_PERCENT * 100 }}%
-                                        para asegurar tu reserva. El saldo
-                                        restante podrás pagarlo antes de la
-                                        fecha de la actividad.
+                                        {{
+                                            $t(
+                                                'Paga al menos el :percent% para asegurar tu reserva. El saldo restante podrás pagarlo antes de la fecha de la actividad.',
+                                                {
+                                                    percent:
+                                                        PARTIAL_PAYMENT_PERCENT *
+                                                        100,
+                                                },
+                                            )
+                                        }}
                                     </p>
                                 </div>
                             </label>
@@ -653,8 +684,13 @@ function goBack(): void {
                                     for="partial-amount"
                                     class="text-xs text-muted-foreground"
                                 >
-                                    Monto a pagar (mín.
-                                    {{ formatCurrency(minPartialAmount) }})
+                                    {{
+                                        $t('Monto a pagar (mín. :amount)', {
+                                            amount: formatCurrency(
+                                                minPartialAmount,
+                                            ),
+                                        })
+                                    }}
                                 </label>
                                 <Input
                                     id="partial-amount"
@@ -669,7 +705,7 @@ function goBack(): void {
                                 class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
                             >
                                 <span class="text-muted-foreground">
-                                    Saldo pendiente
+                                    {{ $t('Saldo pendiente') }}
                                 </span>
                                 <span
                                     class="font-semibold text-card-foreground"
@@ -702,7 +738,7 @@ function goBack(): void {
                 class="rounded-lg border border-border bg-card px-6 py-12 text-center"
             >
                 <p class="text-sm text-muted-foreground">
-                    Estado de la reserva:
+                    {{ $t('Estado de la reserva:') }}
                     <strong>{{ formatBookingStatus(booking.status) }}</strong>
                 </p>
             </div>

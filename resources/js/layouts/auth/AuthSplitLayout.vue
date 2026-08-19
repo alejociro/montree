@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { Leaf } from 'lucide-vue-next';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
+import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import { useTenant } from '@/composables/useTenant';
 import { useTenantBranding } from '@/composables/useTenantBranding';
 import { home } from '@/routes';
@@ -20,6 +21,9 @@ const { configuration, displayName } = useTenant();
     <div
         class="relative grid min-h-dvh flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0"
     >
+        <div class="absolute top-4 right-4 z-20">
+            <LocaleSwitcher />
+        </div>
         <!-- Left panel: branded hero -->
         <div
             class="relative hidden h-full flex-col overflow-hidden lg:flex"
@@ -75,7 +79,9 @@ const { configuration, displayName } = useTenant();
                         {{ configuration.tagline }}
                     </p>
                     <p v-else class="max-w-md text-3xl leading-tight font-bold">
-                        Descubre experiencias únicas en la naturaleza
+                        {{
+                            $t('Descubre experiencias únicas en la naturaleza')
+                        }}
                     </p>
                     <p
                         v-if="configuration?.description"
@@ -99,7 +105,7 @@ const { configuration, displayName } = useTenant();
                                 clip-rule="evenodd"
                             />
                         </svg>
-                        Reserva segura
+                        {{ $t('Reserva segura') }}
                     </span>
                     <span class="flex items-center gap-1.5">
                         <svg
@@ -113,7 +119,7 @@ const { configuration, displayName } = useTenant();
                                 clip-rule="evenodd"
                             />
                         </svg>
-                        Soporte 24/7
+                        {{ $t('Soporte 24/7') }}
                     </span>
                     <span class="flex items-center gap-1.5">
                         <svg
@@ -127,7 +133,7 @@ const { configuration, displayName } = useTenant();
                                 clip-rule="evenodd"
                             />
                         </svg>
-                        Cancelación flexible
+                        {{ $t('Cancelación flexible') }}
                     </span>
                 </div>
             </div>
@@ -150,10 +156,10 @@ const { configuration, displayName } = useTenant();
                         v-if="title"
                         class="text-2xl font-semibold tracking-tight"
                     >
-                        {{ title }}
+                        {{ $t(title) }}
                     </h1>
                     <p v-if="description" class="text-sm text-muted-foreground">
-                        {{ description }}
+                        {{ $t(description) }}
                     </p>
                 </div>
                 <slot />

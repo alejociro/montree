@@ -27,11 +27,14 @@ import {
 } from '@/components/ui/tooltip';
 import { useApi } from '@/composables/useApi';
 import { usePermissions } from '@/composables/usePermissions';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     PermissionSummary,
     RoleListItem,
     RoleListResponse,
 } from '@/types/role';
+
+const { t } = useTranslations();
 
 const api = useApi();
 const { can } = usePermissions();
@@ -93,7 +96,7 @@ function openRole(role: RoleListItem): void {
 }
 
 function onSaved(): void {
-    toast.success('Rol guardado');
+    toast.success(t('Rol guardado'));
     void load();
 }
 
@@ -117,7 +120,7 @@ function destroyRole(): void {
         },
         onError: (errors) => {
             toast.error(
-                Object.values(errors)[0] ?? 'No se pudo eliminar el rol.',
+                Object.values(errors)[0] ?? t('No se pudo eliminar el rol.'),
             );
         },
         onFinish: () => {
@@ -131,17 +134,21 @@ onMounted(load);
 
 <template>
     <div>
-        <Head title="Roles y permisos" />
+        <Head :title="$t('Roles y permisos')" />
 
         <div class="px-4 py-6 md:px-8">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <Heading
-                    title="Roles y permisos"
-                    description="Qué puede hacer cada rol dentro del panel. Los roles del sistema son iguales para todas las agencias; los propios los defines tú."
+                    :title="$t('Roles y permisos')"
+                    :description="
+                        $t(
+                            'Qué puede hacer cada rol dentro del panel. Los roles del sistema son iguales para todas las agencias; los propios los defines tú.',
+                        )
+                    "
                 />
                 <Button v-if="canManage" @click="openCreate">
                     <Plus class="size-4" />
-                    Crear rol
+                    {{ $t('Crear rol') }}
                 </Button>
             </div>
 
@@ -160,10 +167,10 @@ onMounted(load);
                 class="mt-6 rounded-2xl border border-border p-10 text-center"
             >
                 <p class="text-sm text-destructive">
-                    No se pudieron cargar los roles.
+                    {{ $t('No se pudieron cargar los roles.') }}
                 </p>
                 <Button variant="outline" size="sm" class="mt-3" @click="load">
-                    Reintentar
+                    {{ $t('Reintentar') }}
                 </Button>
             </div>
 
@@ -178,11 +185,14 @@ onMounted(load);
                                 <ShieldCheck
                                     class="size-4 text-muted-foreground"
                                 />
-                                Roles del sistema
+                                {{ $t('Roles del sistema') }}
                             </h2>
                             <p class="text-sm text-muted-foreground">
-                                Vienen con MONTREE. Puedes ver sus permisos pero
-                                no modificarlos.
+                                {{
+                                    $t(
+                                        'Vienen con MONTREE. Puedes ver sus permisos pero no modificarlos.',
+                                    )
+                                }}
                             </p>
                         </div>
 
@@ -202,7 +212,7 @@ onMounted(load);
                                             class="gap-1 font-normal"
                                         >
                                             <Lock class="size-3" />
-                                            Solo lectura
+                                            {{ $t('Solo lectura') }}
                                         </Badge>
                                     </div>
                                     <p
@@ -222,7 +232,7 @@ onMounted(load);
                                     size="sm"
                                     @click="openRole(role)"
                                 >
-                                    Ver permisos
+                                    {{ $t('Ver permisos') }}
                                 </Button>
                             </li>
                         </ul>
@@ -235,11 +245,14 @@ onMounted(load);
                                 class="flex items-center gap-2 text-lg font-semibold"
                             >
                                 <Users class="size-4 text-muted-foreground" />
-                                Roles propios de la agencia
+                                {{ $t('Roles propios de la agencia') }}
                             </h2>
                             <p class="text-sm text-muted-foreground">
-                                Combinaciones de permisos que creas tú. Solo
-                                existen dentro de tu agencia.
+                                {{
+                                    $t(
+                                        'Combinaciones de permisos que creas tú. Solo existen dentro de tu agencia.',
+                                    )
+                                }}
                             </p>
                         </div>
 
@@ -248,11 +261,14 @@ onMounted(load);
                             class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center"
                         >
                             <p class="font-medium">
-                                Todavía no hay roles propios
+                                {{ $t('Todavía no hay roles propios') }}
                             </p>
                             <p class="max-w-md text-sm text-muted-foreground">
-                                Crea uno cuando necesites una combinación de
-                                permisos que los roles del sistema no cubren.
+                                {{
+                                    $t(
+                                        'Crea uno cuando necesites una combinación de permisos que los roles del sistema no cubren.',
+                                    )
+                                }}
                             </p>
                             <Button
                                 v-if="canManage"
@@ -261,7 +277,7 @@ onMounted(load);
                                 @click="openCreate"
                             >
                                 <Plus class="size-4" />
-                                Crear rol
+                                {{ $t('Crear rol') }}
                             </Button>
                         </div>
 
@@ -310,18 +326,17 @@ onMounted(load);
                                                     disabled
                                                     class="pointer-events-none text-muted-foreground"
                                                 >
-                                                    Eliminar
+                                                    {{ $t('Eliminar') }}
                                                 </Button>
                                             </span>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            Tiene {{ role.users_count }}
                                             {{
-                                                role.users_count === 1
-                                                    ? 'miembro asignado'
-                                                    : 'miembros asignados'
-                                            }}. Quítaselo desde Equipo antes de
-                                            eliminarlo.
+                                                $tc(
+                                                    'Tiene :count miembro asignado. Quítaselo desde Equipo antes de eliminarlo.|Tiene :count miembros asignados. Quítaselos desde Equipo antes de eliminarlo.',
+                                                    role.users_count,
+                                                )
+                                            }}
                                         </TooltipContent>
                                     </Tooltip>
                                     <Button
@@ -331,7 +346,7 @@ onMounted(load);
                                         class="text-destructive hover:text-destructive"
                                         @click="confirmDelete(role)"
                                     >
-                                        Eliminar
+                                        {{ $t('Eliminar') }}
                                     </Button>
                                 </div>
                             </li>
@@ -355,15 +370,19 @@ onMounted(load);
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Eliminar rol</DialogTitle>
+                    <DialogTitle>{{ $t('Eliminar rol') }}</DialogTitle>
                     <DialogDescription>
-                        ¿Eliminar el rol "{{ deleteTarget?.label }}"? Esta
-                        acción no se puede deshacer.
+                        {{
+                            $t(
+                                '¿Eliminar el rol ":role"? Esta acción no se puede deshacer.',
+                                { role: deleteTarget?.label ?? '' },
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                     <Button variant="outline" @click="deleteTarget = null">
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button
                         variant="destructive"

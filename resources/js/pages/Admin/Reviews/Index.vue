@@ -20,6 +20,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const api = useApi();
 
@@ -47,9 +50,9 @@ const filteredItems = computed(() =>
 );
 
 const tabs: { key: 'pending' | 'approved' | 'rejected'; label: string }[] = [
-    { key: 'pending', label: 'Pendientes' },
-    { key: 'approved', label: 'Aprobadas' },
-    { key: 'rejected', label: 'Rechazadas' },
+    { key: 'pending', label: t('Pendientes') },
+    { key: 'approved', label: t('Aprobadas') },
+    { key: 'rejected', label: t('Rechazadas') },
 ];
 
 const pendingCount = computed(
@@ -77,7 +80,7 @@ function approve(reviewId: number) {
         { status: 'approved' },
         {
             onSuccess: () => {
-                toast.success('Reseña aprobada');
+                toast.success(t('Reseña aprobada'));
                 void load();
             },
             onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
@@ -91,7 +94,7 @@ function reject(reviewId: number) {
         { status: 'rejected' },
         {
             onSuccess: () => {
-                toast.success('Reseña rechazada');
+                toast.success(t('Reseña rechazada'));
                 void load();
             },
             onError: (e) => toast.error(Object.values(e)[0] ?? 'Error'),
@@ -121,7 +124,7 @@ function submitResponse() {
         { response: respondText.value },
         {
             onSuccess: () => {
-                toast.success('Respuesta enviada');
+                toast.success(t('Respuesta enviada'));
                 respondDialog.value = false;
                 void load();
             },
@@ -149,11 +152,11 @@ onMounted(load);
 </script>
 
 <template>
-    <Head title="Reseñas" />
+    <Head :title="$t('Reseñas')" />
     <div class="container mx-auto max-w-4xl space-y-6 px-4 py-8">
         <header class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">
-                Reseñas
+                {{ $t('Reseñas') }}
                 <span
                     v-if="pendingCount > 0"
                     class="ml-2 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground"
@@ -179,20 +182,21 @@ onMounted(load);
             </button>
         </nav>
 
-        <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+        <p v-if="loading" class="text-sm text-muted-foreground">
+            {{ $t('Cargando...') }}
+        </p>
 
         <div
             v-else-if="filteredItems.length === 0"
             class="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
         >
-            No hay reseñas
             {{
                 activeTab === 'pending'
-                    ? 'pendientes'
+                    ? $t('No hay reseñas pendientes.')
                     : activeTab === 'approved'
-                      ? 'aprobadas'
-                      : 'rechazadas'
-            }}.
+                      ? $t('No hay reseñas aprobadas.')
+                      : $t('No hay reseñas rechazadas.')
+            }}
         </div>
 
         <ul v-else class="space-y-3">
@@ -245,7 +249,7 @@ onMounted(load);
                     v-if="r.admin_response"
                     class="rounded-md bg-muted/50 p-3 text-sm"
                 >
-                    <p class="mb-1 font-medium">Tu respuesta</p>
+                    <p class="mb-1 font-medium">{{ $t('Tu respuesta') }}</p>
                     <p class="text-muted-foreground">{{ r.admin_response }}</p>
                 </div>
 
@@ -255,7 +259,7 @@ onMounted(load);
                         size="sm"
                         @click="approve(r.id)"
                     >
-                        Aprobar
+                        {{ $t('Aprobar') }}
                     </Button>
                     <Button
                         v-if="r.status === 'pending'"
@@ -263,7 +267,7 @@ onMounted(load);
                         size="sm"
                         @click="reject(r.id)"
                     >
-                        Rechazar
+                        {{ $t('Rechazar') }}
                     </Button>
                     <Button
                         v-if="r.status === 'approved' && !r.admin_response"
@@ -271,7 +275,7 @@ onMounted(load);
                         size="sm"
                         @click="openRespondDialog(r.id)"
                     >
-                        Responder
+                        {{ $t('Responder') }}
                     </Button>
                 </div>
             </li>
@@ -280,26 +284,29 @@ onMounted(load);
         <Dialog v-model:open="respondDialog">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Responder reseña</DialogTitle>
+                    <DialogTitle>{{ $t('Responder reseña') }}</DialogTitle>
                     <DialogDescription>
-                        Tu respuesta será visible públicamente junto a la reseña
-                        del cliente.
+                        {{
+                            $t(
+                                'Tu respuesta será visible públicamente junto a la reseña del cliente.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-2">
-                    <Label for="admin-response">Respuesta</Label>
+                    <Label for="admin-response">{{ $t('Respuesta') }}</Label>
                     <Textarea
                         id="admin-response"
                         v-model="respondText"
                         rows="4"
                         maxlength="1000"
-                        placeholder="Gracias por tu reseña..."
+                        :placeholder="$t('Gracias por tu reseña...')"
                     />
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="respondDialog = false"
-                        >Cancelar</Button
-                    >
+                    <Button variant="outline" @click="respondDialog = false">{{
+                        $t('Cancelar')
+                    }}</Button>
                     <Button
                         :disabled="respondSubmitting || !respondText.trim()"
                         @click="submitResponse"

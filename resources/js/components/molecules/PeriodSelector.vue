@@ -8,7 +8,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
 import type { DashboardPeriodKey } from '@/types/dashboard';
+
+const { t } = useTranslations();
 
 type Props = {
     modelValue: DashboardPeriodKey;
@@ -26,12 +29,12 @@ type Option = {
 };
 
 const options: Option[] = [
-    { value: 'last_7_days', label: 'Últimos 7 días' },
-    { value: 'last_30_days', label: 'Últimos 30 días' },
-    { value: 'last_90_days', label: 'Últimos 90 días' },
-    { value: 'this_month', label: 'Este mes' },
-    { value: 'last_month', label: 'Mes pasado' },
-    { value: 'this_year', label: 'Este año' },
+    { value: 'last_7_days', label: t('Últimos 7 días') },
+    { value: 'last_30_days', label: t('Últimos 30 días') },
+    { value: 'last_90_days', label: t('Últimos 90 días') },
+    { value: 'this_month', label: t('Este mes') },
+    { value: 'last_month', label: t('Mes pasado') },
+    { value: 'this_year', label: t('Este año') },
 ];
 
 function handleChange(value: AcceptableValue): void {
@@ -46,7 +49,7 @@ function handleChange(value: AcceptableValue): void {
 <template>
     <Select :model-value="props.modelValue" @update:model-value="handleChange">
         <SelectTrigger class="w-[180px]">
-            <SelectValue placeholder="Seleccionar periodo" />
+            <SelectValue :placeholder="$t('Seleccionar periodo')" />
         </SelectTrigger>
         <SelectContent>
             <SelectGroup>

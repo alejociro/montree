@@ -20,6 +20,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const api = useApi();
 
@@ -97,7 +100,7 @@ function submitCreate() {
         { ...form.value },
         {
             onSuccess: () => {
-                toast.success('Promoción creada');
+                toast.success(t('Promoción creada'));
                 showCreateForm.value = false;
                 form.value = defaultForm();
                 void load();
@@ -136,7 +139,7 @@ function submitEdit() {
         { ...form.value },
         {
             onSuccess: () => {
-                toast.success('Promoción actualizada');
+                toast.success(t('Promoción actualizada'));
                 editDialog.value = false;
                 editingPromotion.value = null;
                 void load();
@@ -152,7 +155,7 @@ function submitEdit() {
 function deactivate(id: number) {
     void api.delete(destroyPromotion.url(id), {
         onSuccess: () => {
-            toast.success('Promoción desactivada');
+            toast.success(t('Promoción desactivada'));
             void load();
         },
     });
@@ -163,18 +166,18 @@ function promotionState(p: Promotion): {
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
 } {
     if (p.is_expired) {
-        return { label: 'Expirada', variant: 'outline' };
+        return { label: t('Expirada'), variant: 'outline' };
     }
 
     if (p.is_exhausted) {
-        return { label: 'Agotada', variant: 'outline' };
+        return { label: t('Agotada'), variant: 'outline' };
     }
 
     if (!p.is_active) {
-        return { label: 'Inactiva', variant: 'secondary' };
+        return { label: t('Inactiva'), variant: 'secondary' };
     }
 
-    return { label: 'Activa', variant: 'default' };
+    return { label: t('Activa'), variant: 'default' };
 }
 
 /**
@@ -197,10 +200,10 @@ onMounted(load);
 </script>
 
 <template>
-    <Head title="Promociones" />
+    <Head :title="$t('Promociones')" />
     <div class="container mx-auto max-w-4xl space-y-6 px-4 py-8">
         <header class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">Promociones</h1>
+            <h1 class="text-2xl font-bold">{{ $t('Promociones') }}</h1>
             <Button @click="showCreateForm = !showCreateForm">
                 {{ showCreateForm ? 'Cancelar' : 'Nueva promoción' }}
             </Button>
@@ -209,45 +212,49 @@ onMounted(load);
         <div v-if="!loading" class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg border p-4 text-center">
                 <p class="text-2xl font-bold">{{ stats.total }}</p>
-                <p class="text-sm text-muted-foreground">Total</p>
+                <p class="text-sm text-muted-foreground">{{ $t('Total') }}</p>
             </div>
             <div class="rounded-lg border p-4 text-center">
                 <p class="text-2xl font-bold text-primary">
                     {{ stats.active }}
                 </p>
-                <p class="text-sm text-muted-foreground">Activas</p>
+                <p class="text-sm text-muted-foreground">{{ $t('Activas') }}</p>
             </div>
             <div class="rounded-lg border p-4 text-center">
                 <p class="text-2xl font-bold">{{ stats.totalUses }}</p>
-                <p class="text-sm text-muted-foreground">Usos totales</p>
+                <p class="text-sm text-muted-foreground">
+                    {{ $t('Usos totales') }}
+                </p>
             </div>
         </div>
 
         <section v-if="showCreateForm" class="space-y-4 rounded-lg border p-6">
-            <h2 class="text-lg font-semibold">Nueva promoción</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Nueva promoción') }}</h2>
             <div class="grid gap-3 md:grid-cols-2">
                 <div class="space-y-2">
-                    <Label for="code">Código</Label>
+                    <Label for="code">{{ $t('Código') }}</Label>
                     <Input
                         id="code"
                         v-model="form.code"
-                        placeholder="VERANO2026"
+                        :placeholder="$t('VERANO2026')"
                         maxlength="40"
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="type">Tipo</Label>
+                    <Label for="type">{{ $t('Tipo') }}</Label>
                     <select
                         id="type"
                         v-model="form.type"
                         class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                     >
-                        <option value="percentage">Porcentaje</option>
-                        <option value="fixed">Monto fijo</option>
+                        <option value="percentage">
+                            {{ $t('Porcentaje') }}
+                        </option>
+                        <option value="fixed">{{ $t('Monto fijo') }}</option>
                     </select>
                 </div>
                 <div class="space-y-2">
-                    <Label for="value">Valor</Label>
+                    <Label for="value">{{ $t('Valor') }}</Label>
                     <Input
                         id="value"
                         v-model="form.value"
@@ -257,7 +264,7 @@ onMounted(load);
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="max">Máx. usos (opcional)</Label>
+                    <Label for="max">{{ $t('Máx. usos (opcional)') }}</Label>
                     <Input
                         id="max"
                         :model-value="form.max_uses ?? ''"
@@ -267,11 +274,11 @@ onMounted(load);
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="start">Desde</Label>
+                    <Label for="start">{{ $t('Desde') }}</Label>
                     <Input id="start" v-model="form.starts_at" type="date" />
                 </div>
                 <div class="space-y-2">
-                    <Label for="end">Hasta</Label>
+                    <Label for="end">{{ $t('Hasta') }}</Label>
                     <Input id="end" v-model="form.ends_at" type="date" />
                 </div>
             </div>
@@ -282,10 +289,10 @@ onMounted(load);
 
         <section class="space-y-3">
             <p v-if="loading" class="text-sm text-muted-foreground">
-                Cargando...
+                {{ $t('Cargando...') }}
             </p>
             <p v-else-if="items.length === 0" class="text-muted-foreground">
-                No hay promociones todavía.
+                {{ $t('No hay promociones todavía.') }}
             </p>
             <ul v-else class="space-y-2">
                 <li
@@ -338,7 +345,7 @@ onMounted(load);
                                 size="sm"
                                 @click.stop="deactivate(p.id)"
                             >
-                                Desactivar
+                                {{ $t('Desactivar') }}
                             </Button>
                         </div>
                     </div>
@@ -349,11 +356,11 @@ onMounted(load);
         <Dialog v-model:open="editDialog">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Editar promoción</DialogTitle>
+                    <DialogTitle>{{ $t('Editar promoción') }}</DialogTitle>
                 </DialogHeader>
                 <div class="grid gap-3 md:grid-cols-2">
                     <div class="space-y-2">
-                        <Label for="edit-code">Código</Label>
+                        <Label for="edit-code">{{ $t('Código') }}</Label>
                         <Input
                             id="edit-code"
                             v-model="form.code"
@@ -361,18 +368,22 @@ onMounted(load);
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="edit-type">Tipo</Label>
+                        <Label for="edit-type">{{ $t('Tipo') }}</Label>
                         <select
                             id="edit-type"
                             v-model="form.type"
                             class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                         >
-                            <option value="percentage">Porcentaje</option>
-                            <option value="fixed">Monto fijo</option>
+                            <option value="percentage">
+                                {{ $t('Porcentaje') }}
+                            </option>
+                            <option value="fixed">
+                                {{ $t('Monto fijo') }}
+                            </option>
                         </select>
                     </div>
                     <div class="space-y-2">
-                        <Label for="edit-value">Valor</Label>
+                        <Label for="edit-value">{{ $t('Valor') }}</Label>
                         <Input
                             id="edit-value"
                             v-model="form.value"
@@ -382,7 +393,9 @@ onMounted(load);
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="edit-max">Máx. usos (opcional)</Label>
+                        <Label for="edit-max">{{
+                            $t('Máx. usos (opcional)')
+                        }}</Label>
                         <Input
                             id="edit-max"
                             :model-value="form.max_uses ?? ''"
@@ -392,7 +405,7 @@ onMounted(load);
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="edit-start">Desde</Label>
+                        <Label for="edit-start">{{ $t('Desde') }}</Label>
                         <Input
                             id="edit-start"
                             v-model="form.starts_at"
@@ -400,7 +413,7 @@ onMounted(load);
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="edit-end">Hasta</Label>
+                        <Label for="edit-end">{{ $t('Hasta') }}</Label>
                         <Input
                             id="edit-end"
                             v-model="form.ends_at"
@@ -409,9 +422,9 @@ onMounted(load);
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="editDialog = false"
-                        >Cancelar</Button
-                    >
+                    <Button variant="outline" @click="editDialog = false">{{
+                        $t('Cancelar')
+                    }}</Button>
                     <Button
                         :disabled="submitting || !form.code"
                         @click="submitEdit"

@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { Mail, MapPin, Phone } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { useNavigation } from '@/composables/useNavigation';
@@ -60,45 +61,63 @@ const hasSocialLinks = computed(() => {
                         {{ displayName }}
                     </span>
                 </Link>
-                <nav class="flex items-center gap-2">
-                    <Link
-                        :href="catalogIndex().url"
-                        class="hidden text-sm font-medium text-muted-foreground transition hover:text-foreground sm:inline-flex"
-                    >
-                        Tours
-                    </Link>
-                    <template v-if="$page.props.auth.user">
+                <nav class="flex items-center gap-1">
+                    <div class="hidden items-center gap-5 sm:flex">
                         <Link
-                            v-if="workspace"
-                            :href="workspace.href"
-                            class="hidden text-sm font-medium text-muted-foreground transition hover:text-foreground sm:inline-flex"
+                            :href="catalogIndex().url"
+                            class="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                         >
-                            Panel
+                            {{ $t('Tours') }}
                         </Link>
-                        <Link
-                            v-if="!isStaffMember"
-                            :href="accountBookings()"
-                            class="hidden text-sm font-medium text-muted-foreground transition hover:text-foreground sm:inline-flex"
-                        >
-                            Reservas
-                        </Link>
-                        <Button
-                            v-if="!isStaffMember"
-                            as-child
-                            variant="outline"
-                            size="sm"
-                        >
-                            <Link :href="accountProfile()">Mi cuenta</Link>
-                        </Button>
-                    </template>
-                    <template v-else-if="tenant">
-                        <Button as-child variant="ghost" size="sm">
-                            <Link :href="login().url">Ingresar</Link>
-                        </Button>
-                        <Button as-child size="sm">
-                            <Link :href="register().url">Registrarse</Link>
-                        </Button>
-                    </template>
+                        <template v-if="$page.props.auth.user">
+                            <Link
+                                v-if="workspace"
+                                :href="workspace.href"
+                                class="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                            >
+                                {{ $t('Panel') }}
+                            </Link>
+                            <Link
+                                v-if="!isStaffMember"
+                                :href="accountBookings()"
+                                class="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                            >
+                                {{ $t('Reservas') }}
+                            </Link>
+                        </template>
+                    </div>
+                    <span
+                        class="mx-3 hidden h-5 w-px bg-border sm:block"
+                        aria-hidden="true"
+                    />
+                    <LocaleSwitcher />
+                    <div class="ml-2 flex items-center gap-2">
+                        <template v-if="$page.props.auth.user">
+                            <Button
+                                v-if="!isStaffMember"
+                                as-child
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Link :href="accountProfile()">{{
+                                    $t('Mi cuenta')
+                                }}</Link>
+                            </Button>
+                        </template>
+                        <template v-else-if="tenant">
+                            <Link
+                                :href="login().url"
+                                class="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                            >
+                                {{ $t('Ingresar') }}
+                            </Link>
+                            <Button as-child size="sm">
+                                <Link :href="register().url">{{
+                                    $t('Registrarse')
+                                }}</Link>
+                            </Button>
+                        </template>
+                    </div>
                 </nav>
             </div>
         </header>
@@ -111,7 +130,7 @@ const hasSocialLinks = computed(() => {
             >
                 <div class="space-y-4">
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
-                        Información de Contacto
+                        {{ $t('Información de Contacto') }}
                     </h3>
                     <ul class="space-y-3 text-sm text-white/70">
                         <li class="flex items-start gap-2">
@@ -143,7 +162,7 @@ const hasSocialLinks = computed(() => {
                     class="space-y-4 sm:col-start-2 lg:col-start-3"
                 >
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
-                        Síguenos en Redes Sociales
+                        {{ $t('Síguenos en Redes Sociales') }}
                     </h3>
                     <div class="flex items-center gap-4">
                         <a
@@ -151,7 +170,7 @@ const hasSocialLinks = computed(() => {
                             :href="configuration.social_links.facebook"
                             target="_blank"
                             rel="noopener"
-                            aria-label="Facebook"
+                            :aria-label="$t('Facebook')"
                             class="text-white/70 transition hover:text-white"
                         >
                             <svg
@@ -170,7 +189,7 @@ const hasSocialLinks = computed(() => {
                             :href="configuration.social_links.instagram"
                             target="_blank"
                             rel="noopener"
-                            aria-label="Instagram"
+                            :aria-label="$t('Instagram')"
                             class="text-white/70 transition hover:text-white"
                         >
                             <svg
@@ -189,7 +208,7 @@ const hasSocialLinks = computed(() => {
                             :href="configuration.social_links.twitter"
                             target="_blank"
                             rel="noopener"
-                            aria-label="Twitter"
+                            :aria-label="$t('Twitter')"
                             class="text-white/70 transition hover:text-white"
                         >
                             <svg
@@ -208,7 +227,7 @@ const hasSocialLinks = computed(() => {
                             :href="configuration.social_links.youtube"
                             target="_blank"
                             rel="noopener"
-                            aria-label="YouTube"
+                            :aria-label="$t('YouTube')"
                             class="text-white/70 transition hover:text-white"
                         >
                             <svg
@@ -227,7 +246,7 @@ const hasSocialLinks = computed(() => {
                             :href="configuration.social_links.tiktok"
                             target="_blank"
                             rel="noopener"
-                            aria-label="TikTok"
+                            :aria-label="$t('TikTok')"
                             class="text-white/70 transition hover:text-white"
                         >
                             <svg

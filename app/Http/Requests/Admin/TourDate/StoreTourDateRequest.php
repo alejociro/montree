@@ -49,7 +49,7 @@ class StoreTourDateRequest extends FormRequest
             $tenant = Tenant::current();
 
             if ($tenant === null) {
-                $fail('El guía seleccionado no es válido.');
+                $fail(__('El guía seleccionado no es válido.'));
 
                 return;
             }
@@ -63,7 +63,7 @@ class StoreTourDateRequest extends FormRequest
                 ->exists();
 
             if (! $isGuideMember) {
-                $fail('El guía seleccionado no es válido.');
+                $fail(__('El guía seleccionado no es válido.'));
             }
         };
     }

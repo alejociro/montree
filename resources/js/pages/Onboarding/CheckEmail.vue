@@ -4,8 +4,11 @@ import { CheckCircle2, Leaf, MailCheck } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import { home, login } from '@/routes';
 import { resendVerification } from '@/routes/onboarding';
+
+const { t } = useTranslations();
 
 type Props = {
     email: string | null;
@@ -20,7 +23,7 @@ const resent = ref(false);
 const heading = computed(() =>
     props.agencyName
         ? `Revisa tu email para activar ${props.agencyName}`
-        : 'Revisa tu email para activar tu agencia',
+        : t('Revisa tu email para activar tu agencia'),
 );
 
 function resend() {
@@ -51,7 +54,7 @@ function resend() {
     <div
         class="flex min-h-svh flex-col items-center justify-center bg-background px-6 py-12 text-foreground"
     >
-        <Head title="Revisa tu email — Montree" />
+        <Head :title="$t('Revisa tu email — Montree')" />
 
         <Link :href="home().url" class="mb-10 inline-flex items-center gap-2">
             <span
@@ -59,7 +62,9 @@ function resend() {
             >
                 <Leaf class="size-4" />
             </span>
-            <span class="text-base font-semibold tracking-tight">Montree</span>
+            <span class="text-base font-semibold tracking-tight">{{
+                $t('Montree')
+            }}</span>
         </Link>
 
         <div class="w-full max-w-md text-center">
@@ -74,12 +79,16 @@ function resend() {
             </h1>
 
             <p class="mt-3 text-sm text-muted-foreground">
-                Te enviamos un enlace de confirmación
+                {{ $t('Te enviamos un enlace de confirmación') }}
                 <template v-if="email">
                     a
                     <span class="font-medium text-foreground">{{ email }}</span>
                 </template>
-                . Abrilo para activar tu cuenta y entrar directo a tu panel.
+                {{
+                    $t(
+                        '. Abrilo para activar tu cuenta y entrar directo a tu panel.',
+                    )
+                }}
             </p>
 
             <div
@@ -88,12 +97,16 @@ function resend() {
                 class="mt-6 flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
                 <CheckCircle2 class="size-4 shrink-0" />
-                <span>Si la cuenta existe, te reenviamos el email.</span>
+                <span>{{
+                    $t('Si la cuenta existe, te reenviamos el email.')
+                }}</span>
             </div>
 
             <div class="mt-8 space-y-3">
                 <p class="text-sm text-muted-foreground">
-                    ¿No lo recibiste? Revisa spam o vuelve a enviarlo.
+                    {{
+                        $t('¿No lo recibiste? Revisa spam o vuelve a enviarlo.')
+                    }}
                 </p>
                 <Button
                     v-if="email"
@@ -104,17 +117,17 @@ function resend() {
                     @click="resend"
                 >
                     <Spinner v-if="resending" />
-                    Reenviar email de verificación
+                    {{ $t('Reenviar email de verificación') }}
                 </Button>
             </div>
 
             <p class="mt-8 text-center text-sm text-muted-foreground">
-                ¿Ya confirmaste?
+                {{ $t('¿Ya confirmaste?') }}
                 <Link
                     :href="login().url"
                     class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                 >
-                    Inicia sesión
+                    {{ $t('Inicia sesión') }}
                 </Link>
             </p>
         </div>

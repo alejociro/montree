@@ -46,10 +46,10 @@ final class UpdateMemberRoleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'roles.required' => 'Elige al menos un rol.',
-            'roles.array' => 'Envía una lista de roles.',
-            'roles.min' => 'Elige al menos un rol.',
-            'roles.*.in' => 'Ese rol no existe en tu agencia.',
+            'roles.required' => __('Elige al menos un rol.'),
+            'roles.array' => __('Envía una lista de roles.'),
+            'roles.min' => __('Elige al menos un rol.'),
+            'roles.*.in' => __('Ese rol no existe en tu agencia.'),
         ];
     }
 

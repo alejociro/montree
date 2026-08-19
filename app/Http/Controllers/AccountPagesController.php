@@ -36,7 +36,7 @@ final class AccountPagesController extends Controller
             ->first();
 
         if ($booking === null) {
-            throw new NotFoundHttpException('Booking not found.');
+            throw new NotFoundHttpException(__('Booking not found.'));
         }
 
         return Inertia::render('Account/Bookings/Review', [

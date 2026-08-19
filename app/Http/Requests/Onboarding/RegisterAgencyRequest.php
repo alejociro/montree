@@ -55,23 +55,23 @@ final class RegisterAgencyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'string' => 'Debe ser texto.',
-            'max' => 'Máximo :max caracteres.',
+            'string' => __('Debe ser texto.'),
+            'max' => __('Máximo :max caracteres.'),
 
-            'agency_name.required' => 'Ingresa el nombre de tu agencia.',
+            'agency_name.required' => __('Ingresa el nombre de tu agencia.'),
 
-            'subdomain.required' => 'Elige un subdominio.',
-            'subdomain.regex' => 'Solo minúsculas, números y guiones, sin empezar por guion.',
-            'subdomain.unique' => 'Ese subdominio ya fue reclamado.',
+            'subdomain.required' => __('Elige un subdominio.'),
+            'subdomain.regex' => __('Solo minúsculas, números y guiones, sin empezar por guion.'),
+            'subdomain.unique' => __('Ese subdominio ya fue reclamado.'),
 
-            'founder_name.required' => 'Ingresa tu nombre.',
+            'founder_name.required' => __('Ingresa tu nombre.'),
 
-            'email.required' => 'Ingresa tu correo.',
-            'email.email' => 'Correo inválido.',
-            'email.unique' => 'No pudimos crear la cuenta con esos datos.',
+            'email.required' => __('Ingresa tu correo.'),
+            'email.email' => __('Correo inválido.'),
+            'email.unique' => __('No pudimos crear la cuenta con esos datos.'),
 
-            'password_confirmation.required' => 'Confirma tu contraseña.',
-            'password_confirmation.same' => 'Las contraseñas no coinciden.',
+            'password_confirmation.required' => __('Confirma tu contraseña.'),
+            'password_confirmation.same' => __('Las contraseñas no coinciden.'),
 
             ...$this->passwordMessages(),
         ];
@@ -83,9 +83,9 @@ final class RegisterAgencyRequest extends FormRequest
             'agency_name' => 'nombre de la agencia',
             'subdomain' => 'subdominio',
             'founder_name' => 'nombre',
-            'email' => 'correo electrónico',
-            'password' => 'contraseña',
-            'password_confirmation' => 'confirmación de contraseña',
+            'email' => __('correo electrónico'),
+            'password' => __('contraseña'),
+            'password_confirmation' => __('confirmación de contraseña'),
         ];
     }
 

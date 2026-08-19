@@ -88,13 +88,13 @@ class ExportRevenueRequest extends FormRequest
         }
 
         if ($start->greaterThan($end)) {
-            $validator->errors()->add('from', 'The from date must be before the to date.');
+            $validator->errors()->add('from', __('The from date must be before the to date.'));
 
             return;
         }
 
         if ($start->diffInDays($end) > self::MAX_RANGE_DAYS) {
-            $validator->errors()->add('to', sprintf('The range cannot exceed %d days.', self::MAX_RANGE_DAYS));
+            $validator->errors()->add('to', sprintf(__('The range cannot exceed %d days.'), self::MAX_RANGE_DAYS));
         }
     }
 }

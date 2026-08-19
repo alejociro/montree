@@ -12,7 +12,7 @@ final class PromotionCodeTakenException extends RuntimeException implements Http
 {
     public function __construct()
     {
-        parent::__construct('Ya existe una promoción con este código.');
+        parent::__construct(__('Ya existe una promoción con este código.'));
     }
 
     public function getStatusCode(): int

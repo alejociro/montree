@@ -24,6 +24,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 type ExportFormat = 'csv' | 'json';
 type GroupBy = 'day' | 'week' | 'month';
@@ -59,7 +62,7 @@ function buildExportUrl(): string {
 
 async function submit(): Promise<void> {
     if (!from.value || !to.value) {
-        toast.error('Selecciona un rango de fechas.');
+        toast.error(t('Selecciona un rango de fechas.'));
 
         return;
     }
@@ -89,10 +92,10 @@ async function submit(): Promise<void> {
             URL.revokeObjectURL(link.href);
         }
 
-        toast.success('Reporte generado.');
+        toast.success(t('Reporte generado.'));
         open.value = false;
     } catch {
-        toast.error('No se pudo generar el reporte.');
+        toast.error(t('No se pudo generar el reporte.'));
     } finally {
         isExporting.value = false;
     }
@@ -116,21 +119,23 @@ function handleFormatChange(value: AcceptableValue): void {
         <DialogTrigger as-child>
             <Button variant="outline" size="sm">
                 <Download class="size-4" />
-                Exportar
+                {{ $t('Exportar') }}
             </Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Exportar reporte de ingresos</DialogTitle>
+                <DialogTitle>{{
+                    $t('Exportar reporte de ingresos')
+                }}</DialogTitle>
                 <DialogDescription>
-                    Selecciona el rango y formato del reporte.
+                    {{ $t('Selecciona el rango y formato del reporte.') }}
                 </DialogDescription>
             </DialogHeader>
 
             <div class="grid gap-4 py-2">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="grid gap-2">
-                        <Label for="export-from">Desde</Label>
+                        <Label for="export-from">{{ $t('Desde') }}</Label>
                         <Input
                             id="export-from"
                             v-model="from"
@@ -139,7 +144,7 @@ function handleFormatChange(value: AcceptableValue): void {
                         />
                     </div>
                     <div class="grid gap-2">
-                        <Label for="export-to">Hasta</Label>
+                        <Label for="export-to">{{ $t('Hasta') }}</Label>
                         <Input
                             id="export-to"
                             v-model="to"
@@ -150,7 +155,7 @@ function handleFormatChange(value: AcceptableValue): void {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label>Agrupar por</Label>
+                    <Label>{{ $t('Agrupar por') }}</Label>
                     <Select
                         :model-value="groupBy"
                         @update:model-value="handleGroupByChange"
@@ -160,16 +165,22 @@ function handleFormatChange(value: AcceptableValue): void {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
-                                <SelectItem value="day">Día</SelectItem>
-                                <SelectItem value="week">Semana</SelectItem>
-                                <SelectItem value="month">Mes</SelectItem>
+                                <SelectItem value="day">{{
+                                    $t('Día')
+                                }}</SelectItem>
+                                <SelectItem value="week">{{
+                                    $t('Semana')
+                                }}</SelectItem>
+                                <SelectItem value="month">{{
+                                    $t('Mes')
+                                }}</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
                 </div>
 
                 <div class="grid gap-2">
-                    <Label>Formato</Label>
+                    <Label>{{ $t('Formato') }}</Label>
                     <Select
                         :model-value="format"
                         @update:model-value="handleFormatChange"
@@ -179,8 +190,12 @@ function handleFormatChange(value: AcceptableValue): void {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
-                                <SelectItem value="csv">CSV</SelectItem>
-                                <SelectItem value="json">JSON</SelectItem>
+                                <SelectItem value="csv">{{
+                                    $t('CSV')
+                                }}</SelectItem>
+                                <SelectItem value="json">{{
+                                    $t('JSON')
+                                }}</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
@@ -194,7 +209,7 @@ function handleFormatChange(value: AcceptableValue): void {
                     :disabled="isExporting"
                     @click="open = false"
                 >
-                    Cancelar
+                    {{ $t('Cancelar') }}
                 </Button>
                 <Button type="button" :disabled="isExporting" @click="submit">
                     {{ isExporting ? 'Generando…' : 'Descargar' }}

@@ -52,4 +52,22 @@ return [
         'trial_days' => (int) env('MONTREE_ONBOARDING_TRIAL_DAYS', 14),
         'default_plan' => TenantPlan::Professional,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Idiomas soportados (multilanguage-es-en)
+    |--------------------------------------------------------------------------
+    |
+    | Única fuente de verdad del catálogo de idiomas: la regla `in:` de
+    | UpdateLocaleRequest, la cadena de resolución de App\Http\Middleware\SetLocale
+    | y el selector del frontend leen de aca. `native` es el nombre del idioma en
+    | sí mismo y NO se traduce: un hablante de inglés necesita reconocer
+    | "English" aunque la pantalla esté en español.
+    |
+    */
+    'locales' => [
+        'es' => ['name' => 'Español', 'native' => 'Español'],
+        'en' => ['name' => 'Inglés', 'native' => 'English'],
+    ],
+
 ];

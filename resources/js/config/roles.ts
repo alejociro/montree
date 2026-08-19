@@ -1,3 +1,4 @@
+import { translate } from '@/composables/useTranslations';
 import type { RoleOption } from '@/types/team';
 
 /**
@@ -36,13 +37,17 @@ export const FALLBACK_ROLE_OPTIONS: RoleOption[] = [
 ].map((name) => ({ name, label: BASE_ROLE_LABELS[name] ?? name }));
 
 export function roleLabel(name: string): string {
-    return BASE_ROLE_LABELS[name] ?? name;
+    const label = BASE_ROLE_LABELS[name];
+
+    // Un rol propio de la agencia no esta en el catalogo: su nombre lo escribio una
+    // persona, no la aplicacion, y por eso sale tal cual en los dos idiomas.
+    return label !== undefined ? translate(label) : name;
 }
 
 /** Etiqueta de una lista de roles: "Administrador · Vendedor". */
 export function roleLabels(names: string[], labels?: RoleOption[]): string {
     if (names.length === 0) {
-        return 'Sin rol';
+        return translate('Sin rol');
     }
 
     return names

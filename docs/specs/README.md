@@ -9,6 +9,11 @@ Cada carpeta `F0XX-<slug>/` contiene 4 archivos:
 
 Plantilla copiable en [`_template/`](./_template/).
 
+**Nombre de la carpeta y de la rama.** Los features nuevos usan un slug descriptivo, no el prefijo
+`F0XX`: `docs/specs/<funcionalidad-en-kebab-case>/` y `<tipo>/<funcionalidad-en-kebab-case>` para la
+rama (`feature/`, `bugfix/`, `fix/`, `hotfix/`). El número no dice qué se implementó; el slug sí. Los
+`F001`–`F018` se conservan como están.
+
 ---
 
 ## Orden de implementación
@@ -41,6 +46,9 @@ Constitución, docs, sub-agents, slash commands, schema completo.
 
 ### Fase 5 — Crecimiento / adquisición
 16. [F016 — Onboarding self-serve de agencia](./F016-tenant-onboarding/spec.md) — depende de F002 (estado `pending`) y F001 (sesión aislada §10)
+
+### Transversales
+- [multilanguage-es-en — Soporte multilenguaje (español / inglés)](./multilanguage-es-en/spec.md) — toca toda la UI, las validaciones y los correos; no bloquea ni depende de ningún feature de dominio
 
 ---
 

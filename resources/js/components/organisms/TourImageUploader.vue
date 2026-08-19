@@ -19,8 +19,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 import type { TourImage } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     tourId: number;
@@ -78,12 +81,12 @@ async function upload(file: File): Promise<void> {
 
     await api.post(action.url, formData, {
         onSuccess: () => {
-            toast.success('Imagen subida.');
+            toast.success(t('Imagen subida.'));
             router.reload({ only: ['tour'] });
         },
         onError: (errors) => {
             const message =
-                Object.values(errors)[0] ?? 'No se pudo subir la imagen';
+                Object.values(errors)[0] ?? t('No se pudo subir la imagen');
             toast.error(message);
         },
         onFinish: () => {
@@ -103,10 +106,10 @@ function setAsCover(image: TourImage): void {
         { is_cover: true },
         {
             onSuccess: () => {
-                toast.success('Portada actualizada.');
+                toast.success(t('Portada actualizada.'));
                 router.reload({ only: ['tour'] });
             },
-            onError: () => toast.error('No se pudo actualizar la portada.'),
+            onError: () => toast.error(t('No se pudo actualizar la portada.')),
         },
     );
 }
@@ -130,12 +133,12 @@ function removeImage(): void {
     });
     void api.delete(action.url, {
         onSuccess: () => {
-            toast.success('Imagen eliminada.');
+            toast.success(t('Imagen eliminada.'));
             deleteDialog.value = false;
             imageToDelete.value = null;
             router.reload({ only: ['tour'] });
         },
-        onError: () => toast.error('No se pudo eliminar la imagen.'),
+        onError: () => toast.error(t('No se pudo eliminar la imagen.')),
     });
 }
 </script>
@@ -144,8 +147,8 @@ function removeImage(): void {
     <section class="space-y-4">
         <Heading
             variant="small"
-            title="Galería"
-            description="JPG, PNG o WebP. Máximo 5 MB por imagen."
+            :title="$t('Galería')"
+            :description="$t('JPG, PNG o WebP. Máximo 5 MB por imagen.')"
         />
 
         <div
@@ -176,7 +179,7 @@ function removeImage(): void {
             <ImagePlus v-else class="size-8 text-muted-foreground" />
 
             <p class="text-sm text-muted-foreground">
-                Arrastra una imagen aquí o usa el botón.
+                {{ $t('Arrastra una imagen aquí o usa el botón.') }}
             </p>
             <Button
                 type="button"
@@ -208,7 +211,7 @@ function removeImage(): void {
                     class="absolute top-2 left-2 flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
                 >
                     <Star class="size-3" />
-                    Portada
+                    {{ $t('Portada') }}
                 </div>
 
                 <div
@@ -223,7 +226,7 @@ function removeImage(): void {
                         @click="setAsCover(image)"
                     >
                         <Star class="size-3" />
-                        Portada
+                        {{ $t('Portada') }}
                     </Button>
                     <span v-else />
                     <Button
@@ -240,25 +243,32 @@ function removeImage(): void {
         </div>
 
         <p v-else class="text-xs text-muted-foreground">
-            Aún no hay imágenes. Sube al menos una para activar el tour.
+            {{
+                $t(
+                    'Aún no hay imágenes. Sube al menos una para activar el tour.',
+                )
+            }}
         </p>
 
         <Dialog v-model:open="deleteDialog">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Eliminar imagen</DialogTitle>
+                    <DialogTitle>{{ $t('Eliminar imagen') }}</DialogTitle>
                     <DialogDescription>
-                        ¿Estás seguro de que quieres eliminar esta imagen? Esta
-                        acción no se puede deshacer.
+                        {{
+                            $t(
+                                '¿Estás seguro de que quieres eliminar esta imagen? Esta acción no se puede deshacer.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" @click="deleteDialog = false"
-                        >Cancelar</Button
-                    >
-                    <Button variant="destructive" @click="removeImage"
-                        >Eliminar</Button
-                    >
+                    <Button variant="outline" @click="deleteDialog = false">{{
+                        $t('Cancelar')
+                    }}</Button>
+                    <Button variant="destructive" @click="removeImage">{{
+                        $t('Eliminar')
+                    }}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

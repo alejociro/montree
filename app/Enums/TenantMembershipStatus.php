@@ -13,9 +13,9 @@ enum TenantMembershipStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Active => 'Active',
-            self::Invited => 'Invited',
-            self::Suspended => 'Suspended',
+            self::Active => __('Active'),
+            self::Invited => __('Invited'),
+            self::Suspended => __('Suspended'),
         };
     }
 }

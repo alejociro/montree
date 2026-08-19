@@ -2,6 +2,9 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ShieldAlert } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 type Props = {
     status: number;
@@ -21,37 +24,43 @@ const copy = computed(() => {
     switch (props.status) {
         case 403:
             return {
-                title: 'No tenés acceso a esta pantalla',
-                description:
+                title: t('No tenés acceso a esta pantalla'),
+                description: t(
                     'Tu rol no incluye este módulo. Si creés que deberías verlo, pedile acceso a quien administra tu agencia.',
+                ),
             };
         case 404:
             return {
-                title: 'Esta página no existe',
-                description:
+                title: t('Esta página no existe'),
+                description: t(
                     'El enlace puede estar mal escrito o el contenido pudo haberse eliminado.',
+                ),
             };
         case 419:
             return {
-                title: 'Tu sesión expiró',
-                description:
+                title: t('Tu sesión expiró'),
+                description: t(
                     'Por seguridad cerramos las sesiones inactivas. Volvé a iniciar sesión para continuar.',
+                ),
             };
         case 429:
             return {
-                title: 'Demasiados intentos',
-                description: 'Esperá un momento antes de volver a intentarlo.',
+                title: t('Demasiados intentos'),
+                description: t(
+                    'Esperá un momento antes de volver a intentarlo.',
+                ),
             };
         case 503:
             return {
-                title: 'Estamos en mantenimiento',
-                description: 'Volvé a intentarlo en unos minutos.',
+                title: t('Estamos en mantenimiento'),
+                description: t('Volvé a intentarlo en unos minutos.'),
             };
         default:
             return {
-                title: 'Algo salió mal',
-                description:
+                title: t('Algo salió mal'),
+                description: t(
                     'Tuvimos un problema procesando tu solicitud. Si vuelve a pasar, avisale al equipo.',
+                ),
             };
     }
 });
@@ -87,7 +96,7 @@ const copy = computed(() => {
             :href="homeUrl"
             class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-xs transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-            Volver al inicio
+            {{ $t('Volver al inicio') }}
         </Link>
     </div>
 </template>

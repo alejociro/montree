@@ -62,7 +62,7 @@ final class TeamIndexRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'role.in' => 'Ese rol no existe en tu agencia.',
+            'role.in' => __('Ese rol no existe en tu agencia.'),
         ];
     }
 

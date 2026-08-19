@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 type BookingForReview = {
     id: number;
@@ -37,7 +40,7 @@ function setRating(value: number) {
 
 function submit() {
     if (rating.value === 0) {
-        toast.error('Selecciona una calificación');
+        toast.error(t('Selecciona una calificación'));
 
         return;
     }
@@ -53,12 +56,12 @@ function submit() {
         },
         {
             onSuccess: () => {
-                toast.success('Reseña enviada. Gracias por tu opinión.');
+                toast.success(t('Reseña enviada. Gracias por tu opinión.'));
                 submitted.value = true;
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ?? 'No se pudo enviar la reseña');
+                toast.error(firstError ?? t('No se pudo enviar la reseña'));
             },
             onFinish: () => {
                 submitting.value = false;
@@ -76,9 +79,9 @@ function submit() {
                 href="/account/bookings"
                 class="text-sm text-muted-foreground hover:underline"
             >
-                &larr; Mis reservas
+                &larr; {{ $t('Mis reservas') }}
             </Link>
-            <h1 class="text-2xl font-bold">Escribir reseña</h1>
+            <h1 class="text-2xl font-bold">{{ $t('Escribir reseña') }}</h1>
             <p class="text-muted-foreground">{{ booking.tour_name }}</p>
         </div>
 
@@ -87,14 +90,18 @@ function submit() {
             class="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-8 text-center"
         >
             <div class="text-4xl">&#10003;</div>
-            <h2 class="text-lg font-semibold">Reseña enviada</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Reseña enviada') }}</h2>
             <p class="text-sm text-muted-foreground">
-                Tu opinión será revisada por el equipo antes de publicarse.
+                {{
+                    $t(
+                        'Tu opinión será revisada por el equipo antes de publicarse.',
+                    )
+                }}
             </p>
             <Link href="/account/bookings">
-                <Button variant="outline" class="mt-2"
-                    >Volver a mis reservas</Button
-                >
+                <Button variant="outline" class="mt-2">{{
+                    $t('Volver a mis reservas')
+                }}</Button>
             </Link>
         </div>
 
@@ -103,13 +110,13 @@ function submit() {
             class="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center"
         >
             <p v-if="booking.has_review" class="font-medium">
-                Ya dejaste una reseña para esta reserva.
+                {{ $t('Ya dejaste una reseña para esta reserva.') }}
             </p>
             <p v-else class="font-medium">
-                Solo puedes reseñar reservas completadas.
+                {{ $t('Solo puedes reseñar reservas completadas.') }}
             </p>
             <Link href="/account/bookings">
-                <Button variant="outline" size="sm">Volver</Button>
+                <Button variant="outline" size="sm">{{ $t('Volver') }}</Button>
             </Link>
         </div>
 
@@ -119,7 +126,7 @@ function submit() {
             @submit.prevent="submit"
         >
             <div class="space-y-2">
-                <Label>Calificación</Label>
+                <Label>{{ $t('Calificación') }}</Label>
                 <div class="flex gap-1">
                     <button
                         v-for="star in 5"
@@ -141,23 +148,25 @@ function submit() {
             </div>
 
             <div class="space-y-2">
-                <Label for="review-title">Título (opcional)</Label>
+                <Label for="review-title">{{ $t('Título (opcional)') }}</Label>
                 <Input
                     id="review-title"
                     v-model="title"
                     maxlength="120"
-                    placeholder="Resumen de tu experiencia"
+                    :placeholder="$t('Resumen de tu experiencia')"
                 />
             </div>
 
             <div class="space-y-2">
-                <Label for="review-comment">Comentario (opcional)</Label>
+                <Label for="review-comment">{{
+                    $t('Comentario (opcional)')
+                }}</Label>
                 <Textarea
                     id="review-comment"
                     v-model="comment"
                     rows="4"
                     maxlength="2000"
-                    placeholder="Contanos sobre tu experiencia..."
+                    :placeholder="$t('Contanos sobre tu experiencia...')"
                 />
                 <p class="text-xs text-muted-foreground">
                     {{ comment.length }}/2000

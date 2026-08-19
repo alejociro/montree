@@ -2,30 +2,39 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { BarChart3, CalendarCheck, Leaf, Palette } from 'lucide-vue-next';
 import AgencySignupForm from '@/components/organisms/AgencySignupForm.vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { home, login } from '@/routes';
+
+const { t } = useTranslations();
 
 const highlights = [
     {
         icon: CalendarCheck,
-        title: 'Reservas 24/7',
-        body: 'Recibe y confirma reservas automáticamente, sin responder un solo WhatsApp.',
+        title: t('Reservas 24/7'),
+        body: t(
+            'Recibe y confirma reservas automáticamente, sin responder un solo WhatsApp.',
+        ),
     },
     {
         icon: BarChart3,
-        title: 'Tu negocio en tiempo real',
-        body: 'Ingresos, cupos y próximas salidas en un panel claro y accionable.',
+        title: t('Tu negocio en tiempo real'),
+        body: t(
+            'Ingresos, cupos y próximas salidas en un panel claro y accionable.',
+        ),
     },
     {
         icon: Palette,
-        title: 'Tu marca, tu subdominio',
-        body: 'Un sitio propio con tu logo y colores desde el primer minuto.',
+        title: t('Tu marca, tu subdominio'),
+        body: t(
+            'Un sitio propio con tu logo y colores desde el primer minuto.',
+        ),
     },
 ];
 </script>
 
 <template>
     <div class="min-h-svh bg-background text-foreground lg:grid lg:grid-cols-2">
-        <Head title="Crea tu agencia — Montree" />
+        <Head :title="$t('Crea tu agencia — Montree')" />
 
         <aside
             class="relative hidden overflow-hidden bg-emerald-900 px-10 py-12 text-emerald-50 lg:flex lg:flex-col lg:justify-between"
@@ -52,16 +61,18 @@ const highlights = [
                 >
                     <Leaf class="size-5" />
                 </span>
-                <span class="text-lg font-semibold tracking-tight"
-                    >Montree</span
-                >
+                <span class="text-lg font-semibold tracking-tight">{{
+                    $t('Montree')
+                }}</span>
             </Link>
 
             <div class="relative z-10 max-w-md space-y-8">
                 <h1
                     class="text-3xl font-semibold tracking-tight text-white sm:text-4xl"
                 >
-                    Pon tu agencia de ecoturismo en línea en minutos.
+                    {{
+                        $t('Pon tu agencia de ecoturismo en línea en minutos.')
+                    }}
                 </h1>
 
                 <ul class="space-y-5">
@@ -88,8 +99,11 @@ const highlights = [
             </div>
 
             <p class="relative z-10 text-sm text-emerald-100/70">
-                Sin tarjeta de crédito · 14 días de prueba en el plan
-                Professional.
+                {{
+                    $t(
+                        'Sin tarjeta de crédito · 14 días de prueba en el plan Professional.',
+                    )
+                }}
             </p>
         </aside>
 
@@ -106,30 +120,33 @@ const highlights = [
                     >
                         <Leaf class="size-4" />
                     </span>
-                    <span class="text-base font-semibold tracking-tight"
-                        >Montree</span
-                    >
+                    <span class="text-base font-semibold tracking-tight">{{
+                        $t('Montree')
+                    }}</span>
                 </Link>
 
                 <div class="mb-8 space-y-2">
                     <h2 class="text-2xl font-semibold tracking-tight">
-                        Crea tu agencia
+                        {{ $t('Crea tu agencia') }}
                     </h2>
                     <p class="text-sm text-muted-foreground">
-                        Completa tus datos y empieza tu prueba gratis. Activas tu
-                        cuenta confirmando tu email.
+                        {{
+                            $t(
+                                'Completa tus datos y empieza tu prueba gratis. Activas tu cuenta confirmando tu email.',
+                            )
+                        }}
                     </p>
                 </div>
 
                 <AgencySignupForm />
 
                 <p class="mt-6 text-center text-sm text-muted-foreground">
-                    ¿Ya tienes una agencia?
+                    {{ $t('¿Ya tienes una agencia?') }}
                     <Link
                         :href="login().url"
                         class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
                     >
-                        Inicia sesión
+                        {{ $t('Inicia sesión') }}
                     </Link>
                 </p>
             </div>

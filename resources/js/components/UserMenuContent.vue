@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { Bell, Heart, LogOut, Settings, Ticket } from 'lucide-vue-next';
+import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -53,7 +54,7 @@ const { workspace, isStaffMember } = useNavigation();
                     :href="workspace.href"
                 >
                     <component :is="workspace.icon" class="mr-2 h-4 w-4" />
-                    {{ workspace.label }}
+                    {{ $t(workspace.label) }}
                 </Link>
             </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -67,7 +68,7 @@ const { workspace, isStaffMember } = useNavigation();
                     :href="accountBookings()"
                 >
                     <Ticket class="mr-2 h-4 w-4" />
-                    Mis reservas
+                    {{ $t('Mis reservas') }}
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem :as-child="true">
@@ -76,7 +77,7 @@ const { workspace, isStaffMember } = useNavigation();
                     :href="accountFavorites()"
                 >
                     <Heart class="mr-2 h-4 w-4" />
-                    Favoritos
+                    {{ $t('Favoritos') }}
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem :as-child="true">
@@ -85,17 +86,22 @@ const { workspace, isStaffMember } = useNavigation();
                     :href="accountNotifications()"
                 >
                     <Bell class="mr-2 h-4 w-4" />
-                    Notificaciones
+                    {{ $t('Notificaciones') }}
                 </Link>
             </DropdownMenuItem>
         </template>
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
-                Configuración
+                {{ $t('Configuración') }}
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>
+    <DropdownMenuSeparator />
+    <div class="px-2 py-1.5">
+        <p class="mb-1.5 text-xs text-muted-foreground">{{ $t('Idioma') }}</p>
+        <LocaleSwitcher variant="tabs" />
+    </div>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
         <Link
@@ -106,7 +112,7 @@ const { workspace, isStaffMember } = useNavigation();
             data-test="logout-button"
         >
             <LogOut class="mr-2 h-4 w-4" />
-            Cerrar sesión
+            {{ $t('Cerrar sesión') }}
         </Link>
     </DropdownMenuItem>
 </template>

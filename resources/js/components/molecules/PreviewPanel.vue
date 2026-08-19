@@ -32,16 +32,16 @@ const safeSecondary = computed(() =>
 <template>
     <Card class="sticky top-6">
         <CardHeader>
-            <CardTitle>Vista previa</CardTitle>
+            <CardTitle>{{ $t('Vista previa') }}</CardTitle>
             <CardDescription>
-                Así se verán los colores en la tienda pública.
+                {{ $t('Así se verán los colores en la tienda pública.') }}
             </CardDescription>
         </CardHeader>
 
         <CardContent>
             <div
                 class="overflow-hidden rounded-lg border border-input"
-                aria-label="Tenant branding preview"
+                :aria-label="$t('Tenant branding preview')"
             >
                 <div
                     class="px-5 py-6 text-white"
@@ -62,17 +62,17 @@ const safeSecondary = computed(() =>
 
                 <div class="space-y-3 bg-background p-5">
                     <p class="text-sm font-medium">
-                        Reserva tu próxima aventura
+                        {{ $t('Reserva tu próxima aventura') }}
                     </p>
                     <p class="text-sm text-muted-foreground">
-                        Botón de acción principal:
+                        {{ $t('Botón de acción principal:') }}
                     </p>
                     <button
                         type="button"
                         class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-white shadow-xs transition-opacity hover:opacity-90"
                         :style="{ backgroundColor: safePrimary }"
                     >
-                        Reservar ahora
+                        {{ $t('Reservar ahora') }}
                     </button>
                     <button
                         type="button"
@@ -82,7 +82,7 @@ const safeSecondary = computed(() =>
                             color: safeSecondary,
                         }"
                     >
-                        Saber más
+                        {{ $t('Saber más') }}
                     </button>
                 </div>
             </div>
@@ -92,11 +92,11 @@ const safeSecondary = computed(() =>
             class="flex flex-col items-start gap-1 text-xs text-muted-foreground"
         >
             <span>
-                Primario:
+                {{ $t('Primario:') }}
                 <code class="font-mono">{{ safePrimary }}</code>
             </span>
             <span>
-                Secundario:
+                {{ $t('Secundario:') }}
                 <code class="font-mono">{{ safeSecondary }}</code>
             </span>
         </CardFooter>

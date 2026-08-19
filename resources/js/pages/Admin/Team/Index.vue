@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/select';
 import { useApi } from '@/composables/useApi';
 import { usePermissions } from '@/composables/usePermissions';
+import { useTranslations } from '@/composables/useTranslations';
 import {
     FALLBACK_ROLE_OPTIONS,
     NON_ASSIGNABLE_ROLES,
@@ -60,6 +61,8 @@ import type {
     TeamMemberPayload,
     TeamMemberStatus,
 } from '@/types/team';
+
+const { t } = useTranslations();
 
 const api = useApi();
 const { can } = usePermissions();
@@ -92,18 +95,18 @@ const hasActiveFilters = computed(
 );
 
 const statusOptions: { value: TeamMemberStatus; label: string }[] = [
-    { value: 'active', label: 'Activo' },
-    { value: 'invited', label: 'Invitado' },
-    { value: 'suspended', label: 'Suspendido' },
+    { value: 'active', label: t('Activo') },
+    { value: 'invited', label: t('Invitado') },
+    { value: 'suspended', label: t('Suspendido') },
 ];
 
 const statusMeta: Record<
     TeamMemberStatus,
     { label: string; variant: 'default' | 'secondary' | 'destructive' }
 > = {
-    active: { label: 'Activo', variant: 'secondary' },
-    invited: { label: 'Invitado', variant: 'default' },
-    suspended: { label: 'Suspendido', variant: 'destructive' },
+    active: { label: t('Activo'), variant: 'secondary' },
+    invited: { label: t('Invitado'), variant: 'default' },
+    suspended: { label: t('Suspendido'), variant: 'destructive' },
 };
 
 /**
@@ -294,7 +297,7 @@ function invite(): void {
         },
         {
             onSuccess: () => {
-                toast.success('Invitación enviada');
+                toast.success(t('Invitación enviada'));
                 inviteEmail.value = '';
                 inviteName.value = '';
                 void load();
@@ -415,14 +418,14 @@ function applyRoles(member: TeamMember, roles: string[]): void {
         { roles },
         {
             onSuccess: () => {
-                toast.success('Roles actualizados');
+                toast.success(t('Roles actualizados'));
                 roleDialogMember.value = null;
                 void load();
             },
             onError: (errors) => {
                 toast.error(
                     Object.values(errors)[0] ??
-                        'No se pudieron actualizar los roles.',
+                        t('No se pudieron actualizar los roles.'),
                 );
                 void load();
             },
@@ -441,7 +444,7 @@ function doSuspend(memberId: number): void {
         {},
         {
             onSuccess: () => {
-                toast.success('Miembro suspendido');
+                toast.success(t('Miembro suspendido'));
                 void load();
             },
             onError: (errors) =>
@@ -456,7 +459,7 @@ function doReactivate(memberId: number): void {
         {},
         {
             onSuccess: () => {
-                toast.success('Miembro reactivado');
+                toast.success(t('Miembro reactivado'));
                 void load();
             },
             onError: (errors) =>
@@ -479,7 +482,7 @@ function resendInvitation(member: TeamMember): void {
             onError: (errors) =>
                 toast.error(
                     Object.values(errors)[0] ??
-                        'No se pudo reenviar la invitación.',
+                        t('No se pudo reenviar la invitación.'),
                 ),
             onFinish: () => {
                 resendingFor.value = null;
@@ -502,22 +505,28 @@ onMounted(() => {
 
 <template>
     <div>
-        <Head title="Equipo" />
+        <Head :title="$t('Equipo')" />
 
         <div class="px-4 py-6 md:px-8">
             <Heading
-                title="Equipo"
-                description="Quién trabaja en tu agencia, con qué roles y desde cuándo."
+                :title="$t('Equipo')"
+                :description="
+                    $t(
+                        'Quién trabaja en tu agencia, con qué roles y desde cuándo.',
+                    )
+                "
             />
 
             <section
                 v-if="canInvite"
                 class="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4 md:p-6"
             >
-                <h2 class="text-lg font-semibold">Invitar miembro</h2>
+                <h2 class="text-lg font-semibold">
+                    {{ $t('Invitar miembro') }}
+                </h2>
                 <div class="grid gap-3 md:grid-cols-3">
                     <div class="space-y-1.5">
-                        <Label for="invite-email">Email</Label>
+                        <Label for="invite-email">{{ $t('Email') }}</Label>
                         <Input
                             id="invite-email"
                             v-model="inviteEmail"
@@ -526,7 +535,7 @@ onMounted(() => {
                         />
                     </div>
                     <div class="space-y-1.5">
-                        <Label for="invite-name">Nombre</Label>
+                        <Label for="invite-name">{{ $t('Nombre') }}</Label>
                         <Input
                             id="invite-name"
                             v-model="inviteName"
@@ -534,7 +543,7 @@ onMounted(() => {
                         />
                     </div>
                     <div class="space-y-1.5">
-                        <Label for="invite-role">Rol</Label>
+                        <Label for="invite-role">{{ $t('Rol') }}</Label>
                         <!-- Un solo rol al invitar, igual que antes de Fase 3A:
                              `InviteMemberRequest` sigue pidiendo `role`. Lo que
                              cambia es de dónde salen las opciones — incluyen los
@@ -565,7 +574,7 @@ onMounted(() => {
                     class="flex flex-wrap items-end gap-3 border-b border-border p-4"
                 >
                     <div class="space-y-1.5">
-                        <Label for="filter-search">Buscar</Label>
+                        <Label for="filter-search">{{ $t('Buscar') }}</Label>
                         <div class="relative">
                             <Search
                                 class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -574,25 +583,25 @@ onMounted(() => {
                                 id="filter-search"
                                 v-model="searchInput"
                                 type="search"
-                                placeholder="Nombre o email"
+                                :placeholder="$t('Nombre o email')"
                                 class="w-[240px] pl-9"
                             />
                         </div>
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-status">Estado</Label>
+                        <Label for="filter-status">{{ $t('Estado') }}</Label>
                         <Select
                             :model-value="filters.status"
                             @update:model-value="handleStatusChange"
                         >
                             <SelectTrigger id="filter-status" class="w-[170px]">
-                                <SelectValue placeholder="Todos" />
+                                <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem :value="ALL">
-                                        Todos los estados
+                                        {{ $t('Todos los estados') }}
                                     </SelectItem>
                                     <SelectItem
                                         v-for="option in statusOptions"
@@ -607,18 +616,18 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-role">Rol</Label>
+                        <Label for="filter-role">{{ $t('Rol') }}</Label>
                         <Select
                             :model-value="filters.role"
                             @update:model-value="handleRoleChange"
                         >
                             <SelectTrigger id="filter-role" class="w-[190px]">
-                                <SelectValue placeholder="Todos" />
+                                <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem :value="ALL">
-                                        Todos los roles
+                                        {{ $t('Todos los roles') }}
                                     </SelectItem>
                                     <SelectItem
                                         v-for="option in roleOptions"
@@ -639,7 +648,7 @@ onMounted(() => {
                         class="ml-auto"
                         @click="resetFilters"
                     >
-                        Limpiar filtros
+                        {{ $t('Limpiar filtros') }}
                     </Button>
                 </div>
 
@@ -655,7 +664,7 @@ onMounted(() => {
                 <!-- Error -->
                 <div v-else-if="loadError" class="p-10 text-center">
                     <p class="text-sm text-destructive">
-                        No se pudo cargar el equipo.
+                        {{ $t('No se pudo cargar el equipo.') }}
                     </p>
                     <Button
                         variant="outline"
@@ -663,7 +672,7 @@ onMounted(() => {
                         class="mt-3"
                         @click="load"
                     >
-                        Reintentar
+                        {{ $t('Reintentar') }}
                     </Button>
                 </div>
 
@@ -695,7 +704,7 @@ onMounted(() => {
                         size="sm"
                         @click="resetFilters"
                     >
-                        Limpiar filtros
+                        {{ $t('Limpiar filtros') }}
                     </Button>
                 </div>
 
@@ -706,11 +715,15 @@ onMounted(() => {
                             <tr
                                 class="border-b border-border text-left text-xs font-medium text-muted-foreground"
                             >
-                                <th class="px-4 py-3">Miembro</th>
-                                <th class="px-4 py-3">Roles</th>
-                                <th class="px-4 py-3">Estado</th>
-                                <th class="px-4 py-3">Último acceso</th>
-                                <th class="px-4 py-3 text-right">Acciones</th>
+                                <th class="px-4 py-3">{{ $t('Miembro') }}</th>
+                                <th class="px-4 py-3">{{ $t('Roles') }}</th>
+                                <th class="px-4 py-3">{{ $t('Estado') }}</th>
+                                <th class="px-4 py-3">
+                                    {{ $t('Último acceso') }}
+                                </th>
+                                <th class="px-4 py-3 text-right">
+                                    {{ $t('Acciones') }}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -744,7 +757,7 @@ onMounted(() => {
                                         </Badge>
                                     </div>
                                     <span v-else class="text-muted-foreground">
-                                        Sin rol
+                                        {{ $t('Sin rol') }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
@@ -791,7 +804,7 @@ onMounted(() => {
                                             @click="openRoleDialog(member)"
                                         >
                                             <UserCog class="size-4" />
-                                            Roles
+                                            {{ $t('Roles') }}
                                         </Button>
                                         <Button
                                             v-if="
@@ -803,7 +816,7 @@ onMounted(() => {
                                             size="sm"
                                             @click="doSuspend(member.id)"
                                         >
-                                            Suspender
+                                            {{ $t('Suspender') }}
                                         </Button>
                                         <Button
                                             v-else-if="
@@ -814,7 +827,7 @@ onMounted(() => {
                                             size="sm"
                                             @click="doReactivate(member.id)"
                                         >
-                                            Reactivar
+                                            {{ $t('Reactivar') }}
                                         </Button>
                                     </div>
                                 </td>
@@ -829,8 +842,13 @@ onMounted(() => {
                     class="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm text-muted-foreground"
                 >
                     <span>
-                        Mostrando {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} de
-                        {{ meta.total }} miembros
+                        {{
+                            $t('Mostrando :from–:to de :total miembros', {
+                                from: meta.from ?? 0,
+                                to: meta.to ?? 0,
+                                total: meta.total,
+                            })
+                        }}
                     </span>
                     <div class="flex items-center gap-2">
                         <Button
@@ -840,7 +858,7 @@ onMounted(() => {
                             @click="goToPage(meta.current_page - 1)"
                         >
                             <ChevronLeft class="size-4" />
-                            Anterior
+                            {{ $t('Anterior') }}
                         </Button>
                         <span class="tabular-nums">
                             {{ meta.current_page }} / {{ meta.last_page }}
@@ -851,7 +869,7 @@ onMounted(() => {
                             :disabled="meta.current_page >= meta.last_page"
                             @click="goToPage(meta.current_page + 1)"
                         >
-                            Siguiente
+                            {{ $t('Siguiente') }}
                             <ChevronRight class="size-4" />
                         </Button>
                     </div>
@@ -869,16 +887,23 @@ onMounted(() => {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        Roles de {{ roleDialogMember?.name }}
+                        {{
+                            $t('Roles de :name', {
+                                name: roleDialogMember?.name ?? '',
+                            })
+                        }}
                     </DialogTitle>
                     <DialogDescription>
-                        Un miembro puede tener varios roles: sus permisos son la
-                        suma de todos.
+                        {{
+                            $t(
+                                'Un miembro puede tener varios roles: sus permisos son la suma de todos.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
                 <fieldset class="space-y-0.5">
-                    <legend class="sr-only">Roles asignados</legend>
+                    <legend class="sr-only">{{ $t('Roles asignados') }}</legend>
                     <button
                         v-for="option in roleOptions"
                         :key="option.name"
@@ -902,12 +927,12 @@ onMounted(() => {
                     v-if="roleDraft.length === 0"
                     class="text-xs text-destructive"
                 >
-                    Elige al menos un rol.
+                    {{ $t('Elige al menos un rol.') }}
                 </p>
 
                 <DialogFooter>
                     <Button variant="outline" @click="roleDialogMember = null">
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button
                         :disabled="
@@ -930,20 +955,26 @@ onMounted(() => {
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Confirmar cambio de roles</DialogTitle>
+                    <DialogTitle>{{
+                        $t('Confirmar cambio de roles')
+                    }}</DialogTitle>
                     <DialogDescription>
                         {{ confirmMessage }}
                     </DialogDescription>
                 </DialogHeader>
                 <p class="text-sm text-muted-foreground">
-                    Quedará con: {{ roleLabels(confirmRoles, roleOptions) }}
+                    {{
+                        $t('Quedará con: :roles', {
+                            roles: roleLabels(confirmRoles, roleOptions),
+                        })
+                    }}
                 </p>
                 <DialogFooter>
                     <Button variant="outline" @click="cancelConfirm">
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button :disabled="savingRoles" @click="acceptConfirm">
-                        Confirmar
+                        {{ $t('Confirmar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

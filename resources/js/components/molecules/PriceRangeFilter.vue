@@ -39,14 +39,14 @@ function parseValue(input: string): number | null {
 <template>
     <fieldset class="space-y-2">
         <legend class="text-sm font-medium text-foreground">
-            Rango de precio
+            {{ $t('Rango de precio') }}
         </legend>
         <div class="grid grid-cols-2 gap-2">
             <div class="space-y-1">
                 <Label
                     for="catalog-price-min"
                     class="text-xs text-muted-foreground"
-                    >Mínimo</Label
+                    >{{ $t('Mínimo') }}</Label
                 >
                 <Input
                     id="catalog-price-min"
@@ -61,14 +61,14 @@ function parseValue(input: string): number | null {
                 <Label
                     for="catalog-price-max"
                     class="text-xs text-muted-foreground"
-                    >Máximo</Label
+                    >{{ $t('Máximo') }}</Label
                 >
                 <Input
                     id="catalog-price-max"
                     v-model="maxModel"
                     type="number"
                     min="0"
-                    placeholder="Sin tope"
+                    :placeholder="$t('Sin tope')"
                     inputmode="numeric"
                 />
             </div>

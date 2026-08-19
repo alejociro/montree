@@ -22,7 +22,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_NOT_FOUND',
-            'El código ingresado no existe.',
+            __('El código ingresado no existe.'),
             404,
         );
     }
@@ -31,7 +31,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_EXPIRED',
-            'Este código promocional expiró.',
+            __('Este código promocional expiró.'),
         );
     }
 
@@ -39,7 +39,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_INACTIVE',
-            'Este código promocional está inactivo.',
+            __('Este código promocional está inactivo.'),
         );
     }
 
@@ -47,7 +47,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_EXHAUSTED',
-            'Este código alcanzó su máximo de usos.',
+            __('Este código alcanzó su máximo de usos.'),
         );
     }
 
@@ -63,7 +63,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_TOUR_NOT_APPLICABLE',
-            'Este código no aplica para este tour.',
+            __('Este código no aplica para este tour.'),
         );
     }
 
@@ -71,7 +71,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_USER_LIMIT_REACHED',
-            'Ya usaste este código el máximo de veces permitido.',
+            __('Ya usaste este código el máximo de veces permitido.'),
         );
     }
 

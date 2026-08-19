@@ -54,7 +54,7 @@ final class StoreBookingRequest extends FormRequest
         $validator->after(function ($v): void {
             $total = (int) $this->input('adults_count', 0) + (int) $this->input('minors_count', 0);
             if ($total > 50) {
-                $v->errors()->add('adults_count', 'El total de viajeros no puede superar 50.');
+                $v->errors()->add('adults_count', __('El total de viajeros no puede superar 50.'));
             }
 
             $tourDateId = (int) $this->input('tour_date_id', 0);
@@ -64,7 +64,7 @@ final class StoreBookingRequest extends FormRequest
             }
             $tenantId = Tenant::current()?->id;
             if ($tourDate->tenant_id !== $tenantId) {
-                $v->errors()->add('tour_date_id', 'La fecha no pertenece a este tenant.');
+                $v->errors()->add('tour_date_id', __('La fecha no pertenece a este tenant.'));
             }
         });
     }

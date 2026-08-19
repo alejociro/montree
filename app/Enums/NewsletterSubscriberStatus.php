@@ -13,9 +13,9 @@ enum NewsletterSubscriberStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Active => 'Active',
-            self::Unsubscribed => 'Unsubscribed',
-            self::Bounced => 'Bounced',
+            self::Active => __('Active'),
+            self::Unsubscribed => __('Unsubscribed'),
+            self::Bounced => __('Bounced'),
         };
     }
 }

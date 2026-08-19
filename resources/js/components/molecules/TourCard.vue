@@ -28,14 +28,14 @@ defineProps<Props>();
                 v-else
                 class="flex h-full w-full items-center justify-center text-xs tracking-wide uppercase"
             >
-                Sin imagen
+                {{ $t('Sin imagen') }}
             </div>
 
             <span
                 v-if="tour.is_favorite"
                 class="absolute top-2 left-2 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold tracking-wide text-primary-foreground shadow-sm"
             >
-                Destacado
+                {{ $t('Destacado') }}
             </span>
 
             <button
@@ -62,7 +62,7 @@ defineProps<Props>();
                 v-if="!tour.has_future_dates"
                 class="absolute bottom-2 left-2 rounded-md bg-background/90 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm"
             >
-                Sin disponibilidad
+                {{ $t('Sin disponibilidad') }}
             </span>
         </div>
 

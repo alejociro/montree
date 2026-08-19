@@ -9,6 +9,7 @@ use App\Http\Resources\TenantConfigurationResource;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Locale;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -55,6 +56,11 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => app()->getLocale(),
+            'locales' => Locale::options(),
+            // WHY: no es prop diferida. El primer render tiene que salir ya traducido
+            // (si no, la pantalla parpadea de idioma) y el catalogo pesa pocos KB.
+            'translations' => Locale::translations(app()->getLocale()),
             'auth' => [
                 'user' => $authUser,
                 'permissions' => $authUser['permissions'] ?? [],

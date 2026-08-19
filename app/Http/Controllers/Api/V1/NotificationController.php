@@ -33,7 +33,7 @@ final class NotificationController extends Controller
         $notification = $request->user()->notifications()->where('id', $id)->first();
 
         if ($notification === null) {
-            return new JsonResponse(['message' => 'Not found.'], 404);
+            return new JsonResponse(['message' => __('Not found.')], 404);
         }
 
         $notification->markAsRead();

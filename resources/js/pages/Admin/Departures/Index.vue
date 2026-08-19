@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type {
     LogisticsRef,
@@ -56,6 +57,8 @@ import type {
     TourDatesGlobalResponse,
 } from '@/types/logistics';
 import type { TeamListResponse, TeamMemberPayload } from '@/types/team';
+
+const { t } = useTranslations();
 
 const api = useApi();
 
@@ -177,7 +180,7 @@ async function loadTours(): Promise<void> {
             name: tour.name,
         }));
     } catch {
-        toast.error('No se pudieron cargar los tours para filtrar.');
+        toast.error(t('No se pudieron cargar los tours para filtrar.'));
     }
 }
 
@@ -207,17 +210,17 @@ async function loadOptions(): Promise<void> {
             name: hotel.name,
         }));
     } catch {
-        toast.error('No se pudieron cargar las opciones de condiciones.');
+        toast.error(t('No se pudieron cargar las opciones de condiciones.'));
     }
 }
 
 const statusOptions: { value: TourDateDisplayStatus; label: string }[] = [
-    { value: 'open', label: 'Abierta' },
-    { value: 'full', label: 'Llena' },
-    { value: 'closed', label: 'Cerrada' },
-    { value: 'in_progress', label: 'En curso' },
-    { value: 'finished', label: 'Finalizada' },
-    { value: 'cancelled', label: 'Cancelada' },
+    { value: 'open', label: t('Abierta') },
+    { value: 'full', label: t('Llena') },
+    { value: 'closed', label: t('Cerrada') },
+    { value: 'in_progress', label: t('En curso') },
+    { value: 'finished', label: t('Finalizada') },
+    { value: 'cancelled', label: t('Cancelada') },
 ];
 
 const statusMeta: Record<
@@ -225,32 +228,32 @@ const statusMeta: Record<
     { label: string; classes: string }
 > = {
     open: {
-        label: 'Abierta',
+        label: t('Abierta'),
         classes:
             'border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     },
     full: {
-        label: 'Llena',
+        label: t('Llena'),
         classes:
             'border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     },
     closed: {
-        label: 'Cerrada',
+        label: t('Cerrada'),
         classes:
             'border-transparent bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
     },
     in_progress: {
-        label: 'En curso',
+        label: t('En curso'),
         classes:
             'border-transparent bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
     },
     finished: {
-        label: 'Finalizada',
+        label: t('Finalizada'),
         classes:
             'border-transparent bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     },
     cancelled: {
-        label: 'Cancelada',
+        label: t('Cancelada'),
         classes:
             'border-transparent bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
     },
@@ -342,12 +345,14 @@ function confirmCancel(): void {
         { reason: cancelReason.value.trim() || null },
         {
             onSuccess: () => {
-                toast.success('Salida cancelada.');
+                toast.success(t('Salida cancelada.'));
                 cancelOpen.value = false;
                 void loadDates();
             },
             onError: (errors) => {
-                toast.error(errors._global ?? 'No se pudo cancelar la salida.');
+                toast.error(
+                    errors._global ?? t('No se pudo cancelar la salida.'),
+                );
             },
             onFinish: () => {
                 cancelling.value = false;
@@ -414,12 +419,16 @@ onMounted(() => {
 
 <template>
     <div>
-        <Head title="Salidas" />
+        <Head :title="$t('Salidas')" />
 
         <div class="px-4 py-6 md:px-8">
             <Heading
-                title="Salidas"
-                description="Todas las salidas programadas de tus tours, con su ocupación y estado."
+                :title="$t('Salidas')"
+                :description="
+                    $t(
+                        'Todas las salidas programadas de tus tours, con su ocupación y estado.',
+                    )
+                "
             />
 
             <div class="mt-6 rounded-2xl border border-border bg-card">
@@ -428,18 +437,18 @@ onMounted(() => {
                     class="flex flex-wrap items-end gap-3 border-b border-border p-4"
                 >
                     <div class="space-y-1.5">
-                        <Label for="filter-status">Estado</Label>
+                        <Label for="filter-status">{{ $t('Estado') }}</Label>
                         <Select
                             :model-value="filters.status"
                             @update:model-value="handleStatusChange"
                         >
                             <SelectTrigger id="filter-status" class="w-[160px]">
-                                <SelectValue placeholder="Todos" />
+                                <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem :value="ALL">
-                                        Todos los estados
+                                        {{ $t('Todos los estados') }}
                                     </SelectItem>
                                     <SelectItem
                                         v-for="option in statusOptions"
@@ -454,18 +463,18 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-tour">Tour</Label>
+                        <Label for="filter-tour">{{ $t('Tour') }}</Label>
                         <Select
                             :model-value="filters.tourId"
                             @update:model-value="handleTourChange"
                         >
                             <SelectTrigger id="filter-tour" class="w-[200px]">
-                                <SelectValue placeholder="Todos" />
+                                <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem :value="ALL">
-                                        Todos los tours
+                                        {{ $t('Todos los tours') }}
                                     </SelectItem>
                                     <SelectItem
                                         v-for="tour in tourOptions"
@@ -480,7 +489,7 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-from">Desde</Label>
+                        <Label for="filter-from">{{ $t('Desde') }}</Label>
                         <Input
                             id="filter-from"
                             v-model="filters.from"
@@ -490,7 +499,7 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-to">Hasta</Label>
+                        <Label for="filter-to">{{ $t('Hasta') }}</Label>
                         <Input
                             id="filter-to"
                             v-model="filters.to"
@@ -500,7 +509,7 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-direction">Orden</Label>
+                        <Label for="filter-direction">{{ $t('Orden') }}</Label>
                         <Select
                             :model-value="filters.direction"
                             @update:model-value="handleDirectionChange"
@@ -514,10 +523,10 @@ onMounted(() => {
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem value="desc">
-                                        Más recientes
+                                        {{ $t('Más recientes') }}
                                     </SelectItem>
                                     <SelectItem value="asc">
-                                        Más antiguas
+                                        {{ $t('Más antiguas') }}
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>
@@ -531,7 +540,7 @@ onMounted(() => {
                         class="ml-auto"
                         @click="resetFilters"
                     >
-                        Limpiar filtros
+                        {{ $t('Limpiar filtros') }}
                     </Button>
                 </div>
 
@@ -547,7 +556,7 @@ onMounted(() => {
                 <!-- Error -->
                 <div v-else-if="loadError" class="p-10 text-center">
                     <p class="text-sm text-destructive">
-                        No se pudieron cargar las salidas.
+                        {{ $t('No se pudieron cargar las salidas.') }}
                     </p>
                     <Button
                         variant="outline"
@@ -555,7 +564,7 @@ onMounted(() => {
                         class="mt-3"
                         @click="loadDates"
                     >
-                        Reintentar
+                        {{ $t('Reintentar') }}
                     </Button>
                 </div>
 
@@ -587,7 +596,7 @@ onMounted(() => {
                         size="sm"
                         @click="resetFilters"
                     >
-                        Limpiar filtros
+                        {{ $t('Limpiar filtros') }}
                     </Button>
                 </div>
 
@@ -598,14 +607,18 @@ onMounted(() => {
                             <tr
                                 class="border-b border-border text-left text-xs font-medium text-muted-foreground"
                             >
-                                <th class="px-4 py-3">Tour</th>
-                                <th class="px-4 py-3">Fecha</th>
-                                <th class="px-4 py-3">Ocupación</th>
-                                <th class="px-4 py-3">Precio</th>
-                                <th class="px-4 py-3">Guía</th>
-                                <th class="px-4 py-3">Condiciones</th>
-                                <th class="px-4 py-3">Estado</th>
-                                <th class="px-4 py-3 text-right">Acciones</th>
+                                <th class="px-4 py-3">{{ $t('Tour') }}</th>
+                                <th class="px-4 py-3">{{ $t('Fecha') }}</th>
+                                <th class="px-4 py-3">{{ $t('Ocupación') }}</th>
+                                <th class="px-4 py-3">{{ $t('Precio') }}</th>
+                                <th class="px-4 py-3">{{ $t('Guía') }}</th>
+                                <th class="px-4 py-3">
+                                    {{ $t('Condiciones') }}
+                                </th>
+                                <th class="px-4 py-3">{{ $t('Estado') }}</th>
+                                <th class="px-4 py-3 text-right">
+                                    {{ $t('Acciones') }}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -636,7 +649,7 @@ onMounted(() => {
                                         v-if="date.ends_at"
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        hasta
+                                        {{ $t('hasta') }}
                                         {{
                                             formatTourDate(date.ends_at, {
                                                 withWeekday: false,
@@ -740,7 +753,7 @@ onMounted(() => {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            title="Editar"
+                                            :title="$t('Editar')"
                                             @click="openEdit(date)"
                                         >
                                             <Pencil class="size-4" />
@@ -748,7 +761,7 @@ onMounted(() => {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            title="Cancelar salida"
+                                            :title="$t('Cancelar salida')"
                                             @click="openCancel(date)"
                                         >
                                             <Ban
@@ -774,8 +787,13 @@ onMounted(() => {
                     class="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm text-muted-foreground"
                 >
                     <span>
-                        Mostrando {{ meta.from ?? 0 }}–{{ meta.to ?? 0 }} de
-                        {{ meta.total }} salidas
+                        {{
+                            $t('Mostrando :from–:to de :total salidas', {
+                                from: meta.from ?? 0,
+                                to: meta.to ?? 0,
+                                total: meta.total,
+                            })
+                        }}
                     </span>
                     <div class="flex items-center gap-2">
                         <Button
@@ -785,7 +803,7 @@ onMounted(() => {
                             @click="goToPage(meta.current_page - 1)"
                         >
                             <ChevronLeft class="size-4" />
-                            Anterior
+                            {{ $t('Anterior') }}
                         </Button>
                         <span class="tabular-nums">
                             {{ meta.current_page }} / {{ meta.last_page }}
@@ -796,7 +814,7 @@ onMounted(() => {
                             :disabled="meta.current_page >= meta.last_page"
                             @click="goToPage(meta.current_page + 1)"
                         >
-                            Siguiente
+                            {{ $t('Siguiente') }}
                             <ChevronRight class="size-4" />
                         </Button>
                     </div>
@@ -818,20 +836,25 @@ onMounted(() => {
         <Dialog v-model:open="cancelOpen">
             <DialogContent class="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Cancelar salida</DialogTitle>
+                    <DialogTitle>{{ $t('Cancelar salida') }}</DialogTitle>
                     <DialogDescription>
-                        La salida dejará de mostrarse en el catálogo público.
-                        Las reservas existentes no se modifican.
+                        {{
+                            $t(
+                                'La salida dejará de mostrarse en el catálogo público. Las reservas existentes no se modifican.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div class="space-y-1.5">
-                    <Label for="cancel-reason">Motivo (opcional)</Label>
+                    <Label for="cancel-reason">{{
+                        $t('Motivo (opcional)')
+                    }}</Label>
                     <Textarea
                         id="cancel-reason"
                         v-model="cancelReason"
                         rows="3"
-                        placeholder="Ej: clima adverso"
+                        :placeholder="$t('Ej: clima adverso')"
                     />
                 </div>
 
@@ -841,7 +864,7 @@ onMounted(() => {
                         :disabled="cancelling"
                         @click="cancelOpen = false"
                     >
-                        Volver
+                        {{ $t('Volver') }}
                     </Button>
                     <Button
                         variant="destructive"
@@ -852,7 +875,7 @@ onMounted(() => {
                             v-if="cancelling"
                             class="size-4 animate-spin"
                         />
-                        Cancelar salida
+                        {{ $t('Cancelar salida') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

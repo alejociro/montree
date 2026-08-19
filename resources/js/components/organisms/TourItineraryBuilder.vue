@@ -71,12 +71,12 @@ function errorFor(index: number, field: string): string | undefined {
         <div class="flex items-start justify-between gap-4">
             <Heading
                 variant="small"
-                title="Itinerario"
-                description="Paso a paso de la experiencia."
+                :title="$t('Itinerario')"
+                :description="$t('Paso a paso de la experiencia.')"
             />
             <Button type="button" size="sm" variant="outline" @click="addStep">
                 <Plus class="size-4" />
-                Agregar paso
+                {{ $t('Agregar paso') }}
             </Button>
         </div>
 
@@ -84,8 +84,11 @@ function errorFor(index: number, field: string): string | undefined {
             v-if="modelValue.length === 0"
             class="rounded-md border border-dashed border-input p-6 text-center text-sm text-muted-foreground"
         >
-            Aún no agregaste pasos. Empieza con la salida y la actividad
-            principal.
+            {{
+                $t(
+                    'Aún no agregaste pasos. Empieza con la salida y la actividad principal.',
+                )
+            }}
         </div>
 
         <div
@@ -129,11 +132,13 @@ function errorFor(index: number, field: string): string | undefined {
 
             <div class="grid gap-3 md:grid-cols-[1fr_140px]">
                 <div class="grid gap-2">
-                    <Label :for="`step-title-${index}`">Título</Label>
+                    <Label :for="`step-title-${index}`">{{
+                        $t('Título')
+                    }}</Label>
                     <Input
                         :id="`step-title-${index}`"
                         :model-value="step.title"
-                        placeholder="Salida desde la plaza"
+                        :placeholder="$t('Salida desde la plaza')"
                         maxlength="120"
                         @update:model-value="
                             (v) => updateStep(index, 'title', String(v))
@@ -143,11 +148,13 @@ function errorFor(index: number, field: string): string | undefined {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label :for="`step-duration-${index}`">Duración</Label>
+                    <Label :for="`step-duration-${index}`">{{
+                        $t('Duración')
+                    }}</Label>
                     <Input
                         :id="`step-duration-${index}`"
                         :model-value="step.duration_label"
-                        placeholder="30 min"
+                        :placeholder="$t('30 min')"
                         maxlength="30"
                         @update:model-value="
                             (v) =>
@@ -159,13 +166,15 @@ function errorFor(index: number, field: string): string | undefined {
             </div>
 
             <div class="grid gap-2">
-                <Label :for="`step-description-${index}`">Descripción</Label>
+                <Label :for="`step-description-${index}`">{{
+                    $t('Descripción')
+                }}</Label>
                 <Textarea
                     :id="`step-description-${index}`"
                     :model-value="step.description"
                     rows="2"
                     maxlength="2000"
-                    placeholder="Detalles del paso"
+                    :placeholder="$t('Detalles del paso')"
                     @update:model-value="
                         (v) => updateStep(index, 'description', String(v))
                     "

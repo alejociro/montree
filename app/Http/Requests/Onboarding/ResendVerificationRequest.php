@@ -37,10 +37,10 @@ final class ResendVerificationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Ingresa tu correo.',
-            'email.string' => 'Debe ser texto.',
-            'email.email' => 'Correo inválido.',
-            'email.max' => 'Máximo :max caracteres.',
+            'email.required' => __('Ingresa tu correo.'),
+            'email.string' => __('Debe ser texto.'),
+            'email.email' => __('Correo inválido.'),
+            'email.max' => __('Máximo :max caracteres.'),
         ];
     }
 
@@ -49,7 +49,7 @@ final class ResendVerificationRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['email' => 'correo electrónico'];
+        return ['email' => __('correo electrónico')];
     }
 
     public function email(): string

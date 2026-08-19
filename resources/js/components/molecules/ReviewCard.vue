@@ -36,7 +36,7 @@ const formattedDate = computed(() =>
             v-if="review.admin_response"
             class="mt-3 rounded-md bg-muted/50 p-3 text-sm"
         >
-            <p class="mb-1 font-medium">Respuesta de la agencia</p>
+            <p class="mb-1 font-medium">{{ $t('Respuesta de la agencia') }}</p>
             <p class="text-muted-foreground">{{ review.admin_response }}</p>
         </div>
     </article>

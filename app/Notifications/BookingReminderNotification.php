@@ -55,8 +55,8 @@ final class BookingReminderNotification extends Notification implements ShouldQu
         }
 
         return $mail
-            ->action('Ver reserva', url("/bookings/{$this->bookingNumber}"))
-            ->line('¡Prepara todo para disfrutar!');
+            ->action(__('Ver reserva'), url("/bookings/{$this->bookingNumber}"))
+            ->line(__('¡Prepara todo para disfrutar!'));
     }
 
     /**

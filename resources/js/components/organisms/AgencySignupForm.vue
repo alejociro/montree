@@ -36,14 +36,14 @@ function submit() {
 <template>
     <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
         <div class="grid gap-2">
-            <Label for="agency_name">Nombre de la agencia</Label>
+            <Label for="agency_name">{{ $t('Nombre de la agencia') }}</Label>
             <Input
                 id="agency_name"
                 v-model="form.agency_name"
                 type="text"
                 autocomplete="organization"
                 :tabindex="1"
-                placeholder="Eco Adventures"
+                :placeholder="$t('Eco Adventures')"
                 :aria-invalid="Boolean(form.errors.agency_name)"
                 @input="form.clearErrors('agency_name')"
             />
@@ -60,14 +60,14 @@ function submit() {
         />
 
         <div class="grid gap-2">
-            <Label for="founder_name">Tu nombre</Label>
+            <Label for="founder_name">{{ $t('Tu nombre') }}</Label>
             <Input
                 id="founder_name"
                 v-model="form.founder_name"
                 type="text"
                 autocomplete="name"
                 :tabindex="3"
-                placeholder="Ana Gómez"
+                :placeholder="$t('Ana Gómez')"
                 :aria-invalid="Boolean(form.errors.founder_name)"
                 @input="form.clearErrors('founder_name')"
             />
@@ -75,14 +75,14 @@ function submit() {
         </div>
 
         <div class="grid gap-2">
-            <Label for="email">Correo electrónico</Label>
+            <Label for="email">{{ $t('Correo electrónico') }}</Label>
             <Input
                 id="email"
                 v-model="form.email"
                 type="email"
                 autocomplete="email"
                 :tabindex="4"
-                placeholder="ana@eco.com"
+                :placeholder="$t('ana@eco.com')"
                 :aria-invalid="Boolean(form.errors.email)"
                 @input="form.clearErrors('email')"
             />
@@ -90,13 +90,13 @@ function submit() {
         </div>
 
         <div class="grid gap-2">
-            <Label for="password">Contraseña</Label>
+            <Label for="password">{{ $t('Contraseña') }}</Label>
             <PasswordInput
                 id="password"
                 v-model="form.password"
                 autocomplete="new-password"
                 :tabindex="5"
-                placeholder="Mínimo 8 caracteres"
+                :placeholder="$t('Mínimo 8 caracteres')"
                 :aria-invalid="Boolean(form.errors.password)"
                 @input="form.clearErrors('password', 'password_confirmation')"
             />
@@ -104,13 +104,15 @@ function submit() {
         </div>
 
         <div class="grid gap-2">
-            <Label for="password_confirmation">Confirmar contraseña</Label>
+            <Label for="password_confirmation">{{
+                $t('Confirmar contraseña')
+            }}</Label>
             <PasswordInput
                 id="password_confirmation"
                 v-model="form.password_confirmation"
                 autocomplete="new-password"
                 :tabindex="6"
-                placeholder="Repite la contraseña"
+                :placeholder="$t('Repite la contraseña')"
                 :aria-invalid="Boolean(form.errors.password_confirmation)"
                 @input="form.clearErrors('password_confirmation')"
             />
@@ -125,11 +127,11 @@ function submit() {
             data-test="create-agency-button"
         >
             <Spinner v-if="form.processing" />
-            Crear mi agencia
+            {{ $t('Crear mi agencia') }}
         </Button>
 
         <p class="text-center text-xs text-muted-foreground">
-            Sin tarjeta de crédito · 14 días de prueba gratis
+            {{ $t('Sin tarjeta de crédito · 14 días de prueba gratis') }}
         </p>
     </form>
 </template>

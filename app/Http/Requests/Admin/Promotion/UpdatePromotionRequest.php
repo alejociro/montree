@@ -72,7 +72,7 @@ class UpdatePromotionRequest extends FormRequest
             $value = $this->input('value');
 
             if ($type === PromotionType::Percentage->value && $value !== null && (float) $value > 100) {
-                $validator->errors()->add('value', 'El porcentaje no puede superar 100.');
+                $validator->errors()->add('value', __('El porcentaje no puede superar 100.'));
             }
         });
     }
