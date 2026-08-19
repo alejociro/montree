@@ -92,7 +92,7 @@ async function fetchTours(): Promise<void> {
         tours.value = payload.data;
         meta.value = payload.meta;
     } catch {
-        toast.error('No se pudieron cargar los productos.');
+        toast.error('No se pudieron cargar los tours.');
     } finally {
         loading.value = false;
     }
@@ -148,18 +148,18 @@ function formatPrice(amount: string, code: string): string {
 </script>
 
 <template>
-    <Head title="Productos" />
+    <Head title="Tours" />
 
     <div class="px-4 py-6 md:px-8">
         <div class="flex items-start justify-between gap-4">
             <Heading
-                title="Productos"
+                title="Tours"
                 description="Gestiona el catálogo de experiencias de tu agencia."
             />
             <Link :href="createPage().url">
                 <Button>
                     <Plus class="size-4" />
-                    Nuevo producto
+                    Nuevo tour
                 </Button>
             </Link>
         </div>
@@ -204,9 +204,9 @@ function formatPrice(amount: string, code: string): string {
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <p class="font-medium">Aún no hay productos</p>
+                    <p class="font-medium">Aún no hay tours</p>
                     <p class="text-sm text-muted-foreground">
-                        Crea tu primer producto para empezar a recibir reservas.
+                        Crea tu primer tour para empezar a recibir reservas.
                     </p>
                 </div>
                 <Link :href="createPage().url">
@@ -296,7 +296,7 @@ function formatPrice(amount: string, code: string): string {
             >
                 <p class="text-xs text-muted-foreground">
                     Mostrando {{ meta.from ?? 0 }} – {{ meta.to ?? 0 }} de
-                    {{ meta.total }} productos
+                    {{ meta.total }} tours
                 </p>
 
                 <div v-if="meta.last_page > 1" class="flex items-center gap-2">

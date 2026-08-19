@@ -1,8 +1,9 @@
+import { usePage } from '@inertiajs/vue3';
 import type { ComputedRef } from 'vue';
 import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { usePermissions } from '@/composables/usePermissions';
-import type { WorkspaceLink } from '@/config/navigation';
+import type { NavContext, WorkspaceLink } from '@/config/navigation';
 import {
     buildNavSections,
     buildPanelItems,
@@ -43,9 +44,18 @@ function toCrumb(item: NavItem): BreadcrumbItem {
 export function useNavigation(): UseNavigationReturn {
     const { can } = usePermissions();
     const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+    const page = usePage();
 
-    const sections = computed(() => buildNavSections(can));
-    const homeUrl = computed(() => resolveHomeUrl(can));
+    // WHY: el `super_admin` aprueba cualquier `can()` (`Gate::before`) pero no es
+    // miembro de ninguna agencia, asi que `admin/*` le responde 403. Sin este dato
+    // el menu le ofrecia el panel entero de una agencia que no existe.
+    const context = computed<NavContext>(() => ({
+        can,
+        isSuperAdmin: page.props.auth?.user?.isSuperAdmin ?? false,
+    }));
+
+    const sections = computed(() => buildNavSections(context.value));
+    const homeUrl = computed(() => resolveHomeUrl(context.value));
 
     // A9: ninguna pagina de `pages/Admin/` pasa breadcrumbs, asi que la franja
     // superior estaba vacia en todo el panel. El menu ya sabe donde esta el
@@ -80,8 +90,8 @@ export function useNavigation(): UseNavigationReturn {
         sections,
         homeUrl,
         breadcrumbs,
-        panelItems: computed(() => buildPanelItems(can)),
-        workspace: computed(() => resolveWorkspaceLink(can)),
-        isStaffMember: computed(() => isStaff(can)),
+        panelItems: computed(() => buildPanelItems(context.value)),
+        workspace: computed(() => resolveWorkspaceLink(context.value)),
+        isStaffMember: computed(() => isStaff(context.value)),
     };
 }

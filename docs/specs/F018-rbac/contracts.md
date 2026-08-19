@@ -119,9 +119,19 @@ página Inertia de `admin/*` o `guide/*`):
   "id": 42,
   "name": "Ana Ríos",
   "email": "ana@eco-adventures.test",
+  "isSuperAdmin": false,
   "permissions": ["dashboard.view", "tours.view", "tours.create", "..."]
 }
 ```
+
+**`isSuperAdmin` no es redundante con `permissions`.** El `super_admin` recibe el
+catálogo completo (su bypass es `Gate::before`, no la tabla), pero **no es miembro
+de ningún tenant**, así que `EnsureTenantAdmin` le responde 403 en todo `admin/*`
+en cualquier host. Por eso el menú **no** se puede armar solo con `can()`: quien
+tenga `isSuperAdmin: true` ve únicamente la zona de plataforma
+(`/super-admin/dashboard`, `/super-admin/tenants`) y ninguna sección de agencia ni
+de viajero. Es la misma distinción que hace el backend con dos middlewares
+distintos (`super_admin.only` vs. `tenant_admin.only`).
 
 ## 4. Errores — sin cambio de shape, cambia el motivo
 
@@ -137,6 +147,13 @@ Sigue el shape estándar de `api-conventions.md` §3. Lo único nuevo es que el
 las Policies con `hasRole()` embebido. `CROSS_TENANT_ACCESS` es nuevo (no
 existía chequeo, ver `plan.md` §2 Actions / B3).
 
+**Navegación (no JSON).** Una petición de página con el mismo 403 ya no cae en la
+pantalla cruda de Symfony: `bootstrap/app.php` la renderiza como la página Inertia
+`Errors/Generic` con el status intacto y dos props — `status: number` y
+`homeUrl: string` (el home de rol del usuario, o `/super-admin/dashboard` para el
+`super_admin`). Aplica a 403, 404, 419, 429, 500 y 503. El shape JSON de la tabla
+de arriba no cambia: el callback se salta cualquier petición con `expectsJson()`.
+
 ## 5. Eventos / Side-effects
 
 - Ninguno nuevo. F018 no dispara eventos de dominio — es autorización pura.
@@ -148,6 +165,15 @@ existía chequeo, ver `plan.md` §2 Actions / B3).
 ---
 
 ## Cambios al contrato
+
+- `2026-08-18` — §3 y §4, a raíz de las pruebas manuales sobre `montree.test`
+  (bugs reales, no cambios de alcance). (a) El menú deja de armarse solo con
+  `can()`: se agrega `isSuperAdmin` como discriminante porque `Gate::before` le
+  aprobaba al `super_admin` los 38 permisos y la UI le ofrecía el panel de una
+  agencia de la que no es miembro — "Panel de la agencia" y el sidebar completo
+  respondían 403 en todos sus ítems. (b) Los errores HTTP de navegación pasan a
+  renderizarse como `Errors/Generic`. Sin impacto en el shape JSON ni en la
+  matriz de permisos.
 
 - `2026-08-16` — **BREAKING para backend y frontend** (documenta lo ya
   implementado en Fase 1, no pide código nuevo): §1 agrega el gate de grupo

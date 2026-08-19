@@ -1,7 +1,9 @@
 import {
+    Building2,
     CalendarCheck,
     CalendarClock,
     CalendarDays,
+    Gauge,
     Heart,
     Home,
     LayoutDashboard,
@@ -70,6 +72,15 @@ export const ROLE_HOME = {
     traveler: home().url,
 } as const;
 
+/**
+ * Casa del `super_admin`. No es un rol de agencia: vive en el host de plataforma
+ * (`Route::domain` + `super_admin.only`) y NO es miembro de ningun tenant, asi
+ * que `EnsureTenantAdmin` le responde 403 en todo `admin/*` aunque `Gate::before`
+ * le apruebe cualquier permiso. Su menu se resuelve por esta constante, no por
+ * la matriz de permisos.
+ */
+export const PLATFORM_HOME = '/super-admin/dashboard';
+
 export type PermissionGate = {
     /** Alguno de estos permisos habilita el item. Vacio = sin restriccion. */
     anyOf?: string[];
@@ -78,6 +89,17 @@ export type PermissionGate = {
 };
 
 export type NavItemDefinition = NavItem & PermissionGate;
+
+/**
+ * Con que se decide el menu. `can` no alcanza: `Gate::before` le aprueba al
+ * `super_admin` los 38 permisos, pero su puesto no es el panel de una agencia
+ * (ver `PLATFORM_HOME`). El backend distingue los dos casos con middlewares
+ * distintos y este menu tiene que reflejar esa misma distincion.
+ */
+export type NavContext = {
+    can: PermissionCheck;
+    isSuperAdmin: boolean;
+};
 
 export type NavSectionDefinition = {
     id: string;
@@ -89,6 +111,11 @@ export type NavSectionDefinition = {
      * redirige a su home de rol, asi que mostrarlo seria un enlace que rebota.
      */
     travelerOnly?: boolean;
+    /**
+     * Zona de plataforma: solo la ve el `super_admin`, y el resto de secciones
+     * desaparecen para el (no es miembro de ninguna agencia).
+     */
+    superAdminOnly?: boolean;
 };
 
 export type WorkspaceLink = {
@@ -180,6 +207,29 @@ const panelSection: NavSectionDefinition = {
     ],
 };
 
+/**
+ * Zona exclusiva del `super_admin`. No lleva gates de permiso porque el backend
+ * no la gobierna con `can:` sino con el middleware `super_admin.only`.
+ */
+const platformSection: NavSectionDefinition = {
+    id: 'platform',
+    label: 'Plataforma',
+    superAdminOnly: true,
+    items: [
+        {
+            title: 'Dashboard',
+            href: PLATFORM_HOME,
+            icon: Gauge,
+            exact: true,
+        },
+        {
+            title: 'Tenants',
+            href: '/super-admin/tenants',
+            icon: Building2,
+        },
+    ],
+};
+
 const guideSection: NavSectionDefinition = {
     id: 'guide',
     label: 'Guía',
@@ -230,6 +280,7 @@ const accountSection: NavSectionDefinition = {
 
 /** Orden de aparicion en el sidebar: primero el trabajo, despues lo personal. */
 export const navigationSections: NavSectionDefinition[] = [
+    platformSection,
     panelSection,
     guideSection,
     accountSection,
@@ -253,7 +304,11 @@ export const homeNavItem: NavItem = {
  * `RoleHomeResolver::homeFor()` — el orden importa: `admin` tiene los 38
  * permisos, incluido el de guia, y su casa es el panel.
  */
-export function resolveHomeUrl(can: PermissionCheck): string {
+export function resolveHomeUrl({ can, isSuperAdmin }: NavContext): string {
+    if (isSuperAdmin) {
+        return PLATFORM_HOME;
+    }
+
     if (can(PANEL_GATE)) {
         return ROLE_HOME.panel;
     }
@@ -270,8 +325,8 @@ export function resolveHomeUrl(can: PermissionCheck): string {
  * condicion del middleware `traveler.only`: quien es staff no tiene zona de
  * viajero, todo `/account/*` lo redirige a su home de rol.
  */
-export function isStaff(can: PermissionCheck): boolean {
-    return resolveHomeUrl(can) !== ROLE_HOME.traveler;
+export function isStaff(context: NavContext): boolean {
+    return resolveHomeUrl(context) !== ROLE_HOME.traveler;
 }
 
 /**
@@ -279,9 +334,18 @@ export function isStaff(can: PermissionCheck): boolean {
  * fuera del panel (`/settings/*` o el sitio publico). `null` para el cliente,
  * que no tiene otro puesto que el que ya esta viendo.
  */
-export function resolveWorkspaceLink(
-    can: PermissionCheck,
-): WorkspaceLink | null {
+export function resolveWorkspaceLink({
+    can,
+    isSuperAdmin,
+}: NavContext): WorkspaceLink | null {
+    if (isSuperAdmin) {
+        return {
+            href: PLATFORM_HOME,
+            label: 'Panel de plataforma',
+            icon: ShieldCheck,
+        };
+    }
+
     if (can(PANEL_GATE)) {
         return {
             href: ROLE_HOME.panel,
@@ -357,13 +421,19 @@ function dedupeByHref(sections: NavSection[]): NavSection[] {
  * apuntando al home del rol. El sidebar del panel no lo necesita.
  */
 export function buildNavSections(
-    can: PermissionCheck,
+    context: NavContext,
     withHome: boolean = true,
 ): NavSection[] {
-    const home: NavItem = { ...homeNavItem, href: resolveHomeUrl(can) };
-    const staff = isStaff(can);
+    const { can, isSuperAdmin } = context;
+    const home: NavItem = { ...homeNavItem, href: resolveHomeUrl(context) };
+    const staff = isStaff(context);
 
     const sections = navigationSections
+        // El `super_admin` no es miembro de ninguna agencia: darle el panel o la
+        // zona de viajero seria ofrecerle enlaces que responden 403 (bug real
+        // reportado en pruebas). Solo ve la seccion de plataforma; el resto solo
+        // la ve quien NO es super_admin.
+        .filter((section) => (section.superAdminOnly === true) === isSuperAdmin)
         .filter((section) => !(section.travelerOnly === true && staff))
         .map(
             (section): NavSection => ({
@@ -385,9 +455,9 @@ export function buildNavSections(
 }
 
 /** Solo los items de `admin/*`, para el sidebar del panel. */
-export function buildPanelItems(can: PermissionCheck): NavItem[] {
+export function buildPanelItems(context: NavContext): NavItem[] {
     return (
-        buildNavSections(can, false).find(
+        buildNavSections(context, false).find(
             (section) => section.id === PANEL_SECTION_ID,
         )?.items ?? []
     );

@@ -15,6 +15,7 @@ use App\Exceptions\SubdomainTakenException;
 use App\Exceptions\TeamException;
 use App\Exceptions\TourDateException;
 use App\Exceptions\TourHasActiveBookingsException;
+use App\Http\Controllers\Errors\GenericErrorController;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTenantAdmin;
 use App\Http\Middleware\EnsureTenantGuide;
@@ -39,7 +40,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -160,5 +163,18 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return null;
+        });
+
+        // WHY: última red, y por eso va al final — los callbacks se consultan en
+        // orden de registro, así que todo lo específico de arriba (la página de
+        // verificación vencida, el 403 JSON con `error_code`) gana antes de llegar
+        // acá. Cualquier otro error HTTP de navegación sale como página Inertia con
+        // marca y con salida, en vez de la pantalla cruda de Symfony.
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request): ?Response {
+            if ($request->expectsJson()) {
+                return null;
+            }
+
+            return app(GenericErrorController::class)($request, $e->getStatusCode());
         });
     })->create();

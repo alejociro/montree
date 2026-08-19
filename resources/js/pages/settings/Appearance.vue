@@ -17,9 +17,9 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Appearance settings" />
+    <Head title="Apariencia" />
 
-    <h1 class="sr-only">Appearance settings</h1>
+    <h1 class="sr-only">Apariencia</h1>
 
     <div class="space-y-6">
         <Heading

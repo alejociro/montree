@@ -158,7 +158,7 @@ function transitionTo(next: TourStatusType): void {
 
                 if (code === 'TOUR_NEEDS_IMAGE_TO_ACTIVATE') {
                     statusError.value =
-                        'El producto necesita al menos una imagen antes de activarse.';
+                        'El tour necesita al menos una imagen antes de activarse.';
                 } else {
                     statusError.value = 'No se pudo cambiar el estado.';
                 }
@@ -173,7 +173,7 @@ function transitionTo(next: TourStatusType): void {
 function deleteTour(): void {
     if (
         !confirm(
-            '¿Eliminar este producto? Esta acción se puede revertir desde tu base de datos.',
+            '¿Eliminar este tour? Esta acción se puede revertir desde tu base de datos.',
         )
     ) {
         return;
@@ -181,7 +181,7 @@ function deleteTour(): void {
 
     void api.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
-            toast.success('Producto eliminado.');
+            toast.success('Tour eliminado.');
             router.visit(indexPage().url);
         },
         onError: (errors) => {
@@ -195,7 +195,7 @@ function deleteTour(): void {
                 return;
             }
 
-            toast.error('No se pudo eliminar el producto.');
+            toast.error('No se pudo eliminar el tour.');
         },
     });
 }
@@ -269,7 +269,7 @@ function deleteTour(): void {
                     <CardHeader>
                         <CardTitle class="text-base">Estado</CardTitle>
                         <CardDescription>
-                            Controla la visibilidad del producto en el catálogo.
+                            Controla la visibilidad del tour en el catálogo.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">

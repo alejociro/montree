@@ -79,7 +79,7 @@ function submit(): void {
             onSuccess: (response) => {
                 const tour = response?.data;
 
-                toast.success('Producto creado en borrador.');
+                toast.success('Tour creado en borrador.');
 
                 if (tour) {
                     router.visit(editPage({ tour: tour.id }).url);
@@ -109,7 +109,7 @@ function submit(): void {
 </script>
 
 <template>
-    <Head title="Nuevo producto" />
+    <Head title="Nuevo tour" />
 
     <div class="px-4 py-6 md:px-8">
         <div class="mb-6 flex items-center gap-3">
@@ -119,7 +119,7 @@ function submit(): void {
                 </Button>
             </Link>
             <Heading
-                title="Nuevo producto"
+                title="Nuevo tour"
                 description="Empieza creando un borrador. Podrás publicarlo cuando tenga al menos una imagen; las salidas se agregan después."
             />
         </div>
