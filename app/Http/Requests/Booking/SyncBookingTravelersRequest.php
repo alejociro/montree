@@ -59,7 +59,7 @@ final class SyncBookingTravelersRequest extends FormRequest
             foreach ($travelers as $index => $traveler) {
                 $id = $traveler['id'] ?? null;
                 if ($id !== null && ! in_array((int) $id, $ownedIds, true)) {
-                    $v->errors()->add("travelers.{$index}.id", 'El viajero no pertenece a esta reserva.');
+                    $v->errors()->add("travelers.{$index}.id", __('El viajero no pertenece a esta reserva.'));
                 }
 
                 if ((bool) ($traveler['is_minor'] ?? false)) {

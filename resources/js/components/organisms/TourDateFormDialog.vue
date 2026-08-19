@@ -18,13 +18,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi  } from '@/composables/useApi';
-import type {ApiErrors} from '@/composables/useApi';
+import { useApi } from '@/composables/useApi';
+import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     LogisticsRef,
     TourDateAdmin,
     TourDateFormInput,
 } from '@/types/logistics';
+
+const { t } = useTranslations();
 
 type Props = {
     open: boolean;
@@ -152,11 +155,11 @@ function validateLocally(): boolean {
     errors.value = {};
 
     if (form.starts_at === '') {
-        errors.value.starts_at = 'La fecha de inicio es obligatoria.';
+        errors.value.starts_at = t('La fecha de inicio es obligatoria.');
     }
 
     if (form.capacity < 1) {
-        errors.value.capacity = 'La capacidad debe ser al menos 1.';
+        errors.value.capacity = t('La capacidad debe ser al menos 1.');
     }
 
     return Object.keys(errors.value).length === 0;
@@ -194,16 +197,16 @@ function submit(): void {
             }
 
             toast.success(
-                isEditing.value ? 'Salida actualizada.' : 'Salida creada.',
+                isEditing.value
+                    ? t('Salida actualizada.')
+                    : t('Salida creada.'),
             );
             emit('saved', response.data);
             close();
         },
         onError: (received: ApiErrors) => {
             errors.value = received;
-            toast.error(
-                received._global ?? 'Revisa los campos marcados.',
-            );
+            toast.error(received._global ?? t('Revisa los campos marcados.'));
         },
         onFinish: () => {
             processing.value = false;
@@ -239,8 +242,11 @@ function submit(): void {
                     {{ isEditing ? 'Editar salida' : 'Nueva salida' }}
                 </DialogTitle>
                 <DialogDescription>
-                    Define la fecha, la capacidad y las condiciones especiales de
-                    esta salida.
+                    {{
+                        $t(
+                            'Define la fecha, la capacidad y las condiciones especiales de esta salida.',
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -254,7 +260,7 @@ function submit(): void {
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="space-y-1.5">
-                        <Label for="date-starts-at">Inicio *</Label>
+                        <Label for="date-starts-at">{{ $t('Inicio *') }}</Label>
                         <Input
                             id="date-starts-at"
                             v-model="form.starts_at"
@@ -269,7 +275,7 @@ function submit(): void {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="date-ends-at">Fin</Label>
+                        <Label for="date-ends-at">{{ $t('Fin') }}</Label>
                         <Input
                             id="date-ends-at"
                             v-model="form.ends_at"
@@ -284,7 +290,9 @@ function submit(): void {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="date-capacity">Capacidad *</Label>
+                        <Label for="date-capacity">{{
+                            $t('Capacidad *')
+                        }}</Label>
                         <Input
                             id="date-capacity"
                             v-model.number="form.capacity"
@@ -301,13 +309,17 @@ function submit(): void {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="date-price">Precio propio</Label>
+                        <Label for="date-price">{{
+                            $t('Precio propio')
+                        }}</Label>
                         <Input
                             id="date-price"
                             v-model="form.price_override"
                             type="text"
                             inputmode="decimal"
-                            placeholder="Usa el precio base si se deja vacío"
+                            :placeholder="
+                                $t('Usa el precio base si se deja vacío')
+                            "
                         />
                         <p
                             v-if="errors.price_override"
@@ -319,7 +331,7 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-1.5">
-                    <Label for="date-guide">Guía</Label>
+                    <Label for="date-guide">{{ $t('Guía') }}</Label>
                     <select
                         id="date-guide"
                         :value="form.guide_id ?? ''"
@@ -330,7 +342,7 @@ function submit(): void {
                             )
                         "
                     >
-                        <option value="">Sin guía asignado</option>
+                        <option value="">{{ $t('Sin guía asignado') }}</option>
                         <option
                             v-for="guide in props.guides"
                             :key="guide.id"
@@ -346,7 +358,7 @@ function submit(): void {
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="space-y-1.5">
-                        <Label for="date-route">Ruta</Label>
+                        <Label for="date-route">{{ $t('Ruta') }}</Label>
                         <select
                             id="date-route"
                             :value="form.route_id ?? ''"
@@ -357,7 +369,7 @@ function submit(): void {
                                 )
                             "
                         >
-                            <option value="">Sin ruta</option>
+                            <option value="">{{ $t('Sin ruta') }}</option>
                             <option
                                 v-for="route in props.routes"
                                 :key="route.id"
@@ -375,7 +387,7 @@ function submit(): void {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="date-provider">Proveedor</Label>
+                        <Label for="date-provider">{{ $t('Proveedor') }}</Label>
                         <select
                             id="date-provider"
                             :value="form.provider_id ?? ''"
@@ -386,7 +398,7 @@ function submit(): void {
                                 )
                             "
                         >
-                            <option value="">Sin proveedor</option>
+                            <option value="">{{ $t('Sin proveedor') }}</option>
                             <option
                                 v-for="provider in props.providers"
                                 :key="provider.id"
@@ -405,12 +417,12 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-1.5">
-                    <Label>Hoteles</Label>
+                    <Label>{{ $t('Hoteles') }}</Label>
                     <p
                         v-if="props.hotels.length === 0"
                         class="text-xs text-muted-foreground"
                     >
-                        No hay hoteles en tu catálogo todavía.
+                        {{ $t('No hay hoteles en tu catálogo todavía.') }}
                     </p>
                     <div
                         v-else
@@ -436,12 +448,14 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-1.5">
-                    <Label for="date-notes">Notas</Label>
+                    <Label for="date-notes">{{ $t('Notas') }}</Label>
                     <Textarea
                         id="date-notes"
                         v-model="form.notes"
                         rows="3"
-                        placeholder="Detalles internos de esta salida (opcional)"
+                        :placeholder="
+                            $t('Detalles internos de esta salida (opcional)')
+                        "
                     />
                     <p v-if="errors.notes" class="text-xs text-destructive">
                         {{ errors.notes }}
@@ -455,7 +469,7 @@ function submit(): void {
                         :disabled="processing"
                         @click="close"
                     >
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button type="submit" :disabled="processing">
                         {{

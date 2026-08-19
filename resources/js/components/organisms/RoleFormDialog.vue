@@ -21,8 +21,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import { PERMISSION_CATALOG } from '@/config/permissions';
 import type { PermissionSummary, RoleDetail } from '@/types/role';
+
+const { t } = useTranslations();
 
 type Mode = 'create' | 'edit' | 'view';
 
@@ -66,20 +69,26 @@ const isReadonly = computed(
 
 const title = computed(() => {
     if (props.mode === 'create') {
-        return 'Crear rol';
+        return t('Crear rol');
     }
 
-    return isReadonly.value ? 'Permisos del rol' : 'Editar rol';
+    return isReadonly.value ? t('Permisos del rol') : t('Editar rol');
 });
 
 const description = computed(() => {
     if (props.mode === 'create') {
-        return 'Elige un nombre y marca los permisos que tendrá este rol dentro de tu agencia.';
+        return t(
+            'Elige un nombre y marca los permisos que tendrá este rol dentro de tu agencia.',
+        );
     }
 
     return isReadonly.value
-        ? 'Los roles del sistema son iguales para todas las agencias, por eso no se pueden editar. Crea un rol propio si necesitas otra combinación de permisos.'
-        : 'Cambia el nombre o los permisos de este rol. Afecta de inmediato a todos los miembros que lo tengan.';
+        ? t(
+              'Los roles del sistema son iguales para todas las agencias, por eso no se pueden editar. Crea un rol propio si necesitas otra combinación de permisos.',
+          )
+        : t(
+              'Cambia el nombre o los permisos de este rol. Afecta de inmediato a todos los miembros que lo tengan.',
+          );
 });
 
 /**
@@ -101,7 +110,7 @@ const nameError = computed(() => {
     }
 
     if (name.value.trim() === '') {
-        return 'El nombre del rol es obligatorio.';
+        return t('El nombre del rol es obligatorio.');
     }
 
     if (name.value.trim().length > NAME_MAX_LENGTH) {
@@ -117,7 +126,7 @@ const permissionsError = computed(() => {
     }
 
     return submitted.value && permissions.value.length === 0
-        ? 'Elige al menos un permiso.'
+        ? t('Elige al menos un permiso.')
         : '';
 });
 
@@ -239,7 +248,7 @@ watch(
                         class="gap-1 font-normal"
                     >
                         <Lock class="size-3" />
-                        Solo lectura
+                        {{ $t('Solo lectura') }}
                     </Badge>
                 </DialogTitle>
                 <DialogDescription>{{ description }}</DialogDescription>
@@ -260,7 +269,7 @@ watch(
             <!-- Error -->
             <div v-else-if="loadError" class="py-8 text-center">
                 <p class="text-sm text-destructive">
-                    No se pudieron cargar los permisos de este rol.
+                    {{ $t('No se pudieron cargar los permisos de este rol.') }}
                 </p>
                 <Button
                     variant="outline"
@@ -268,13 +277,13 @@ watch(
                     class="mt-3"
                     @click="roleId !== null && loadDetail(roleId)"
                 >
-                    Reintentar
+                    {{ $t('Reintentar') }}
                 </Button>
             </div>
 
             <form v-else class="space-y-5" @submit.prevent="submit">
                 <div class="space-y-1.5">
-                    <Label for="role-name">Nombre del rol</Label>
+                    <Label for="role-name">{{ $t('Nombre del rol') }}</Label>
                     <Input
                         id="role-name"
                         v-model="name"
@@ -284,7 +293,7 @@ watch(
                         :aria-describedby="
                             nameError !== '' ? 'role-name-error' : undefined
                         "
-                        placeholder="Ventas fin de semana"
+                        :placeholder="$t('Ventas fin de semana')"
                         autocomplete="off"
                     />
                     <p
@@ -297,7 +306,7 @@ watch(
                 </div>
 
                 <div class="space-y-2">
-                    <p class="text-sm font-medium">Permisos</p>
+                    <p class="text-sm font-medium">{{ $t('Permisos') }}</p>
                     <PermissionPicker
                         v-model="permissions"
                         :catalog="catalog"

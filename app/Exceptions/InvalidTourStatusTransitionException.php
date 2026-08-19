@@ -25,7 +25,7 @@ final class InvalidTourStatusTransitionException extends RuntimeException implem
     public static function needsImage(): self
     {
         $exception = new self(TourStatus::Draft, TourStatus::Active);
-        $exception->message = 'Tour needs at least one image before activating.';
+        $exception->message = __('Tour needs at least one image before activating.');
         $exception->errorCode = 'TOUR_NEEDS_IMAGE_TO_ACTIVATE';
 
         return $exception;

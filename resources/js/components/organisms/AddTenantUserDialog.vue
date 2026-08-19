@@ -21,8 +21,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useApi  } from '@/composables/useApi';
-import type {ApiErrors} from '@/composables/useApi';
+import { useApi } from '@/composables/useApi';
+import type { ApiErrors } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const props = defineProps<{
     tenantId: number;
@@ -66,13 +69,13 @@ function submit(): void {
         { name: form.name, email: form.email, role: form.role },
         {
             onSuccess: () => {
-                toast.success('Usuario agregado. Se envió la invitación.');
+                toast.success(t('Usuario agregado. Se envió la invitación.'));
                 open.value = false;
                 emit('created');
             },
             onError: (e) => {
                 errors.value = e;
-                toast.error(e._global ?? 'No se pudo agregar el usuario.');
+                toast.error(e._global ?? t('No se pudo agregar el usuario.'));
             },
             onFinish: () => {
                 processing.value = false;
@@ -85,24 +88,29 @@ function submit(): void {
 <template>
     <Dialog v-model:open="open">
         <DialogTrigger as-child>
-            <Button variant="outline" size="sm">Agregar usuario</Button>
+            <Button variant="outline" size="sm">{{
+                $t('Agregar usuario')
+            }}</Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Agregar usuario</DialogTitle>
+                <DialogTitle>{{ $t('Agregar usuario') }}</DialogTitle>
                 <DialogDescription>
-                    Agrega un miembro al equipo de esta agencia. Recibirá un correo
-                    para establecer su contraseña.
+                    {{
+                        $t(
+                            'Agrega un miembro al equipo de esta agencia. Recibirá un correo para establecer su contraseña.',
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="space-y-2">
-                    <Label for="user-name">Nombre</Label>
+                    <Label for="user-name">{{ $t('Nombre') }}</Label>
                     <Input
                         id="user-name"
                         v-model="form.name"
-                        placeholder="Carlos Díaz"
+                        :placeholder="$t('Carlos Díaz')"
                         autocomplete="off"
                     />
                     <p v-if="errors.name" class="text-xs text-red-600">
@@ -111,12 +119,12 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-2">
-                    <Label for="user-email">Email</Label>
+                    <Label for="user-email">{{ $t('Email') }}</Label>
                     <Input
                         id="user-email"
                         v-model="form.email"
                         type="email"
-                        placeholder="carlos@agencia.com"
+                        :placeholder="$t('carlos@agencia.com')"
                         autocomplete="off"
                     />
                     <p v-if="errors.email" class="text-xs text-red-600">
@@ -125,16 +133,24 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-2">
-                    <Label>Rol</Label>
+                    <Label>{{ $t('Rol') }}</Label>
                     <Select v-model="form.role">
                         <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar rol" />
+                            <SelectValue :placeholder="$t('Seleccionar rol')" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="sales">Vendedor</SelectItem>
-                            <SelectItem value="operator">Operador</SelectItem>
-                            <SelectItem value="guide">Guía</SelectItem>
+                            <SelectItem value="admin">{{
+                                $t('Admin')
+                            }}</SelectItem>
+                            <SelectItem value="sales">{{
+                                $t('Vendedor')
+                            }}</SelectItem>
+                            <SelectItem value="operator">{{
+                                $t('Operador')
+                            }}</SelectItem>
+                            <SelectItem value="guide">{{
+                                $t('Guía')
+                            }}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p v-if="errors.role" class="text-xs text-red-600">
@@ -149,7 +165,7 @@ function submit(): void {
                         :disabled="processing"
                         @click="open = false"
                     >
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button type="submit" :disabled="processing">
                         {{ processing ? 'Agregando…' : 'Agregar usuario' }}

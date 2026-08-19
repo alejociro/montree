@@ -18,28 +18,31 @@ import {
     Users,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { start } from '@/routes/onboarding';
+
+const { t } = useTranslations();
 
 // ── Carousel ─────────────────────────────────────────────────
 const carouselImages = [
     {
         src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80&auto=format&fit=crop',
-        label: 'Valle de Cocora',
-        sub: 'Quindío, Colombia',
+        label: t('Valle de Cocora'),
+        sub: t('Quindío, Colombia'),
     },
     {
         src: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1400&q=80&auto=format&fit=crop',
-        label: 'Selva Amazónica',
+        label: t('Selva Amazónica'),
         sub: 'Amazonas, Colombia',
     },
     {
         src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=80&auto=format&fit=crop',
-        label: 'Los Andes',
-        sub: 'Boyacá, Colombia',
+        label: t('Los Andes'),
+        sub: t('Boyacá, Colombia'),
     },
     {
         src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1400&q=80&auto=format&fit=crop',
-        label: 'Sierra Nevada',
+        label: t('Sierra Nevada'),
         sub: 'Magdalena, Colombia',
     },
 ];
@@ -98,111 +101,148 @@ onUnmounted(() => clearInterval(carouselTimer));
 const features = [
     {
         icon: Mountain,
-        title: 'Catálogo de tours',
-        body: 'Tu vitrina siempre actualizada.',
-        detail: 'Publica tours con fotos HD, itinerarios día a día, nivel de dificultad, qué incluye y qué no, y cupos en tiempo real. Todo editable desde el celular en segundos. Tu catálogo luce tan profesional como el de cualquier operadora internacional.',
+        title: t('Catálogo de tours'),
+        body: t('Tu vitrina siempre actualizada.'),
+        detail: t(
+            'Publica tours con fotos HD, itinerarios día a día, nivel de dificultad, qué incluye y qué no, y cupos en tiempo real. Todo editable desde el celular en segundos. Tu catálogo luce tan profesional como el de cualquier operadora internacional.',
+        ),
         bullets: [
-            'Galería de fotos y video optimizada para móvil y web',
-            'Cupos en tiempo real: cuando se llena, se cierra automáticamente',
-            'Filtros por dificultad, duración, precio y tipo de experiencia',
+            t('Galería de fotos y video optimizada para móvil y web'),
+            t(
+                'Cupos en tiempo real: cuando se llena, se cierra automáticamente',
+            ),
+            t('Filtros por dificultad, duración, precio y tipo de experiencia'),
         ],
         image: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=900&q=80&auto=format&fit=crop',
-        imageAlt: 'Vista aérea de bosque tropical — destinos de ecoturismo',
+        imageAlt: t('Vista aérea de bosque tropical — destinos de ecoturismo'),
     },
     {
         icon: Calendar,
-        title: 'Reservas 24/7',
-        body: 'Confirma reservas mientras duermes.',
-        detail: 'El sistema recibe, confirma y gestiona reservas las 24 horas sin que respondas un solo WhatsApp. El cliente elige el tour, la fecha y el número de personas, paga en línea y recibe su confirmación automáticamente por email.',
+        title: t('Reservas 24/7'),
+        body: t('Confirma reservas mientras duermes.'),
+        detail: t(
+            'El sistema recibe, confirma y gestiona reservas las 24 horas sin que respondas un solo WhatsApp. El cliente elige el tour, la fecha y el número de personas, paga en línea y recibe su confirmación automáticamente por email.',
+        ),
         bullets: [
-            'Confirmación automática por email y WhatsApp al instante',
-            'Gestión de cupos en tiempo real: nunca más vender más lugares de los que tienes',
-            'Historial completo por cliente: quién reservó qué y cuándo',
+            t('Confirmación automática por email y WhatsApp al instante'),
+            t(
+                'Gestión de cupos en tiempo real: nunca más vender más lugares de los que tienes',
+            ),
+            t('Historial completo por cliente: quién reservó qué y cuándo'),
         ],
         image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=900&q=80&auto=format&fit=crop',
-        imageAlt: 'Viajero reservando tour desde su teléfono en la naturaleza',
+        imageAlt: t(
+            'Viajero reservando tour desde su teléfono en la naturaleza',
+        ),
     },
     {
         icon: BarChart3,
-        title: 'Dashboard de control',
-        body: 'Tu negocio en tiempo real de un vistazo.',
-        detail: 'Una vista central de todo en tiempo real. Ingresos del día, tours más vendidos, próximas salidas, cupos disponibles y rendimiento por guía. Con reportes por mes y por tour, tomas decisiones con datos, no con intuición.',
+        title: t('Dashboard de control'),
+        body: t('Tu negocio en tiempo real de un vistazo.'),
+        detail: t(
+            'Una vista central de todo en tiempo real. Ingresos del día, tours más vendidos, próximas salidas, cupos disponibles y rendimiento por guía. Con reportes por mes y por tour, tomas decisiones con datos, no con intuición.',
+        ),
         bullets: [
-            'Ingresos del día, semana y mes con comparativo vs período anterior',
-            'Top de tours más vendidos y más rentables por margen neto',
-            'Próximas salidas con lista de viajeros y estado de pago por persona',
+            t(
+                'Ingresos del día, semana y mes con comparativo vs período anterior',
+            ),
+            t('Top de tours más vendidos y más rentables por margen neto'),
+            t(
+                'Próximas salidas con lista de viajeros y estado de pago por persona',
+            ),
         ],
         image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&q=80&auto=format&fit=crop',
-        imageAlt: 'Dashboard de métricas y análisis de negocio',
+        imageAlt: t('Dashboard de métricas y análisis de negocio'),
     },
     {
         icon: Users,
-        title: 'Gestión de equipo',
-        body: 'Roles diferenciados para cada miembro.',
-        detail: 'Cada persona de tu equipo ve exactamente lo que necesita, nada más. El guía ve sus tours y la lista de viajeros. El operador gestiona logística. El admin controla todo. Sin riesgo de que alguien modifique algo que no debe.',
+        title: t('Gestión de equipo'),
+        body: t('Roles diferenciados para cada miembro.'),
+        detail: t(
+            'Cada persona de tu equipo ve exactamente lo que necesita, nada más. El guía ve sus tours y la lista de viajeros. El operador gestiona logística. El admin controla todo. Sin riesgo de que alguien modifique algo que no debe.',
+        ),
         bullets: [
-            'Roles: Admin, Operador, Guía — permisos específicos por rol',
-            'Asignación de guías a tours con notificación automática',
-            'Registro de actividad: quién hizo qué y cuándo en cada operación',
+            t('Roles: Admin, Operador, Guía — permisos específicos por rol'),
+            t('Asignación de guías a tours con notificación automática'),
+            t(
+                'Registro de actividad: quién hizo qué y cuándo en cada operación',
+            ),
         ],
         image: 'https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=900&q=80&auto=format&fit=crop',
-        imageAlt: 'Equipo de guías y operadores de ecoturismo',
+        imageAlt: t('Equipo de guías y operadores de ecoturismo'),
     },
     {
         icon: CreditCard,
-        title: 'Pagos integrados',
-        body: 'Cobra con Bre-B y PSE directo a tu cuenta.',
-        detail: 'Configura si cobras el 100% anticipado o solo un depósito para asegurar el cupo. El dinero llega a la cuenta bancaria de tu agencia ya con la comisión descontada, sin intermediarios que lo retengan semanas. Comisiones claras desde el primer día.',
+        title: t('Pagos integrados'),
+        body: t('Cobra con Bre-B y PSE directo a tu cuenta.'),
+        detail: t(
+            'Configura si cobras el 100% anticipado o solo un depósito para asegurar el cupo. El dinero llega a la cuenta bancaria de tu agencia ya con la comisión descontada, sin intermediarios que lo retengan semanas. Comisiones claras desde el primer día.',
+        ),
         bullets: [
-            'Bre-B y PSE, los medios que ya usan tus clientes en Colombia',
-            'Configura el anticipo por tour: 30%, 50% o pago total',
-            'Reembolsos según tu política de cancelación',
+            t('Bre-B y PSE, los medios que ya usan tus clientes en Colombia'),
+            t('Configura el anticipo por tour: 30%, 50% o pago total'),
+            t('Reembolsos según tu política de cancelación'),
         ],
         image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80&auto=format&fit=crop',
-        imageAlt: 'Pago móvil y transacciones digitales seguras',
+        imageAlt: t('Pago móvil y transacciones digitales seguras'),
     },
     {
         icon: Palette,
-        title: 'Tu marca, tu sitio',
+        title: t('Tu marca, tu sitio'),
         body: 'Dominio propio, identidad 100% tuya.',
-        detail: 'Tu agencia tiene su propio sitio con logo, colores y dominio personalizado. Sin mencionar "Powered by Montree" en ningún lado. Para tus clientes, es tu plataforma 100%. Con SEO básico incluido para que Google te encuentre.',
+        detail: t(
+            'Tu agencia tiene su propio sitio con logo, colores y dominio personalizado. Sin mencionar "Powered by Montree" en ningún lado. Para tus clientes, es tu plataforma 100%. Con SEO básico incluido para que Google te encuentre.',
+        ),
         bullets: [
-            'Subdominio gratis (tu-agencia.montree.co) o dominio propio',
-            'Logo, colores primarios y foto de portada personalizables',
-            'SEO incluido: meta tags, Open Graph y sitemap automático',
+            t('Subdominio gratis (tu-agencia.montree.co) o dominio propio'),
+            t('Logo, colores primarios y foto de portada personalizables'),
+            t('SEO incluido: meta tags, Open Graph y sitemap automático'),
         ],
         image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=900&q=80&auto=format&fit=crop',
-        imageAlt:
+        imageAlt: t(
             'Paleta de colores y personalización de marca para tu agencia',
+        ),
     },
 ];
 
 const painPoints = [
-    '¿Manejas las reservas por WhatsApp y pierdes clientes cuando no alcanzas a responder a tiempo?',
-    '¿Tu Excel se desactualiza y terminas vendiendo más cupos de los que tienes, con el costo y el mal rato que eso implica?',
-    '¿No sabes cuánto ganaste el mes pasado sin revisar diez hojas de cálculo distintas?',
+    t(
+        '¿Manejas las reservas por WhatsApp y pierdes clientes cuando no alcanzas a responder a tiempo?',
+    ),
+    t(
+        '¿Tu Excel se desactualiza y terminas vendiendo más cupos de los que tienes, con el costo y el mal rato que eso implica?',
+    ),
+    t(
+        '¿No sabes cuánto ganaste el mes pasado sin revisar diez hojas de cálculo distintas?',
+    ),
 ];
 
 const steps = [
     {
         num: '01',
-        title: 'Regístrate gratis',
-        body: 'Solo tu email. Sin tarjeta de crédito. Listo en 60 segundos.',
+        title: t('Regístrate gratis'),
+        body: t('Solo tu email. Sin tarjeta de crédito. Listo en 60 segundos.'),
     },
     {
         num: '02',
-        title: 'Personaliza tu agencia',
-        body: 'Sube tu logo, elige colores y activa tu subdominio en minutos.',
+        title: t('Personaliza tu agencia'),
+        body: t(
+            'Sube tu logo, elige colores y activa tu subdominio en minutos.',
+        ),
     },
     {
         num: '03',
-        title: 'Publica tus tours',
-        body: 'Fotos, itinerarios, precios y cupos. Tan fácil como publicar en redes.',
+        title: t('Publica tus tours'),
+        body: t(
+            'Fotos, itinerarios, precios y cupos. Tan fácil como publicar en redes.',
+        ),
     },
     {
         num: '04',
-        title: 'Recibe y cobra',
-        body: 'Reservas 24/7 y cobros con Bre-B o PSE. Nos quedamos con una comisión de 3% a 5% por reserva confirmada; el resto va a tu cuenta.',
+        title: t('Recibe y cobra'),
+        body: t(
+            'Reservas 24/7 y cobros con Bre-B o PSE. Nos quedamos con una comisión de 3% a 5% por reserva confirmada; el resto va a tu cuenta.',
+        ),
     },
 ];
 
@@ -211,19 +251,25 @@ const testimonials = [
         avatar: 'CM',
         name: 'Carlos Mendoza',
         role: 'Fundador, EcoAndes Colombia',
-        text: 'Pasamos de manejar todo por WhatsApp a un sistema profesional en una semana. Las reservas aumentaron y el caos administrativo desapareció.',
+        text: t(
+            'Pasamos de manejar todo por WhatsApp a un sistema profesional en una semana. Las reservas aumentaron y el caos administrativo desapareció.',
+        ),
     },
     {
         avatar: 'LJ',
-        name: 'Laura Jiménez',
+        name: t('Laura Jiménez'),
         role: 'Directora, Naturaleza Viva',
-        text: 'Antes perdíamos clientes porque no podíamos responder a tiempo. Ahora el sistema trabaja solo y nosotros nos enfocamos en lo que importa.',
+        text: t(
+            'Antes perdíamos clientes porque no podíamos responder a tiempo. Ahora el sistema trabaja solo y nosotros nos enfocamos en lo que importa.',
+        ),
     },
     {
         avatar: 'MT',
         name: 'Miguel Torres',
         role: 'Operador, Sierra Nevada Tours',
-        text: 'Por primera vez sé exactamente cuánto gano, cuáles tours son más rentables y qué guías necesitan apoyo. Cambió todo.',
+        text: t(
+            'Por primera vez sé exactamente cuánto gano, cuáles tours son más rentables y qué guías necesitan apoyo. Cambió todo.',
+        ),
     },
 ];
 
@@ -232,34 +278,34 @@ const plans = [
         name: 'Starter',
         price: '$99.000',
         period: '/mes',
-        desc: 'Para agencias que comienzan su transformación digital',
+        desc: t('Para agencias que comienzan su transformación digital'),
         items: [
-            'Hasta 5 tours activos',
-            'Reservas ilimitadas',
+            t('Hasta 5 tours activos'),
+            t('Reservas ilimitadas'),
             'Subdominio incluido',
-            'Cobros con Bre-B y PSE',
-            'Dashboard básico',
-            'Soporte por email',
+            t('Cobros con Bre-B y PSE'),
+            t('Dashboard básico'),
+            t('Soporte por email'),
         ],
-        cta: 'Probar 30 días gratis',
+        cta: t('Probar 30 días gratis'),
         hot: false,
     },
     {
         name: 'Pro',
         price: '$249.000',
         period: '/mes',
-        desc: 'Para agencias en crecimiento que quieren escalar sin límites',
+        desc: t('Para agencias en crecimiento que quieren escalar sin límites'),
         items: [
             'Tours ilimitados',
             'Dominio personalizado',
-            'Gestión de equipo completa',
-            'Dashboard + métricas avanzadas',
+            t('Gestión de equipo completa'),
+            t('Dashboard + métricas avanzadas'),
             'Newsletter integrado',
-            'Reseñas de clientes',
+            t('Reseñas de clientes'),
             'Soporte prioritario 24/7',
             'Onboarding personalizado',
         ],
-        cta: 'Probar 30 días gratis',
+        cta: t('Probar 30 días gratis'),
         hot: true,
     },
 ];
@@ -270,7 +316,11 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 </script>
 
 <template>
-    <Head title="Montree — Digitaliza y automatiza tu agencia de ecoturismo">
+    <Head
+        :title="
+            $t('Montree — Digitaliza y automatiza tu agencia de ecoturismo')
+        "
+    >
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
             rel="preconnect"
@@ -292,15 +342,15 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
             <div class="header-inner container">
                 <a href="/" class="brand">
                     <div class="brand-icon"><Leaf class="size-4" /></div>
-                    <span class="brand-name">Montree</span>
-                    <span class="brand-tag">Beta</span>
+                    <span class="brand-name">{{ $t('Montree') }}</span>
+                    <span class="brand-tag">{{ $t('Beta') }}</span>
                 </a>
                 <nav class="main-nav">
-                    <a href="#features">Funciones</a>
-                    <a href="#problem">El problema</a>
-                    <a href="#how-it-works">Cómo funciona</a>
-                    <a href="#pricing">Precios</a>
-                    <a href="/faq">FAQ</a>
+                    <a href="#features">{{ $t('Funciones') }}</a>
+                    <a href="#problem">{{ $t('El problema') }}</a>
+                    <a href="#how-it-works">{{ $t('Cómo funciona') }}</a>
+                    <a href="#pricing">{{ $t('Precios') }}</a>
+                    <a href="/faq">{{ $t('FAQ') }}</a>
                 </nav>
                 <div class="flex items-center gap-3">
                     <template v-if="user">
@@ -309,7 +359,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             href="/super-admin/dashboard"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                         >
-                            Ir al panel
+                            {{ $t('Ir al panel') }}
                         </Link>
                         <Link
                             href="/logout"
@@ -317,7 +367,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             as="button"
                             class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
                         >
-                            Cerrar sesión
+                            {{ $t('Cerrar sesión') }}
                         </Link>
                     </template>
                     <template v-else>
@@ -325,13 +375,13 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             href="/login"
                             class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
                         >
-                            Iniciar sesión
+                            {{ $t('Iniciar sesión') }}
                         </Link>
                         <Link
                             :href="start().url"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                         >
-                            Comenzar gratis
+                            {{ $t('Comenzar gratis') }}
                         </Link>
                     </template>
                 </div>
@@ -346,57 +396,69 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 <div class="hero-left">
                     <div class="hero-badge">
                         <Sparkles class="size-3.5" />
-                        Plataforma para ecoturismo colombiano
+                        {{ $t('Plataforma para ecoturismo colombiano') }}
                     </div>
 
-                    <h1 class="hero-headline">
-                        Digitaliza tu<br />
-                        <em>agencia</em> de<br />
-                        ecoturismo.
-                    </h1>
+                    <!-- WHY: el titular va como una sola clave con su markup. Partido en
+                         palabras sueltas ('agencia', 'de', 'ecoturismo.') el ingles queda con
+                         el orden del espanol; asi cada idioma acomoda las lineas a su gusto.
+                         El HTML sale del catalogo propio, nunca de input del usuario. -->
+                    <h1
+                        class="hero-headline"
+                        v-html="
+                            $t(
+                                'Digitaliza tu<br /><em>agencia</em> de<br />ecoturismo.',
+                            )
+                        "
+                    ></h1>
 
                     <p class="hero-sub">
-                        Montree reemplaza el WhatsApp, el Excel y los papeles.
-                        Reservas automáticas, pagos en línea y gestión de equipo
-                        en un solo lugar — que trabaja 24/7 por ti.
+                        {{
+                            $t(
+                                'Montree reemplaza el WhatsApp, el Excel y los papeles. Reservas automáticas, pagos en línea y gestión de equipo en un solo lugar — que trabaja 24/7 por ti.',
+                            )
+                        }}
                     </p>
 
                     <div class="hero-ctas">
                         <Link :href="start().url" class="btn-hero-primary">
-                            Comenzar gratis
+                            {{ $t('Comenzar gratis') }}
                             <ArrowRight class="size-5" />
                         </Link>
                         <a href="#how-it-works" class="btn-hero-ghost">
-                            Ver cómo funciona
+                            {{ $t('Ver cómo funciona') }}
                             <ChevronDown class="size-4" />
                         </a>
                     </div>
 
                     <p class="hero-disclaimer">
-                        Sin tarjeta · Cancela cuando quieras · Soporte en
-                        español
+                        {{
+                            $t(
+                                'Sin tarjeta · Cancela cuando quieras · Soporte en español',
+                            )
+                        }}
                     </p>
 
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <span class="hero-stat-num">85%</span>
-                            <span class="hero-stat-label"
-                                >menos tiempo administrativo</span
-                            >
+                            <span class="hero-stat-label">{{
+                                $t('menos tiempo administrativo')
+                            }}</span>
                         </div>
                         <div class="hero-stat-divider" />
                         <div class="hero-stat">
                             <span class="hero-stat-num">3×</span>
-                            <span class="hero-stat-label"
-                                >más reservas en el primer mes</span
-                            >
+                            <span class="hero-stat-label">{{
+                                $t('más reservas en el primer mes')
+                            }}</span>
                         </div>
                         <div class="hero-stat-divider" />
                         <div class="hero-stat">
                             <span class="hero-stat-num">&lt;10min</span>
-                            <span class="hero-stat-label"
-                                >para publicar tu primer tour</span
-                            >
+                            <span class="hero-stat-label">{{
+                                $t('para publicar tu primer tour')
+                            }}</span>
                         </div>
                     </div>
                 </div>
@@ -415,7 +477,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 
                         <button
                             class="carousel-arrow carousel-arrow--prev"
-                            aria-label="Anterior"
+                            :aria-label="$t('Anterior')"
                             @click="
                                 () => {
                                     prevSlide();
@@ -427,7 +489,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         </button>
                         <button
                             class="carousel-arrow carousel-arrow--next"
-                            aria-label="Siguiente"
+                            :aria-label="$t('Siguiente')"
                             @click="
                                 () => {
                                     nextSlide();
@@ -468,9 +530,11 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             <CheckCircle class="size-3.5" />
                         </div>
                         <div>
-                            <p class="float-notif-title">¡Nueva reserva!</p>
+                            <p class="float-notif-title">
+                                {{ $t('¡Nueva reserva!') }}
+                            </p>
                             <p class="float-notif-sub">
-                                Senderismo Cocora · 2 personas
+                                {{ $t('Senderismo Cocora · 2 personas') }}
                             </p>
                         </div>
                     </div>
@@ -482,8 +546,12 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             style="color: #4a7c59; flex-shrink: 0"
                         />
                         <div>
-                            <p class="float-notif-title">+$1.2M este mes</p>
-                            <p class="float-notif-sub">↑ 34% vs mes anterior</p>
+                            <p class="float-notif-title">
+                                {{ $t('+$1.2M este mes') }}
+                            </p>
+                            <p class="float-notif-sub">
+                                {{ $t('↑ 34% vs mes anterior') }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -493,9 +561,9 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <!-- ── TRUSTED BY STRIP ───────────────────────────────── -->
         <div class="trusted-strip">
             <div class="trusted-inner container">
-                <span class="trusted-label"
-                    >Agencias que ya operan con Montree</span
-                >
+                <span class="trusted-label">{{
+                    $t('Agencias que ya operan con Montree')
+                }}</span>
                 <div class="trusted-logos">
                     <span
                         v-for="n in [
@@ -517,13 +585,16 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <section id="features" class="section-pale">
             <div class="container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill">Funciones</span>
+                    <span class="eyebrow-pill">{{ $t('Funciones') }}</span>
                     <h2 class="section-title">
-                        Todo lo que tu agencia necesita
+                        {{ $t('Todo lo que tu agencia necesita') }}
                     </h2>
                     <p class="section-sub">
-                        Diseñado para operadores de ecoturismo. Cada función
-                        resuelve un problema real de tu operación diaria.
+                        {{
+                            $t(
+                                'Diseñado para operadores de ecoturismo. Cada función resuelve un problema real de tu operación diaria.',
+                            )
+                        }}
                     </p>
                 </div>
 
@@ -567,8 +638,16 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                                     </div>
                                     <div>
                                         <p class="feat-detail-eyebrow">
-                                            Función {{ activeFeature + 1 }} de
-                                            {{ features.length }}
+                                            {{
+                                                $t(
+                                                    'Función :current de :total',
+                                                    {
+                                                        current:
+                                                            activeFeature + 1,
+                                                        total: features.length,
+                                                    },
+                                                )
+                                            }}
                                         </p>
                                         <h3 class="feat-detail-title">
                                             {{ features[activeFeature].title }}
@@ -601,7 +680,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                                         class="fdn-btn"
                                         @click="activeFeature--"
                                     >
-                                        ← Anterior
+                                        {{ $t('← Anterior') }}
                                     </button>
                                     <div class="fdn-dots">
                                         <span
@@ -623,7 +702,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                                         class="fdn-btn fdn-btn--next"
                                         @click="activeFeature++"
                                     >
-                                        Siguiente →
+                                        {{ $t('Siguiente →') }}
                                     </button>
                                 </div>
                             </div>
@@ -637,11 +716,18 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <section id="problem" class="section-cream section-cream--tight">
             <div class="container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill">El problema real</span>
-                    <h2 class="section-title">¿Te suena familiar?</h2>
+                    <span class="eyebrow-pill">{{
+                        $t('El problema real')
+                    }}</span>
+                    <h2 class="section-title">
+                        {{ $t('¿Te suena familiar?') }}
+                    </h2>
                     <p class="section-sub">
-                        El 90% de las agencias de ecoturismo opera con
-                        herramientas improvisadas que frenan su crecimiento.
+                        {{
+                            $t(
+                                'El 90% de las agencias de ecoturismo opera con herramientas improvisadas que frenan su crecimiento.',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="pain-list">
@@ -661,9 +747,14 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         style="color: #4a7c59; flex-shrink: 0"
                     />
                     <p>
-                        Montree resuelve los tres problemas desde el mismo
-                        lugar, y lo dejas andando en menos de 10 minutos.
-                        <a href="#pricing">Pruébalo 30 días gratis →</a>
+                        {{
+                            $t(
+                                'Montree resuelve los tres problemas desde el mismo lugar, y lo dejas andando en menos de 10 minutos.',
+                            )
+                        }}
+                        <a href="#pricing">{{
+                            $t('Pruébalo 30 días gratis →')
+                        }}</a>
                     </p>
                 </div>
             </div>
@@ -673,15 +764,18 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <section id="how-it-works" class="section-dark-alt">
             <div class="container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill eyebrow-pill--light"
-                        >En 10 minutos</span
-                    >
+                    <span class="eyebrow-pill eyebrow-pill--light">{{
+                        $t('En 10 minutos')
+                    }}</span>
                     <h2 class="section-title section-title--light">
-                        En línea antes de terminar tu café
+                        {{ $t('En línea antes de terminar tu café') }}
                     </h2>
                     <p class="section-sub section-sub--light">
-                        Sin configuraciones complicadas. Sin técnicos. Sin
-                        esperas.
+                        {{
+                            $t(
+                                'Sin configuraciones complicadas. Sin técnicos. Sin esperas.',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="steps-grid">
@@ -710,14 +804,18 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <section class="section-dark">
             <div class="container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill eyebrow-pill--light"
-                        >Testimonios</span
-                    >
+                    <span class="eyebrow-pill eyebrow-pill--light">{{
+                        $t('Testimonios')
+                    }}</span>
                     <h2 class="section-title section-title--light">
-                        Agencias que ya dieron el paso
+                        {{ $t('Agencias que ya dieron el paso') }}
                     </h2>
                     <p class="section-sub section-sub--light">
-                        Operadores que pasaron del caos a la automatización.
+                        {{
+                            $t(
+                                'Operadores que pasaron del caos a la automatización.',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="testi-grid">
@@ -745,54 +843,68 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
         <section id="pricing" class="section-cream">
             <div class="container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill">Precios</span>
-                    <h2 class="section-title">Precios claros, sin sorpresas</h2>
+                    <span class="eyebrow-pill">{{ $t('Precios') }}</span>
+                    <h2 class="section-title">
+                        {{ $t('Precios claros, sin sorpresas') }}
+                    </h2>
                     <p class="section-sub">
-                        Ganamos cuando tú cobras: una comisión por reserva
-                        confirmada. Sin costos ocultos y con 30 días gratis para
-                        empezar.
+                        {{
+                            $t(
+                                'Ganamos cuando tú cobras: una comisión por reserva confirmada. Sin costos ocultos y con 30 días gratis para empezar.',
+                            )
+                        }}
                     </p>
                 </div>
 
                 <div class="reveal commission-card">
                     <div class="commission-main">
                         <span class="commission-label">
-                            Comisión por reserva
+                            {{ $t('Comisión por reserva') }}
                         </span>
                         <div class="commission-figure">
                             <span class="commission-range">3% – 5%</span>
                             <span class="commission-unit">
-                                por reserva confirmada
+                                {{ $t('por reserva confirmada') }}
                             </span>
                         </div>
                         <p class="commission-desc">
-                            El porcentaje depende del volumen mensual de tu
-                            agencia. No cobramos por reservas canceladas,
-                            expiradas ni por cupos que no se vendieron.
+                            {{
+                                $t(
+                                    'El porcentaje depende del volumen mensual de tu agencia. No cobramos por reservas canceladas, expiradas ni por cupos que no se vendieron.',
+                                )
+                            }}
                         </p>
                     </div>
                     <div class="commission-side">
-                        <span class="commission-label">Medios de pago</span>
+                        <span class="commission-label">{{
+                            $t('Medios de pago')
+                        }}</span>
                         <ul class="commission-rails">
                             <li>
                                 <CheckCircle class="size-4 shrink-0" />
-                                Bre-B — transferencia inmediata
+                                {{ $t('Bre-B — transferencia inmediata') }}
                             </li>
                             <li>
                                 <CheckCircle class="size-4 shrink-0" />
-                                PSE — débito desde tu banco
+                                {{ $t('PSE — débito desde tu banco') }}
                             </li>
                         </ul>
                         <p class="commission-pending">
-                            Tarjeta de crédito para paquetes de viaje: en
-                            evaluación.
+                            {{
+                                $t(
+                                    'Tarjeta de crédito para paquetes de viaje: en evaluación.',
+                                )
+                            }}
                         </p>
                     </div>
                 </div>
 
                 <p class="pricing-bridge">
-                    ¿Prefieres una tarifa fija mensual? Estos son los planes que
-                    estamos evaluando:
+                    {{
+                        $t(
+                            '¿Prefieres una tarifa fija mensual? Estos son los planes que estamos evaluando:',
+                        )
+                    }}
                 </p>
                 <div class="pricing-grid">
                     <div
@@ -804,7 +916,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         ]"
                     >
                         <div v-if="plan.hot" class="pricing-badge">
-                            Más popular
+                            {{ $t('Más popular') }}
                         </div>
                         <div class="pricing-card-top">
                             <h3 class="pricing-name">{{ plan.name }}</h3>
@@ -840,16 +952,21 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     </div>
                 </div>
                 <p class="pricing-note pricing-note--pending">
-                    Estamos evaluando una tarifa mensual reducida para agencias
-                    pequeñas, pensada solo para cubrir costos de
-                    infraestructura. Valor por confirmar.
+                    {{
+                        $t(
+                            'Estamos evaluando una tarifa mensual reducida para agencias pequeñas, pensada solo para cubrir costos de infraestructura. Valor por confirmar.',
+                        )
+                    }}
                 </p>
                 <p class="pricing-note">
-                    ¿Varias agencias o necesidades especiales?
-                    <a href="mailto:hola@montree.co"
-                        >Contáctanos para un plan Enterprise →</a
-                    >
-                    · <a href="/politica-de-pago">Ver política de pago</a>
+                    {{ $t('¿Varias agencias o necesidades especiales?') }}
+                    <a href="mailto:hola@montree.co">{{
+                        $t('Contáctanos para un plan Enterprise →')
+                    }}</a>
+                    ·
+                    <a href="/politica-de-pago">{{
+                        $t('Ver política de pago')
+                    }}</a>
                 </p>
             </div>
         </section>
@@ -861,29 +978,34 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 <div class="cta-icon-wrap">
                     <Leaf class="size-6" />
                 </div>
-                <h2 class="cta-headline">
-                    ¿Listo para dejar<br />
-                    el <em>Excel</em> atrás?
-                </h2>
+                <h2
+                    class="cta-headline"
+                    v-html="
+                        $t('¿Listo para dejar<br />el <em>Excel</em> atrás?')
+                    "
+                ></h2>
                 <p class="cta-sub">
-                    Los primeros 30 días son completamente gratis. Sin tarjeta
-                    de crédito. Configuras en minutos y empiezas a recibir
-                    reservas hoy.
+                    {{
+                        $t(
+                            'Los primeros 30 días son completamente gratis. Sin tarjeta de crédito. Configuras en minutos y empiezas a recibir reservas hoy.',
+                        )
+                    }}
                 </p>
                 <div class="cta-actions">
                     <Link :href="start().url" class="btn-cta-primary">
-                        <ArrowRight class="size-5" />Comenzar gratis
+                        <ArrowRight class="size-5" />{{ $t('Comenzar gratis') }}
                     </Link>
-                    <a href="mailto:hola@montree.co" class="btn-cta-ghost"
-                        >Hablar con el equipo</a
-                    >
+                    <a href="mailto:hola@montree.co" class="btn-cta-ghost">{{
+                        $t('Hablar con el equipo')
+                    }}</a>
                 </div>
                 <div class="cta-guarantee">
                     <CheckCircle class="size-4" />
-                    <span
-                        >Sin permanencia mínima · Cancela cuando quieras · Datos
-                        exportables</span
-                    >
+                    <span>{{
+                        $t(
+                            'Sin permanencia mínima · Cancela cuando quieras · Datos exportables',
+                        )
+                    }}</span>
                 </div>
             </div>
         </section>
@@ -894,39 +1016,47 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 <div class="footer-brand-col">
                     <div class="brand">
                         <div class="brand-icon"><Leaf class="size-4" /></div>
-                        <span class="brand-name" style="color: #f2ede4"
-                            >Montree</span
-                        >
+                        <span class="brand-name" style="color: #f2ede4">{{
+                            $t('Montree')
+                        }}</span>
                     </div>
                     <p class="footer-desc">
-                        La plataforma digital para agencias de ecoturismo que
-                        quieren crecer sin el caos administrativo.
+                        {{
+                            $t(
+                                'La plataforma digital para agencias de ecoturismo que quieren crecer sin el caos administrativo.',
+                            )
+                        }}
                     </p>
                     <a href="mailto:hola@montree.co" class="footer-email"
-                        ><Mail class="size-4" />hola@montree.co</a
+                        ><Mail class="size-4" />{{ $t('hola@montree.co') }}</a
                     >
                 </div>
                 <div class="footer-links-col">
-                    <h4>Producto</h4>
-                    <a href="#features">Funciones</a>
-                    <a href="#how-it-works">Cómo funciona</a>
-                    <a href="#pricing">Precios</a>
-                    <a href="/faq">Preguntas frecuentes</a>
+                    <h4>{{ $t('Producto') }}</h4>
+                    <a href="#features">{{ $t('Funciones') }}</a>
+                    <a href="#how-it-works">{{ $t('Cómo funciona') }}</a>
+                    <a href="#pricing">{{ $t('Precios') }}</a>
+                    <a href="/faq">{{ $t('Preguntas frecuentes') }}</a>
                 </div>
                 <div class="footer-links-col">
-                    <h4>Legal</h4>
-                    <a href="/politica-de-pago">Política de pago</a>
+                    <h4>{{ $t('Legal') }}</h4>
+                    <a href="/politica-de-pago">{{ $t('Política de pago') }}</a>
                     <a href="/politica-de-cancelacion">
-                        Política de cancelación
+                        {{ $t('Política de cancelación') }}
                     </a>
                 </div>
             </div>
             <div class="footer-bottom container">
                 <p>
-                    © {{ new Date().getFullYear() }} Montree. Todos los derechos
-                    reservados.
+                    {{
+                        $t('© :year Montree. Todos los derechos reservados.', {
+                            year: new Date().getFullYear(),
+                        })
+                    }}
                 </p>
-                <p>Hecho con amor para el ecoturismo colombiano 🌿</p>
+                <p>
+                    {{ $t('Hecho con amor para el ecoturismo colombiano 🌿') }}
+                </p>
             </div>
         </footer>
     </div>

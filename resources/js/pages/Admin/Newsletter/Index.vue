@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const api = useApi();
 
@@ -54,7 +57,7 @@ function send() {
         },
         {
             onSuccess: () => {
-                toast.success('Campaña encolada');
+                toast.success(t('Campaña encolada'));
                 subject.value = '';
                 bodyHtml.value = '';
                 previewText.value = '';
@@ -71,17 +74,17 @@ onMounted(load);
 </script>
 
 <template>
-    <Head title="Newsletter" />
+    <Head :title="$t('Newsletter')" />
     <div class="container mx-auto max-w-4xl space-y-8 px-4 py-8">
-        <h1 class="text-2xl font-bold">Newsletter</h1>
+        <h1 class="text-2xl font-bold">{{ $t('Newsletter') }}</h1>
 
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">
-                Suscriptores activos:
+                {{ $t('Suscriptores activos:') }}
                 <span class="text-primary">{{ totalActive }}</span>
             </h2>
             <p v-if="loading" class="text-sm text-muted-foreground">
-                Cargando...
+                {{ $t('Cargando...') }}
             </p>
             <ul
                 v-else-if="subscribers.length > 0"
@@ -97,22 +100,22 @@ onMounted(load);
                 </li>
             </ul>
             <p v-else class="text-sm text-muted-foreground">
-                Sin suscriptores todavía.
+                {{ $t('Sin suscriptores todavía.') }}
             </p>
         </section>
 
         <section class="space-y-4 rounded-lg border p-6">
-            <h2 class="text-lg font-semibold">Enviar campaña</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Enviar campaña') }}</h2>
             <div class="space-y-2">
-                <Label for="subject">Asunto</Label>
+                <Label for="subject">{{ $t('Asunto') }}</Label>
                 <Input id="subject" v-model="subject" maxlength="200" />
             </div>
             <div class="space-y-2">
-                <Label for="preview">Texto preview</Label>
+                <Label for="preview">{{ $t('Texto preview') }}</Label>
                 <Input id="preview" v-model="previewText" maxlength="200" />
             </div>
             <div class="space-y-2">
-                <Label for="body">Cuerpo HTML</Label>
+                <Label for="body">{{ $t('Cuerpo HTML') }}</Label>
                 <Textarea id="body" v-model="bodyHtml" rows="10" />
             </div>
             <Button :disabled="sending || !subject || !bodyHtml" @click="send">

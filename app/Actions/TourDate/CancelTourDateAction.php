@@ -19,7 +19,7 @@ final class CancelTourDateAction
         $tourDate->status = TourDateStatus::Cancelled;
 
         if ($reason !== null && $reason !== '') {
-            $tourDate->notes = trim(($tourDate->notes ? $tourDate->notes."\n" : '').'Cancelación: '.$reason);
+            $tourDate->notes = trim(($tourDate->notes ? $tourDate->notes."\n" : '').__('Cancelación: ').$reason);
         }
 
         $tourDate->save();

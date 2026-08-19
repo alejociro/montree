@@ -13,9 +13,9 @@ enum PaymentType: string
     public function label(): string
     {
         return match ($this) {
-            self::Full => 'Full payment',
-            self::Partial => 'Partial payment',
-            self::Remainder => 'Remainder payment',
+            self::Full => __('Full payment'),
+            self::Partial => __('Partial payment'),
+            self::Remainder => __('Remainder payment'),
         };
     }
 }

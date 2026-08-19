@@ -16,12 +16,12 @@ enum PaymentStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Pending',
-            self::Processing => 'Processing',
-            self::Completed => 'Completed',
-            self::Failed => 'Failed',
-            self::Refunded => 'Refunded',
-            self::PartiallyRefunded => 'Partially refunded',
+            self::Pending => __('Pending'),
+            self::Processing => __('Processing'),
+            self::Completed => __('Completed'),
+            self::Failed => __('Failed'),
+            self::Refunded => __('Refunded'),
+            self::PartiallyRefunded => __('Partially refunded'),
         };
     }
 }

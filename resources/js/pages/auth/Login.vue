@@ -47,7 +47,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 </script>
 
 <template>
-    <Head title="Iniciar sesión" />
+    <Head :title="$t('Iniciar sesión')" />
 
     <div
         v-if="status"
@@ -68,11 +68,11 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             class="mb-2"
         >
             <AlertTriangle class="size-4" />
-            <AlertTitle>Cuenta suspendida</AlertTitle>
+            <AlertTitle>{{ $t('Cuenta suspendida') }}</AlertTitle>
             <AlertDescription>
                 <p>{{ errors.email }}</p>
                 <p v-if="contactEmail" class="mt-2">
-                    Contacta al administrador:
+                    {{ $t('Contacta al administrador:') }}
                     <a
                         :href="`mailto:${contactEmail}`"
                         class="font-medium underline"
@@ -85,7 +85,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+                <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -94,7 +94,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
-                    placeholder="tu@correo.com"
+                    :placeholder="$t('tu@correo.com')"
                 />
                 <InputError
                     v-if="!isSuspensionError(errors.email)"
@@ -104,14 +104,14 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
-                    <Label for="password">Contraseña</Label>
+                    <Label for="password">{{ $t('Contraseña') }}</Label>
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
                         class="text-sm"
                         :tabindex="5"
                     >
-                        ¿Olvidaste tu contraseña?
+                        {{ $t('¿Olvidaste tu contraseña?') }}
                     </TextLink>
                 </div>
                 <PasswordInput
@@ -120,7 +120,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Contraseña"
+                    :placeholder="$t('Contraseña')"
                 />
                 <InputError :message="errors.password" />
             </div>
@@ -128,7 +128,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Recordarme</span>
+                    <span>{{ $t('Recordarme') }}</span>
                 </Label>
             </div>
 
@@ -140,7 +140,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                 data-test="login-button"
             >
                 <Spinner v-if="processing" />
-                Iniciar sesión
+                {{ $t('Iniciar sesión') }}
             </Button>
         </div>
 
@@ -148,8 +148,10 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
             class="text-center text-sm text-muted-foreground"
             v-if="canRegister"
         >
-            ¿No tienes una cuenta?
-            <TextLink :href="register()" :tabindex="5">Regístrate</TextLink>
+            {{ $t('¿No tienes una cuenta?') }}
+            <TextLink :href="register()" :tabindex="5">{{
+                $t('Regístrate')
+            }}</TextLink>
         </div>
     </Form>
 </template>

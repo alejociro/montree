@@ -15,14 +15,14 @@ defineEmits<{
 
 <template>
     <label class="relative block w-full">
-        <span class="sr-only">Buscar tours</span>
+        <span class="sr-only">{{ $t('Buscar tours') }}</span>
         <Search
             class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
             type="search"
             :model-value="modelValue"
-            placeholder="Buscar tours por nombre o descripción"
+            :placeholder="$t('Buscar tours por nombre o descripción')"
             class="pl-9"
             autocomplete="off"
             @update:model-value="

@@ -4,6 +4,9 @@ import type { HTMLAttributes } from 'vue';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { t } = useTranslations();
 
 const props = defineProps<{
     tourId: number;
@@ -16,7 +19,7 @@ const submitting = ref(false);
 const api = useApi();
 
 const ariaLabel = computed(() =>
-    isFavorite.value ? 'Quitar de favoritos' : 'Agregar a favoritos',
+    isFavorite.value ? t('Quitar de favoritos') : t('Agregar a favoritos'),
 );
 
 function toggle() {

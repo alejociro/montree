@@ -34,17 +34,17 @@ function isActive(item: NavItem): boolean {
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>{{ label }}</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ $t(label) }}</SidebarGroupLabel>
         <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="toUrl(item.href)">
                 <SidebarMenuButton
                     as-child
                     :is-active="isActive(item)"
-                    :tooltip="item.title"
+                    :tooltip="$t(item.title)"
                 >
                     <Link :href="item.href">
                         <component :is="item.icon" />
-                        <span>{{ item.title }}</span>
+                        <span>{{ $t(item.title) }}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

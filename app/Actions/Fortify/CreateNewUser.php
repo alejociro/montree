@@ -36,14 +36,14 @@ class CreateNewUser implements CreatesNewUsers
         ], [
             ...$this->profileMessages(),
             ...$this->passwordMessages(),
-            'email.unique' => 'Las credenciales no son válidas.',
-        ], $this->profileAttributes() + ['password' => 'contraseña'])->validate();
+            'email.unique' => __('Las credenciales no son válidas.'),
+        ], $this->profileAttributes() + ['password' => __('contraseña')])->validate();
 
         $tenant = Tenant::current();
 
         if ($tenant === null) {
             throw ValidationException::withMessages([
-                'email' => 'No se pudo determinar la agencia actual.',
+                'email' => __('No se pudo determinar la agencia actual.'),
             ]);
         }
 

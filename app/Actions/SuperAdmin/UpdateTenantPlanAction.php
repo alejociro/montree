@@ -46,7 +46,7 @@ final class UpdateTenantPlanAction
         $currentStaff = $tenant->users()->count();
 
         if ($currentTours > $maxTours || $currentStaff > $maxStaff) {
-            Log::warning('Tenant plan downgrade exceeds new limits (soft limit applied).', [
+            Log::warning(__('Tenant plan downgrade exceeds new limits (soft limit applied).'), [
                 'tenant_id' => $tenant->id,
                 'previous_plan' => $previous->value,
                 'new_plan' => $next->value,

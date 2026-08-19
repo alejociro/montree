@@ -12,6 +12,7 @@ import { computed, onMounted, ref } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +37,10 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useApi } from '@/composables/useApi';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
+import { useTranslations } from '@/composables/useTranslations';
 import type { BreadcrumbItem, NavItem } from '@/types';
+
+const { t } = useTranslations();
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -107,17 +111,17 @@ onMounted(loadNotifications);
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Mis Reservas',
+        title: t('Mis Reservas'),
         href: '/account/bookings',
         icon: CalendarCheck,
     },
     {
-        title: 'Favoritos',
+        title: t('Favoritos'),
         href: '/account/favorites',
         icon: Heart,
     },
     {
-        title: 'Mi Cuenta',
+        title: t('Mi Cuenta'),
         href: '/account',
         icon: User,
     },
@@ -141,9 +145,9 @@ const mainNavItems: NavItem[] = [
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" class="w-[300px] p-6">
-                            <SheetTitle class="sr-only"
-                                >Navigation menu</SheetTitle
-                            >
+                            <SheetTitle class="sr-only">{{
+                                $t('Navigation menu')
+                            }}</SheetTitle>
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon
                                     class="size-6 fill-current text-black dark:text-white"
@@ -234,6 +238,8 @@ const mainNavItems: NavItem[] = [
                         </Button>
                     </div>
 
+                    <LocaleSwitcher />
+
                     <DropdownMenu
                         @update:open="
                             (open: boolean) => open && loadNotifications()
@@ -257,14 +263,14 @@ const mainNavItems: NavItem[] = [
                         <DropdownMenuContent align="end" class="w-80">
                             <div class="p-2">
                                 <p class="text-sm font-semibold">
-                                    Notificaciones
+                                    {{ $t('Notificaciones') }}
                                 </p>
                             </div>
                             <div
                                 v-if="notifications.length === 0"
                                 class="p-4 text-center text-sm text-muted-foreground"
                             >
-                                Sin notificaciones
+                                {{ $t('Sin notificaciones') }}
                             </div>
                             <button
                                 v-for="n in notifications"
@@ -295,7 +301,7 @@ const mainNavItems: NavItem[] = [
                                 href="/account/notifications"
                                 class="block border-t p-2 text-center text-xs text-primary hover:underline"
                             >
-                                Ver todas
+                                {{ $t('Ver todas') }}
                             </Link>
                         </DropdownMenuContent>
                     </DropdownMenu>

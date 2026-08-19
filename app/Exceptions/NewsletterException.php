@@ -40,16 +40,16 @@ final class NewsletterException extends \Exception implements HttpExceptionInter
 
     public static function alreadySubscribed(): self
     {
-        return new self('NEWSLETTER_ALREADY_SUBSCRIBED', 'Este email ya está suscrito.', 409);
+        return new self('NEWSLETTER_ALREADY_SUBSCRIBED', __('Este email ya está suscrito.'), 409);
     }
 
     public static function invalidToken(): self
     {
-        return new self('NEWSLETTER_INVALID_TOKEN', 'El token de baja no es válido.', 404);
+        return new self('NEWSLETTER_INVALID_TOKEN', __('El token de baja no es válido.'), 404);
     }
 
     public static function noRecipients(): self
     {
-        return new self('NEWSLETTER_NO_RECIPIENTS', 'No hay suscriptores activos.', 422);
+        return new self('NEWSLETTER_NO_RECIPIENTS', __('No hay suscriptores activos.'), 422);
     }
 }

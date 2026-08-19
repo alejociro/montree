@@ -34,7 +34,7 @@ const { panelItems, homeUrl } = useNavigation();
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain label="Administración" :items="panelItems" />
+            <NavMain :label="$t('Administración')" :items="panelItems" />
         </SidebarContent>
 
         <SidebarFooter>

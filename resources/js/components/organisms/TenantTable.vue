@@ -39,37 +39,37 @@ function formatCurrency(value: string | null): string {
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Tenant
+                        {{ $t('Tenant') }}
                     </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Status
+                        {{ $t('Status') }}
                     </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Plan
+                        {{ $t('Plan') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Usuarios
+                        {{ $t('Usuarios') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Tours
+                        {{ $t('Tours') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Bookings (30d)
+                        {{ $t('Bookings (30d)') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
                     >
-                        Revenue (30d)
+                        {{ $t('Revenue (30d)') }}
                     </th>
                     <th class="px-4 py-3" />
                 </tr>
@@ -83,7 +83,7 @@ function formatCurrency(value: string | null): string {
                             <span
                                 class="size-3 animate-pulse rounded-full bg-zinc-400 dark:bg-zinc-600"
                             />
-                            Cargando tenants...
+                            {{ $t('Cargando tenants...') }}
                         </div>
                     </td>
                 </tr>
@@ -92,7 +92,7 @@ function formatCurrency(value: string | null): string {
                         colspan="8"
                         class="px-4 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        No se encontraron tenants con esos filtros.
+                        {{ $t('No se encontraron tenants con esos filtros.') }}
                     </td>
                 </tr>
                 <tr
@@ -144,7 +144,7 @@ function formatCurrency(value: string | null): string {
                             :href="`/super-admin/tenants/${tenant.id}`"
                             class="inline-flex items-center text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                         >
-                            Detalle
+                            {{ $t('Detalle') }}
                             <ChevronRight class="size-4" />
                         </Link>
                     </td>

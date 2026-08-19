@@ -47,7 +47,7 @@ final class RoleException extends \Exception implements HttpExceptionInterface
     {
         return new self(
             'BASE_ROLE_READ_ONLY',
-            'Los roles base son de solo lectura. Creá un rol propio de tu agencia para personalizar permisos.',
+            __('Los roles base son de solo lectura. Creá un rol propio de tu agencia para personalizar permisos.'),
             403,
         );
     }

@@ -21,9 +21,9 @@ defineProps<Props>();
 <template>
     <Card>
         <CardHeader>
-            <CardTitle>Tours más reservados</CardTitle>
+            <CardTitle>{{ $t('Tours más reservados') }}</CardTitle>
             <CardDescription>
-                Los 5 tours con más reservas en el periodo.
+                {{ $t('Los 5 tours con más reservas en el periodo.') }}
             </CardDescription>
         </CardHeader>
         <CardContent class="px-0">
@@ -31,7 +31,7 @@ defineProps<Props>();
                 v-if="tours.length === 0"
                 class="px-6 py-8 text-center text-sm text-muted-foreground"
             >
-                No hay reservas en este periodo.
+                {{ $t('No hay reservas en este periodo.') }}
             </div>
             <ul v-else class="divide-y divide-border">
                 <li
@@ -65,7 +65,11 @@ defineProps<Props>();
                         >
                             <Star class="size-3" />
                             {{ tour.rating_average }} ·
-                            {{ formatNumber(tour.bookings_count) }} reservas
+                            {{
+                                $t(':count reservas', {
+                                    count: formatNumber(tour.bookings_count),
+                                })
+                            }}
                         </p>
                     </div>
 
@@ -73,7 +77,9 @@ defineProps<Props>();
                         <p class="text-sm font-semibold">
                             {{ formatCurrency(tour.revenue, currency) }}
                         </p>
-                        <p class="text-xs text-muted-foreground">ingresos</p>
+                        <p class="text-xs text-muted-foreground">
+                            {{ $t('ingresos') }}
+                        </p>
                     </div>
                 </li>
             </ul>

@@ -25,7 +25,7 @@ final class PaymentController extends Controller
             ->first();
 
         if ($booking === null) {
-            throw new NotFoundHttpException('Booking not found.');
+            throw new NotFoundHttpException(__('Booking not found.'));
         }
 
         $payment = $this->processPayment->handle($booking, $request->validated());

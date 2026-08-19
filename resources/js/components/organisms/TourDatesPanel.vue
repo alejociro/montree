@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { CalendarPlus, Loader2, MapPin, Pencil, Trash2, Truck, UserRound, Building2, Ban } from 'lucide-vue-next';
+import {
+    CalendarPlus,
+    Loader2,
+    MapPin,
+    Pencil,
+    Trash2,
+    Truck,
+    UserRound,
+    Building2,
+    Ban,
+} from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import CancelTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/CancelTourDateController';
@@ -25,12 +35,15 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type {
     LogisticsRef,
     TourDateAdmin,
     TourDateStatus,
 } from '@/types/logistics';
+
+const { t } = useTranslations();
 
 type Props = {
     tourId: number;
@@ -121,7 +134,7 @@ async function loadOptions(): Promise<void> {
             name: hotel.name,
         }));
     } catch {
-        toast.error('No se pudieron cargar las opciones de condiciones.');
+        toast.error(t('No se pudieron cargar las opciones de condiciones.'));
     }
 }
 
@@ -158,23 +171,30 @@ const visibleDates = computed(() => {
 });
 
 const tabs = computed<{ key: Tab; label: string; count: number }[]>(() => [
-    { key: 'upcoming', label: 'Próximas', count: upcomingDates.value.length },
-    { key: 'past', label: 'Pasadas', count: pastDates.value.length },
+    {
+        key: 'upcoming',
+        label: t('Próximas'),
+        count: upcomingDates.value.length,
+    },
+    { key: 'past', label: t('Pasadas'), count: pastDates.value.length },
     {
         key: 'cancelled',
-        label: 'Canceladas',
+        label: t('Canceladas'),
         count: cancelledDates.value.length,
     },
 ]);
 
 const statusMeta: Record<
     TourDateStatus,
-    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+    {
+        label: string;
+        variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    }
 > = {
-    open: { label: 'Abierta', variant: 'default' },
-    full: { label: 'Completa', variant: 'secondary' },
-    closed: { label: 'Cerrada', variant: 'outline' },
-    cancelled: { label: 'Cancelada', variant: 'destructive' },
+    open: { label: t('Abierta'), variant: 'default' },
+    full: { label: t('Completa'), variant: 'secondary' },
+    closed: { label: t('Cerrada'), variant: 'outline' },
+    cancelled: { label: t('Cancelada'), variant: 'destructive' },
 };
 
 function openCreate(): void {
@@ -209,12 +229,14 @@ function confirmCancel(): void {
         { reason: cancelReason.value.trim() || null },
         {
             onSuccess: () => {
-                toast.success('Salida cancelada.');
+                toast.success(t('Salida cancelada.'));
                 cancelOpen.value = false;
                 void loadDates();
             },
             onError: (errors) => {
-                toast.error(errors._global ?? 'No se pudo cancelar la salida.');
+                toast.error(
+                    errors._global ?? t('No se pudo cancelar la salida.'),
+                );
             },
             onFinish: () => {
                 cancelling.value = false;
@@ -226,7 +248,9 @@ function confirmCancel(): void {
 function removeDate(date: TourDateAdmin): void {
     if (
         !confirm(
-            '¿Eliminar esta salida? Solo se puede si no tiene reservas asociadas.',
+            t(
+                '¿Eliminar esta salida? Solo se puede si no tiene reservas asociadas.',
+            ),
         )
     ) {
         return;
@@ -234,11 +258,11 @@ function removeDate(date: TourDateAdmin): void {
 
     void api.delete(destroyDate(date.id).url, {
         onSuccess: () => {
-            toast.success('Salida eliminada.');
+            toast.success(t('Salida eliminada.'));
             void loadDates();
         },
         onError: (errors) => {
-            toast.error(errors._global ?? 'No se pudo eliminar la salida.');
+            toast.error(errors._global ?? t('No se pudo eliminar la salida.'));
         },
     });
 }
@@ -257,14 +281,20 @@ onMounted(() => {
     <section class="space-y-4 rounded-2xl border border-border bg-card p-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h2 class="text-lg font-semibold text-foreground">Salidas</h2>
+                <h2 class="text-lg font-semibold text-foreground">
+                    {{ $t('Salidas') }}
+                </h2>
                 <p class="text-sm text-muted-foreground">
-                    Programa las fechas de este producto con sus condiciones.
+                    {{
+                        $t(
+                            'Programa las fechas de este producto con sus condiciones.',
+                        )
+                    }}
                 </p>
             </div>
             <Button size="sm" @click="openCreate">
                 <CalendarPlus class="size-4" />
-                Nueva salida
+                {{ $t('Nueva salida') }}
             </Button>
         </div>
 
@@ -298,15 +328,10 @@ onMounted(() => {
             class="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center"
         >
             <p class="text-sm text-destructive">
-                No se pudieron cargar las salidas.
+                {{ $t('No se pudieron cargar las salidas.') }}
             </p>
-            <Button
-                variant="outline"
-                size="sm"
-                class="mt-3"
-                @click="loadDates"
-            >
-                Reintentar
+            <Button variant="outline" size="sm" class="mt-3" @click="loadDates">
+                {{ $t('Reintentar') }}
             </Button>
         </div>
 
@@ -328,7 +353,11 @@ onMounted(() => {
                 v-if="activeTab === 'upcoming'"
                 class="mt-1 text-sm text-muted-foreground"
             >
-                Crea la primera salida para que aparezca en el catálogo.
+                {{
+                    $t(
+                        'Crea la primera salida para que aparezca en el catálogo.',
+                    )
+                }}
             </p>
         </div>
 
@@ -352,7 +381,9 @@ onMounted(() => {
                             class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground"
                         >
                             <span>
-                                {{ date.booked_count }}/{{ date.capacity }}
+                                {{ date.booked_count }}/{{
+                                    date.capacity
+                                }}
                                 reservados · {{ date.available_seats }} cupos
                             </span>
                             <span class="font-medium text-foreground">
@@ -404,7 +435,7 @@ onMounted(() => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            title="Editar"
+                            :title="$t('Editar')"
                             @click="openEdit(date)"
                         >
                             <Pencil class="size-4" />
@@ -412,7 +443,7 @@ onMounted(() => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            title="Cancelar salida"
+                            :title="$t('Cancelar salida')"
                             @click="openCancel(date)"
                         >
                             <Ban class="size-4 text-amber-600" />
@@ -420,7 +451,7 @@ onMounted(() => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            title="Eliminar"
+                            :title="$t('Eliminar')"
                             @click="removeDate(date)"
                         >
                             <Trash2 class="size-4 text-destructive" />
@@ -444,20 +475,25 @@ onMounted(() => {
         <Dialog v-model:open="cancelOpen">
             <DialogContent class="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Cancelar salida</DialogTitle>
+                    <DialogTitle>{{ $t('Cancelar salida') }}</DialogTitle>
                     <DialogDescription>
-                        La salida dejará de mostrarse en el catálogo público. Las
-                        reservas existentes no se modifican.
+                        {{
+                            $t(
+                                'La salida dejará de mostrarse en el catálogo público. Las reservas existentes no se modifican.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div class="space-y-1.5">
-                    <Label for="cancel-reason">Motivo (opcional)</Label>
+                    <Label for="cancel-reason">{{
+                        $t('Motivo (opcional)')
+                    }}</Label>
                     <Textarea
                         id="cancel-reason"
                         v-model="cancelReason"
                         rows="3"
-                        placeholder="Ej: clima adverso"
+                        :placeholder="$t('Ej: clima adverso')"
                     />
                 </div>
 
@@ -467,7 +503,7 @@ onMounted(() => {
                         :disabled="cancelling"
                         @click="cancelOpen = false"
                     >
-                        Volver
+                        {{ $t('Volver') }}
                     </Button>
                     <Button
                         variant="destructive"
@@ -478,7 +514,7 @@ onMounted(() => {
                             v-if="cancelling"
                             class="size-4 animate-spin"
                         />
-                        Cancelar salida
+                        {{ $t('Cancelar salida') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

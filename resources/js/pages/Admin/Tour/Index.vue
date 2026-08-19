@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Eye,
-    Pencil,
-    Plus,
-} from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Eye, Pencil, Plus } from 'lucide-vue-next';
 import { onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import {
@@ -27,12 +21,15 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     PaginatedTours,
     TourCategory,
     TourStatus,
     TourSummary,
 } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type Props = {
     categories: TourCategory[];
@@ -92,7 +89,7 @@ async function fetchTours(): Promise<void> {
         tours.value = payload.data;
         meta.value = payload.meta;
     } catch {
-        toast.error('No se pudieron cargar los tours.');
+        toast.error(t('No se pudieron cargar los tours.'));
     } finally {
         loading.value = false;
     }
@@ -148,18 +145,20 @@ function formatPrice(amount: string, code: string): string {
 </script>
 
 <template>
-    <Head title="Tours" />
+    <Head :title="$t('Tours')" />
 
     <div class="px-4 py-6 md:px-8">
         <div class="flex items-start justify-between gap-4">
             <Heading
-                title="Tours"
-                description="Gestiona el catálogo de experiencias de tu agencia."
+                :title="$t('Tours')"
+                :description="
+                    $t('Gestiona el catálogo de experiencias de tu agencia.')
+                "
             />
             <Link :href="createPage().url">
                 <Button>
                     <Plus class="size-4" />
-                    Nuevo tour
+                    {{ $t('Nuevo tour') }}
                 </Button>
             </Link>
         </div>
@@ -204,15 +203,19 @@ function formatPrice(amount: string, code: string): string {
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <p class="font-medium">Aún no hay tours</p>
+                    <p class="font-medium">{{ $t('Aún no hay tours') }}</p>
                     <p class="text-sm text-muted-foreground">
-                        Crea tu primer tour para empezar a recibir reservas.
+                        {{
+                            $t(
+                                'Crea tu primer tour para empezar a recibir reservas.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Link :href="createPage().url">
                     <Button>
                         <Plus class="size-4" />
-                        Crear el primero
+                        {{ $t('Crear el primero') }}
                     </Button>
                 </Link>
             </div>
@@ -225,7 +228,7 @@ function formatPrice(amount: string, code: string): string {
                 >
                     <Link
                         :href="showPage({ tour: tour.id }).url"
-                        class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                        class="block focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
                     >
                         <div class="aspect-[16/9] overflow-hidden bg-muted">
                             <img
@@ -238,7 +241,7 @@ function formatPrice(amount: string, code: string): string {
                                 v-else
                                 class="flex size-full items-center justify-center text-xs text-muted-foreground"
                             >
-                                Sin portada
+                                {{ $t('Sin portada') }}
                             </div>
                         </div>
 
@@ -276,13 +279,13 @@ function formatPrice(amount: string, code: string): string {
                             <Link :href="showPage({ tour: tour.id }).url">
                                 <Button size="sm" variant="ghost">
                                     <Eye class="size-4" />
-                                    Ver
+                                    {{ $t('Ver') }}
                                 </Button>
                             </Link>
                             <Link :href="editPage({ tour: tour.id }).url">
                                 <Button size="sm" variant="outline">
                                     <Pencil class="size-4" />
-                                    Editar
+                                    {{ $t('Editar') }}
                                 </Button>
                             </Link>
                         </div>
@@ -295,8 +298,13 @@ function formatPrice(amount: string, code: string): string {
                 class="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
                 <p class="text-xs text-muted-foreground">
-                    Mostrando {{ meta.from ?? 0 }} – {{ meta.to ?? 0 }} de
-                    {{ meta.total }} tours
+                    {{
+                        $t('Mostrando :from – :to de :total tours', {
+                            from: meta.from ?? 0,
+                            to: meta.to ?? 0,
+                            total: meta.total,
+                        })
+                    }}
                 </p>
 
                 <div v-if="meta.last_page > 1" class="flex items-center gap-2">
@@ -307,18 +315,25 @@ function formatPrice(amount: string, code: string): string {
                         @click="goToPage(meta.current_page - 1)"
                     >
                         <ChevronLeft class="size-4" />
-                        Anterior
+                        {{ $t('Anterior') }}
                     </Button>
                     <span class="text-xs text-muted-foreground">
-                        Página {{ meta.current_page }} de {{ meta.last_page }}
+                        {{
+                            $t('Página :current de :last', {
+                                current: meta.current_page,
+                                last: meta.last_page,
+                            })
+                        }}
                     </span>
                     <Button
                         size="sm"
                         variant="outline"
-                        :disabled="loading || meta.current_page >= meta.last_page"
+                        :disabled="
+                            loading || meta.current_page >= meta.last_page
+                        "
                         @click="goToPage(meta.current_page + 1)"
                     >
-                        Siguiente
+                        {{ $t('Siguiente') }}
                         <ChevronRight class="size-4" />
                     </Button>
                 </div>

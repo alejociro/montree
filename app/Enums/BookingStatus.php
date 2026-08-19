@@ -16,12 +16,12 @@ enum BookingStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::PendingPayment => 'Pending payment',
-            self::Confirmed => 'Confirmed',
-            self::Cancelled => 'Cancelled',
-            self::Completed => 'Completed',
-            self::Refunded => 'Refunded',
-            self::Expired => 'Expired',
+            self::PendingPayment => __('Pending payment'),
+            self::Confirmed => __('Confirmed'),
+            self::Cancelled => __('Cancelled'),
+            self::Completed => __('Completed'),
+            self::Refunded => __('Refunded'),
+            self::Expired => __('Expired'),
         };
     }
 }

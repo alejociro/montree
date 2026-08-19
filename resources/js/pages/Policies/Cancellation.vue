@@ -1,114 +1,152 @@
 <script setup lang="ts">
+import { useTranslations } from '@/composables/useTranslations';
 import PlatformShell from '@/layouts/PlatformShell.vue';
 
-const lastUpdated = '11 de agosto de 2026';
+const { t } = useTranslations();
+
+const lastUpdated = t('11 de agosto de 2026');
 </script>
 
 <template>
-    <PlatformShell title="Política de cancelación — Montree">
+    <PlatformShell :title="$t('Política de cancelación — Montree')">
         <section class="section-cream">
             <div class="container--narrow container">
                 <div class="reveal section-header">
-                    <span class="eyebrow-pill">Legal</span>
-                    <h2 class="section-title">Política de cancelación</h2>
+                    <span class="eyebrow-pill">{{ $t('Legal') }}</span>
+                    <h2 class="section-title">
+                        {{ $t('Política de cancelación') }}
+                    </h2>
                     <p class="section-sub">
-                        Qué ocurre cuando un viajero cancela, cuando la agencia
-                        cancela una salida y cómo se calculan los reembolsos.
+                        {{
+                            $t(
+                                'Qué ocurre cuando un viajero cancela, cuando la agencia cancela una salida y cómo se calculan los reembolsos.',
+                            )
+                        }}
                     </p>
                 </div>
 
                 <article class="reveal legal-doc">
                     <p class="legal-updated">
-                        Última actualización: {{ lastUpdated }}
+                        {{
+                            $t('Última actualización: :date', {
+                                date: lastUpdated,
+                            })
+                        }}
                     </p>
 
-                    <h3>1. Marco general</h3>
+                    <h3>{{ $t('1. Marco general') }}</h3>
                     <p>
-                        Cada agencia define la política de cancelación de sus
-                        tours y la publica en la ficha de cada experiencia. Lo
-                        que aparece en esa ficha prevalece sobre este documento,
-                        que funciona como marco por defecto cuando la agencia no
-                        ha definido reglas propias.
+                        {{
+                            $t(
+                                'Cada agencia define la política de cancelación de sus tours y la publica en la ficha de cada experiencia. Lo que aparece en esa ficha prevalece sobre este documento, que funciona como marco por defecto cuando la agencia no ha definido reglas propias.',
+                            )
+                        }}
                     </p>
 
-                    <h3>2. Cancelación por parte del viajero</h3>
+                    <h3>{{ $t('2. Cancelación por parte del viajero') }}</h3>
                     <p>
-                        Salvo que la agencia indique lo contrario, aplica esta
-                        escala sobre el valor pagado:
+                        {{
+                            $t(
+                                'Salvo que la agencia indique lo contrario, aplica esta escala sobre el valor pagado:',
+                            )
+                        }}
                     </p>
                     <ul>
                         <li>
-                            Más de <strong>7 días</strong> antes de la salida:
-                            reembolso del 100%.
+                            {{ $t('Más de') }}
+                            <strong>{{ $t('7 días') }}</strong>
+                            {{ $t('antes de la salida: reembolso del 100%.') }}
                         </li>
                         <li>
-                            Entre <strong>7 y 2 días</strong> antes de la
-                            salida: reembolso del 50%.
+                            {{ $t('Entre') }}
+                            <strong>{{ $t('7 y 2 días') }}</strong>
+                            {{ $t('antes de la salida: reembolso del 50%.') }}
                         </li>
                         <li>
-                            Menos de <strong>48 horas</strong> antes de la
-                            salida o no presentarse: sin reembolso.
+                            {{ $t('Menos de') }}
+                            <strong>{{ $t('48 horas') }}</strong>
+                            {{
+                                $t(
+                                    'antes de la salida o no presentarse: sin reembolso.',
+                                )
+                            }}
                         </li>
                     </ul>
                     <p>
-                        La solicitud se hace desde «Mis reservas» en el sitio de
-                        la agencia o escribiendo directamente a la agencia.
+                        {{
+                            $t(
+                                'La solicitud se hace desde «Mis reservas» en el sitio de la agencia o escribiendo directamente a la agencia.',
+                            )
+                        }}
                     </p>
 
-                    <h3>3. Cancelación por parte de la agencia</h3>
+                    <h3>{{ $t('3. Cancelación por parte de la agencia') }}</h3>
                     <p>
-                        Si la agencia cancela una salida — por clima, cupo
-                        mínimo no alcanzado, condiciones de seguridad o
-                        cualquier otra causa — el viajero puede elegir entre el
-                        reembolso del 100% de lo pagado o reprogramar sin costo
-                        para otra fecha disponible.
+                        {{
+                            $t(
+                                'Si la agencia cancela una salida — por clima, cupo mínimo no alcanzado, condiciones de seguridad o cualquier otra causa — el viajero puede elegir entre el reembolso del 100% de lo pagado o reprogramar sin costo para otra fecha disponible.',
+                            )
+                        }}
                     </p>
 
-                    <h3>4. Fuerza mayor</h3>
+                    <h3>{{ $t('4. Fuerza mayor') }}</h3>
                     <p>
-                        Ante eventos ajenos a las partes (desastres naturales,
-                        cierres de vías, disposiciones de autoridad), la agencia
-                        ofrecerá reprogramación o bono equivalente. Si ninguna
-                        de las dos opciones es viable, se procede al reembolso
-                        según la escala del numeral 2.
+                        {{
+                            $t(
+                                'Ante eventos ajenos a las partes (desastres naturales, cierres de vías, disposiciones de autoridad), la agencia ofrecerá reprogramación o bono equivalente. Si ninguna de las dos opciones es viable, se procede al reembolso según la escala del numeral 2.',
+                            )
+                        }}
                     </p>
 
-                    <h3>5. Cómo y cuándo se reembolsa</h3>
+                    <h3>{{ $t('5. Cómo y cuándo se reembolsa') }}</h3>
                     <p>
-                        El reembolso se devuelve por el mismo medio de pago
-                        usado en la compra (Bre-B o PSE). Los tiempos de
-                        acreditación dependen de la entidad financiera del
-                        viajero. La comisión de Montree no se cobra sobre
-                        reservas reembolsadas en su totalidad.
+                        {{
+                            $t(
+                                'El reembolso se devuelve por el mismo medio de pago usado en la compra (Bre-B o PSE). Los tiempos de acreditación dependen de la entidad financiera del viajero. La comisión de Montree no se cobra sobre reservas reembolsadas en su totalidad.',
+                            )
+                        }}
                     </p>
                     <p class="legal-pending">
-                        Pendiente de confirmación: plazo máximo comprometido
-                        para la acreditación del reembolso.
+                        {{
+                            $t(
+                                'Pendiente de confirmación: plazo máximo comprometido para la acreditación del reembolso.',
+                            )
+                        }}
                     </p>
 
-                    <h3>6. Cambios de fecha</h3>
+                    <h3>{{ $t('6. Cambios de fecha') }}</h3>
                     <p>
-                        Un cambio de fecha solicitado con más de 7 días de
-                        anticipación no tiene costo, siempre que haya cupo
-                        disponible en la nueva salida. Dentro de los 7 días
-                        previos, el cambio queda a criterio de la agencia.
+                        {{
+                            $t(
+                                'Un cambio de fecha solicitado con más de 7 días de anticipación no tiene costo, siempre que haya cupo disponible en la nueva salida. Dentro de los 7 días previos, el cambio queda a criterio de la agencia.',
+                            )
+                        }}
                     </p>
 
-                    <h3>7. Cancelación de la cuenta de una agencia</h3>
+                    <h3>
+                        {{ $t('7. Cancelación de la cuenta de una agencia') }}
+                    </h3>
                     <p>
-                        Una agencia puede dar de baja su cuenta de Montree
-                        cuando quiera, sin penalización ni permanencia mínima, y
-                        exportar su información. Las reservas ya confirmadas
-                        deben ser honradas o reembolsadas por la agencia antes
-                        del cierre.
+                        {{
+                            $t(
+                                'Una agencia puede dar de baja su cuenta de Montree cuando quiera, sin penalización ni permanencia mínima, y exportar su información. Las reservas ya confirmadas deben ser honradas o reembolsadas por la agencia antes del cierre.',
+                            )
+                        }}
                     </p>
 
-                    <h3>8. Contacto</h3>
+                    <h3>{{ $t('8. Contacto') }}</h3>
                     <p>
-                        Para dudas sobre una cancelación escríbenos a
-                        <a href="mailto:hola@montree.co">hola@montree.co</a> o
-                        revisa la
-                        <a href="/politica-de-pago">política de pago</a>.
+                        {{
+                            $t('Para dudas sobre una cancelación escríbenos a')
+                        }}
+                        <a href="mailto:hola@montree.co">{{
+                            $t('hola@montree.co')
+                        }}</a>
+                        {{ $t('o revisa la') }}
+                        <a href="/politica-de-pago">{{
+                            $t('política de pago')
+                        }}</a
+                        >.
                     </p>
                 </article>
             </div>

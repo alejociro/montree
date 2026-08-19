@@ -5,7 +5,10 @@ import { toast } from 'vue-sonner';
 import { show as dashboardShow } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/DashboardController';
 import Heading from '@/components/Heading.vue';
 import PlatformStats from '@/components/organisms/PlatformStats.vue';
+import { useTranslations } from '@/composables/useTranslations';
 import type { PlatformMetrics, TenantPlan } from '@/types';
+
+const { t } = useTranslations();
 
 const http = useHttp();
 
@@ -21,7 +24,7 @@ async function loadMetrics(): Promise<void> {
         };
         metrics.value = response.data;
     } catch {
-        toast.error('No se pudieron cargar las métricas de la plataforma.');
+        toast.error(t('No se pudieron cargar las métricas de la plataforma.'));
     } finally {
         loading.value = false;
     }
@@ -46,12 +49,16 @@ function planLabel(plan: TenantPlan): string {
 </script>
 
 <template>
-    <Head title="Super admin · Dashboard" />
+    <Head :title="$t('Super admin · Dashboard')" />
 
     <div class="space-y-8 px-4 py-6 md:px-8">
         <Heading
-            title="Panel de plataforma"
-            description="Métricas agregadas de todos los tenants y la plataforma MONTREE."
+            :title="$t('Panel de plataforma')"
+            :description="
+                $t(
+                    'Métricas agregadas de todos los tenants y la plataforma MONTREE.',
+                )
+            "
         />
 
         <PlatformStats :metrics="metrics" />
@@ -63,11 +70,11 @@ function planLabel(plan: TenantPlan): string {
                 <h2
                     class="text-base font-semibold text-zinc-900 dark:text-zinc-50"
                 >
-                    Distribución por plan
+                    {{ $t('Distribución por plan') }}
                 </h2>
-                <span v-if="loading" class="text-xs text-zinc-500"
-                    >Cargando...</span
-                >
+                <span v-if="loading" class="text-xs text-zinc-500">{{
+                    $t('Cargando...')
+                }}</span>
             </header>
 
             <div v-if="metrics" class="grid grid-cols-1 gap-4 sm:grid-cols-3">

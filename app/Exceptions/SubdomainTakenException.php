@@ -12,7 +12,7 @@ final class SubdomainTakenException extends RuntimeException implements HttpExce
 {
     public function __construct()
     {
-        parent::__construct('Ese subdominio ya fue reclamado.');
+        parent::__construct(__('Ese subdominio ya fue reclamado.'));
     }
 
     public function getStatusCode(): int

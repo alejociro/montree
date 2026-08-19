@@ -12,8 +12,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 import type { TourCategory, TourStatus } from '@/types/tour';
+
+const { t } = useTranslations();
 
 type FilterValue = {
     status: TourStatus | 'all';
@@ -35,11 +38,11 @@ const emit = defineEmits<{
 const statusOptions = computed<
     { value: FilterValue['status']; label: string }[]
 >(() => [
-    { value: 'all', label: 'Todos' },
-    { value: 'draft', label: 'Borradores' },
-    { value: 'active', label: 'Activos' },
-    { value: 'paused', label: 'Pausados' },
-    { value: 'archived', label: 'Archivados' },
+    { value: 'all', label: t('Todos') },
+    { value: 'draft', label: t('Borradores') },
+    { value: 'active', label: t('Activos') },
+    { value: 'paused', label: t('Pausados') },
+    { value: 'archived', label: t('Archivados') },
 ]);
 
 function setStatus(value: FilterValue['status']): void {
@@ -95,13 +98,13 @@ function setSearch(value: string | number): void {
                 @update:model-value="setCategory"
             >
                 <SelectTrigger class="w-full md:w-48">
-                    <SelectValue placeholder="Categoría" />
+                    <SelectValue :placeholder="$t('Categoría')" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
-                        <SelectItem value="all"
-                            >Todas las categorías</SelectItem
-                        >
+                        <SelectItem value="all">{{
+                            $t('Todas las categorías')
+                        }}</SelectItem>
                         <SelectItem
                             v-for="category in categories"
                             :key="category.id"
@@ -119,7 +122,7 @@ function setSearch(value: string | number): void {
                 />
                 <Input
                     type="search"
-                    placeholder="Buscar tours..."
+                    :placeholder="$t('Buscar tours...')"
                     class="pl-9"
                     :model-value="modelValue.search"
                     @update:model-value="setSearch"

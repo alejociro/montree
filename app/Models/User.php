@@ -12,6 +12,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Auth\Notifications\ResetPassword as DefaultResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail as DefaultVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,9 +24,9 @@ use Laravel\Cashier\Billable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'avatar_path', 'phone'])]
+#[Fillable(['name', 'email', 'password', 'avatar_path', 'phone', 'locale'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use Billable, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
@@ -55,6 +56,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function mustSetPassword(): bool
     {
         return $this->password_set_at === null;
+    }
+
+    /**
+     * WHY: contrato HasLocalePreference. Sin esto una notificación encolada se
+     * renderiza con el locale del request que la originó — el del administrador que
+     * confirma la reserva, no el del viajero que recibe el correo.
+     */
+    public function preferredLocale(): ?string
+    {
+        return $this->locale;
     }
 
     public function tenants(): BelongsToMany

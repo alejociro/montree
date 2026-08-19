@@ -113,54 +113,58 @@ const meetingErrors = computed(() => ({
         <section class="space-y-4">
             <Heading
                 variant="small"
-                title="Información general"
-                description="Nombre y descripción del tour."
+                :title="$t('Información general')"
+                :description="$t('Nombre y descripción del tour.')"
             />
 
             <div class="grid gap-2">
-                <Label for="name">Nombre</Label>
+                <Label for="name">{{ $t('Nombre') }}</Label>
                 <Input
                     id="name"
                     :model-value="value.name"
                     maxlength="120"
-                    placeholder="Sendero del Quindío"
+                    :placeholder="$t('Sendero del Quindío')"
                     @update:model-value="(v) => handleString('name', v)"
                 />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="short_description">Resumen corto</Label>
+                <Label for="short_description">{{ $t('Resumen corto') }}</Label>
                 <Input
                     id="short_description"
                     :model-value="value.short_description"
                     maxlength="280"
-                    placeholder="Caminata de 6 horas por el valle de Cocora"
+                    :placeholder="
+                        $t('Caminata de 6 horas por el valle de Cocora')
+                    "
                     @update:model-value="
                         (v) => handleString('short_description', v)
                     "
                 />
                 <p class="text-xs text-muted-foreground">
-                    Aparece en listados. Máx. 280 caracteres.
+                    {{ $t('Aparece en listados. Máx. 280 caracteres.') }}
                 </p>
                 <InputError :message="errors.short_description" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="description">Descripción completa</Label>
+                <Label for="description">{{
+                    $t('Descripción completa')
+                }}</Label>
                 <Textarea
                     id="description"
                     :model-value="value.description"
                     rows="6"
                     maxlength="10000"
-                    placeholder="Detalle de la experiencia"
+                    :placeholder="$t('Detalle de la experiencia')"
                     @update:model-value="(v) => handleString('description', v)"
                 />
                 <InputError :message="errors.description" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="category_id">Categoría</Label>
+                <Label for="category_id">{{ $t('Categoría') }}</Label>
                 <Select
                     :model-value="
                         value.category_id === null
@@ -170,11 +174,13 @@ const meetingErrors = computed(() => ({
                     @update:model-value="handleCategoryChange"
                 >
                     <SelectTrigger id="category_id" class="w-full">
-                        <SelectValue placeholder="Sin categoría" />
+                        <SelectValue :placeholder="$t('Sin categoría')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem value="none">Sin categoría</SelectItem>
+                            <SelectItem value="none">{{
+                                $t('Sin categoría')
+                            }}</SelectItem>
                             <SelectItem
                                 v-for="category in categories"
                                 :key="category.id"
@@ -192,14 +198,14 @@ const meetingErrors = computed(() => ({
         <section class="space-y-4">
             <Heading
                 variant="small"
-                title="Precio y capacidad"
-                description="Configura la economía del tour."
+                :title="$t('Precio y capacidad')"
+                :description="$t('Configura la economía del tour.')"
             />
 
             <div class="grid gap-6 md:grid-cols-2">
                 <PriceInput
                     id="base_price"
-                    label="Precio base por persona"
+                    :label="$t('Precio base por persona')"
                     :model-value="value.base_price"
                     :currency="value.currency as SupportedCurrency"
                     :price-error="errors.base_price"
@@ -210,8 +216,12 @@ const meetingErrors = computed(() => ({
 
                 <CapacityInput
                     id="default_capacity"
-                    label="Capacidad por fecha"
-                    description="Cuántos viajeros pueden ir como máximo en cada salida."
+                    :label="$t('Capacidad por fecha')"
+                    :description="
+                        $t(
+                            'Cuántos viajeros pueden ir como máximo en cada salida.',
+                        )
+                    "
                     :model-value="value.default_capacity"
                     :error="errors.default_capacity"
                     @update:model-value="(v) => update('default_capacity', v)"
@@ -220,7 +230,9 @@ const meetingErrors = computed(() => ({
 
             <div class="grid gap-6 md:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="duration_hours">Duración (horas)</Label>
+                    <Label for="duration_hours">{{
+                        $t('Duración (horas)')
+                    }}</Label>
                     <Input
                         id="duration_hours"
                         type="number"
@@ -245,17 +257,19 @@ const meetingErrors = computed(() => ({
         <section class="space-y-4">
             <Heading
                 variant="small"
-                title="Detalle de la experiencia"
-                description="Qué incluye, qué no y qué necesitan los viajeros."
+                :title="$t('Detalle de la experiencia')"
+                :description="
+                    $t('Qué incluye, qué no y qué necesitan los viajeros.')
+                "
             />
 
             <div class="grid gap-6 md:grid-cols-3">
                 <div class="grid gap-2">
-                    <Label for="includes">Incluye</Label>
+                    <Label for="includes">{{ $t('Incluye') }}</Label>
                     <Textarea
                         id="includes"
                         rows="5"
-                        placeholder="Una entrada por línea"
+                        :placeholder="$t('Una entrada por línea')"
                         :model-value="value.includes.join('\n')"
                         @update:model-value="
                             (v) => handleListChange('includes', v)
@@ -265,11 +279,11 @@ const meetingErrors = computed(() => ({
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="excludes">No incluye</Label>
+                    <Label for="excludes">{{ $t('No incluye') }}</Label>
                     <Textarea
                         id="excludes"
                         rows="5"
-                        placeholder="Una entrada por línea"
+                        :placeholder="$t('Una entrada por línea')"
                         :model-value="value.excludes.join('\n')"
                         @update:model-value="
                             (v) => handleListChange('excludes', v)
@@ -279,11 +293,11 @@ const meetingErrors = computed(() => ({
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="requirements">Requerimientos</Label>
+                    <Label for="requirements">{{ $t('Requerimientos') }}</Label>
                     <Textarea
                         id="requirements"
                         rows="5"
-                        placeholder="Una entrada por línea"
+                        :placeholder="$t('Una entrada por línea')"
                         :model-value="value.requirements.join('\n')"
                         @update:model-value="
                             (v) => handleListChange('requirements', v)

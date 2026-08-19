@@ -26,12 +26,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     SuperAdminTenantSummary,
     TenantPlan,
     TenantStatus,
 } from '@/types';
 import type { TenantConfiguration } from '@/types/tenant';
+
+const { t } = useTranslations();
 
 const props = defineProps<{
     tenant: SuperAdminTenantSummary;
@@ -213,14 +216,14 @@ function submitConfiguration(): void {
 }
 
 const currencies = [
-    { value: 'COP', label: 'COP - Peso colombiano' },
-    { value: 'USD', label: 'USD - Dólar americano' },
-    { value: 'EUR', label: 'EUR - Euro' },
-    { value: 'MXN', label: 'MXN - Peso mexicano' },
-    { value: 'ARS', label: 'ARS - Peso argentino' },
-    { value: 'PEN', label: 'PEN - Sol peruano' },
-    { value: 'CLP', label: 'CLP - Peso chileno' },
-    { value: 'BRL', label: 'BRL - Real brasileño' },
+    { value: 'COP', label: t('COP - Peso colombiano') },
+    { value: 'USD', label: t('USD - Dólar americano') },
+    { value: 'EUR', label: t('EUR - Euro') },
+    { value: 'MXN', label: t('MXN - Peso mexicano') },
+    { value: 'ARS', label: t('ARS - Peso argentino') },
+    { value: 'PEN', label: t('PEN - Sol peruano') },
+    { value: 'CLP', label: t('CLP - Peso chileno') },
+    { value: 'BRL', label: t('BRL - Real brasileño') },
 ];
 
 const timezones = [
@@ -292,11 +295,14 @@ const timezones = [
                 <h2
                     class="text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                 >
-                    Estado del tenant
+                    {{ $t('Estado del tenant') }}
                 </h2>
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                    Suspender bloquea el acceso a todos los usuarios.
-                    Restablecer reactiva el servicio.
+                    {{
+                        $t(
+                            'Suspender bloquea el acceso a todos los usuarios. Restablecer reactiva el servicio.',
+                        )
+                    }}
                 </p>
                 <StatusChanger
                     :current-status="tenant.status"
@@ -309,10 +315,10 @@ const timezones = [
                 <h2
                     class="text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                 >
-                    Plan asignado
+                    {{ $t('Plan asignado') }}
                 </h2>
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                    Los nuevos límites aplican inmediatamente.
+                    {{ $t('Los nuevos límites aplican inmediatamente.') }}
                 </p>
                 <PlanChanger
                     :current-plan="tenant.plan"
@@ -328,7 +334,7 @@ const timezones = [
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
                 <p class="text-xs tracking-wider text-zinc-500 uppercase">
-                    Usuarios
+                    {{ $t('Usuarios') }}
                 </p>
                 <p
                     class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
@@ -340,7 +346,7 @@ const timezones = [
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
                 <p class="text-xs tracking-wider text-zinc-500 uppercase">
-                    Tours
+                    {{ $t('Tours') }}
                 </p>
                 <p
                     class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
@@ -352,7 +358,7 @@ const timezones = [
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
                 <p class="text-xs tracking-wider text-zinc-500 uppercase">
-                    Reservas (30d)
+                    {{ $t('Reservas (30d)') }}
                 </p>
                 <p
                     class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
@@ -364,7 +370,7 @@ const timezones = [
                 class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
             >
                 <p class="text-xs tracking-wider text-zinc-500 uppercase">
-                    Ingresos (30d)
+                    {{ $t('Ingresos (30d)') }}
                 </p>
                 <p
                     class="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
@@ -385,11 +391,14 @@ const timezones = [
                     class="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                 >
                     <Palette class="size-5" />
-                    Personalización y configuración
+                    {{ $t('Personalización y configuración') }}
                 </h2>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Configura la identidad visual, ajustes operativos y redes
-                    sociales del tenant.
+                    {{
+                        $t(
+                            'Configura la identidad visual, ajustes operativos y redes sociales del tenant.',
+                        )
+                    }}
                 </p>
             </div>
 
@@ -400,12 +409,12 @@ const timezones = [
                         class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                     >
                         <Palette class="size-4" />
-                        Identidad visual
+                        {{ $t('Identidad visual') }}
                     </h3>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
-                            <Label>Color primario</Label>
+                            <Label>{{ $t('Color primario') }}</Label>
                             <div class="flex items-center gap-2">
                                 <input
                                     type="color"
@@ -420,7 +429,7 @@ const timezones = [
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <Label>Color secundario</Label>
+                            <Label>{{ $t('Color secundario') }}</Label>
                             <div class="flex items-center gap-2">
                                 <input
                                     type="color"
@@ -437,10 +446,12 @@ const timezones = [
                     </div>
 
                     <div class="space-y-2">
-                        <Label>Eslogan</Label>
+                        <Label>{{ $t('Eslogan') }}</Label>
                         <Input
                             v-model="configForm.tagline"
-                            placeholder="Ej: Descubre la naturaleza con nosotros"
+                            :placeholder="
+                                $t('Ej: Descubre la naturaleza con nosotros')
+                            "
                             maxlength="160"
                         />
                         <p class="text-xs text-zinc-400">
@@ -449,10 +460,10 @@ const timezones = [
                     </div>
 
                     <div class="space-y-2">
-                        <Label>Descripción</Label>
+                        <Label>{{ $t('Descripción') }}</Label>
                         <Textarea
                             v-model="configForm.description"
-                            placeholder="Descripción de la agencia..."
+                            :placeholder="$t('Descripción de la agencia...')"
                             rows="3"
                             maxlength="2000"
                         />
@@ -465,17 +476,17 @@ const timezones = [
                         class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                     >
                         <Image class="size-4" />
-                        Imágenes
+                        {{ $t('Imágenes') }}
                     </h3>
 
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-2">
-                            <Label>Logo</Label>
+                            <Label>{{ $t('Logo') }}</Label>
                             <div class="space-y-2">
                                 <img
                                     v-if="config?.logo_url"
                                     :src="config.logo_url"
-                                    alt="Logo actual"
+                                    :alt="$t('Logo actual')"
                                     class="h-12 w-auto rounded border bg-zinc-50 object-contain p-1"
                                 />
                                 <label
@@ -496,12 +507,12 @@ const timezones = [
                         </div>
 
                         <div class="space-y-2">
-                            <Label>Favicon</Label>
+                            <Label>{{ $t('Favicon') }}</Label>
                             <div class="space-y-2">
                                 <img
                                     v-if="config?.favicon_url"
                                     :src="config.favicon_url"
-                                    alt="Favicon actual"
+                                    :alt="$t('Favicon actual')"
                                     class="h-8 w-auto rounded border bg-zinc-50 object-contain p-1"
                                 />
                                 <label
@@ -526,12 +537,12 @@ const timezones = [
                         </div>
 
                         <div class="space-y-2">
-                            <Label>Imagen principal (Hero)</Label>
+                            <Label>{{ $t('Imagen principal (Hero)') }}</Label>
                             <div class="space-y-2">
                                 <img
                                     v-if="config?.hero_image_url"
                                     :src="config.hero_image_url"
-                                    alt="Hero actual"
+                                    :alt="$t('Hero actual')"
                                     class="h-20 w-full rounded border bg-zinc-50 object-cover"
                                 />
                                 <label
@@ -563,16 +574,16 @@ const timezones = [
                         class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                     >
                         <Globe class="size-4" />
-                        Configuración operativa
+                        {{ $t('Configuración operativa') }}
                     </h3>
 
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-2">
-                            <Label>Moneda</Label>
+                            <Label>{{ $t('Moneda') }}</Label>
                             <Select v-model="configForm.currency">
                                 <SelectTrigger>
                                     <SelectValue
-                                        placeholder="Seleccionar moneda"
+                                        :placeholder="$t('Seleccionar moneda')"
                                     />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -588,11 +599,11 @@ const timezones = [
                         </div>
 
                         <div class="space-y-2">
-                            <Label>Zona horaria</Label>
+                            <Label>{{ $t('Zona horaria') }}</Label>
                             <Select v-model="configForm.timezone">
                                 <SelectTrigger>
                                     <SelectValue
-                                        placeholder="Seleccionar zona"
+                                        :placeholder="$t('Seleccionar zona')"
                                     />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -608,16 +619,20 @@ const timezones = [
                         </div>
 
                         <div class="space-y-2">
-                            <Label>Idioma</Label>
+                            <Label>{{ $t('Idioma') }}</Label>
                             <Select v-model="configForm.locale">
                                 <SelectTrigger>
                                     <SelectValue
-                                        placeholder="Seleccionar idioma"
+                                        :placeholder="$t('Seleccionar idioma')"
                                     />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="es">Español</SelectItem>
-                                    <SelectItem value="en">English</SelectItem>
+                                    <SelectItem value="es">{{
+                                        $t('Español')
+                                    }}</SelectItem>
+                                    <SelectItem value="en">{{
+                                        $t('English')
+                                    }}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -625,7 +640,7 @@ const timezones = [
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
-                            <Label>Pago parcial mínimo (%)</Label>
+                            <Label>{{ $t('Pago parcial mínimo (%)') }}</Label>
                             <Input
                                 v-model.number="
                                     configForm.min_partial_payment_pct
@@ -644,11 +659,14 @@ const timezones = [
                         >
                             <div>
                                 <p class="text-sm font-medium">
-                                    Reseñas requieren moderación
+                                    {{ $t('Reseñas requieren moderación') }}
                                 </p>
                                 <p class="text-xs text-zinc-500">
-                                    Las reseñas no se publican hasta que un
-                                    admin las apruebe.
+                                    {{
+                                        $t(
+                                            'Las reseñas no se publican hasta que un admin las apruebe.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                             <Switch
@@ -665,11 +683,14 @@ const timezones = [
                         >
                             <div>
                                 <p class="text-sm font-medium">
-                                    Requerir datos de viajeros
+                                    {{ $t('Requerir datos de viajeros') }}
                                 </p>
                                 <p class="text-xs text-zinc-500">
-                                    Solicita nombre y documento de cada viajero
-                                    al reservar.
+                                    {{
+                                        $t(
+                                            'Solicita nombre y documento de cada viajero al reservar.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                             <Switch
@@ -688,20 +709,20 @@ const timezones = [
                         class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                     >
                         <Mail class="size-4" />
-                        Información de contacto
+                        {{ $t('Información de contacto') }}
                     </h3>
 
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="space-y-2">
-                            <Label>Email de contacto</Label>
+                            <Label>{{ $t('Email de contacto') }}</Label>
                             <Input
                                 v-model="configForm.contact_info.email"
                                 type="email"
-                                placeholder="contacto@agencia.com"
+                                :placeholder="$t('contacto@agencia.com')"
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>Teléfono</Label>
+                            <Label>{{ $t('Teléfono') }}</Label>
                             <Input
                                 v-model="configForm.contact_info.phone"
                                 type="tel"
@@ -709,10 +730,10 @@ const timezones = [
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>Dirección</Label>
+                            <Label>{{ $t('Dirección') }}</Label>
                             <Input
                                 v-model="configForm.contact_info.address"
-                                placeholder="Calle 123 #45-67, Ciudad"
+                                :placeholder="$t('Calle 123 #45-67, Ciudad')"
                             />
                         </div>
                     </div>
@@ -724,43 +745,43 @@ const timezones = [
                         class="flex items-center gap-2 text-sm font-semibold tracking-wider text-zinc-500 uppercase"
                     >
                         <ExternalLink class="size-4" />
-                        Redes sociales
+                        {{ $t('Redes sociales') }}
                     </h3>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
-                            <Label>Instagram</Label>
+                            <Label>{{ $t('Instagram') }}</Label>
                             <Input
                                 v-model="configForm.social_links.instagram"
-                                placeholder="https://instagram.com/..."
+                                :placeholder="$t('https://instagram.com/...')"
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>Facebook</Label>
+                            <Label>{{ $t('Facebook') }}</Label>
                             <Input
                                 v-model="configForm.social_links.facebook"
-                                placeholder="https://facebook.com/..."
+                                :placeholder="$t('https://facebook.com/...')"
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>Twitter / X</Label>
+                            <Label>{{ $t('Twitter / X') }}</Label>
                             <Input
                                 v-model="configForm.social_links.twitter"
-                                placeholder="https://twitter.com/..."
+                                :placeholder="$t('https://twitter.com/...')"
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>YouTube</Label>
+                            <Label>{{ $t('YouTube') }}</Label>
                             <Input
                                 v-model="configForm.social_links.youtube"
-                                placeholder="https://youtube.com/..."
+                                :placeholder="$t('https://youtube.com/...')"
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label>TikTok</Label>
+                            <Label>{{ $t('TikTok') }}</Label>
                             <Input
                                 v-model="configForm.social_links.tiktok"
-                                placeholder="https://tiktok.com/..."
+                                :placeholder="$t('https://tiktok.com/...')"
                             />
                         </div>
                     </div>

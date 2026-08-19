@@ -18,9 +18,9 @@ const pct = (n: number) =>
     <div class="space-y-3">
         <div class="flex items-baseline gap-2">
             <span class="text-3xl font-bold">{{ average }}</span>
-            <span class="text-sm text-muted-foreground"
-                >({{ count }} reseñas)</span
-            >
+            <span class="text-sm text-muted-foreground">{{
+                $t('(:count reseñas)', { count })
+            }}</span>
         </div>
         <div class="space-y-1">
             <div

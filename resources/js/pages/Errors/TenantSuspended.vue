@@ -17,7 +17,7 @@ useTenantBranding();
     <div
         class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 text-center"
     >
-        <Head title="Agencia temporalmente no disponible" />
+        <Head :title="$t('Agencia temporalmente no disponible')" />
 
         <div
             class="flex size-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -29,14 +29,21 @@ useTenantBranding();
             <p
                 class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
             >
-                503 · Temporalmente no disponible
+                {{ $t('503 · Temporalmente no disponible') }}
             </p>
             <h1 class="text-2xl font-semibold tracking-tight">
-                {{ tenantName }} no está disponible en este momento
+                {{
+                    $t(':agency no está disponible en este momento', {
+                        agency: tenantName,
+                    })
+                }}
             </h1>
             <p class="text-sm text-muted-foreground">
-                Esta agencia se encuentra suspendida temporalmente. Vuelve más
-                tarde o contacta al equipo si creés que es un error.
+                {{
+                    $t(
+                        'Esta agencia se encuentra suspendida temporalmente. Vuelve más tarde o contacta al equipo si creés que es un error.',
+                    )
+                }}
             </p>
         </div>
 

@@ -40,16 +40,16 @@ final class ReviewException extends \Exception implements HttpExceptionInterface
 
     public static function bookingNotCompleted(): self
     {
-        return new self('BOOKING_NOT_COMPLETED', 'Solo se puede reseñar después de completar el tour.', 403);
+        return new self('BOOKING_NOT_COMPLETED', __('Solo se puede reseñar después de completar el tour.'), 403);
     }
 
     public static function alreadyReviewed(): self
     {
-        return new self('REVIEW_ALREADY_EXISTS', 'Ya enviaste una reseña para esta reserva.', 409);
+        return new self('REVIEW_ALREADY_EXISTS', __('Ya enviaste una reseña para esta reserva.'), 409);
     }
 
     public static function alreadyResponded(): self
     {
-        return new self('REVIEW_ALREADY_RESPONDED', 'Esta reseña ya tiene respuesta.', 409);
+        return new self('REVIEW_ALREADY_RESPONDED', __('Esta reseña ya tiene respuesta.'), 409);
     }
 }

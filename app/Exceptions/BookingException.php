@@ -40,7 +40,7 @@ final class BookingException extends \Exception implements HttpExceptionInterfac
 
     public static function dateNotAvailable(): self
     {
-        return new self('TOUR_DATE_NOT_AVAILABLE', 'La fecha seleccionada ya no está disponible.', 422);
+        return new self('TOUR_DATE_NOT_AVAILABLE', __('La fecha seleccionada ya no está disponible.'), 422);
     }
 
     public static function insufficientCapacity(int $available): self
@@ -50,16 +50,16 @@ final class BookingException extends \Exception implements HttpExceptionInterfac
 
     public static function bookingWindowClosed(): self
     {
-        return new self('BOOKING_WINDOW_CLOSED', 'La fecha ya no admite reservas.', 422);
+        return new self('BOOKING_WINDOW_CLOSED', __('La fecha ya no admite reservas.'), 422);
     }
 
     public static function notFound(): self
     {
-        return new self('BOOKING_NOT_FOUND', 'No encontramos la reserva indicada.', 404);
+        return new self('BOOKING_NOT_FOUND', __('No encontramos la reserva indicada.'), 404);
     }
 
     public static function travelersLocked(): self
     {
-        return new self('BOOKING_TRAVELERS_LOCKED', 'No es posible editar los viajeros de una reserva cancelada o expirada.', 409);
+        return new self('BOOKING_TRAVELERS_LOCKED', __('No es posible editar los viajeros de una reserva cancelada o expirada.'), 409);
     }
 }

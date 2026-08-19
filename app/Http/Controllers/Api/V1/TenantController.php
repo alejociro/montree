@@ -18,7 +18,7 @@ final class TenantController extends Controller
 
         if ($tenant === null) {
             return new JsonResponse([
-                'message' => 'No tenant for this host.',
+                'message' => __('No tenant for this host.'),
                 'error_code' => 'TENANT_NOT_RESOLVED',
             ], 404);
         }

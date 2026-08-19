@@ -78,7 +78,7 @@ function onHexChange(value: string | number): void {
             v-if="modelValue && !isValidHex"
             class="text-xs text-amber-600 dark:text-amber-400"
         >
-            Formato esperado: #RRGGBB (6 dígitos hexadecimales).
+            {{ $t('Formato esperado: #RRGGBB (6 dígitos hexadecimales).') }}
         </p>
 
         <InputError :message="error" />

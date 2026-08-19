@@ -18,7 +18,7 @@ final class PublicReviewController extends Controller
         $tour = Tour::query()->where('slug', $slug)->where('status', TourStatus::Active)->first();
 
         if ($tour === null) {
-            throw new NotFoundHttpException('Tour not found.');
+            throw new NotFoundHttpException(__('Tour not found.'));
         }
 
         $reviews = $tour->reviews()

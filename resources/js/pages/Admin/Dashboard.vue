@@ -14,11 +14,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     DashboardPeriodKey,
     DashboardResponse,
     DashboardSnapshot,
 } from '@/types/dashboard';
+
+const { t } = useTranslations();
 
 const period = ref<DashboardPeriodKey>('last_30_days');
 const snapshot = ref<DashboardSnapshot | null>(null);
@@ -65,7 +68,9 @@ const isRefreshing = computed(() => isLoading.value && snapshot.value !== null);
 const pendingReviewsLabel = computed(() => {
     const count = snapshot.value?.pending_reviews_count ?? 0;
 
-    return count === 1 ? '1 reseña pendiente' : `${count} reseñas pendientes`;
+    return count === 1
+        ? t('1 reseña pendiente')
+        : `${count} reseñas pendientes`;
 });
 
 async function loadDashboard(): Promise<void> {
@@ -80,7 +85,7 @@ async function loadDashboard(): Promise<void> {
         const response = (await useHttp().submit(action)) as DashboardResponse;
         snapshot.value = response.data;
     } catch {
-        errorMessage.value = 'No se pudo cargar el dashboard.';
+        errorMessage.value = t('No se pudo cargar el dashboard.');
         snapshot.value = null;
     } finally {
         isLoading.value = false;
@@ -98,13 +103,13 @@ watch(period, () => {
 
 <template>
     <div class="px-4 py-6 md:px-8">
-        <Head title="Dashboard administrativo" />
+        <Head :title="$t('Dashboard administrativo')" />
 
         <div
             class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
         >
             <Heading
-                title="Dashboard"
+                :title="$t('Dashboard')"
                 :description="`Resumen de la operación de ${tenant?.name ?? 'tu agencia'}.`"
             />
 
@@ -119,7 +124,7 @@ watch(period, () => {
 
         <Alert v-if="errorMessage" variant="destructive" class="mt-6">
             <AlertCircle class="size-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>{{ $t('Error') }}</AlertTitle>
             <AlertDescription>{{ errorMessage }}</AlertDescription>
         </Alert>
 
@@ -139,7 +144,12 @@ watch(period, () => {
             :class="{ 'opacity-60': isRefreshing }"
         >
             <div v-if="userName" class="text-sm text-muted-foreground">
-                Hola, {{ userName }}. Esto pasó en {{ rangeLabel }}.
+                {{
+                    $t('Hola, :name. Esto pasó en :range.', {
+                        name: userName,
+                        range: rangeLabel,
+                    })
+                }}
             </div>
 
             <DashboardStatGrid
@@ -163,10 +173,10 @@ watch(period, () => {
                         class="rounded-xl border border-border bg-card p-4 text-card-foreground"
                     >
                         <p class="text-sm font-medium text-muted-foreground">
-                            Tendencia de ingresos
+                            {{ $t('Tendencia de ingresos') }}
                         </p>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Comparación con el periodo anterior.
+                            {{ $t('Comparación con el periodo anterior.') }}
                         </p>
                         <div class="mt-4">
                             <RevenueSparkline :points="sparklinePoints" />
@@ -183,7 +193,11 @@ watch(period, () => {
                                 {{ pendingReviewsLabel }}
                             </p>
                             <p class="mt-1 text-xs">
-                                Revísalas para mantener tu reputación al día.
+                                {{
+                                    $t(
+                                        'Revísalas para mantener tu reputación al día.',
+                                    )
+                                }}
                             </p>
                         </div>
                     </div>
@@ -195,9 +209,15 @@ watch(period, () => {
             v-else-if="!isLoading && !errorMessage"
             class="mt-12 rounded-xl border border-dashed border-border p-12 text-center"
         >
-            <h3 class="text-base font-semibold">Bienvenido al dashboard</h3>
+            <h3 class="text-base font-semibold">
+                {{ $t('Bienvenido al dashboard') }}
+            </h3>
             <p class="mt-2 text-sm text-muted-foreground">
-                Cuando empieces a recibir reservas vas a ver aquí tus métricas.
+                {{
+                    $t(
+                        'Cuando empieces a recibir reservas vas a ver aquí tus métricas.',
+                    )
+                }}
             </p>
         </div>
     </div>

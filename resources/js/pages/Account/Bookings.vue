@@ -48,16 +48,18 @@ function formatPrice(amount: string, currency: string) {
 </script>
 
 <template>
-    <Head title="Mis reservas" />
+    <Head :title="$t('Mis reservas')" />
     <div class="container mx-auto max-w-4xl space-y-8 px-4 py-8">
         <SetPasswordCard />
 
-        <h1 class="text-2xl font-bold">Mis reservas</h1>
+        <h1 class="text-2xl font-bold">{{ $t('Mis reservas') }}</h1>
 
-        <p v-if="loading" class="text-sm text-muted-foreground">Cargando...</p>
+        <p v-if="loading" class="text-sm text-muted-foreground">
+            {{ $t('Cargando...') }}
+        </p>
 
         <section v-if="!loading && upcoming.length > 0" class="space-y-3">
-            <h2 class="text-lg font-semibold">Próximas</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Próximas') }}</h2>
             <ul class="space-y-3">
                 <li
                     v-for="b in upcoming"
@@ -93,7 +95,7 @@ function formatPrice(amount: string, currency: string) {
         </section>
 
         <section v-if="!loading && past.length > 0" class="space-y-3">
-            <h2 class="text-lg font-semibold">Anteriores</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Anteriores') }}</h2>
             <ul class="space-y-3">
                 <li
                     v-for="b in past"
@@ -116,20 +118,20 @@ function formatPrice(amount: string, currency: string) {
                             v-if="b.status === 'completed' && !b.has_review"
                             :href="`/account/bookings/${b.booking_number}/review`"
                         >
-                            <Button variant="outline" size="sm"
-                                >Dejar reseña</Button
-                            >
+                            <Button variant="outline" size="sm">{{
+                                $t('Dejar reseña')
+                            }}</Button>
                         </Link>
-                        <Badge v-else-if="b.has_review" variant="secondary"
-                            >Reseñado</Badge
-                        >
+                        <Badge v-else-if="b.has_review" variant="secondary">{{
+                            $t('Reseñado')
+                        }}</Badge>
                     </div>
                 </li>
             </ul>
         </section>
 
         <section v-if="!loading && cancelled.length > 0" class="space-y-3">
-            <h2 class="text-lg font-semibold">Canceladas</h2>
+            <h2 class="text-lg font-semibold">{{ $t('Canceladas') }}</h2>
             <ul class="space-y-2">
                 <li
                     v-for="b in cancelled"
@@ -172,13 +174,19 @@ function formatPrice(amount: string, currency: string) {
                 </svg>
             </div>
             <div class="space-y-1">
-                <p class="font-medium">No tienes reservas todavía</p>
+                <p class="font-medium">
+                    {{ $t('No tienes reservas todavía') }}
+                </p>
                 <p class="text-sm text-muted-foreground">
-                    Explora los tours disponibles y reserva tu próxima aventura.
+                    {{
+                        $t(
+                            'Explora los tours disponibles y reserva tu próxima aventura.',
+                        )
+                    }}
                 </p>
             </div>
             <Link href="/tours">
-                <Button>Ver tours</Button>
+                <Button>{{ $t('Ver tours') }}</Button>
             </Link>
         </div>
     </div>

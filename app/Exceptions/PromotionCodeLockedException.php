@@ -14,7 +14,7 @@ final class PromotionCodeLockedException extends RuntimeException implements Htt
 
     public function __construct()
     {
-        parent::__construct('No se puede modificar el código de una promoción que ya fue usada.');
+        parent::__construct(__('No se puede modificar el código de una promoción que ya fue usada.'));
     }
 
     public function getStatusCode(): int

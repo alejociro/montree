@@ -18,7 +18,7 @@ final class BookingController extends Controller
     {
         $tenant = Tenant::current();
 
-        abort_if($tenant === null, 404, 'No tenant for this host.');
+        abort_if($tenant === null, 404, __('No tenant for this host.'));
 
         $query = Booking::query()
             ->with(['user:id,name,email', 'tour:id,name', 'tourDate:id,starts_at'])

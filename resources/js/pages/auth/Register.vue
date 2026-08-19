@@ -26,12 +26,12 @@ const { isResolved, displayName } = useTenant();
 </script>
 
 <template>
-    <Head title="Registrarse" />
+    <Head :title="$t('Registrarse')" />
 
     <p v-if="isResolved" class="mb-4 text-center text-sm text-muted-foreground">
-        Crea tu cuenta en
+        {{ $t('Crea tu cuenta en') }}
         <span class="font-medium text-primary">{{ displayName }}</span>
-        para reservar tours y guardar tus favoritos.
+        {{ $t('para reservar tours y guardar tus favoritos.') }}
     </p>
 
     <Form
@@ -42,7 +42,7 @@ const { isResolved, displayName } = useTenant();
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="name">Nombre completo</Label>
+                <Label for="name">{{ $t('Nombre completo') }}</Label>
                 <Input
                     id="name"
                     type="text"
@@ -51,14 +51,14 @@ const { isResolved, displayName } = useTenant();
                     :tabindex="1"
                     autocomplete="name"
                     name="name"
-                    placeholder="Tu nombre completo"
+                    :placeholder="$t('Tu nombre completo')"
                     @input="clearErrors('name')"
                 />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+                <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -66,21 +66,21 @@ const { isResolved, displayName } = useTenant();
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
-                    placeholder="tu@correo.com"
+                    :placeholder="$t('tu@correo.com')"
                     @input="clearErrors('email')"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Contraseña</Label>
+                <Label for="password">{{ $t('Contraseña') }}</Label>
                 <PasswordInput
                     id="password"
                     required
                     :tabindex="3"
                     autocomplete="new-password"
                     name="password"
-                    placeholder="Contraseña"
+                    :placeholder="$t('Contraseña')"
                     :passwordrules="passwordRules"
                     @input="clearErrors('password', 'password_confirmation')"
                 />
@@ -88,14 +88,16 @@ const { isResolved, displayName } = useTenant();
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirmar contraseña</Label>
+                <Label for="password_confirmation">{{
+                    $t('Confirmar contraseña')
+                }}</Label>
                 <PasswordInput
                     id="password_confirmation"
                     required
                     :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
-                    placeholder="Confirmar contraseña"
+                    :placeholder="$t('Confirmar contraseña')"
                     :passwordrules="passwordRules"
                     @input="clearErrors('password_confirmation')"
                 />
@@ -110,18 +112,18 @@ const { isResolved, displayName } = useTenant();
                 data-test="register-user-button"
             >
                 <Spinner v-if="processing" />
-                Crear cuenta
+                {{ $t('Crear cuenta') }}
             </Button>
         </div>
 
         <div class="text-center text-sm text-muted-foreground">
-            ¿Ya tienes una cuenta?
+            {{ $t('¿Ya tienes una cuenta?') }}
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
                 :tabindex="6"
             >
-                Inicia sesión
+                {{ $t('Inicia sesión') }}
             </TextLink>
         </div>
     </Form>

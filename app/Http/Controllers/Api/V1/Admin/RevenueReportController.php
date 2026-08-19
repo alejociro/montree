@@ -19,7 +19,7 @@ final class RevenueReportController extends Controller
     {
         $tenant = Tenant::current();
 
-        abort_if($tenant === null, 404, 'No tenant for this host.');
+        abort_if($tenant === null, 404, __('No tenant for this host.'));
 
         $result = $this->action->handle(
             $request->fromDate(),

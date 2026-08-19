@@ -18,6 +18,19 @@ abstract class TestCase extends BaseTestCase
      */
     protected $seeder = RolesAndPermissionsSeeder::class;
 
+    /**
+     * WHY: el cliente HTTP de pruebas manda `Accept-Language: en-us,en;q=0.5` por defecto,
+     * asi que desde multilanguage-es-en la suite entera correria en ingles y cada
+     * assertion sobre un mensaje en espanol fallaria. Se fija el idioma del proyecto y
+     * cada test que necesite otro lo sobrescribe con `withHeader`.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withHeader('Accept-Language', 'es');
+    }
+
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void
     {
         if (! Features::enabled($feature)) {

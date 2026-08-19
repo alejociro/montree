@@ -28,7 +28,7 @@ final class ToggleFavoriteRequest extends FormRequest
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $tour = Tour::query()->where('id', $value)->where('status', TourStatus::Active)->first();
                     if ($tour === null) {
-                        $fail('The selected tour is not available.');
+                        $fail(__('The selected tour is not available.'));
                     }
                 },
             ],

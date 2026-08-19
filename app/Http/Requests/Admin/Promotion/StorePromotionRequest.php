@@ -67,7 +67,7 @@ class StorePromotionRequest extends FormRequest
             if ($this->input('type') === PromotionType::Percentage->value
                 && $this->filled('value')
                 && (float) $this->input('value') > 100) {
-                $validator->errors()->add('value', 'El porcentaje no puede superar 100.');
+                $validator->errors()->add('value', __('El porcentaje no puede superar 100.'));
             }
         });
     }

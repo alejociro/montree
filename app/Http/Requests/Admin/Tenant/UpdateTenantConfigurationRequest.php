@@ -63,12 +63,12 @@ class UpdateTenantConfigurationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'primary_color.regex' => 'The primary color must be a valid hex code (e.g. #16a34a).',
-            'secondary_color.regex' => 'The secondary color must be a valid hex code (e.g. #0f766e).',
-            'currency.in' => 'The selected currency is not supported.',
-            'timezone.in' => 'The selected timezone is not valid.',
-            'locale.in' => 'The selected locale is not supported.',
-            'custom_css.max' => 'Custom CSS must be 10000 characters or less.',
+            'primary_color.regex' => __('The primary color must be a valid hex code (e.g. #16a34a).'),
+            'secondary_color.regex' => __('The secondary color must be a valid hex code (e.g. #0f766e).'),
+            'currency.in' => __('The selected currency is not supported.'),
+            'timezone.in' => __('The selected timezone is not valid.'),
+            'locale.in' => __('The selected locale is not supported.'),
+            'custom_css.max' => __('Custom CSS must be 10000 characters or less.'),
         ];
     }
 

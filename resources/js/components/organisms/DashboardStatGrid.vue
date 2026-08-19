@@ -37,33 +37,33 @@ const ratingLabel = computed(() => {
 <template>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
-            title="Ingresos brutos"
+            :title="$t('Ingresos brutos')"
             :value="grossLabel"
             :icon="DollarSign"
             :trend="revenue.growth_pct"
             trend-label="vs periodo anterior"
         />
         <StatCard
-            title="Ingresos netos"
+            :title="$t('Ingresos netos')"
             :value="netLabel"
             :icon="DollarSign"
-            description="Después de reembolsos"
+            :description="$t('Después de reembolsos')"
         />
         <StatCard
-            title="Reservas"
+            :title="$t('Reservas')"
             :value="formatNumber(bookings.total)"
             :icon="TicketCheck"
             :trend="bookings.growth_pct"
             trend-label="vs periodo anterior"
         />
         <StatCard
-            title="Rating promedio"
+            :title="$t('Rating promedio')"
             :value="ratingLabel"
             :icon="Star"
             :description="`${formatNumber(rating.count)} reseñas`"
         />
         <StatCard
-            title="Ocupación próxima"
+            :title="$t('Ocupación próxima')"
             :value="`${occupancy.occupancy_pct ?? 0}%`"
             :icon="Calendar"
             :description="`${formatNumber(occupancy.booked_seats)} / ${formatNumber(occupancy.total_capacity)} asientos`"

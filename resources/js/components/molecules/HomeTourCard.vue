@@ -39,7 +39,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                 v-else
                 class="flex size-full items-center justify-center text-xs tracking-wide text-muted-foreground uppercase"
             >
-                Sin imagen
+                {{ $t('Sin imagen') }}
             </div>
 
             <div
@@ -59,7 +59,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                 class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm"
             >
                 <Sparkles class="size-3" aria-hidden="true" />
-                Nuevo
+                {{ $t('Nuevo') }}
             </span>
         </Link>
 
@@ -100,7 +100,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
             </p>
 
             <p class="mt-auto pt-2 text-sm text-muted-foreground">
-                Desde
+                {{ $t('Desde') }}
                 <span class="text-base font-bold text-foreground">
                     {{ formatCurrency(tour.base_price, tour.currency) }}
                 </span>

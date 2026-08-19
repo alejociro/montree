@@ -11,7 +11,10 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/composables/useTranslations';
 import type { TenantStatus } from '@/types';
+
+const { t } = useTranslations();
 
 defineProps<{
     currentStatus: TenantStatus;
@@ -36,7 +39,7 @@ const dialogTitle = computed(() => {
         return 'Restablecer tenant';
     }
 
-    return 'Cambiar estado';
+    return t('Cambiar estado');
 });
 
 function openDialog(next: TenantStatus): void {
@@ -52,7 +55,7 @@ function submit(): void {
     }
 
     if (targetStatus.value === 'suspended' && reason.value.trim() === '') {
-        reasonError.value = 'El motivo es obligatorio al suspender.';
+        reasonError.value = t('El motivo es obligatorio al suspender.');
 
         return;
     }
@@ -80,7 +83,7 @@ defineExpose({ closeDialog });
             :disabled="processing"
             @click="openDialog('active')"
         >
-            Activar
+            {{ $t('Activar') }}
         </Button>
         <Button
             v-if="currentStatus !== 'suspended'"
@@ -89,7 +92,7 @@ defineExpose({ closeDialog });
             :disabled="processing"
             @click="openDialog('suspended')"
         >
-            Suspender
+            {{ $t('Suspender') }}
         </Button>
 
         <Dialog v-model:open="open">
@@ -97,18 +100,23 @@ defineExpose({ closeDialog });
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        Esta acción afecta el acceso del tenant a la plataforma
-                        y notifica a sus administradores.
+                        {{
+                            $t(
+                                'Esta acción afecta el acceso del tenant a la plataforma y notifica a sus administradores.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div v-if="targetStatus === 'suspended'" class="space-y-2">
-                    <Label for="suspension-reason">Motivo</Label>
+                    <Label for="suspension-reason">{{ $t('Motivo') }}</Label>
                     <Textarea
                         id="suspension-reason"
                         v-model="reason"
                         rows="3"
-                        placeholder="Describe brevemente el motivo de la suspensión"
+                        :placeholder="
+                            $t('Describe brevemente el motivo de la suspensión')
+                        "
                     />
                     <p v-if="reasonError" class="text-sm text-red-600">
                         {{ reasonError }}
@@ -121,7 +129,7 @@ defineExpose({ closeDialog });
                         :disabled="processing"
                         @click="open = false"
                     >
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button :disabled="processing" @click="submit">
                         {{ processing ? 'Procesando...' : 'Confirmar' }}

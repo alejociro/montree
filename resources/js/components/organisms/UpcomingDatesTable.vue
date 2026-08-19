@@ -40,9 +40,9 @@ function occupancyColor(pct: number | null): string {
 <template>
     <Card>
         <CardHeader>
-            <CardTitle>Próximas fechas</CardTitle>
+            <CardTitle>{{ $t('Próximas fechas') }}</CardTitle>
             <CardDescription>
-                Salidas programadas en los próximos 7 días.
+                {{ $t('Salidas programadas en los próximos 7 días.') }}
             </CardDescription>
         </CardHeader>
         <CardContent class="px-0">
@@ -50,7 +50,7 @@ function occupancyColor(pct: number | null): string {
                 v-if="sorted.length === 0"
                 class="px-6 py-8 text-center text-sm text-muted-foreground"
             >
-                No hay fechas programadas en los próximos 7 días.
+                {{ $t('No hay fechas programadas en los próximos 7 días.') }}
             </div>
             <ul v-else class="divide-y divide-border">
                 <li

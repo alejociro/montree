@@ -10,8 +10,11 @@ import { onMounted, ref } from 'vue';
 import { index as datesIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { TourDateAdmin, TourDateStatus } from '@/types/logistics';
+
+const { t } = useTranslations();
 
 type Props = {
     tourId: number;
@@ -26,12 +29,15 @@ const loadError = ref(false);
 
 const statusMeta: Record<
     TourDateStatus,
-    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+    {
+        label: string;
+        variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    }
 > = {
-    open: { label: 'Abierta', variant: 'default' },
-    full: { label: 'Completa', variant: 'secondary' },
-    closed: { label: 'Cerrada', variant: 'outline' },
-    cancelled: { label: 'Cancelada', variant: 'destructive' },
+    open: { label: t('Abierta'), variant: 'default' },
+    full: { label: t('Completa'), variant: 'secondary' },
+    closed: { label: t('Cerrada'), variant: 'outline' },
+    cancelled: { label: t('Cancelada'), variant: 'destructive' },
 };
 
 async function loadDates(): Promise<void> {
@@ -86,10 +92,10 @@ onMounted(loadDates);
             class="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
         >
             <p class="text-sm text-destructive">
-                No se pudieron cargar las salidas.
+                {{ $t('No se pudieron cargar las salidas.') }}
             </p>
             <Button variant="outline" size="sm" class="mt-3" @click="loadDates">
-                Reintentar
+                {{ $t('Reintentar') }}
             </Button>
         </div>
 
@@ -98,9 +104,11 @@ onMounted(loadDates);
             class="rounded-xl border border-dashed border-border p-8 text-center"
         >
             <CalendarClock class="mx-auto size-8 text-muted-foreground/40" />
-            <p class="mt-3 font-medium text-foreground">Sin salidas próximas</p>
+            <p class="mt-3 font-medium text-foreground">
+                {{ $t('Sin salidas próximas') }}
+            </p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Programa una salida desde la edición del producto.
+                {{ $t('Programa una salida desde la edición del producto.') }}
             </p>
         </div>
 
@@ -127,7 +135,9 @@ onMounted(loadDates);
                             >
                                 <div
                                     class="h-full rounded-full bg-primary transition-all"
-                                    :style="{ width: `${occupancyRate(date)}%` }"
+                                    :style="{
+                                        width: `${occupancyRate(date)}%`,
+                                    }"
                                 />
                             </div>
                             <span class="text-xs text-muted-foreground">
@@ -177,7 +187,9 @@ onMounted(loadDates);
                     <span
                         class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
                     >
-                        {{ formatCurrency(date.effective_price, props.currency) }}
+                        {{
+                            formatCurrency(date.effective_price, props.currency)
+                        }}
                     </span>
                 </div>
             </li>

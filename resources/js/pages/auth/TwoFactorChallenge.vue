@@ -9,24 +9,29 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { useTranslations } from '@/composables/useTranslations';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
+
+const { t } = useTranslations();
 
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
-            title: 'Código de recuperación',
-            description:
+            title: t('Código de recuperación'),
+            description: t(
                 'Confirma el acceso a tu cuenta ingresando uno de tus códigos de recuperación de emergencia.',
-            buttonText: 'usar código de autenticación',
+            ),
+            buttonText: t('usar código de autenticación'),
         };
     }
 
     return {
-        title: 'Código de autenticación',
-        description:
+        title: t('Código de autenticación'),
+        description: t(
             'Ingresa el código de autenticación proporcionado por tu aplicación de autenticación.',
-        buttonText: 'usar código de recuperación',
+        ),
+        buttonText: t('usar código de recuperación'),
     };
 });
 
@@ -49,7 +54,7 @@ const code = ref<string>('');
 </script>
 
 <template>
-    <Head title="Autenticación en dos pasos" />
+    <Head :title="$t('Autenticación en dos pasos')" />
 
     <div class="space-y-6">
         <template v-if="!showRecoveryInput">
@@ -84,10 +89,10 @@ const code = ref<string>('');
                     <InputError :message="errors.code" />
                 </div>
                 <Button type="submit" class="w-full" :disabled="processing">
-                    Continuar
+                    {{ $t('Continuar') }}
                 </Button>
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>O puedes </span>
+                    <span>{{ $t('O puedes') }} </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
@@ -109,17 +114,17 @@ const code = ref<string>('');
                 <Input
                     name="recovery_code"
                     type="text"
-                    placeholder="Ingresa código de recuperación"
+                    :placeholder="$t('Ingresa código de recuperación')"
                     :autofocus="showRecoveryInput"
                     required
                 />
                 <InputError :message="errors.recovery_code" />
                 <Button type="submit" class="w-full" :disabled="processing">
-                    Continuar
+                    {{ $t('Continuar') }}
                 </Button>
 
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>O puedes </span>
+                    <span>{{ $t('O puedes') }} </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

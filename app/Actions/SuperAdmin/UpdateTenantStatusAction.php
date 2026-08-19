@@ -21,7 +21,7 @@ final class UpdateTenantStatusAction
         $previous = $tenant->status;
 
         if ($previous === $next) {
-            throw new RuntimeException('Tenant already has the requested status.');
+            throw new RuntimeException(__('Tenant already has the requested status.'));
         }
 
         DB::transaction(function () use ($tenant, $next): void {

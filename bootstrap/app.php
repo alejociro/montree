@@ -26,6 +26,7 @@ use App\Http\Middleware\RedirectRegistrationToOnboarding;
 use App\Http\Middleware\RedirectStaffFromTravelerArea;
 use App\Http\Middleware\RedirectToPlatformHost;
 use App\Http\Middleware\ResolveTenant;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
@@ -60,7 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // "Mixed Content" (pantalla en blanco).
         $middleware->trustProxies(at: '*');
 
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'locale']);
 
         $middleware->web(prepend: [
             RedirectToPlatformHost::class,
@@ -69,6 +70,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            // WHY: va en `append`, no en `prepend`. La cadena de resolucion consulta
+            // `$request->user()`, que no existe hasta que StartSession corrio — y
+            // StartSession es parte del grupo `web`, o sea posterior a cualquier prepend.
+            SetLocale::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
@@ -87,6 +92,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
+            SetLocale::class,
         ]);
 
         $middleware->alias([

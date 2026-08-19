@@ -50,13 +50,13 @@ final class InviteMemberRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Ingresa el correo de la persona a invitar.',
-            'email.email' => 'Correo inválido.',
-            'email.max' => 'Máximo :max caracteres.',
-            'name.string' => 'Debe ser texto.',
-            'name.max' => 'Máximo :max caracteres.',
-            'role.required' => 'Elige un rol.',
-            'role.in' => 'Ese rol no es válido.',
+            'email.required' => __('Ingresa el correo de la persona a invitar.'),
+            'email.email' => __('Correo inválido.'),
+            'email.max' => __('Máximo :max caracteres.'),
+            'name.string' => __('Debe ser texto.'),
+            'name.max' => __('Máximo :max caracteres.'),
+            'role.required' => __('Elige un rol.'),
+            'role.in' => __('Ese rol no es válido.'),
         ];
     }
 
@@ -66,7 +66,7 @@ final class InviteMemberRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'email' => 'correo electrónico',
+            'email' => __('correo electrónico'),
             'name' => 'nombre',
             'role' => 'rol',
         ];

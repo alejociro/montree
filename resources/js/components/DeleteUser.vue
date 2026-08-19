@@ -25,22 +25,24 @@ const passwordInput = useTemplateRef('passwordInput');
     <div class="space-y-6">
         <Heading
             variant="small"
-            title="Eliminar cuenta"
-            description="Elimina tu cuenta y todos sus datos"
+            :title="$t('Eliminar cuenta')"
+            :description="$t('Elimina tu cuenta y todos sus datos')"
         />
         <div
             class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
         >
             <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
-                <p class="font-medium">Atención</p>
+                <p class="font-medium">{{ $t('Atención') }}</p>
                 <p class="text-sm">
-                    Esta acción no se puede deshacer.
+                    {{ $t('Esta acción no se puede deshacer.') }}
                 </p>
             </div>
             <Dialog>
                 <DialogTrigger as-child>
-                    <Button variant="destructive" data-test="delete-user-button"
-                        >Eliminar cuenta</Button
+                    <Button
+                        variant="destructive"
+                        data-test="delete-user-button"
+                        >{{ $t('Eliminar cuenta') }}</Button
                     >
                 </DialogTrigger>
                 <DialogContent>
@@ -55,27 +57,27 @@ const passwordInput = useTemplateRef('passwordInput');
                         v-slot="{ errors, processing, reset, clearErrors }"
                     >
                         <DialogHeader class="space-y-3">
-                            <DialogTitle
-                                >¿Seguro que querés eliminar tu
-                                cuenta?</DialogTitle
-                            >
+                            <DialogTitle>{{
+                                $t('¿Seguro que querés eliminar tu cuenta?')
+                            }}</DialogTitle>
                             <DialogDescription>
-                                Al eliminar tu cuenta se borran de forma
-                                permanente todos sus datos. Ingresá tu
-                                contraseña para confirmar que querés
-                                eliminarla.
+                                {{
+                                    $t(
+                                        'Al eliminar tu cuenta se borran de forma permanente todos sus datos. Ingresá tu contraseña para confirmar que querés eliminarla.',
+                                    )
+                                }}
                             </DialogDescription>
                         </DialogHeader>
 
                         <div class="grid gap-2">
-                            <Label for="password" class="sr-only"
-                                >Contraseña</Label
-                            >
+                            <Label for="password" class="sr-only">{{
+                                $t('Contraseña')
+                            }}</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 ref="passwordInput"
-                                placeholder="Contraseña"
+                                :placeholder="$t('Contraseña')"
                             />
                             <InputError :message="errors.password" />
                         </div>
@@ -91,7 +93,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                         }
                                     "
                                 >
-                                    Cancelar
+                                    {{ $t('Cancelar') }}
                                 </Button>
                             </DialogClose>
 
@@ -101,7 +103,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                 :disabled="processing"
                                 data-test="confirm-delete-user-button"
                             >
-                                Eliminar cuenta
+                                {{ $t('Eliminar cuenta') }}
                             </Button>
                         </DialogFooter>
                     </Form>

@@ -3,10 +3,13 @@ import { Check, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import type {
     SubdomainAvailabilityReason,
     SubdomainStatus,
 } from '@/types/onboarding.types';
+
+const { t } = useTranslations();
 
 type Props = {
     modelValue: string;
@@ -67,7 +70,7 @@ const statusMessage = computed(() => {
     }
 
     if (props.status === 'available') {
-        return '¡Disponible! Este subdominio es tuyo.';
+        return t('¡Disponible! Este subdominio es tuyo.');
     }
 
     if (props.status === 'unavailable') {
@@ -75,15 +78,15 @@ const statusMessage = computed(() => {
             case 'taken':
                 return 'Ese subdominio ya fue reclamado.';
             case 'reserved':
-                return 'Ese subdominio está reservado, elige otro.';
+                return t('Ese subdominio está reservado, elige otro.');
             case 'invalid_format':
-                return 'Usa solo minúsculas, números y guiones.';
+                return t('Usa solo minúsculas, números y guiones.');
             default:
-                return 'Ese subdominio no está disponible.';
+                return t('Ese subdominio no está disponible.');
         }
     }
 
-    return 'Puedes usar letras minúsculas, números y guiones.';
+    return t('Puedes usar letras minúsculas, números y guiones.');
 });
 
 const statusTone = computed(() => {
@@ -105,7 +108,7 @@ const isInvalid = computed(
 
 <template>
     <div class="grid gap-2">
-        <Label :for="id">{{ label }}</Label>
+        <Label :for="id">{{ $t(label) }}</Label>
 
         <div
             class="flex items-stretch overflow-hidden rounded-md border bg-background shadow-xs transition-colors focus-within:ring-[3px] focus-within:ring-ring/50"
@@ -127,7 +130,7 @@ const isInvalid = computed(
                 spellcheck="false"
                 :tabindex="tabindex"
                 name="subdomain"
-                placeholder="mi-agencia"
+                :placeholder="$t('mi-agencia')"
                 class="w-full min-w-0 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
                 :aria-invalid="isInvalid"
                 :aria-describedby="messageId"
