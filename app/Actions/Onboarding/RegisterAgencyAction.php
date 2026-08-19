@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Onboarding;
 
+use App\Actions\Tenant\SeedDefaultCategoriesAction;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
@@ -20,7 +21,10 @@ use Illuminate\Support\Str;
 
 final class RegisterAgencyAction
 {
-    public function __construct(private readonly AttachUserToTenant $attachUserToTenant) {}
+    public function __construct(
+        private readonly AttachUserToTenant $attachUserToTenant,
+        private readonly SeedDefaultCategoriesAction $seedCategories,
+    ) {}
 
     public function handle(array $data): Tenant
     {
@@ -47,6 +51,8 @@ final class RegisterAgencyAction
         ]);
 
         TenantConfiguration::query()->create(['tenant_id' => $tenant->id]);
+
+        $this->seedCategories->handle($tenant);
 
         $user = User::query()->create([
             'name' => $data['founder_name'],
