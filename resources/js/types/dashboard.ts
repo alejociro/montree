@@ -14,12 +14,18 @@ export type DashboardPeriod = {
     previous_end: string;
 };
 
+export type DashboardRevenuePoint = {
+    date: string;
+    amount: string;
+};
+
 export type DashboardRevenue = {
     gross: string;
     net: string;
     currency: string;
     growth_pct: number | null;
     previous_gross: string;
+    series: DashboardRevenuePoint[];
 };
 
 export type DashboardBookings = {

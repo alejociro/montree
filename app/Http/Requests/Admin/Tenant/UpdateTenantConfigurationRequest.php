@@ -25,7 +25,7 @@ class UpdateTenantConfigurationRequest extends FormRequest
             return false;
         }
 
-        return $this->user()?->can('update', $tenant) ?? false;
+        return $this->user()?->can('updateSettings', $tenant) ?? false;
     }
 
     /**

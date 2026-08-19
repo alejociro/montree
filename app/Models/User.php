@@ -40,6 +40,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'password_set_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
+            // WHY: NO va en #[Fillable] — es un timestamp que fija el sistema al autenticar,
+            // nunca input del usuario (mismo criterio que `password_set_at` y
+            // `email_verified_at`). Escribirlo con `forceFill(['last_login_at' => now()])->save()`;
+            // un `update()` sin forceFill se descarta en silencio por mass-assignment.
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -95,6 +100,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * WHY: `isActiveMemberOf` no sirve para autorizar la gestión del equipo — reactivar a
+     * alguien exige justamente que hoy NO esté activo. Lo que se valida ahí es pertenencia.
+     */
+    public function belongsToTenant(Tenant $tenant): bool
+    {
+        return $this->membershipFor($tenant) !== null;
+    }
+
+    /**
      * WHY: super_admin role lives on the sentinel team_id=0 (see RolesAndPermissionsSeeder
      * + multi-tenancy.md §9.3), so resolving it must switch the permission team first.
      */
@@ -109,7 +123,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * Scope spatie/permission role resolution to a tenant team and reset the cached
      * roles relation so the next role check reads the correct team.
      */
-    public function loadRolesForTeam(int $teamId): void
+    public function loadRolesForTeam(int|string|null $teamId): void
     {
         setPermissionsTeamId($teamId);
         $this->unsetRelation('roles');

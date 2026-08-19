@@ -47,4 +47,14 @@ final class TeamException extends \Exception implements HttpExceptionInterface
     {
         return new self('TEAM_LAST_ADMIN', 'No puedes remover al último admin del equipo.', 422);
     }
+
+    public static function rolesRequired(): self
+    {
+        return new self('TEAM_ROLES_REQUIRED', 'Un miembro del equipo necesita al menos un rol.', 422);
+    }
+
+    public static function invitationAlreadyAccepted(): self
+    {
+        return new self('TEAM_INVITATION_ALREADY_ACCEPTED', 'Esta persona ya aceptó su invitación.', 422);
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\NewsletterSubscriber;
 use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 final class NewsletterController extends Controller
@@ -20,6 +21,8 @@ final class NewsletterController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        Gate::authorize('newsletter.view');
+
         $subscribers = NewsletterSubscriber::query()
             ->orderByDesc('id')
             ->paginate(20);

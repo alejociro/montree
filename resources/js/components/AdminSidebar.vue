@@ -1,18 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    LayoutDashboard,
-    Mountain,
-    CalendarClock,
-    Truck,
-    Megaphone,
-    Mail,
-    Star,
-    Users,
-    Settings,
-} from 'lucide-vue-next';
-import AdminNavMain from '@/components/AdminNavMain.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
+import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -23,56 +12,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { index as departuresIndex } from '@/routes/admin/departures';
-import type { NavItem } from '@/types';
+import { useNavigation } from '@/composables/useNavigation';
 
-const navItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/admin/dashboard',
-        icon: LayoutDashboard,
-    },
-    {
-        title: 'Productos',
-        href: '/admin/tours',
-        icon: Mountain,
-    },
-    {
-        title: 'Tours',
-        href: departuresIndex().url,
-        icon: CalendarClock,
-    },
-    {
-        title: 'Logística',
-        href: '/admin/logistics',
-        icon: Truck,
-    },
-    {
-        title: 'Promociones',
-        href: '/admin/promotions',
-        icon: Megaphone,
-    },
-    {
-        title: 'Newsletter',
-        href: '/admin/newsletter',
-        icon: Mail,
-    },
-    {
-        title: 'Reseñas',
-        href: '/admin/reviews',
-        icon: Star,
-    },
-    {
-        title: 'Equipo',
-        href: '/admin/team',
-        icon: Users,
-    },
-    {
-        title: 'Configuración',
-        href: '/admin/tenant/configuration',
-        icon: Settings,
-    },
-];
+// Los items salen del unico constructor de menu por permiso
+// (`@/config/navigation`): aca no se decide nada, solo se pinta.
+const { panelItems, homeUrl } = useNavigation();
 </script>
 
 <template>
@@ -81,7 +25,7 @@ const navItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link href="/admin/dashboard">
+                        <Link :href="homeUrl">
                             <TenantBrandedLogo size="sm" />
                         </Link>
                     </SidebarMenuButton>
@@ -90,7 +34,7 @@ const navItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <AdminNavMain :items="navItems" />
+            <NavMain label="Administración" :items="panelItems" />
         </SidebarContent>
 
         <SidebarFooter>

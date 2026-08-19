@@ -89,6 +89,26 @@ class TourStatusControllerTest extends TestCase
         $this->assertSame(TourStatus::Active, $tour->fresh()?->status);
     }
 
+    public function test_status_rejection_body_carries_error_code_at_top_level(): void
+    {
+        // Contrato que consume el frontend: useApi.flattenLaravelErrors lee
+        // `error_code` y `message` de la raíz del 422; el cuerpo no trae `errors`.
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create(['status' => TourStatus::Draft]);
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->patchJson(
+            "http://demo.montree.test/api/v1/admin/tours/{$tour->id}/status",
+            ['status' => 'active'],
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonStructure(['message', 'error_code']);
+        $response->assertJsonMissingPath('errors');
+        $response->assertJsonPath('error_code', 'TOUR_NEEDS_IMAGE_TO_ACTIVATE');
+    }
+
     public function test_invalid_transition_returns_422(): void
     {
         $tenant = $this->makeTenant();

@@ -53,7 +53,7 @@ class DemoTenantSeeder extends Seeder
             ['slug' => 'demo'],
             [
                 'name' => 'Demo Eco Adventures',
-                'domain' => 'demo.'.config('montree.super_admin_host'),
+                'domain' => 'demo.'.config('montree.platform_host'),
                 'contact_email' => 'hello@demo.montree.test',
                 'contact_phone' => '+57 300 000 0000',
                 'status' => TenantStatus::Active,
@@ -82,6 +82,7 @@ class DemoTenantSeeder extends Seeder
         $tenant->makeCurrent();
 
         $admin = $this->ensureMember($tenant, 'admin@demo.montree.test', 'Demo Admin', UserRole::Admin);
+        $this->ensureMember($tenant, 'sales@demo.montree.test', 'Demo Sales', UserRole::Sales);
         $this->ensureMember($tenant, 'operator@demo.montree.test', 'Demo Operator', UserRole::Operator);
         $this->ensureMember($tenant, 'guide@demo.montree.test', 'Demo Guide', UserRole::Guide);
         $this->ensureMember($tenant, 'customer@demo.montree.test', 'Demo Customer', UserRole::Customer);

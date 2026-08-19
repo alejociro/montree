@@ -16,6 +16,7 @@ use App\Http\Controllers\Onboarding\AgencyOnboardingController;
 use App\Http\Controllers\Onboarding\ClaimAgencyController;
 use App\Http\Controllers\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\PublicTourPageController;
+use App\Http\Controllers\RoleHomeRedirectController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
 use Illuminate\Support\Facades\Route;
@@ -59,33 +60,40 @@ Route::get('onboarding/claim', ClaimAgencyController::class)
     ->name('onboarding.claim');
 
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
-    Route::get('dashboard', fn () => redirect('/account/bookings'))->name('dashboard');
+    Route::get('dashboard', RoleHomeRedirectController::class)->name('dashboard');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
 
-    Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
-    Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
-    Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
-    Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
-    Route::get('account/bookings/{bookingNumber}/review', [AccountPagesController::class, 'review'])->name('account.bookings.review');
+    // WHY: F018 B4 — la zona de viajero es solo del cliente. Quien tiene permisos de
+    // panel (`dashboard.view` o `guide.schedule.view`) vuelve a su home de rol.
+    Route::middleware('traveler.only')->group(function () {
+        Route::get('account', [AccountPagesController::class, 'profile'])->name('account.profile');
+        Route::get('account/bookings', [AccountPagesController::class, 'bookings'])->name('account.bookings');
+        Route::get('account/favorites', [AccountPagesController::class, 'favorites'])->name('account.favorites');
+        Route::get('account/notifications', [NotificationPagesController::class, 'index'])->name('account.notifications');
+        Route::get('account/bookings/{bookingNumber}/review', [AccountPagesController::class, 'review'])->name('account.bookings.review');
+    });
 });
 
-Route::middleware(['auth', 'verified', 'tenant_admin.only'])->prefix('admin')->name('admin.')->group(function () {
+// WHY: mismo criterio que routes/api.php — `dashboard.view` abre el panel y cada pantalla
+// exige además el permiso de su módulo (F018 contracts.md §1).
+Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'])->prefix('admin')->name('admin.')->group(function () {
     Route::inertia('dashboard', 'Admin/Dashboard')->name('dashboard');
-    Route::get('tours', [TourPagesController::class, 'index'])->name('tours.index');
-    Route::get('tours/create', [TourPagesController::class, 'create'])->name('tours.create');
-    Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->name('tours.edit');
-    Route::get('tours/{tour}', [TourPagesController::class, 'show'])->name('tours.show');
-    Route::inertia('departures', 'Admin/Departures/Index')->name('departures.index');
-    Route::inertia('logistics', 'Admin/Logistics/Index')->name('logistics.index');
-    Route::get('promotions', [PromotionPagesController::class, 'index'])->name('promotions.index');
-    Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->name('newsletter.index');
-    Route::get('reviews', [ReviewPagesController::class, 'index'])->name('reviews.index');
-    Route::get('team', [TeamPagesController::class, 'index'])->name('team.index');
-    Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->name('tenant.configuration');
+    Route::get('tours', [TourPagesController::class, 'index'])->middleware('can:tours.view')->name('tours.index');
+    Route::get('tours/create', [TourPagesController::class, 'create'])->middleware('can:tours.create')->name('tours.create');
+    Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->middleware('can:tours.update')->name('tours.edit');
+    Route::get('tours/{tour}', [TourPagesController::class, 'show'])->middleware('can:tours.view')->name('tours.show');
+    Route::inertia('departures', 'Admin/Departures/Index')->middleware('can:departures.view')->name('departures.index');
+    Route::inertia('logistics', 'Admin/Logistics/Index')->middleware('can:logistics.view')->name('logistics.index');
+    Route::get('promotions', [PromotionPagesController::class, 'index'])->middleware('can:promotions.view')->name('promotions.index');
+    Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->middleware('can:newsletter.view')->name('newsletter.index');
+    Route::get('reviews', [ReviewPagesController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
+    Route::get('team', [TeamPagesController::class, 'index'])->middleware('can:team.view')->name('team.index');
+    Route::inertia('roles', 'Admin/Roles/Index')->middleware('can:team.role.update')->name('roles.index');
+    Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->middleware('can:tenant.view')->name('tenant.configuration');
 });
 
 Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->name('guide.')->group(function () {
-    Route::get('schedule', [GuidePagesController::class, 'schedule'])->name('schedule');
+    Route::get('schedule', [GuidePagesController::class, 'schedule'])->middleware('can:guide.schedule.view')->name('schedule');
 });
 
 // WHY: marketing/legal pages belong to the platform brand, not to a tenant's

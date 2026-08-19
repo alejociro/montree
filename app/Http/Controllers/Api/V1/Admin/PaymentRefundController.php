@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Payment\PaymentResource;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 final class PaymentRefundController extends Controller
 {
@@ -16,9 +17,7 @@ final class PaymentRefundController extends Controller
 
     public function __invoke(Request $request, Payment $payment): PaymentResource
     {
-        if (! $request->user()?->hasRole('admin')) {
-            abort(403);
-        }
+        Gate::authorize('payments.refund');
 
         $reason = $request->validate(['reason' => ['nullable', 'string', 'max:500']])['reason'] ?? null;
 

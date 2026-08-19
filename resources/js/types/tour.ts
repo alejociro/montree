@@ -100,6 +100,24 @@ export type TourFormPayload = {
     itinerary: TourItineraryDraft[];
 };
 
+/**
+ * Lo que viaja al backend al guardar. Los campos opcionales de texto se mandan
+ * como `null` cuando quedan vacios (el formulario los mantiene como '' para
+ * poder bindearlos a un input).
+ */
+export type TourSubmitPayload = Omit<
+    TourFormPayload,
+    | 'short_description'
+    | 'meeting_point'
+    | 'meeting_latitude'
+    | 'meeting_longitude'
+> & {
+    short_description: string | null;
+    meeting_point: string | null;
+    meeting_latitude: string | null;
+    meeting_longitude: string | null;
+};
+
 export type TourShowStats = {
     bookings: {
         total: number;

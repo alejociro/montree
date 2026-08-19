@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Tour;
 use App\Models\User;
 
@@ -12,58 +11,45 @@ final class TourPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isStaff($user);
+        return $user->can('tours.view');
     }
 
     public function view(User $user, Tour $tour): bool
     {
-        return $this->isStaff($user);
+        return $user->can('tours.view');
     }
 
     public function create(User $user): bool
     {
-        return $this->isAdminOrOperator($user);
+        return $user->can('tours.create');
     }
 
     public function update(User $user, Tour $tour): bool
     {
-        return $this->isAdminOrOperator($user);
+        return $user->can('tours.update');
+    }
+
+    public function publish(User $user, Tour $tour): bool
+    {
+        return $user->can('tours.publish');
     }
 
     public function delete(User $user, Tour $tour): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('tours.delete');
     }
 
+    /**
+     * WHY: archivar es la otra salida destructiva del catálogo y el catálogo de F018 no
+     * tiene `tours.archive`; se apoya en `tours.delete`, que es el mismo conjunto de roles.
+     */
     public function archive(User $user, Tour $tour): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('tours.delete');
     }
 
-    private function isStaff(User $user): bool
+    public function manageImages(User $user, Tour $tour): bool
     {
-        return $user->hasAnyRole([
-            UserRole::SuperAdmin->value,
-            UserRole::Admin->value,
-            UserRole::Operator->value,
-            UserRole::Guide->value,
-        ]);
-    }
-
-    private function isAdminOrOperator(User $user): bool
-    {
-        return $user->hasAnyRole([
-            UserRole::SuperAdmin->value,
-            UserRole::Admin->value,
-            UserRole::Operator->value,
-        ]);
-    }
-
-    private function isAdmin(User $user): bool
-    {
-        return $user->hasAnyRole([
-            UserRole::SuperAdmin->value,
-            UserRole::Admin->value,
-        ]);
+        return $user->can('tours.images.manage');
     }
 }

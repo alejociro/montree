@@ -1,34 +1,29 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { Mail, MapPin, Phone } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
+import { useNavigation } from '@/composables/useNavigation';
 import { useTenant } from '@/composables/useTenant';
 import { useTenantBranding } from '@/composables/useTenantBranding';
 import { login, register } from '@/routes';
-import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    bookings as accountBookings,
+    profile as accountProfile,
+} from '@/routes/account';
 import { index as catalogIndex } from '@/routes/catalog';
-import { schedule as guideSchedule } from '@/routes/guide';
-import type { TenantRole } from '@/types/auth';
 
 const { displayName, tenant, configuration } = useTenant();
 
 useTenantBranding();
 
-const page = usePage();
-
 // WHY: staff browsing the public site kept losing their way back to the panel.
-const workspaceHref = computed(() => {
-    const role = page.props.auth.user?.tenantRole as TenantRole | null | undefined;
-
-    if (role === 'admin' || role === 'operator') {
-        return adminDashboard().url;
-    }
-
-    return role === 'guide' ? guideSchedule().url : null;
-});
+// El destino sale del constructor unico de menu (por permiso), no de un
+// `switch` por rol propio de este layout. `isStaffMember` esconde los enlaces
+// de viajero a quien `traveler.only` devolveria a su home de rol.
+const { workspace, isStaffMember } = useNavigation();
 
 const hasSocialLinks = computed(() => {
     const links = configuration.value?.social_links;
@@ -74,20 +69,26 @@ const hasSocialLinks = computed(() => {
                     </Link>
                     <template v-if="$page.props.auth.user">
                         <Link
-                            v-if="workspaceHref"
-                            :href="workspaceHref"
+                            v-if="workspace"
+                            :href="workspace.href"
                             class="hidden text-sm font-medium text-muted-foreground transition hover:text-foreground sm:inline-flex"
                         >
                             Panel
                         </Link>
                         <Link
-                            href="/account/bookings"
+                            v-if="!isStaffMember"
+                            :href="accountBookings()"
                             class="hidden text-sm font-medium text-muted-foreground transition hover:text-foreground sm:inline-flex"
                         >
                             Reservas
                         </Link>
-                        <Button as-child variant="outline" size="sm">
-                            <Link href="/account">Mi cuenta</Link>
+                        <Button
+                            v-if="!isStaffMember"
+                            as-child
+                            variant="outline"
+                            size="sm"
+                        >
+                            <Link :href="accountProfile()">Mi cuenta</Link>
                         </Button>
                     </template>
                     <template v-else-if="tenant">

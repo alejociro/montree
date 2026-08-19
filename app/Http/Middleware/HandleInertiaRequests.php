@@ -48,13 +48,16 @@ final class HandleInertiaRequests extends Middleware
         /** @var User|null $user */
         $user = $request->user();
 
+        $authUser = $user !== null
+            ? (new AuthUserResource($user, $tenant))->resolve()
+            : null;
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $user !== null
-                    ? (new AuthUserResource($user, $tenant))->resolve()
-                    : null,
+                'user' => $authUser,
+                'permissions' => $authUser['permissions'] ?? [],
             ],
             'tenant' => $tenant !== null
                 ? (new TenantResource($tenant))->resolve()

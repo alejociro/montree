@@ -30,7 +30,7 @@ final class TourDateController extends Controller
 
     public function index(Request $request, Tour $tour): AnonymousResourceCollection
     {
-        Gate::authorize('view', $tour);
+        Gate::authorize('viewAny', TourDate::class);
 
         $scope = in_array($request->string('scope')->toString(), ['upcoming', 'past', 'all'], true)
             ? $request->string('scope')->toString()
@@ -64,7 +64,7 @@ final class TourDateController extends Controller
 
     public function destroy(TourDate $tourDate): JsonResponse
     {
-        Gate::authorize('update', $tourDate->tour);
+        Gate::authorize('delete', $tourDate);
 
         $this->deleteAction->handle($tourDate);
 

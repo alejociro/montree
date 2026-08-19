@@ -14,6 +14,7 @@ use App\Http\Resources\Tour\TourImageResource;
 use App\Models\Tour;
 use App\Models\TourImage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 final class TourImageController extends Controller
 {
@@ -46,6 +47,8 @@ final class TourImageController extends Controller
 
     public function destroy(Tour $tour, TourImage $image): JsonResponse
     {
+        Gate::authorize('manageImages', $tour);
+
         abort_if($image->tour_id !== $tour->id, 404);
 
         $this->detachAction->handle($image);

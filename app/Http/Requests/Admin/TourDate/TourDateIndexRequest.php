@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\TourDate;
 
 use App\Enums\TourDateDisplayStatus;
 use App\Models\Tenant;
-use App\Models\Tour;
+use App\Models\TourDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,7 +14,7 @@ class TourDateIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('viewAny', Tour::class) ?? false;
+        return $this->user()?->can('viewAny', TourDate::class) ?? false;
     }
 
     /**

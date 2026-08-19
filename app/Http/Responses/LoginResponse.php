@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Responses;
 
 use App\Enums\TenantMembershipStatus;
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Auth\CrossHostLoginHandoff;
+use App\Services\Auth\RoleHomeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +19,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class LoginResponse implements LoginResponseContract
 {
-    public function __construct(private CrossHostLoginHandoff $handoff) {}
+    public function __construct(
+        private CrossHostLoginHandoff $handoff,
+        private RoleHomeResolver $roleHome,
+    ) {}
 
     public function toResponse($request): Response
     {
@@ -56,13 +59,6 @@ final class LoginResponse implements LoginResponseContract
         }
 
         return $this->buildRedirect($user, $request, $tenant);
-    }
-
-    private function tenantRole(User $user, Tenant $tenant): ?string
-    {
-        $user->loadRolesForTeam($tenant->id);
-
-        return $user->getRoleNames()->first();
     }
 
     private function redirectSuperAdmin(User $user, Request $request): Response
@@ -112,7 +108,7 @@ final class LoginResponse implements LoginResponseContract
 
     private function buildRedirect(User $user, Request $request, Tenant $tenant): Response
     {
-        $target = $this->roleHome($user, $tenant);
+        $target = $this->roleHome->homeFor($user, $tenant);
 
         return $request->wantsJson()
             ? response()->json(['two_factor' => false, 'redirect' => $target])
@@ -145,17 +141,8 @@ final class LoginResponse implements LoginResponseContract
             $user,
             $request,
             $this->tenantHost($request, $tenant),
-            $this->roleHome($user, $tenant),
+            $this->roleHome->homeFor($user, $tenant),
         );
-    }
-
-    private function roleHome(User $user, Tenant $tenant): string
-    {
-        return match ($this->tenantRole($user, $tenant)) {
-            UserRole::Admin->value, UserRole::Operator->value => '/admin/dashboard',
-            UserRole::Guide->value => '/guide/schedule',
-            default => $this->home(),
-        };
     }
 
     private function tenantHost(Request $request, Tenant $tenant): string

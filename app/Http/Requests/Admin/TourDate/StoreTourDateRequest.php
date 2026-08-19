@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\TourDate;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\UserRole;
 use App\Models\Tenant;
-use App\Models\Tour;
+use App\Models\TourDate;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,7 +16,7 @@ class StoreTourDateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Tour::class) ?? false;
+        return $this->user()?->can('create', TourDate::class) ?? false;
     }
 
     /**

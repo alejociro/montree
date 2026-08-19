@@ -29,7 +29,7 @@ defineProps<{
     canRegister: boolean;
 }>();
 
-const { tenant, displayName } = useTenant();
+const { tenant } = useTenant();
 
 const SUSPENSION_KEYWORDS = ['suspendida', 'suspended', 'suspendido'] as const;
 
