@@ -46,6 +46,66 @@ export function formatDateTime(iso: string, locale = 'es-CO'): string {
     }).format(date);
 }
 
+export function formatDate(iso: string, locale = 'es-CO'): string {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+        date,
+    );
+}
+
+const RELATIVE_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ['year', 365 * 24 * 60 * 60],
+    ['month', 30 * 24 * 60 * 60],
+    ['day', 24 * 60 * 60],
+    ['hour', 60 * 60],
+    ['minute', 60],
+];
+
+/**
+ * Fecha relativa en espanol: "hace 3 días", "hace un momento".
+ *
+ * Para distancias de mas de un mes devuelve la fecha absoluta: "hace 7 meses"
+ * dice menos que "12 de enero de 2026" cuando lo que se busca es saber si la
+ * persona sigue usando la cuenta.
+ */
+export function formatRelativeDate(
+    iso: string,
+    now: Date = new Date(),
+    locale = 'es-CO',
+): string {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+
+    const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+    const absolute = Math.abs(seconds);
+
+    if (absolute >= 30 * 24 * 60 * 60) {
+        return formatDate(iso, locale);
+    }
+
+    if (absolute < 60) {
+        return 'hace un momento';
+    }
+
+    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+    for (const [unit, unitSeconds] of RELATIVE_UNITS) {
+        if (absolute >= unitSeconds) {
+            return formatter.format(Math.round(seconds / unitSeconds), unit);
+        }
+    }
+
+    return formatter.format(seconds, 'second');
+}
+
 type TourDateOptions = {
     withWeekday?: boolean;
     withTime?: boolean;

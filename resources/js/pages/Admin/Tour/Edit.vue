@@ -24,11 +24,13 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useApi } from '@/composables/useApi';
+import type { ApiErrors } from '@/composables/useApi';
 import type {
     SupportedCurrency,
     Tour,
     TourCategory,
     TourFormPayload,
+    TourSubmitPayload,
     TourStatus as TourStatusType,
 } from '@/types/tour';
 
@@ -73,7 +75,7 @@ const formErrors = computed(
 );
 const saving = ref(false);
 
-function normalizePayload(data: TourFormPayload): TourFormPayload {
+function normalizePayload(data: TourFormPayload): TourSubmitPayload {
     return {
         ...data,
         meeting_latitude:
@@ -139,6 +141,33 @@ function statusLabel(status: TourStatusType): string {
     }
 }
 
+const STATUS_ERROR_MESSAGES: Record<string, string> = {
+    TOUR_NEEDS_IMAGE_TO_ACTIVATE:
+        'El tour necesita al menos una imagen antes de activarse.',
+    INVALID_STATUS_TRANSITION:
+        'Ese cambio de estado no es válido desde el estado actual del tour.',
+    TOUR_HAS_ACTIVE_BOOKINGS:
+        'El tour tiene reservas activas: archívalo en lugar de cambiarlo de estado.',
+    FEATURE_REQUIRES_ENTERPRISE:
+        'Esta acción solo está disponible en el plan Enterprise.',
+};
+
+function statusErrorMessage(errors: ApiErrors): string {
+    const mapped = errors.error_code
+        ? STATUS_ERROR_MESSAGES[errors.error_code]
+        : undefined;
+
+    if (mapped) {
+        return mapped;
+    }
+
+    if (!errors.error_code && errors._global) {
+        return errors._global;
+    }
+
+    return 'No se pudo cambiar el estado del tour. Revisa que tenga al menos una imagen y que el cambio sea válido desde su estado actual.';
+}
+
 function transitionTo(next: TourStatusType): void {
     statusError.value = null;
     changingStatus.value = true;
@@ -154,14 +183,7 @@ function transitionTo(next: TourStatusType): void {
                 router.reload({ only: ['tour'] });
             },
             onError: (errors) => {
-                const code = errors.error_code;
-
-                if (code === 'TOUR_NEEDS_IMAGE_TO_ACTIVATE') {
-                    statusError.value =
-                        'El producto necesita al menos una imagen antes de activarse.';
-                } else {
-                    statusError.value = 'No se pudo cambiar el estado.';
-                }
+                statusError.value = statusErrorMessage(errors);
             },
             onFinish: () => {
                 changingStatus.value = false;
@@ -173,7 +195,7 @@ function transitionTo(next: TourStatusType): void {
 function deleteTour(): void {
     if (
         !confirm(
-            '¿Eliminar este producto? Esta acción se puede revertir desde tu base de datos.',
+            '¿Eliminar este tour? Esta acción se puede revertir desde tu base de datos.',
         )
     ) {
         return;
@@ -181,7 +203,7 @@ function deleteTour(): void {
 
     void api.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
-            toast.success('Producto eliminado.');
+            toast.success('Tour eliminado.');
             router.visit(indexPage().url);
         },
         onError: (errors) => {
@@ -195,7 +217,7 @@ function deleteTour(): void {
                 return;
             }
 
-            toast.error('No se pudo eliminar el producto.');
+            toast.error('No se pudo eliminar el tour.');
         },
     });
 }
@@ -269,7 +291,7 @@ function deleteTour(): void {
                     <CardHeader>
                         <CardTitle class="text-base">Estado</CardTitle>
                         <CardDescription>
-                            Controla la visibilidad del producto en el catálogo.
+                            Controla la visibilidad del tour en el catálogo.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">

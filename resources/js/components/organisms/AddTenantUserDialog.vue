@@ -41,7 +41,7 @@ const errors = ref<ApiErrors>({});
 const form = reactive({
     name: '',
     email: '',
-    role: 'guide' as 'admin' | 'operator' | 'guide',
+    role: 'guide' as 'admin' | 'sales' | 'operator' | 'guide',
 });
 
 function reset(): void {
@@ -132,6 +132,7 @@ function submit(): void {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="sales">Vendedor</SelectItem>
                             <SelectItem value="operator">Operador</SelectItem>
                             <SelectItem value="guide">Guía</SelectItem>
                         </SelectContent>

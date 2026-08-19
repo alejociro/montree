@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Dashboard;
 
-use App\Policies\DashboardPolicy;
+use App\Models\Booking;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AdminBookingIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
-
-        if ($user === null) {
-            return false;
-        }
-
-        return (new DashboardPolicy)->view($user);
+        return $this->user()?->can('viewAny', Booking::class) ?? false;
     }
 
     /**

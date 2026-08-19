@@ -26,7 +26,7 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label for="password">Contraseña</Label>
                 <PasswordInput
                     id="password"
                     name="password"

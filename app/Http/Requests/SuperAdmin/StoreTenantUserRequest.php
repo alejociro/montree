@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\SuperAdmin;
 
-use App\Enums\UserRole;
+use App\Concerns\LowercasesInput;
 use App\Models\Tenant;
+use App\Services\Rbac\TenantRoleCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreTenantUserRequest extends FormRequest
 {
+    use LowercasesInput;
+
     public function authorize(): bool
     {
         $tenant = $this->route('tenant');
@@ -30,18 +33,12 @@ class StoreTenantUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'string', Rule::in([
-                UserRole::Admin->value,
-                UserRole::Operator->value,
-                UserRole::Guide->value,
-            ])],
+            'role' => ['required', 'string', Rule::in(TenantRoleCatalog::STAFF_ROLES)],
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('email')) {
-            $this->merge(['email' => mb_strtolower(trim((string) $this->input('email')))]);
-        }
+        $this->lowercaseInput('email');
     }
 }

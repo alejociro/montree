@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * WHY: desde F018 este middleware ya NO pregunta por rol — la autorización de cada ruta
+ * de `admin/*` la resuelve `can:<permiso>`. Lo que sigue siendo suyo es la membresía:
+ * un miembro suspendido conserva sus filas en `model_has_roles`, así que sin este
+ * chequeo seguiría pasando el `can:` después de que el equipo lo suspendiera.
+ */
 final class EnsureTenantAdmin
 {
     public function handle(Request $request, Closure $next): Response
@@ -33,10 +38,6 @@ final class EnsureTenantAdmin
         }
 
         $user->loadRolesForTeam($tenant->id);
-
-        if (! $user->hasAnyRole([UserRole::Admin->value, UserRole::Operator->value])) {
-            abort(403);
-        }
 
         return $next($request);
     }

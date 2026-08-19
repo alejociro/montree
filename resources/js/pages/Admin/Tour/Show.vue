@@ -104,7 +104,7 @@ const mapsUrl = computed(() => {
             class="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
             <ArrowLeft class="size-4" />
-            Volver a productos
+            Volver a tours
         </Link>
 
         <!-- Hero -->
@@ -377,7 +377,7 @@ const mapsUrl = computed(() => {
                         v-if="props.tour.itinerary.length === 0"
                         class="text-sm text-muted-foreground"
                     >
-                        Este producto todavía no tiene itinerario.
+                        Este tour todavía no tiene itinerario.
                     </p>
 
                     <ol v-else class="relative space-y-6">

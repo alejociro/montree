@@ -57,6 +57,25 @@ class TenantUserControllerTest extends TestCase
         Notification::assertSentTo($user, TenantUserInvitationNotification::class);
     }
 
+    public function test_normalizes_the_email_before_persisting(): void
+    {
+        Notification::fake();
+        Role::findOrCreate(UserRole::Operator->value, 'web');
+
+        $tenant = Tenant::factory()->create(['slug' => 'demo']);
+        $superAdmin = $this->superAdmin();
+
+        $response = $this->actingAs($superAdmin)->postJson(
+            "http://montree.test/api/v1/super-admin/tenants/{$tenant->id}/users",
+            ['name' => 'New Guide', 'email' => 'GUIDE@Demo.test', 'role' => 'operator'],
+        );
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.email', 'guide@demo.test');
+
+        $this->assertSame('guide@demo.test', User::query()->whereKeyNot($superAdmin->id)->sole()->email);
+    }
+
     public function test_existing_member_is_rejected(): void
     {
         Role::findOrCreate(UserRole::Guide->value, 'web');
@@ -77,6 +96,32 @@ class TenantUserControllerTest extends TestCase
 
         $response->assertStatus(409);
         $response->assertJsonPath('error_code', 'TEAM_ALREADY_MEMBER');
+    }
+
+    /**
+     * `sales` entro al catalogo en F018 Fase 1 y quedo fuera de la regla de este
+     * endpoint: el super admin no podia dar de alta un vendedor.
+     */
+    public function test_sales_is_an_assignable_role(): void
+    {
+        Notification::fake();
+        Role::findOrCreate(UserRole::Sales->value, 'web');
+
+        $tenant = Tenant::factory()->create(['slug' => 'demo']);
+        $superAdmin = $this->superAdmin();
+
+        $response = $this->actingAs($superAdmin)->postJson(
+            "http://montree.test/api/v1/super-admin/tenants/{$tenant->id}/users",
+            ['name' => 'New Sales', 'email' => 'sales@demo.test', 'role' => 'sales'],
+        );
+
+        $response->assertCreated();
+
+        $user = User::query()->where('email', 'sales@demo.test')->firstOrFail();
+
+        setPermissionsTeamId($tenant->id);
+        $user->unsetRelation('roles');
+        $this->assertTrue($user->hasRole(UserRole::Sales->value));
     }
 
     public function test_invalid_role_is_rejected(): void

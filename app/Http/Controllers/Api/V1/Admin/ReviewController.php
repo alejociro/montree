@@ -13,6 +13,7 @@ use App\Http\Resources\Review\ReviewResource;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class ReviewController extends Controller
 {
@@ -23,6 +24,8 @@ final class ReviewController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        Gate::authorize('viewAny', Review::class);
+
         $query = Review::query()->with(['tour', 'user'])->orderByDesc('id');
 
         if ($status = $request->query('status')) {

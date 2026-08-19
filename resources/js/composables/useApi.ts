@@ -12,6 +12,7 @@ type HttpMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type ValidationErrorBody = {
     message?: string;
+    error_code?: string;
     errors?: Record<string, string[] | string>;
 };
 
@@ -60,6 +61,10 @@ function flattenLaravelErrors(body: ValidationErrorBody): ApiErrors {
 
     if (Object.keys(errors).length === 0 && body.message) {
         errors._global = body.message;
+    }
+
+    if (body.error_code) {
+        errors.error_code = body.error_code;
     }
 
     return errors;
@@ -117,7 +122,7 @@ async function request<TResponse>(
             | ValidationErrorBody;
 
         if (!response.ok) {
-            const errors =
+            const errors: ApiErrors =
                 response.status === 422
                     ? flattenLaravelErrors(json as ValidationErrorBody)
                     : {
@@ -125,6 +130,13 @@ async function request<TResponse>(
                               (json as ValidationErrorBody).message ??
                               'Error inesperado.',
                       };
+
+            const errorCode = (json as ValidationErrorBody).error_code;
+
+            if (errorCode && !errors.error_code) {
+                errors.error_code = errorCode;
+            }
+
             options.onError?.(errors);
 
             return null;

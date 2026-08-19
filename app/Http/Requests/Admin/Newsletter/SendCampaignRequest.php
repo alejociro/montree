@@ -10,7 +10,7 @@ final class SendCampaignRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('admin') ?? false;
+        return $this->user()?->can('newsletter.send') ?? false;
     }
 
     /**

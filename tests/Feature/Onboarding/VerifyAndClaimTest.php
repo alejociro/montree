@@ -9,8 +9,10 @@ use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\User;
+use App\Notifications\Onboarding\VerifyAgencyEmail;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
@@ -58,7 +60,7 @@ class VerifyAndClaimTest extends TestCase
 
     private function verifyUrl(?int $tenantId = null, ?int $userId = null): string
     {
-        URL::forceRootUrl('http://montree.test');
+        URL::useOrigin('http://montree.test');
 
         try {
             return URL::temporarySignedRoute('onboarding.verify', now()->addMinutes(60), [
@@ -66,7 +68,7 @@ class VerifyAndClaimTest extends TestCase
                 'user' => $userId ?? $this->founder->id,
             ]);
         } finally {
-            URL::forceRootUrl(null);
+            URL::useOrigin(null);
         }
     }
 
@@ -111,6 +113,51 @@ class VerifyAndClaimTest extends TestCase
         $this->get($claimUrl)->assertRedirect('/admin/dashboard');
 
         $this->get($claimUrl)->assertRedirect(route('login'));
+    }
+
+    public function test_email_link_is_rooted_at_the_platform_host_not_app_url(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'local');
+        Config::set('app.url', 'http://localhost');
+        Config::set('montree.platform_host', 'montree.test');
+
+        $url = $this->verificationUrlFromEmail();
+
+        $this->assertStringStartsWith('http://montree.test/onboarding/verify/', $url);
+
+        $this->get($url)->assertRedirect();
+        $this->assertSame(TenantStatus::Active, $this->tenant->fresh()->status);
+    }
+
+    public function test_email_link_keeps_the_port_used_by_the_deployment(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'local');
+        Config::set('app.url', 'http://localhost:8000');
+        Config::set('montree.platform_host', 'montree.test');
+
+        $this->assertStringStartsWith('http://montree.test:8000/onboarding/verify/', $this->verificationUrlFromEmail());
+    }
+
+    public function test_email_link_is_always_https_outside_local(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'production');
+        Config::set('app.url', 'http://montree.com.co');
+        Config::set('montree.platform_host', 'montree.com.co');
+
+        $this->assertStringStartsWith('https://montree.com.co/onboarding/verify/', $this->verificationUrlFromEmail());
+    }
+
+    private function verificationUrlFromEmail(): string
+    {
+        $html = (string) VerifyAgencyEmail::for($this->tenant, $this->founder)
+            ->toMail($this->founder)
+            ->render();
+
+        preg_match('#https?://[^"\s]+/onboarding/verify/[^"\s]+#', $html, $matches);
+
+        $this->assertNotEmpty($matches, 'The email carries no verification link.');
+
+        return htmlspecialchars_decode($matches[0], ENT_QUOTES);
     }
 
     public function test_expired_or_invalid_signature_shows_expired_page(): void

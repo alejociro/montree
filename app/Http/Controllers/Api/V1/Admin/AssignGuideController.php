@@ -10,6 +10,7 @@ use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 final class AssignGuideController extends Controller
 {
@@ -17,9 +18,7 @@ final class AssignGuideController extends Controller
 
     public function __invoke(Request $request, TourDate $tourDate): JsonResponse
     {
-        if (! $request->user()?->hasRole(['admin', 'operator'])) {
-            abort(403);
-        }
+        Gate::authorize('assignGuide', $tourDate);
 
         $data = $request->validate(['guide_id' => ['nullable', 'integer', 'exists:users,id']]);
         $guide = $data['guide_id'] !== null ? User::query()->find((int) $data['guide_id']) : null;

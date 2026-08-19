@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Onboarding;
 
+use App\Concerns\LowercasesInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class ResendVerificationRequest extends FormRequest
 {
+    use LowercasesInput;
+
     public function authorize(): bool
     {
         return true;
@@ -15,9 +18,7 @@ final class ResendVerificationRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (is_string($this->input('email'))) {
-            $this->merge(['email' => mb_strtolower($this->input('email'))]);
-        }
+        $this->lowercaseInput('email');
     }
 
     /**
@@ -28,6 +29,27 @@ final class ResendVerificationRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Ingresa tu correo.',
+            'email.string' => 'Debe ser texto.',
+            'email.email' => 'Correo inválido.',
+            'email.max' => 'Máximo :max caracteres.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['email' => 'correo electrónico'];
     }
 
     public function email(): string

@@ -13,7 +13,7 @@ defineProps<{
 
 useTenantBranding();
 
-const { configuration, displayName, isResolved } = useTenant();
+const { configuration, displayName } = useTenant();
 </script>
 
 <template>

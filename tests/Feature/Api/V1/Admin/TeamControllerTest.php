@@ -41,7 +41,7 @@ class TeamControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
 
-        $roles = collect($response->json('data'))->pluck('role')->all();
+        $roles = collect($response->json('data'))->pluck('roles.0.name')->all();
         sort($roles);
         $this->assertSame(['admin', 'guide', 'operator'], $roles);
 

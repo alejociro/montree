@@ -13,7 +13,7 @@ class UpdateTourImageRequest extends FormRequest
     {
         $tour = $this->route('tour');
 
-        return $tour instanceof Tour && ($this->user()?->can('update', $tour) ?? false);
+        return $tour instanceof Tour && ($this->user()?->can('manageImages', $tour) ?? false);
     }
 
     /**

@@ -10,6 +10,13 @@ use Illuminate\Validation\Rule;
 
 final class UpdateTourDateRequest extends StoreTourDateRequest
 {
+    public function authorize(): bool
+    {
+        $tourDate = $this->route('tourDate');
+
+        return $tourDate instanceof TourDate && ($this->user()?->can('update', $tourDate) ?? false);
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */

@@ -64,9 +64,22 @@ class PasswordSetupTest extends TestCase
                 'password_confirmation' => 'different-password',
             ]);
 
-        $response->assertSessionHasErrors('password');
+        $response->assertSessionHasErrors(['password' => 'Las contraseñas no coinciden.']);
 
         $this->assertTrue($user->fresh()->mustSetPassword());
+    }
+
+    public function test_password_setup_reports_a_missing_password_in_spanish(): void
+    {
+        $user = User::factory()->needsPasswordSetup()->create();
+
+        $this->actingAs($user)
+            ->from(route('account.bookings'))
+            ->post(route('user-password.setup'), [
+                'password' => '',
+                'password_confirmation' => '',
+            ])
+            ->assertSessionHasErrors(['password' => 'Ingresa una contraseña.']);
     }
 
     public function test_guests_cannot_set_password(): void

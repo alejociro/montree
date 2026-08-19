@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionContr
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
@@ -30,8 +31,6 @@ use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\GuideController;
 use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\Onboarding\AgencyRegistrationController;
-use App\Http\Controllers\Api\V1\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
@@ -49,17 +48,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('tenant', [TenantController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('api.v1.tenant.show');
-
-// WHY: self-serve onboarding (F016) runs on the platform host (no tenant). These
-// endpoints must NOT sit inside any group that requires a current tenant.
-Route::prefix('onboarding')->name('api.v1.onboarding.')->group(function (): void {
-    Route::get('subdomain-availability', SubdomainAvailabilityController::class)
-        ->middleware('throttle:30,1')
-        ->name('subdomain-availability');
-    Route::post('agencies', [AgencyRegistrationController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('agencies.store');
-});
 
 Route::middleware('throttle:5,1')->group(function (): void {
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('api.v1.newsletter.subscribe');
@@ -99,52 +87,81 @@ Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'tenant_guide.only'])->group(function (): void {
-    Route::get('guide/schedule', [GuideController::class, 'schedule'])->name('api.v1.guide.schedule');
-    Route::get('guide/tour-dates/{tourDate}/travelers', [GuideController::class, 'travelers'])->name('api.v1.guide.tour-dates.travelers');
+    Route::get('guide/schedule', [GuideController::class, 'schedule'])->middleware('can:guide.schedule.view')->name('api.v1.guide.schedule');
+    Route::get('guide/tour-dates/{tourDate}/travelers', [GuideController::class, 'travelers'])->middleware('can:guide.travelers.view')->name('api.v1.guide.tour-dates.travelers');
 });
 
-Route::middleware(['auth', 'tenant_admin.only'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
-    Route::put('tenant', [AdminTenantController::class, 'update'])->name('tenant.update');
-    Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->name('tenant.configuration.update');
+// WHY: `dashboard.view` es la llave del panel — la tiene admin, vendedor y operador, y no
+// el guía (F018 spec.md §matriz). Sin ella el guía entraría a las pantallas de producto
+// por sus permisos `tours.view`/`departures.view`, que existen para SUS salidas.
+Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
+    Route::put('tenant', [AdminTenantController::class, 'update'])->middleware('can:tenant.update')->name('tenant.update');
+    Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->middleware('can:tenant.settings.update')->name('tenant.configuration.update');
 
     Route::get('dashboard', [AdminDashboardController::class, 'show'])->name('dashboard.show');
-    Route::get('reports/revenue', AdminRevenueReportController::class)->name('reports.revenue');
-    Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+    Route::get('reports/revenue', AdminRevenueReportController::class)->middleware('can:reports.view')->name('reports.revenue');
+    Route::get('bookings', [AdminBookingController::class, 'index'])->middleware('can:bookings.view')->name('bookings.index');
 
-    Route::apiResource('tours', AdminTourController::class)->names('tours');
-    Route::patch('tours/{tour}/status', AdminTourStatusController::class)->name('tours.status');
+    Route::apiResource('tours', AdminTourController::class)
+        ->names('tours')
+        ->middlewareFor(['index', 'show'], 'can:tours.view')
+        ->middlewareFor('store', 'can:tours.create')
+        ->middlewareFor('update', 'can:tours.update')
+        ->middlewareFor('destroy', 'can:tours.delete');
+    Route::patch('tours/{tour}/status', AdminTourStatusController::class)->middleware('can:tours.publish')->name('tours.status');
 
-    Route::get('tour-dates', AdminTourDateIndexController::class)->name('tour-dates.index');
-    Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->name('tours.dates.index');
-    Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->name('tours.dates.store');
-    Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->name('tour-dates.update');
-    Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->name('tour-dates.cancel');
-    Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->name('tour-dates.destroy');
+    Route::get('tour-dates', AdminTourDateIndexController::class)->middleware('can:departures.view')->name('tour-dates.index');
+    Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->middleware('can:departures.view')->name('tours.dates.index');
+    Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
+    Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
+    Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
+    Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
+    Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
 
-    Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes');
-    Route::apiResource('providers', AdminProviderController::class)->only(['index', 'store', 'update', 'destroy'])->names('providers');
-    Route::apiResource('hotels', AdminHotelController::class)->only(['index', 'store', 'update', 'destroy'])->names('hotels');
-    Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
-    Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
-    Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
+    Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')
+        ->middlewareFor('index', 'can:logistics.view')
+        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
+    Route::apiResource('providers', AdminProviderController::class)->only(['index', 'store', 'update', 'destroy'])->names('providers')
+        ->middlewareFor('index', 'can:logistics.view')
+        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
+    Route::apiResource('hotels', AdminHotelController::class)->only(['index', 'store', 'update', 'destroy'])->names('hotels')
+        ->middlewareFor('index', 'can:logistics.view')
+        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
 
-    Route::apiResource('promotions', AdminPromotionController::class)->names('promotions');
+    Route::middleware('can:tours.images.manage')->group(function (): void {
+        Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
+        Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
+        Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
+    });
 
-    Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
-    Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('reviews.status');
-    Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->name('reviews.respond');
+    Route::apiResource('promotions', AdminPromotionController::class)
+        ->names('promotions')
+        ->middlewareFor(['index', 'show'], 'can:promotions.view')
+        ->middlewareFor('store', 'can:promotions.create')
+        ->middlewareFor('update', 'can:promotions.update')
+        ->middlewareFor('destroy', 'can:promotions.delete');
 
-    Route::post('payments/{payment}/refund', AdminPaymentRefundController::class)->name('payments.refund');
+    Route::get('reviews', [AdminReviewController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
+    Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->middleware('can:reviews.moderate')->name('reviews.status');
+    Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->middleware('can:reviews.respond')->name('reviews.respond');
 
-    Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->name('newsletter.subscribers');
-    Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->name('newsletter.send');
+    Route::post('payments/{payment}/refund', AdminPaymentRefundController::class)->middleware('can:payments.refund')->name('payments.refund');
 
-    Route::get('users', [AdminTeamController::class, 'index'])->name('users.index');
-    Route::post('users', [AdminTeamController::class, 'store'])->name('users.store');
-    Route::patch('users/{user}/role', [AdminTeamController::class, 'updateRole'])->name('users.role');
-    Route::patch('users/{user}/suspend', [AdminTeamController::class, 'suspend'])->name('users.suspend');
-    Route::patch('users/{user}/reactivate', [AdminTeamController::class, 'reactivate'])->name('users.reactivate');
-    Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->name('tour-dates.guide');
+    Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware('can:newsletter.view')->name('newsletter.subscribers');
+    Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('can:newsletter.send')->name('newsletter.send');
+
+    Route::get('users', [AdminTeamController::class, 'index'])->middleware('can:team.view')->name('users.index');
+    Route::post('users', [AdminTeamController::class, 'store'])->middleware('can:team.invite')->name('users.store');
+    Route::post('users/{user}/resend-invitation', [AdminTeamController::class, 'resend'])->middleware('can:team.invite')->name('users.resend-invitation');
+    Route::patch('users/{user}/role', [AdminTeamController::class, 'updateRole'])->middleware('can:team.role.update')->name('users.role');
+    Route::patch('users/{user}/suspend', [AdminTeamController::class, 'suspend'])->middleware('can:team.suspend')->name('users.suspend');
+    Route::patch('users/{user}/reactivate', [AdminTeamController::class, 'reactivate'])->middleware('can:team.suspend')->name('users.reactivate');
+
+    // WHY: gobernar roles propios es la misma potestad que cambiarle el rol a un miembro,
+    // así que reusa `team.role.update` en vez de sumar un permiso 39 al catálogo cerrado.
+    Route::apiResource('roles', AdminRoleController::class)
+        ->names('roles')
+        ->middleware('can:team.role.update');
 });
 
 // WHY: super-admin API routes intentionally do NOT use Route::domain().

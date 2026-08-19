@@ -55,6 +55,7 @@ import type {
     TourDateGlobalAdmin,
     TourDatesGlobalResponse,
 } from '@/types/logistics';
+import type { TeamListResponse, TeamMemberPayload } from '@/types/team';
 
 const api = useApi();
 
@@ -158,7 +159,13 @@ async function loadDates(): Promise<void> {
     }
 }
 
-type TeamMember = { id: number; name: string; role: string | null };
+/**
+ * Desde F018 Fase 3A un miembro tiene varios roles y cada uno viaja como objeto
+ * (`RoleSummaryResource`), no como string: hay que mirar `name`.
+ */
+function isGuide(member: TeamMemberPayload): boolean {
+    return (member.roles ?? []).some((role) => role.name === 'guide');
+}
 
 async function loadTours(): Promise<void> {
     try {
@@ -170,7 +177,7 @@ async function loadTours(): Promise<void> {
             name: tour.name,
         }));
     } catch {
-        toast.error('No se pudieron cargar los productos para filtrar.');
+        toast.error('No se pudieron cargar los tours para filtrar.');
     }
 }
 
@@ -178,14 +185,14 @@ async function loadOptions(): Promise<void> {
     try {
         const [teamJson, routesJson, providersJson, hotelsJson] =
             await Promise.all([
-                fetchJson<{ data: TeamMember[] }>(teamIndex().url),
+                fetchJson<TeamListResponse>(teamIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(routesIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(providersIndex().url),
                 fetchJson<{ data: LogisticsRef[] }>(hotelsIndex().url),
             ]);
 
         guides.value = teamJson.data
-            .filter((member) => member.role === 'guide')
+            .filter(isGuide)
             .map((member) => ({ id: member.id, name: member.name }));
         routes.value = routesJson.data.map((route) => ({
             id: route.id,
@@ -407,12 +414,12 @@ onMounted(() => {
 
 <template>
     <div>
-        <Head title="Tours" />
+        <Head title="Salidas" />
 
         <div class="px-4 py-6 md:px-8">
             <Heading
-                title="Tours"
-                description="Todas las salidas programadas de tus productos, con su ocupación y estado."
+                title="Salidas"
+                description="Todas las salidas programadas de tus tours, con su ocupación y estado."
             />
 
             <div class="mt-6 rounded-2xl border border-border bg-card">
@@ -447,7 +454,7 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="filter-tour">Producto</Label>
+                        <Label for="filter-tour">Tour</Label>
                         <Select
                             :model-value="filters.tourId"
                             @update:model-value="handleTourChange"
@@ -458,7 +465,7 @@ onMounted(() => {
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem :value="ALL">
-                                        Todos los productos
+                                        Todos los tours
                                     </SelectItem>
                                     <SelectItem
                                         v-for="tour in tourOptions"
@@ -570,7 +577,7 @@ onMounted(() => {
                             {{
                                 hasActiveFilters
                                     ? 'Prueba ajustar o limpiar los filtros.'
-                                    : 'Programa salidas desde el detalle de cada producto.'
+                                    : 'Programa salidas desde el detalle de cada tour.'
                             }}
                         </p>
                     </div>
@@ -591,7 +598,7 @@ onMounted(() => {
                             <tr
                                 class="border-b border-border text-left text-xs font-medium text-muted-foreground"
                             >
-                                <th class="px-4 py-3">Producto</th>
+                                <th class="px-4 py-3">Tour</th>
                                 <th class="px-4 py-3">Fecha</th>
                                 <th class="px-4 py-3">Ocupación</th>
                                 <th class="px-4 py-3">Precio</th>

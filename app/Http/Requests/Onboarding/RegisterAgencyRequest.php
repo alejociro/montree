@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Onboarding;
 
+use App\Concerns\LowercasesInput;
 use App\Concerns\PasswordValidationRules;
 use App\Models\User;
 use App\Rules\NotReservedSubdomain;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 final class RegisterAgencyRequest extends FormRequest
 {
+    use LowercasesInput;
     use PasswordValidationRules;
 
     public function authorize(): bool
@@ -21,15 +24,9 @@ final class RegisterAgencyRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'subdomain' => is_string($this->input('subdomain')) ? mb_strtolower($this->input('subdomain')) : $this->input('subdomain'),
-            'email' => is_string($this->input('email')) ? mb_strtolower($this->input('email')) : $this->input('email'),
-        ]);
+        $this->lowercaseInput('subdomain', 'email');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [
@@ -42,29 +39,58 @@ final class RegisterAgencyRequest extends FormRequest
             ],
             'founder_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
-            'password' => $this->passwordRules(),
+            'password' => $this->passwordRulesWithoutConfirmation(),
+            'password_confirmation' => ['required', 'same:password'],
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
+    private function passwordRulesWithoutConfirmation(): array
+    {
+        return array_values(array_filter(
+            $this->passwordRules(),
+            static fn (mixed $rule): bool => $rule !== 'confirmed',
+        ));
+    }
+
     public function messages(): array
     {
         return [
-            'email.unique' => __('No pudimos crear la cuenta con esos datos.'),
-            'subdomain.unique' => __('Ese subdominio ya fue reclamado.'),
+            'string' => 'Debe ser texto.',
+            'max' => 'Máximo :max caracteres.',
+
+            'agency_name.required' => 'Ingresa el nombre de tu agencia.',
+
+            'subdomain.required' => 'Elige un subdominio.',
+            'subdomain.regex' => 'Solo minúsculas, números y guiones, sin empezar por guion.',
+            'subdomain.unique' => 'Ese subdominio ya fue reclamado.',
+
+            'founder_name.required' => 'Ingresa tu nombre.',
+
+            'email.required' => 'Ingresa tu correo.',
+            'email.email' => 'Correo inválido.',
+            'email.unique' => 'No pudimos crear la cuenta con esos datos.',
+
+            'password_confirmation.required' => 'Confirma tu contraseña.',
+            'password_confirmation.same' => 'Las contraseñas no coinciden.',
+
+            ...$this->passwordMessages(),
         ];
     }
 
-    /**
-     * @return array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string}
-     */
+    public function attributes(): array
+    {
+        return [
+            'agency_name' => 'nombre de la agencia',
+            'subdomain' => 'subdominio',
+            'founder_name' => 'nombre',
+            'email' => 'correo electrónico',
+            'password' => 'contraseña',
+            'password_confirmation' => 'confirmación de contraseña',
+        ];
+    }
+
     public function agencyData(): array
     {
-        /** @var array{agency_name: string, subdomain: string, founder_name: string, email: string, password: string} $data */
-        $data = $this->only(['agency_name', 'subdomain', 'founder_name', 'email', 'password']);
-
-        return $data;
+        return Arr::except($this->validated(), 'password_confirmation');
     }
 }

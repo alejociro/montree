@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\SuperAdmin;
 
+use App\Actions\Team\SendTeamInvitationAction;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\UserRole;
 use App\Exceptions\TeamException;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Notifications\SuperAdmin\TenantUserInvitationNotification;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 final class CreateTenantUserAction
 {
+    public function __construct(private SendTeamInvitationAction $sendInvitation) {}
+
     /**
      * Create (or attach an existing) user to a specific tenant with the given
      * role, from the super admin context, and email them an invitation to set
@@ -25,7 +26,7 @@ final class CreateTenantUserAction
      */
     public function handle(Tenant $tenant, array $data): User
     {
-        $email = mb_strtolower($data['email']);
+        $email = $data['email'];
         $role = UserRole::from($data['role']);
 
         $user = User::query()->where('email', $email)->first();
@@ -55,15 +56,8 @@ final class CreateTenantUserAction
         $user->unsetRelation('roles');
         $user->syncRoles([$role->value]);
 
-        $this->sendInvitation($user, $tenant);
+        $this->sendInvitation->handle($user, $tenant);
 
         return $user->fresh();
-    }
-
-    private function sendInvitation(User $user, Tenant $tenant): void
-    {
-        $token = Password::broker()->createToken($user);
-
-        $user->notify(TenantUserInvitationNotification::for($tenant, $token, $user->email));
     }
 }
