@@ -27,19 +27,19 @@ Orden no negociable: **Fase 2 antes que Fase 4** (si no, la planilla nace vacía
 
 ## Fase 1 — Esquema (`montree-db-architect`) · ~2 días
 
-- [ ] Migration `add_health_and_emergency_fields_to_booking_travelers_table` (`eps`, `eps_other`, `emergency_contact_relationship`, índice `[tenant_id, document_number]`)
-- [ ] La misma migración traslada el contacto de emergencia de `bookings.contact_snapshot` al primer viajero de cada reserva que lo tenga; idempotente
-- [ ] Migration `add_default_guide_id_to_tours_table`
-- [ ] Migration `require_guide_and_derive_ends_at_on_tour_dates_table`: recalcula `ends_at` de todas las salidas, asigna guía a las que no tengan, **aborta con el listado** si algún tenant no tiene ningún usuario `guide`, pasa `guide_id` a `NOT NULL` y **reporta los solapes** que encuentre
-- [ ] `App\Enums\DocumentType` (`cc · ce · ti · passport · other`, sin `nit`) con `label()`
-- [ ] `App\Enums\Eps` (`sura · nueva_eps · sanitas · salud_total · other`) con `label()` y `requiresDetail()`
-- [ ] `BookingTraveler`: `$fillable`, casts, accessor `epsLabel()`, scope `search()`
-- [ ] `Tour::defaultGuide()`; `TourDate::occupiedDays()` y scope `occupying()`; `Booking::dueAmount()` y `Booking::passengerShare()`
-- [ ] `TourDateFactory`: `ends_at` derivado de `duration_hours` (hoy suma 4 h fijas, `:30`) y reparto de guías **sin solapes**
-- [ ] `BookingTravelerFactory`: estados `withDue()`, `withNotes()`, `withOtherEps()`
-- [ ] `DemoTenantSeeder`: una salida con pasajeros que cubran los tres casos (con saldo, con observaciones, con EPS «Otra») y un tour de varios días para probar el bloqueo del guía
-- [ ] Permiso `bookings.passengers.medical.view` en `RolesAndPermissionsSeeder`: módulo `bookings`, roles `admin` y `guide`. **No** `sales`, **no** `operator`
-- [ ] `php artisan migrate:fresh --seed` en verde
+- [x] Migration `add_health_and_emergency_fields_to_booking_travelers_table` (`eps`, `eps_other`, `emergency_contact_relationship`, índice `[tenant_id, document_number]`)
+- [x] La misma migración traslada el contacto de emergencia de `bookings.contact_snapshot` al primer viajero de cada reserva que lo tenga; idempotente
+- [x] Migration `add_default_guide_id_to_tours_table`
+- [x] Migration `require_guide_and_derive_ends_at_on_tour_dates_table`: recalcula `ends_at` de todas las salidas, asigna guía a las que no tengan, **aborta con el listado** si algún tenant no tiene ningún usuario `guide`, pasa `guide_id` a `NOT NULL` y **reporta los solapes** que encuentre
+- [x] `App\Enums\DocumentType` (`cc · ce · ti · passport · other`, sin `nit`) con `label()`
+- [x] `App\Enums\Eps` (`sura · nueva_eps · sanitas · salud_total · other`) con `label()` y `requiresDetail()`
+- [x] `BookingTraveler`: `$fillable`, casts, accessor `epsLabel()`, scope `search()`
+- [x] `Tour::defaultGuide()`; `TourDate::occupiedDays()` y scope `occupying()`; `Booking::dueAmount()` y `Booking::passengerShare()`
+- [x] `TourDateFactory`: `ends_at` derivado de `duration_hours` (hoy suma 4 h fijas, `:30`) y reparto de guías **sin solapes**
+- [x] `BookingTravelerFactory`: estados `withDue()`, `withNotes()`, `withOtherEps()`
+- [x] `DemoTenantSeeder`: una salida con pasajeros que cubran los tres casos (con saldo, con observaciones, con EPS «Otra») y un tour de varios días para probar el bloqueo del guía
+- [x] Permiso `bookings.passengers.medical.view` en `RolesAndPermissionsSeeder`: módulo `bookings`, roles `admin` y `guide`. **No** `sales`, **no** `operator`
+- [x] `php artisan migrate:fresh --seed` en verde
 
 ## Fase 2 — Captura del dato (`montree-backend-dev` + `montree-frontend-dev`) · ~1 día
 
