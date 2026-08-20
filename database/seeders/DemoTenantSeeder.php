@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\BookingStatus;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TourStatus;
 use App\Enums\TourStopKind;
 use App\Enums\UserRole;
+use App\Models\Booking;
+use App\Models\BookingTraveler;
 use App\Models\Category;
 use App\Models\Hotel;
 use App\Models\Provider;
@@ -23,12 +26,22 @@ use App\Models\TourItinerary;
 use App\Models\TourStop;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class DemoTenantSeeder extends Seeder
 {
+    /**
+     * Días calendario ya ocupados por guía: `guide_id => ['Y-m-d' => true]`.
+     * WHY (D9): el seeder no puede producir un solape. Cada salida se programa
+     * en el primer hueco libre del guía, no en una fecha al azar.
+     *
+     * @var array<int, array<string, true>>
+     */
+    private array $occupiedDays = [];
+
     public function run(): void
     {
         // WHY: previous cached Tenant payloads can become __PHP_Incomplete_Class
@@ -86,8 +99,9 @@ class DemoTenantSeeder extends Seeder
         $admin = $this->ensureMember($tenant, 'admin@demo.montree.test', 'Demo Admin', UserRole::Admin);
         $this->ensureMember($tenant, 'sales@demo.montree.test', 'Demo Sales', UserRole::Sales);
         $this->ensureMember($tenant, 'operator@demo.montree.test', 'Demo Operator', UserRole::Operator);
-        $this->ensureMember($tenant, 'guide@demo.montree.test', 'Demo Guide', UserRole::Guide);
-        $this->ensureMember($tenant, 'customer@demo.montree.test', 'Demo Customer', UserRole::Customer);
+        $guide = $this->ensureMember($tenant, 'guide@demo.montree.test', 'Demo Guide', UserRole::Guide);
+        $secondGuide = $this->ensureMember($tenant, 'guide2@demo.montree.test', 'Demo Guide 2', UserRole::Guide);
+        $customer = $this->ensureMember($tenant, 'customer@demo.montree.test', 'Demo Customer', UserRole::Customer);
 
         $categories = collect([
             ['name' => 'Senderismo', 'icon' => 'mountain'],
@@ -148,6 +162,7 @@ class DemoTenantSeeder extends Seeder
             $tour = Tour::factory()
                 ->state([
                     'category_id' => $categories->random()->id,
+                    'default_guide_id' => $guide->id,
                     'name' => "Tour Demo #$i",
                     'slug' => "tour-demo-$i",
                     'status' => TourStatus::Active,
@@ -163,9 +178,10 @@ class DemoTenantSeeder extends Seeder
                 ])->create();
             }
 
-            $dates = TourDate::factory()->count(2)->for($tour)->state([
-                'guide_id' => $admin->id,
-            ])->create();
+            $dates = collect([
+                $this->scheduleDeparture($tour, $guide),
+                $this->scheduleDeparture($tour, $secondGuide),
+            ]);
 
             // WHY: assign support logistics to the first date so demo data exercises
             // the route/provider/hotel relations end-to-end.
@@ -177,7 +193,9 @@ class DemoTenantSeeder extends Seeder
             $firstDate->hotels()->sync([$hotels->random()->id]);
         }
 
-        $this->seedRouteMapTour($categories->first()->id, $admin->id);
+        $cocora = $this->seedRouteMapTour($categories->first()->id, $guide->id);
+        $this->seedMultiDayTour($categories->last()->id, $guide->id);
+        $this->seedManifestBookings($cocora, $customer);
 
         Tenant::forgetCurrent();
     }
@@ -186,15 +204,18 @@ class DemoTenantSeeder extends Seeder
      * Tour del Valle de Cocora con las paradas del handoff de diseño: es el único
      * dato demo que llena el mapa de ruta del detalle público de punta a punta.
      */
-    private function seedRouteMapTour(int $categoryId, int $guideId): void
+    private function seedRouteMapTour(int $categoryId, int $guideId): Tour
     {
-        if (Tour::query()->where('slug', 'valle-de-cocora')->exists()) {
-            return;
+        $existing = Tour::query()->where('slug', 'valle-de-cocora')->first();
+
+        if ($existing !== null) {
+            return $existing;
         }
 
         $tour = Tour::factory()
             ->state([
                 'category_id' => $categoryId,
+                'default_guide_id' => $guideId,
                 'name' => 'Valle de Cocora',
                 'slug' => 'valle-de-cocora',
                 'short_description' => 'Caminata de un día entre las palmas de cera más altas del mundo.',
@@ -261,9 +282,188 @@ class DemoTenantSeeder extends Seeder
             ])->create();
         }
 
-        TourDate::factory()->count(2)->for($tour)->state([
-            'guide_id' => $guideId,
-        ])->create();
+        $guide = User::query()->findOrFail($guideId);
+
+        $this->scheduleDeparture($tour, $guide);
+        $this->scheduleDeparture($tour, $guide);
+
+        return $tour;
+    }
+
+    /**
+     * Tour de varios días: es el que permite probar en local que un guía queda
+     * bloqueado los días completos de la salida (D9), no solo la mañana.
+     */
+    private function seedMultiDayTour(int $categoryId, int $guideId): void
+    {
+        if (Tour::query()->where('slug', 'travesia-sierra-nevada')->exists()) {
+            return;
+        }
+
+        $tour = Tour::factory()
+            ->state([
+                'category_id' => $categoryId,
+                'default_guide_id' => $guideId,
+                'name' => 'Travesía Sierra Nevada — 4 días',
+                'slug' => 'travesia-sierra-nevada',
+                'short_description' => 'Cuatro días de travesía con campamento entre la selva y la nieve.',
+                'duration_hours' => 96,
+                'status' => TourStatus::Active,
+            ])
+            ->create();
+
+        TourImage::factory()->cover()->for($tour)->create();
+
+        foreach ([1, 2, 3] as $step) {
+            TourItinerary::factory()->for($tour)->state(['step_number' => $step])->create();
+        }
+
+        $this->scheduleDeparture($tour, User::query()->findOrFail($guideId));
+    }
+
+    /**
+     * Reservas de la planilla: los tres casos que hay que poder ver en pantalla
+     * —con saldo, con observaciones y con EPS «Otra»— sobre una misma salida,
+     * más una reserva sin viajeros cargados para la fila «Datos pendientes».
+     */
+    private function seedManifestBookings(Tour $tour, User $customer): void
+    {
+        $departure = $tour->dates()->orderBy('starts_at')->first();
+
+        if ($departure === null || $departure->bookings()->exists()) {
+            return;
+        }
+
+        $departure->update(['capacity' => max($departure->capacity, 12)]);
+
+        // Reserva pagada: aporta el pasajero con observaciones médicas y el de EPS «Otra».
+        $paid = Booking::factory()
+            ->state([
+                'user_id' => $customer->id,
+                'tour_id' => $tour->id,
+                'tour_date_id' => $departure->id,
+                'travelers_count' => 2,
+                'adults_count' => 2,
+                'minors_count' => 0,
+                'currency' => 'COP',
+                'subtotal' => '360000.00',
+                'discount_amount' => '0.00',
+                'total_amount' => '360000.00',
+            ])
+            ->confirmed()
+            ->create();
+
+        BookingTraveler::factory()->for($paid)->withNotes()->create([
+            'full_name' => 'María Fernanda Ríos',
+            'email' => 'maria@example.com',
+        ]);
+        BookingTraveler::factory()->for($paid)->withOtherEps()->create([
+            'full_name' => 'Julián Ríos',
+            'email' => 'julian@example.com',
+        ]);
+
+        // Reserva a medio pagar: el pasajero con saldo pendiente.
+        $due = Booking::factory()
+            ->state([
+                'user_id' => $customer->id,
+                'tour_id' => $tour->id,
+                'tour_date_id' => $departure->id,
+                'travelers_count' => 1,
+                'adults_count' => 1,
+                'minors_count' => 0,
+                'currency' => 'COP',
+                'subtotal' => '180000.00',
+                'discount_amount' => '0.00',
+                'total_amount' => '180000.00',
+                'status' => BookingStatus::Confirmed,
+                'confirmed_at' => now(),
+                'expires_at' => null,
+            ])
+            ->create();
+
+        BookingTraveler::factory()->for($due)->withDue()->create([
+            'full_name' => 'Andrés Camilo Peña',
+            'email' => 'andres@example.com',
+        ]);
+
+        // Reserva sin viajeros cargados: la planilla la pinta como «Datos pendientes».
+        Booking::factory()
+            ->state([
+                'user_id' => $customer->id,
+                'tour_id' => $tour->id,
+                'tour_date_id' => $departure->id,
+                'travelers_count' => 1,
+                'adults_count' => 1,
+                'minors_count' => 0,
+                'currency' => 'COP',
+                'subtotal' => '180000.00',
+                'discount_amount' => '0.00',
+                'total_amount' => '180000.00',
+            ])
+            ->confirmed()
+            ->create();
+
+        $departure->update(['booked_count' => 4]);
+    }
+
+    /**
+     * Programa una salida en el primer día libre del guía. `ends_at` lo deriva la
+     * factory de `tours.duration_hours`; acá solo se elige la fecha de inicio.
+     */
+    private function scheduleDeparture(Tour $tour, User $guide, array $state = []): TourDate
+    {
+        $duration = max(1, (int) $tour->duration_hours);
+        $cursor = Carbon::today()->addDays(fake()->numberBetween(2, 6));
+
+        while (true) {
+            $startsAt = $cursor->copy()->setTime(7, 0);
+            $days = $this->calendarDays($startsAt, $startsAt->copy()->addHours($duration));
+
+            if (! $this->guideIsBusy($guide->id, $days)) {
+                foreach ($days as $day) {
+                    $this->occupiedDays[$guide->id][$day] = true;
+                }
+
+                return TourDate::factory()->for($tour)->create(array_merge([
+                    'guide_id' => $guide->id,
+                    'starts_at' => $startsAt,
+                    'ends_at' => null,
+                ], $state));
+            }
+
+            $cursor->addDay();
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $days
+     */
+    private function guideIsBusy(int $guideId, array $days): bool
+    {
+        foreach ($days as $day) {
+            if (isset($this->occupiedDays[$guideId][$day])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function calendarDays(Carbon $startsAt, Carbon $endsAt): array
+    {
+        $days = [];
+        $cursor = $startsAt->copy()->startOfDay();
+        $last = $endsAt->copy()->startOfDay();
+
+        while ($cursor->lte($last)) {
+            $days[] = $cursor->toDateString();
+            $cursor->addDay();
+        }
+
+        return $days;
     }
 
     private function ensureMember(Tenant $tenant, string $email, string $name, UserRole $role): User
