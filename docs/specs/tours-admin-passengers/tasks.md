@@ -45,13 +45,13 @@ Orden no negociable: **Fase 2 antes que Fase 4** (si no, la planilla nace vacía
 
 Va antes que la planilla: sin esto la planilla nace vacía.
 
-- [ ] Ampliar `Booking\SyncBookingTravelersRequest` con `emergency_contact_name`, `emergency_contact_relationship`, `emergency_contact_phone`, `eps` y `eps_other` (`email`, `phone`, `dietary_restrictions` y `medical_notes` ya están, `:40`)
-- [ ] `UpdatePassengerAction` con la normalización `eps ≠ other ⇒ eps_other = null` — una sola fuente de la regla para panel, viajero y seeder
-- [ ] `BookingTravelerResource` (zona del viajero) expone los campos nuevos **solo al dueño**
-- [ ] Tests de validación de `eps_other` (obligatorio / anulado)
-- [ ] `BookingTravelersSection.vue`: email, emergencia (nombre, parentesco, teléfono), EPS como radios en grid de 3, campo «¿Cuál EPS?» que aparece y **recibe el foco** al marcar «Otra», textarea de observaciones con el aviso «visible solo para la agencia y el guía asignado»
-- [ ] `DOCUMENT_TYPES` del componente sale del enum, no de la lista a mano (`:48-52`)
-- [ ] Cadenas nuevas en `lang/en.json`
+- [x] Ampliar `Booking\SyncBookingTravelersRequest` con `emergency_contact_name`, `emergency_contact_relationship`, `emergency_contact_phone`, `eps` y `eps_other` (`email`, `phone`, `dietary_restrictions` y `medical_notes` ya están, `:40`)
+- [x] `UpdatePassengerAction` con la normalización `eps ≠ other ⇒ eps_other = null` — una sola fuente de la regla para panel, viajero y seeder
+- [x] `BookingTravelerResource` (zona del viajero) expone los campos nuevos **solo al dueño**
+- [x] Tests de validación de `eps_other` (obligatorio / anulado)
+- [x] `BookingTravelersSection.vue`: email, emergencia (nombre, parentesco, teléfono), EPS como radios en grid de 3, campo «¿Cuál EPS?» que aparece y **recibe el foco** al marcar «Otra», textarea de observaciones con el aviso «visible solo para la agencia y el guía asignado»
+- [x] `DOCUMENT_TYPES` del componente sale del enum, no de la lista a mano (`:48-52`)
+- [x] Cadenas nuevas en `lang/en.json`
 
 ## Fase 3 — API de la planilla (`montree-backend-dev`) · ~2,5 días
 
@@ -135,6 +135,63 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 - [ ] PR `feature/tours-admin-passenger-manifest` → `develop` (rama y mensajes en inglés, sin co-author)
 
 ---
+
+## Notas durante implementación
+
+### Fase 2 — backend (2026-08-20)
+
+- **`UpdatePassengerAction` no existía.** Se creó en `App\Actions\Passengers\UpdatePassengerAction`
+  (el namespace que fija `plan.md §3 · Actions`) y `SyncBookingTravelersAction` pasó a delegarle el
+  guardado de cada viajero: la normalización `eps ≠ other ⇒ eps_other = null` queda en un solo
+  sitio y la reutiliza tal cual el `PUT /api/v1/admin/passengers/{traveler}` de la Fase 3.
+  El seeder no la llama: usa `BookingTravelerFactory::withOtherEps()`, que fija el par
+  `eps = other` + `eps_other` de una pieza y no puede producir el estado inconsistente.
+- **`BookingTravelerResource` tampoco existía.** El viajero se serializaba a mano dentro de
+  `BookingResource::toArray()` (`travelers`, `:50-59`). Se extrajo a
+  `App\Http\Resources\Booking\BookingTravelerResource` con un `mergeWhen()` de pertenencia.
+- **«Dueño» se resuelve comparando `auth()->id()` con `booking.user_id`**, que es como ya lo hacen
+  las dos entradas de la zona del viajero (`BookingController@show:59` y
+  `SyncBookingTravelersRequest::booking():91`, ambas con `where('user_id', …)`). La reserva se le
+  pasa al viajero con `setRelation()` desde `BookingResource` para no disparar una consulta por
+  fila.
+- **El bloque del dueño incluye también `medical_notes` y `dietary_restrictions`**, además de los
+  cinco campos de la tarea. El endpoint de sync reemplaza al viajero entero: si el formulario de la
+  Fase 2 no puede releer esos dos campos, el siguiente guardado los borra.
+- **`travelers.*.document_type` pasó de `string|max:255` a `Rule::enum(DocumentType::class)`.** No
+  estaba en el checklist, pero desde la Fase 1 la columna se castea a `DocumentType` y un valor
+  fuera del catálogo revienta al leer el modelo, no al escribirlo. Son los mismos cinco valores que
+  `BookingTravelersSection.vue:48-52` ya envía.
+- **`eps_other` se anula, no se rechaza**, cuando `eps ≠ other` (acceptance criteria de `spec.md`).
+  Lo que sí devuelve `422` es `eps = other` sin `eps_other`.
+
+### Fase 2 — frontend (2026-08-20)
+
+- **No existe generación de enums PHP → TS en el repo** (ni transformer, ni prop compartida de
+  Inertia). La convención vigente es el espejo en `resources/js/types/*.ts`
+  (`TOUR_DIFFICULTIES`, `SUPPORTED_CURRENCIES`), así que `DOCUMENT_TYPES` y `EPS_OPTIONS` viven
+  ahí como `as const` y las uniones se derivan del array. Las etiquetas son
+  `Record<DocumentType, string>` y `Record<Eps, string>` dentro del componente: si el enum de PHP
+  gana o pierde un caso y el espejo se actualiza, `npm run types:check` falla hasta completar el
+  mapa. Sacar el catálogo del backend en cada visita sería una prop nueva y un cambio de contrato;
+  no se hizo por eso.
+- **El foco del campo «¿Cuál EPS?» se lleva con `document.getElementById()` tras `nextTick()`.**
+  `components/ui/input` no expone la referencia del `<input>` y el `id` del campo ya es
+  determinista (`traveler-eps-other-{index}`); un `ref` de plantilla obligaría a castear `$el`.
+- **Grid de 3 columnas a partir de `sm:`**, dos en móvil (`grid-cols-2 sm:grid-cols-3`): con tres
+  columnas fijas «Salud Total» y «Nueva EPS» se parten a 390 px.
+- **La regla `eps ≠ other ⇒ eps_other = null` se aplica también en el cliente**: al marcar otra EPS
+  se limpia el texto libre y el campo desaparece, y el payload solo lleva `eps_other` con «Otra».
+  Se añadieron dos validaciones espejo (`required_if:eps,other` y
+  `required_with:emergency_contact_name` sobre el teléfono) que solo se muestran tras el primer
+  intento de guardado; la fuente de verdad sigue siendo el Form Request.
+- **El primer adulto se precarga también con el email y el contacto de emergencia del
+  `contact_snapshot`** (el par nombre + teléfono solo si están los dos, por el `required_with`).
+  Es el mismo dato que la migración de la Fase 1 trasladó al primer viajero, y solo se usa cuando
+  la reserva todavía no tiene viajeros guardados.
+- **Verificación**: `types:check`, `lint:check`, `format:check` y `npm run build` en verde, más un
+  render SSR del componente con un viajero de `eps = other` (5 radios, uno marcado, campo libre
+  visible con su valor, observaciones y aviso de privacidad). **No** se pudo abrir el navegador
+  desde este entorno: la comprobación visual y el foco real quedan para la Fase 8.
 
 ## Pendiente heredado
 

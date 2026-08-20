@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { CheckCircle2, Users } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { syncTravelers } from '@/actions/App/Http/Controllers/Api/V1/BookingController';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +15,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
-import type { BookingTraveler, TravelerSyncInput } from '@/types/booking';
+import type {
+    BookingTraveler,
+    DocumentType,
+    Eps,
+    TravelerSyncInput,
+} from '@/types/booking';
+import {
+    DOCUMENT_TYPES,
+    EPS_OPTIONS,
+    EPS_REQUIRING_DETAIL,
+} from '@/types/booking';
 
 const { t } = useTranslations();
 
@@ -27,7 +38,13 @@ type Props = {
     minorsCount: number;
     travelers: BookingTraveler[];
     required: boolean;
-    contact?: { name: string; phone: string | null } | null;
+    contact?: {
+        name: string;
+        email?: string | null;
+        phone: string | null;
+        emergency_contact_name?: string | null;
+        emergency_contact_phone?: string | null;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -37,30 +54,64 @@ const api = useApi();
 type TravelerSlot = {
     id: number | null;
     full_name: string;
+    email: string;
     phone: string;
     document_type: string;
     document_number: string;
     birth_date: string;
     is_minor: boolean;
+    emergency_contact_name: string;
+    emergency_contact_relationship: string;
+    emergency_contact_phone: string;
+    eps: Eps | '';
+    eps_other: string;
+    medical_notes: string;
 };
 
-const DOCUMENT_TYPES = [
-    { value: 'cc', label: t('Cédula de ciudadanía') },
-    { value: 'ce', label: t('Cédula de extranjería') },
-    { value: 'ti', label: t('Tarjeta de identidad') },
-    { value: 'passport', label: t('Pasaporte') },
-    { value: 'other', label: t('Otro') },
-];
+/**
+ * Etiquetas de los enums del backend. Al ser `Record<…>` sobre la unión, quitar
+ * o agregar un caso en PHP rompe el type-check hasta actualizar el mapa.
+ */
+const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+    cc: t('Cédula de ciudadanía'),
+    ce: t('Cédula de extranjería'),
+    ti: t('Tarjeta de identidad'),
+    passport: t('Pasaporte'),
+    other: t('Otro'),
+};
+
+const EPS_LABELS: Record<Eps, string> = {
+    sura: t('Sura'),
+    nueva_eps: t('Nueva EPS'),
+    sanitas: t('Sanitas'),
+    salud_total: t('Salud Total'),
+    other: t('Otra'),
+};
+
+function asDocumentType(value: string | null): DocumentType | '' {
+    return DOCUMENT_TYPES.find((type) => type === value) ?? '';
+}
+
+function asEps(value: string | null | undefined): Eps | '' {
+    return EPS_OPTIONS.find((option) => option === value) ?? '';
+}
 
 function blankSlot(isMinor: boolean): TravelerSlot {
     return {
         id: null,
         full_name: '',
+        email: '',
         phone: '',
         document_type: '',
         document_number: '',
         birth_date: '',
         is_minor: isMinor,
+        emergency_contact_name: '',
+        emergency_contact_relationship: '',
+        emergency_contact_phone: '',
+        eps: '',
+        eps_other: '',
+        medical_notes: '',
     };
 }
 
@@ -68,11 +119,19 @@ function slotFromTraveler(traveler: BookingTraveler): TravelerSlot {
     return {
         id: traveler.id,
         full_name: traveler.full_name ?? '',
+        email: traveler.email ?? '',
         phone: traveler.phone ?? '',
-        document_type: traveler.document_type ?? '',
+        document_type: asDocumentType(traveler.document_type),
         document_number: traveler.document_number ?? '',
         birth_date: traveler.birth_date ?? '',
         is_minor: traveler.is_minor,
+        emergency_contact_name: traveler.emergency_contact_name ?? '',
+        emergency_contact_relationship:
+            traveler.emergency_contact_relationship ?? '',
+        emergency_contact_phone: traveler.emergency_contact_phone ?? '',
+        eps: asEps(traveler.eps),
+        eps_other: traveler.eps_other ?? '',
+        medical_notes: traveler.medical_notes ?? '',
     };
 }
 
@@ -86,7 +145,19 @@ function seededFirstAdult(): TravelerSlot {
 
     if (props.contact) {
         slot.full_name = props.contact.name;
+        slot.email = props.contact.email ?? '';
         slot.phone = props.contact.phone ?? '';
+
+        // El par nombre + teléfono viaja junto o no viaja: el backend exige el
+        // teléfono en cuanto hay nombre (`required_with`).
+        if (
+            props.contact.emergency_contact_name &&
+            props.contact.emergency_contact_phone
+        ) {
+            slot.emergency_contact_name = props.contact.emergency_contact_name;
+            slot.emergency_contact_phone =
+                props.contact.emergency_contact_phone;
+        }
     }
 
     return slot;
@@ -155,6 +226,77 @@ function optionalField(value: string): string | undefined {
     return trimmed === '' ? undefined : trimmed;
 }
 
+/**
+ * WHY: el backend anula `eps_other` cuando la EPS no es «Otra»
+ * (`UpdatePassengerAction`). El formulario aplica la misma regla al marcar la
+ * opción para que lo que se ve en pantalla sea lo que se guarda, y lleva el foco
+ * al campo libre en cuanto aparece.
+ */
+function selectEps(index: number, value: Eps): void {
+    const slot = slots.value[index];
+
+    if (slot === undefined) {
+        return;
+    }
+
+    slot.eps = value;
+
+    if (value !== EPS_REQUIRING_DETAIL) {
+        slot.eps_other = '';
+
+        return;
+    }
+
+    void nextTick(() => {
+        document.getElementById(`traveler-eps-other-${index}`)?.focus();
+    });
+}
+
+type SlotErrors = {
+    emergency_contact_phone?: string;
+    eps_other?: string;
+};
+
+/**
+ * Espejo de las dos reglas de `SyncBookingTravelersRequest` que el usuario puede
+ * romper sin darse cuenta. La fuente de verdad sigue siendo el backend: esto
+ * solo evita el viaje de ida y vuelta.
+ */
+const slotErrors = computed<SlotErrors[]>(() =>
+    slots.value.map((slot) => {
+        const errors: SlotErrors = {};
+
+        if (slot.full_name.trim() === '') {
+            return errors;
+        }
+
+        if (
+            slot.emergency_contact_name.trim() !== '' &&
+            slot.emergency_contact_phone.trim() === ''
+        ) {
+            errors.emergency_contact_phone = t(
+                'Indica el teléfono del contacto de emergencia.',
+            );
+        }
+
+        if (slot.eps === EPS_REQUIRING_DETAIL && slot.eps_other.trim() === '') {
+            errors.eps_other = t('Indica el nombre de tu EPS.');
+        }
+
+        return errors;
+    }),
+);
+
+const hasSlotErrors = computed(() =>
+    slotErrors.value.some((errors) => Object.keys(errors).length > 0),
+);
+
+const submitted = ref(false);
+
+function errorsFor(index: number): SlotErrors {
+    return submitted.value ? (slotErrors.value[index] ?? {}) : {};
+}
+
 function buildPayload(): TravelerSyncInput[] {
     return slots.value
         .filter((slot) => slot.full_name.trim() !== '')
@@ -174,9 +316,15 @@ function buildPayload(): TravelerSyncInput[] {
                 traveler.phone = phone;
             }
 
-            const documentType = optionalField(slot.document_type);
+            const email = optionalField(slot.email);
 
-            if (documentType !== undefined) {
+            if (email !== undefined) {
+                traveler.email = email;
+            }
+
+            const documentType = asDocumentType(slot.document_type);
+
+            if (documentType !== '') {
                 traveler.document_type = documentType;
             }
 
@@ -192,6 +340,44 @@ function buildPayload(): TravelerSyncInput[] {
                 traveler.birth_date = birthDate;
             }
 
+            const emergencyName = optionalField(slot.emergency_contact_name);
+
+            if (emergencyName !== undefined) {
+                traveler.emergency_contact_name = emergencyName;
+            }
+
+            const emergencyRelationship = optionalField(
+                slot.emergency_contact_relationship,
+            );
+
+            if (emergencyRelationship !== undefined) {
+                traveler.emergency_contact_relationship = emergencyRelationship;
+            }
+
+            const emergencyPhone = optionalField(slot.emergency_contact_phone);
+
+            if (emergencyPhone !== undefined) {
+                traveler.emergency_contact_phone = emergencyPhone;
+            }
+
+            if (slot.eps !== '') {
+                traveler.eps = slot.eps;
+            }
+
+            // El texto libre solo viaja con «Otra»: con cualquier otra EPS el
+            // backend lo guardaría como `null` de todos modos.
+            const epsOther = optionalField(slot.eps_other);
+
+            if (slot.eps === EPS_REQUIRING_DETAIL && epsOther !== undefined) {
+                traveler.eps_other = epsOther;
+            }
+
+            const medicalNotes = optionalField(slot.medical_notes);
+
+            if (medicalNotes !== undefined) {
+                traveler.medical_notes = medicalNotes;
+            }
+
             return traveler;
         });
 }
@@ -201,12 +387,21 @@ function save(): void {
         return;
     }
 
+    submitted.value = true;
+
     const payload = buildPayload();
 
     if (payload.length === 0) {
         generalError.value = t(
             'Completa el nombre de al menos un viajero para guardar.',
         );
+        toast.error(generalError.value);
+
+        return;
+    }
+
+    if (hasSlotErrors.value) {
+        generalError.value = t('Revisa los datos marcados en rojo.');
         toast.error(generalError.value);
 
         return;
@@ -220,6 +415,7 @@ function save(): void {
         { travelers: payload },
         {
             onSuccess: () => {
+                submitted.value = false;
                 toast.success(t('Datos de los viajeros guardados.'));
                 router.reload({ only: ['booking'] });
             },
@@ -323,6 +519,19 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                     </div>
 
                     <div class="space-y-1.5">
+                        <Label :for="`traveler-email-${index}`">
+                            {{ $t('Correo electrónico') }}
+                        </Label>
+                        <Input
+                            :id="`traveler-email-${index}`"
+                            v-model="slot.email"
+                            type="email"
+                            autocomplete="email"
+                            placeholder="nombre@correo.com"
+                        />
+                    </div>
+
+                    <div class="space-y-1.5">
                         <Label :for="`traveler-phone-${index}`">
                             {{ $t('Teléfono') }}
                         </Label>
@@ -356,10 +565,10 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                             <SelectContent>
                                 <SelectItem
                                     v-for="type in DOCUMENT_TYPES"
-                                    :key="type.value"
-                                    :value="type.value"
+                                    :key="type"
+                                    :value="type"
                                 >
-                                    {{ type.label }}
+                                    {{ DOCUMENT_TYPE_LABELS[type] }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -375,6 +584,159 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                             type="text"
                         />
                     </div>
+                </div>
+
+                <fieldset class="space-y-3 border-t border-border pt-4">
+                    <legend class="sr-only">
+                        {{ $t('Contacto de emergencia') }}
+                    </legend>
+                    <p class="text-sm font-medium text-foreground">
+                        {{ $t('Contacto de emergencia') }}
+                    </p>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="space-y-1.5">
+                            <Label :for="`traveler-emergency-name-${index}`">
+                                {{ $t('Nombre') }}
+                            </Label>
+                            <Input
+                                :id="`traveler-emergency-name-${index}`"
+                                v-model="slot.emergency_contact_name"
+                                type="text"
+                                :placeholder="$t('Quién responde por ti')"
+                            />
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <Label
+                                :for="`traveler-emergency-relationship-${index}`"
+                            >
+                                {{ $t('Parentesco') }}
+                            </Label>
+                            <Input
+                                :id="`traveler-emergency-relationship-${index}`"
+                                v-model="slot.emergency_contact_relationship"
+                                type="text"
+                                :placeholder="$t('Madre, hermano, amigo…')"
+                            />
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <Label :for="`traveler-emergency-phone-${index}`">
+                                {{ $t('Teléfono') }}
+                            </Label>
+                            <Input
+                                :id="`traveler-emergency-phone-${index}`"
+                                v-model="slot.emergency_contact_phone"
+                                type="tel"
+                                placeholder="+57 300 000 0000"
+                                :aria-invalid="
+                                    errorsFor(index).emergency_contact_phone !==
+                                    undefined
+                                "
+                                :aria-describedby="
+                                    errorsFor(index).emergency_contact_phone
+                                        ? `traveler-emergency-phone-error-${index}`
+                                        : undefined
+                                "
+                            />
+                            <p
+                                v-if="errorsFor(index).emergency_contact_phone"
+                                :id="`traveler-emergency-phone-error-${index}`"
+                                class="text-xs text-destructive"
+                            >
+                                {{ errorsFor(index).emergency_contact_phone }}
+                            </p>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="space-y-3 border-t border-border pt-4">
+                    <legend class="text-sm font-medium text-foreground">
+                        {{ $t('EPS') }}
+                    </legend>
+
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <label
+                            v-for="option in EPS_OPTIONS"
+                            :key="option"
+                            class="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition"
+                            :class="
+                                slot.eps === option
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-muted-foreground/30'
+                            "
+                        >
+                            <input
+                                type="radio"
+                                :name="`traveler-eps-${index}`"
+                                :value="option"
+                                :checked="slot.eps === option"
+                                class="size-4 accent-primary"
+                                @change="selectEps(index, option)"
+                            />
+                            <span class="text-foreground">
+                                {{ EPS_LABELS[option] }}
+                            </span>
+                        </label>
+                    </div>
+
+                    <div
+                        v-if="slot.eps === EPS_REQUIRING_DETAIL"
+                        class="space-y-1.5 sm:max-w-sm"
+                    >
+                        <Label :for="`traveler-eps-other-${index}`">
+                            {{ $t('¿Cuál EPS?') }}
+                        </Label>
+                        <Input
+                            :id="`traveler-eps-other-${index}`"
+                            v-model="slot.eps_other"
+                            type="text"
+                            :placeholder="$t('Nombre de tu EPS')"
+                            :aria-invalid="
+                                errorsFor(index).eps_other !== undefined
+                            "
+                            :aria-describedby="
+                                errorsFor(index).eps_other
+                                    ? `traveler-eps-other-error-${index}`
+                                    : undefined
+                            "
+                        />
+                        <p
+                            v-if="errorsFor(index).eps_other"
+                            :id="`traveler-eps-other-error-${index}`"
+                            class="text-xs text-destructive"
+                        >
+                            {{ errorsFor(index).eps_other }}
+                        </p>
+                    </div>
+                </fieldset>
+
+                <div class="space-y-1.5 border-t border-border pt-4">
+                    <Label :for="`traveler-medical-notes-${index}`">
+                        {{ $t('Observaciones médicas') }}
+                    </Label>
+                    <Textarea
+                        :id="`traveler-medical-notes-${index}`"
+                        v-model="slot.medical_notes"
+                        rows="3"
+                        :placeholder="
+                            $t(
+                                'Alergias, condiciones médicas o discapacidad física.',
+                            )
+                        "
+                        :aria-describedby="`traveler-medical-notes-hint-${index}`"
+                    />
+                    <p
+                        :id="`traveler-medical-notes-hint-${index}`"
+                        class="text-xs text-muted-foreground"
+                    >
+                        {{
+                            $t(
+                                'Visible solo para la agencia y el guía asignado.',
+                            )
+                        }}
+                    </p>
                 </div>
             </div>
 
