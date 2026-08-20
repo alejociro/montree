@@ -11,6 +11,8 @@ export type TourRouteStop = {
     time: string | null;
     latitude: number;
     longitude: number;
+    /** Paso del itinerario que esta parada ilustra, para el botón "Ver en el mapa". */
+    itinerary_step: number | null;
 };
 
 /** Zona donde ocurre el tour, dibujada como círculo sobre el mapa. */

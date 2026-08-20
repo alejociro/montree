@@ -8,6 +8,7 @@ import DifficultySelector from '@/components/molecules/DifficultySelector.vue';
 import MeetingPointPicker from '@/components/molecules/MeetingPointPicker.vue';
 import PriceInput from '@/components/molecules/PriceInput.vue';
 import TourItineraryBuilder from '@/components/organisms/TourItineraryBuilder.vue';
+import TourRouteStopsBuilder from '@/components/organisms/TourRouteStopsBuilder.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -24,6 +25,7 @@ import type {
     TourCategory,
     TourFormPayload,
     TourItineraryDraft,
+    TourStopDraft,
 } from '@/types/tour';
 
 type Errors = Record<string, string | undefined>;
@@ -93,6 +95,10 @@ function handleMeetingPoint(meeting: {
 
 function handleItinerary(steps: TourItineraryDraft[]): void {
     update('itinerary', steps);
+}
+
+function handleStops(stops: TourStopDraft[]): void {
+    update('stops', stops);
 }
 
 const meetingValue = computed(() => ({
@@ -318,6 +324,13 @@ const meetingErrors = computed(() => ({
             :model-value="value.itinerary"
             :errors="errors"
             @update:model-value="handleItinerary"
+        />
+
+        <TourRouteStopsBuilder
+            :model-value="value.stops"
+            :steps="value.itinerary"
+            :errors="errors"
+            @update:model-value="handleStops"
         />
     </div>
 </template>

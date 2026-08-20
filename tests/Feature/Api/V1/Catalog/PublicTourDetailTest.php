@@ -14,6 +14,7 @@ use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\TourImage;
 use App\Models\TourItinerary;
+use App\Models\TourStop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -42,8 +43,35 @@ final class PublicTourDetailTest extends TestCase
 
         $response->assertOk()->assertJsonPath('data.slug', 'cocora-hike');
         $response->assertJsonStructure([
-            'data' => ['id', 'name', 'images', 'itinerary', 'future_dates', 'rating_distribution'],
+            'data' => ['id', 'name', 'images', 'itinerary', 'stops', 'future_dates', 'rating_distribution'],
         ]);
+    }
+
+    public function test_exposes_route_stops_as_numbers_in_order(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $tenant->makeCurrent();
+
+        $tour = Tour::factory()->create(['slug' => 'cocora-stops', 'status' => TourStatus::Active]);
+        TourStop::factory()->drop()->for($tour)->create([
+            'position' => 2,
+            'name' => 'Terminal de Armenia',
+            'latitude' => 4.5252,
+            'longitude' => -75.6812,
+        ]);
+        TourStop::factory()->pickup()->for($tour)->create([
+            'position' => 1,
+            'name' => 'Plaza de Bolívar',
+            'latitude' => 4.5350,
+            'longitude' => -75.6813,
+        ]);
+
+        $response = $this->getJson('http://demo.montree.test/api/v1/tours/cocora-stops');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.stops.0.name', 'Plaza de Bolívar');
+        $response->assertJsonPath('data.stops.1.name', 'Terminal de Armenia');
+        $this->assertSame(4.535, $response->json('data.stops.0.latitude'));
     }
 
     public function test_returns_404_for_archived_tour(): void

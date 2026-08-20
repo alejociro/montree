@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { tourStopsPayload } from '@/lib/tour-stops';
 import type {
     Tour,
     TourCategory,
@@ -53,6 +54,7 @@ const initialValues: TourFormPayload = {
     excludes: [],
     requirements: [],
     itinerary: [],
+    stops: [],
 };
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues }));
@@ -72,6 +74,7 @@ function normalizePayload(data: TourFormPayload): TourSubmitPayload {
         meeting_point: data.meeting_point === '' ? null : data.meeting_point,
         short_description:
             data.short_description === '' ? null : data.short_description,
+        stops: tourStopsPayload(data.stops),
     };
 }
 

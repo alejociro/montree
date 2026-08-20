@@ -59,7 +59,7 @@ final class TourController extends Controller
     {
         Gate::authorize('view', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return new JsonResponse(['data' => (new TourResource($tour))->resolve()]);
     }

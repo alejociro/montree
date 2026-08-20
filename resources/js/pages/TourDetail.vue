@@ -6,6 +6,7 @@ import {
     Clock,
     MapPin,
     Mountain,
+    MapPinned,
     Star,
     Users,
     X,
@@ -21,7 +22,10 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatTourDate } from '@/lib/format';
-import { routeStopsFromTour } from '@/lib/tour-route';
+import {
+    routeStopsFromTour,
+    stopIndexForItineraryStep,
+} from '@/lib/tour-route';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
 import type {
@@ -59,6 +63,49 @@ const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
 const routeStops = computed(() => routeStopsFromTour(props.tour));
+
+const mapSection = ref<InstanceType<typeof TourRouteMapSection> | null>(null);
+
+/** Paso del itinerario → índice de su parada, para el botón "Ver en el mapa". */
+const stopIndexByStep = computed(() =>
+    props.tour.itinerary.reduce<Record<number, number>>((map, step) => {
+        const index = stopIndexForItineraryStep(
+            routeStops.value,
+            step.step_number,
+        );
+
+        if (index !== null) {
+            map[step.step_number] = index;
+        }
+
+        return map;
+    }, {}),
+);
+
+/** El offset del header sticky obliga a scrollear a mano: `scrollIntoView` lo tapa. */
+const MAP_SCROLL_OFFSET = 70;
+const MAP_SELECT_DELAY_MS = 350;
+
+function showStepOnMap(stepNumber: number): void {
+    const index = stopIndexByStep.value[stepNumber];
+    const section = document.getElementById('ruta');
+
+    if (index === undefined || section === null) {
+        return;
+    }
+
+    window.scrollTo({
+        top:
+            section.getBoundingClientRect().top +
+            window.scrollY -
+            MAP_SCROLL_OFFSET,
+        behavior: 'smooth',
+    });
+    window.setTimeout(
+        () => mapSection.value?.selectStop(index),
+        MAP_SELECT_DELAY_MS,
+    );
+}
 
 const routeNote = computed(() =>
     props.tour.meeting_point === null
@@ -391,9 +438,28 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 {{ step.step_number }}
                             </div>
                             <div>
-                                <p class="leading-tight font-medium">
-                                    {{ step.title }}
-                                </p>
+                                <div
+                                    class="flex items-start justify-between gap-3"
+                                >
+                                    <p class="leading-tight font-medium">
+                                        {{ step.title }}
+                                    </p>
+                                    <Button
+                                        v-if="
+                                            stopIndexByStep[
+                                                step.step_number
+                                            ] !== undefined
+                                        "
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="shrink-0 rounded-full"
+                                        @click="showStepOnMap(step.step_number)"
+                                    >
+                                        <MapPinned class="size-3.5" />
+                                        {{ $t('Ver en el mapa') }}
+                                    </Button>
+                                </div>
                                 <p
                                     v-if="step.duration_label"
                                     class="text-xs text-muted-foreground"
@@ -527,7 +593,11 @@ function dateOptionLabel(date: TourDetailDate): string {
         v-if="routeStops.length > 0"
         class="mx-auto w-full max-w-7xl px-4 pb-6 sm:px-6 lg:px-8"
     >
-        <TourRouteMapSection :stops="routeStops" :note="routeNote" />
+        <TourRouteMapSection
+            ref="mapSection"
+            :stops="routeStops"
+            :note="routeNote"
+        />
     </div>
 
     <!-- Reviews section -->

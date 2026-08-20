@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Catalog;
 
+use App\Http\Resources\Tour\TourStopResource;
 use App\Models\Tour;
 use App\Models\TourImage;
 use App\Services\Catalog\RatingDistribution;
@@ -57,6 +58,7 @@ final class PublicTourResource extends JsonResource
             ])->values(),
             'requirements' => $this->requirements ?? [],
             'includes' => $this->includes ?? [],
+            'stops' => TourStopResource::collection($this->stops)->resolve(),
             'meeting_point' => $this->meeting_point,
             'meeting_latitude' => $this->meeting_latitude,
             'meeting_longitude' => $this->meeting_longitude,

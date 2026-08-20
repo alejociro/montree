@@ -8,6 +8,7 @@ use App\Enums\TenantMembershipStatus;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TourStatus;
+use App\Enums\TourStopKind;
 use App\Enums\UserRole;
 use App\Models\Category;
 use App\Models\Hotel;
@@ -19,6 +20,7 @@ use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\TourImage;
 use App\Models\TourItinerary;
+use App\Models\TourStop;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -175,7 +177,76 @@ class DemoTenantSeeder extends Seeder
             $firstDate->hotels()->sync([$hotels->random()->id]);
         }
 
+        $this->seedRouteMapTour($categories->first()->id, $admin->id);
+
         Tenant::forgetCurrent();
+    }
+
+    /**
+     * Tour del Valle de Cocora con las paradas del handoff de diseño: es el único
+     * dato demo que llena el mapa de ruta del detalle público de punta a punta.
+     */
+    private function seedRouteMapTour(int $categoryId, int $guideId): void
+    {
+        if (Tour::query()->where('slug', 'valle-de-cocora')->exists()) {
+            return;
+        }
+
+        $tour = Tour::factory()
+            ->state([
+                'category_id' => $categoryId,
+                'name' => 'Valle de Cocora',
+                'slug' => 'valle-de-cocora',
+                'short_description' => 'Caminata de un día entre las palmas de cera más altas del mundo.',
+                'duration_hours' => 10,
+                'meeting_point' => 'Plaza de Bolívar, Armenia',
+                'meeting_latitude' => 4.5350,
+                'meeting_longitude' => -75.6813,
+                'status' => TourStatus::Active,
+            ])
+            ->create();
+
+        TourImage::factory()->cover()->for($tour)->create();
+        TourImage::factory()->count(2)->for($tour)->create();
+
+        foreach ([
+            ['Salida desde Armenia', 'Recogida en la Plaza de Bolívar y traslado hasta Salento.', '1 h 10 min'],
+            ['Sendero de las palmas', 'Caminata por el bosque de palmas de cera hasta la reserva Acaime.', '5 h'],
+            ['Regreso', 'Traslado de vuelta a Armenia y fin del tour en la terminal.', '1 h 30 min'],
+        ] as $index => [$title, $description, $duration]) {
+            TourItinerary::factory()->for($tour)->state([
+                'step_number' => $index + 1,
+                'title' => $title,
+                'description' => $description,
+                'duration_label' => $duration,
+            ])->create();
+        }
+
+        foreach ([
+            [TourStopKind::Pickup, 'A', 'Recogida', 'Recogida · Plaza de Bolívar', 'Armenia, Quindío', '8:00 a. m.', 4.5350, -75.6813, 1],
+            [TourStopKind::Site, '1', null, 'Salento — registro', 'Salento, Quindío', '9:10 a. m.', 4.6376, -75.5706, 2],
+            [TourStopKind::Site, '2', null, 'Entrada Valle de Cocora', 'Salento, Quindío', '10:30 a. m.', 4.6378, -75.4869, 2],
+            [TourStopKind::Site, '3', null, 'Bosque de palmas de cera', 'Valle de Cocora', '12:15 p. m.', 4.6428, -75.4790, 2],
+            [TourStopKind::Site, '4', null, 'Reserva Acaime (2.860 m)', 'Valle de Cocora', '2:00 p. m.', 4.6497, -75.4620, 2],
+            [TourStopKind::Drop, 'B', 'Regreso', 'Regreso · Terminal de Transportes', 'Armenia, Quindío', '5:30 p. m.', 4.5252, -75.6812, 3],
+        ] as $index => [$kind, $code, $label, $name, $place, $time, $latitude, $longitude, $step]) {
+            TourStop::factory()->for($tour)->state([
+                'position' => $index + 1,
+                'kind' => $kind,
+                'code' => $code,
+                'label' => $label,
+                'name' => $name,
+                'place' => $place,
+                'time_label' => $time,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'itinerary_step' => $step,
+            ])->create();
+        }
+
+        TourDate::factory()->count(2)->for($tour)->state([
+            'guide_id' => $guideId,
+        ])->create();
     }
 
     private function ensureMember(Tenant $tenant, string $email, string $name, UserRole $role): User

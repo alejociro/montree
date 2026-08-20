@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Tour;
 
 use App\Enums\TourDifficulty;
+use App\Enums\TourStopKind;
 use App\Models\Category;
 use App\Models\Tour;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -55,6 +57,36 @@ class UpdateTourRequest extends FormRequest
             'itinerary.*.title' => ['required_with:itinerary', 'string', 'max:120'],
             'itinerary.*.description' => ['nullable', 'string', 'max:2000'],
             'itinerary.*.duration_label' => ['nullable', 'string', 'max:30'],
+            'stops' => ['sometimes', 'nullable', 'array', 'max:40'],
+            'stops.*.kind' => ['required_with:stops', 'string', Rule::in(array_column(TourStopKind::cases(), 'value'))],
+            'stops.*.name' => ['required_with:stops', 'string', 'max:120'],
+            'stops.*.label' => ['nullable', 'string', 'max:40'],
+            'stops.*.place' => ['nullable', 'string', 'max:120'],
+            'stops.*.time' => ['nullable', 'string', 'max:30'],
+            'stops.*.latitude' => ['required_with:stops', 'numeric', 'between:-90,90'],
+            'stops.*.longitude' => ['required_with:stops', 'numeric', 'between:-180,180'],
+            'stops.*.itinerary_step' => ['nullable', 'integer', 'min:1'],
+        ];
+    }
+
+    /**
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $kinds = array_column((array) $this->input('stops', []), 'kind');
+
+                foreach ([TourStopKind::Pickup, TourStopKind::Drop] as $unique) {
+                    if (count(array_keys($kinds, $unique->value, true)) > 1) {
+                        $validator->errors()->add(
+                            'stops',
+                            __('Solo puede haber una parada de tipo :kind.', ['kind' => $unique->label()]),
+                        );
+                    }
+                }
+            },
         ];
     }
 }

@@ -17,6 +17,20 @@ export type TourImage = {
     is_cover: boolean;
 };
 
+export type TourStopKind = 'pickup' | 'site' | 'drop';
+
+export type TourStop = {
+    kind: TourStopKind;
+    code: string;
+    label: string | null;
+    name: string;
+    place: string | null;
+    time: string | null;
+    latitude: number;
+    longitude: number;
+    itinerary_step: number | null;
+};
+
 export type TourItineraryStep = {
     id: number;
     step_number: number;
@@ -70,6 +84,7 @@ export type Tour = {
     rating_count: number;
     images: TourImage[];
     itinerary: TourItineraryStep[];
+    stops: TourStop[];
     created_at: string;
     updated_at: string;
 };
@@ -79,6 +94,32 @@ export type TourItineraryDraft = {
     title: string;
     description: string;
     duration_label: string;
+};
+
+/**
+ * Parada tal como la edita el formulario: todo texto, porque los inputs no
+ * pueden sostener un número a medio escribir. `tourStopsPayload` la convierte.
+ */
+export type TourStopDraft = {
+    kind: TourStopKind;
+    label: string;
+    name: string;
+    place: string;
+    time: string;
+    latitude: string;
+    longitude: string;
+    itinerary_step: string;
+};
+
+export type TourStopPayload = {
+    kind: TourStopKind;
+    label: string | null;
+    name: string;
+    place: string | null;
+    time: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    itinerary_step: number | null;
 };
 
 export type TourFormPayload = {
@@ -98,6 +139,7 @@ export type TourFormPayload = {
     excludes: string[];
     requirements: string[];
     itinerary: TourItineraryDraft[];
+    stops: TourStopDraft[];
 };
 
 /**
@@ -111,11 +153,13 @@ export type TourSubmitPayload = Omit<
     | 'meeting_point'
     | 'meeting_latitude'
     | 'meeting_longitude'
+    | 'stops'
 > & {
     short_description: string | null;
     meeting_point: string | null;
     meeting_latitude: string | null;
     meeting_longitude: string | null;
+    stops: TourStopPayload[];
 };
 
 export type TourShowStats = {

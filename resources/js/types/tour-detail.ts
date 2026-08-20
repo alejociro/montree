@@ -1,3 +1,5 @@
+import type { TourRouteStop } from '@/types/tour-route';
+
 export type TourDetailImage = {
     id: number;
     url: string | null;
@@ -46,6 +48,7 @@ export type TourDetail = {
     itinerary: TourDetailItineraryStep[];
     requirements: string[];
     includes: string[];
+    stops: TourRouteStop[];
     meeting_point: string | null;
     meeting_latitude: string | null;
     meeting_longitude: string | null;

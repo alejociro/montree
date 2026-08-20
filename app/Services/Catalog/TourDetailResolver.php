@@ -16,6 +16,7 @@ final class TourDetailResolver
                 'category',
                 'images',
                 'itineraries',
+                'stops',
                 'dates' => fn ($q) => $q->openFuture()->orderBy('starts_at')->limit(12),
             ])
             ->where('slug', $slug)

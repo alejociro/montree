@@ -140,11 +140,15 @@ export function googleDirectionsUrl(stops: TourRouteStop[]): string | null {
 /**
  * Paradas de la ruta a partir del detalle público del tour.
  *
- * WHY: hoy la API solo expone el punto de encuentro (`meeting_*`), así que la
- * ruta se reduce a la recogida. Cuando el backend entregue las paradas reales,
- * esta función pasa a leerlas y el resto del mapa no cambia.
+ * WHY: un tour puede no tener paradas cargadas todavía. En ese caso se cae al
+ * punto de encuentro, que es el único dato geográfico que siempre existe, para
+ * que el mapa muestre al menos la recogida en vez de desaparecer.
  */
 export function routeStopsFromTour(tour: TourDetail): TourRouteStop[] {
+    if (tour.stops.length > 0) {
+        return tour.stops;
+    }
+
     const latitude = Number.parseFloat(tour.meeting_latitude ?? '');
     const longitude = Number.parseFloat(tour.meeting_longitude ?? '');
 
@@ -162,6 +166,17 @@ export function routeStopsFromTour(tour: TourDetail): TourRouteStop[] {
             time: null,
             latitude,
             longitude,
+            itinerary_step: null,
         },
     ];
+}
+
+/** Índice de la parada que ilustra un paso del itinerario, si hay alguna. */
+export function stopIndexForItineraryStep(
+    stops: TourRouteStop[],
+    stepNumber: number,
+): number | null {
+    const index = stops.findIndex((stop) => stop.itinerary_step === stepNumber);
+
+    return index === -1 ? null : index;
 }
