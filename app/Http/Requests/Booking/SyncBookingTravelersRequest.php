@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Booking;
 
+use App\Enums\DocumentType;
+use App\Enums\Eps;
 use App\Models\Booking;
 use App\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 final class SyncBookingTravelersRequest extends FormRequest
@@ -30,7 +33,7 @@ final class SyncBookingTravelersRequest extends FormRequest
             'travelers.*.id' => ['nullable', 'integer'],
             'travelers.*.full_name' => ['required', 'string', 'max:255'],
             'travelers.*.is_minor' => ['required', 'boolean'],
-            'travelers.*.document_type' => ['nullable', 'string', 'max:255'],
+            'travelers.*.document_type' => ['nullable', Rule::enum(DocumentType::class)],
             'travelers.*.document_number' => ['nullable', 'string', 'max:255'],
             'travelers.*.birth_date' => ['nullable', 'date', 'before:today'],
             'travelers.*.nationality' => ['nullable', 'string', 'max:255'],
@@ -38,6 +41,14 @@ final class SyncBookingTravelersRequest extends FormRequest
             'travelers.*.phone' => ['nullable', 'string', 'max:30'],
             'travelers.*.dietary_restrictions' => ['nullable', 'string', 'max:2000'],
             'travelers.*.medical_notes' => ['nullable', 'string', 'max:2000'],
+            'travelers.*.emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'travelers.*.emergency_contact_relationship' => ['nullable', 'string', 'max:60'],
+            'travelers.*.emergency_contact_phone' => ['nullable', 'string', 'max:40', 'required_with:travelers.*.emergency_contact_name'],
+            'travelers.*.eps' => ['nullable', Rule::enum(Eps::class)],
+            // WHY: el texto libre solo se exige con «Otra». Si la EPS es otra
+            // cualquiera, lo que llegue se ignora y se persiste `null`
+            // (`UpdatePassengerAction`), no se rechaza la petición.
+            'travelers.*.eps_other' => ['nullable', 'string', 'max:120', 'required_if:travelers.*.eps,'.Eps::Other->value],
         ];
     }
 

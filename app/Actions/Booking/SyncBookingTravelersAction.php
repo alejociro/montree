@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Booking;
 
+use App\Actions\Passengers\UpdatePassengerAction;
 use App\Enums\BookingStatus;
 use App\Exceptions\BookingException;
 use App\Models\Booking;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 final class SyncBookingTravelersAction
 {
     private const LOCKED_STATUSES = [BookingStatus::Cancelled, BookingStatus::Expired];
+
+    public function __construct(private UpdatePassengerAction $updatePassenger) {}
 
     /**
      * @param  array<int, array<string, mixed>>  $travelers
@@ -24,32 +27,17 @@ final class SyncBookingTravelersAction
         }
 
         return DB::transaction(function () use ($booking, $travelers): Booking {
+            $existing = $booking->travelers()->get()->keyBy('id');
             $keptIds = [];
 
             foreach ($travelers as $traveler) {
-                $attributes = [
-                    'full_name' => $traveler['full_name'],
-                    'is_minor' => (bool) $traveler['is_minor'],
-                    'document_type' => $traveler['document_type'] ?? null,
-                    'document_number' => $traveler['document_number'] ?? null,
-                    'birth_date' => $traveler['birth_date'] ?? null,
-                    'nationality' => $traveler['nationality'] ?? null,
-                    'email' => $traveler['email'] ?? null,
-                    'phone' => $traveler['phone'] ?? null,
-                    'dietary_restrictions' => $traveler['dietary_restrictions'] ?? null,
-                    'medical_notes' => $traveler['medical_notes'] ?? null,
-                ];
+                $id = isset($traveler['id']) ? (int) $traveler['id'] : null;
+                $passenger = $id === null ? null : $existing->get($id);
 
-                $id = $traveler['id'] ?? null;
-                if ($id !== null) {
-                    $booking->travelers()->whereKey($id)->update($attributes);
-                    $keptIds[] = (int) $id;
-
-                    continue;
-                }
-
-                $created = $booking->travelers()->create($attributes);
-                $keptIds[] = $created->id;
+                $keptIds[] = $this->updatePassenger->handle(
+                    $passenger ?? $booking->travelers()->make(),
+                    $traveler,
+                )->id;
             }
 
             BookingTraveler::query()

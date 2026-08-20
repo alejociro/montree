@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Booking;
 
 use App\Models\Booking;
+use App\Models\BookingTraveler;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -47,16 +48,12 @@ final class BookingResource extends JsonResource
                 'id' => $this->promotion->id,
                 'code' => $this->promotion->code,
             ]),
-            'travelers' => $this->whenLoaded('travelers', fn () => $this->travelers->map(fn ($t) => [
-                'id' => $t->id,
-                'full_name' => $t->full_name,
-                'is_minor' => $t->is_minor,
-                'email' => $t->email,
-                'phone' => $t->phone,
-                'document_type' => $t->document_type,
-                'document_number' => $t->document_number,
-                'birth_date' => $t->birth_date?->toDateString(),
-            ])->values()),
+            'travelers' => $this->whenLoaded('travelers', fn () => BookingTravelerResource::collection(
+                // WHY: el viajero necesita su reserva para saber si quien pide es
+                // el dueño; se la pasa la que ya está en memoria, no una consulta
+                // por fila.
+                $this->travelers->each(fn (BookingTraveler $traveler) => $traveler->setRelation('booking', $this->resource))
+            )),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
