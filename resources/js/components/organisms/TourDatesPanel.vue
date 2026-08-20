@@ -452,7 +452,7 @@ onMounted(() => {
                             :title="$t('Cancelar salida')"
                             @click="openCancel(date)"
                         >
-                            <Ban class="size-4 text-amber-600" />
+                            <Ban class="size-4 text-accent-foreground" />
                         </Button>
                         <Button
                             variant="ghost"

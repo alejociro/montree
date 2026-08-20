@@ -18,6 +18,7 @@ final class CreateTourAction
         private TourSlugGenerator $slugGenerator,
         private PlanLimitChecker $planLimits,
         private SyncTourItineraryAction $syncItinerary,
+        private SyncTourStopsAction $syncStops,
     ) {}
 
     /**
@@ -31,7 +32,7 @@ final class CreateTourAction
 
         return DB::transaction(function () use ($data): Tour {
             $tour = new Tour;
-            $tour->fill($this->withoutItinerary($data));
+            $tour->fill($this->withoutRelations($data));
             $tour->slug = $this->slugGenerator->generate($data['name']);
             $tour->status = TourStatus::Draft;
             $tour->save();
@@ -40,7 +41,11 @@ final class CreateTourAction
                 $this->syncItinerary->handle($tour, $data['itinerary']);
             }
 
-            return $tour->fresh(['category', 'images', 'itineraries']) ?? $tour;
+            if (isset($data['stops']) && is_array($data['stops'])) {
+                $this->syncStops->handle($tour, $data['stops']);
+            }
+
+            return $tour->fresh(['category', 'images', 'itineraries', 'stops']) ?? $tour;
         });
     }
 
@@ -48,9 +53,9 @@ final class CreateTourAction
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function withoutItinerary(array $data): array
+    private function withoutRelations(array $data): array
     {
-        unset($data['itinerary']);
+        unset($data['itinerary'], $data['stops']);
 
         return $data;
     }

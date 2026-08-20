@@ -91,11 +91,11 @@ const statusMessage = computed(() => {
 
 const statusTone = computed(() => {
     if (props.status === 'available') {
-        return 'text-emerald-600 dark:text-emerald-400';
+        return 'text-primary';
     }
 
     if (props.status === 'unavailable' || props.error) {
-        return 'text-red-600 dark:text-red-500';
+        return 'text-destructive';
     }
 
     return 'text-muted-foreground';
@@ -114,9 +114,9 @@ const isInvalid = computed(
             class="flex items-stretch overflow-hidden rounded-md border bg-background shadow-xs transition-colors focus-within:ring-[3px] focus-within:ring-ring/50"
             :class="
                 isInvalid
-                    ? 'border-red-400 focus-within:border-red-500'
+                    ? 'border-destructive focus-within:border-destructive'
                     : status === 'available'
-                      ? 'border-emerald-400 focus-within:border-emerald-500'
+                      ? 'border-primary focus-within:border-primary'
                       : 'border-input focus-within:border-ring'
             "
         >
@@ -150,11 +150,11 @@ const isInvalid = computed(
                 <Spinner v-if="status === 'checking'" class="size-4" />
                 <Check
                     v-else-if="status === 'available'"
-                    class="size-4 text-emerald-600 dark:text-emerald-400"
+                    class="size-4 text-primary"
                 />
                 <X
                     v-else-if="status === 'unavailable'"
-                    class="size-4 text-red-600 dark:text-red-500"
+                    class="size-4 text-destructive"
                 />
             </span>
         </div>

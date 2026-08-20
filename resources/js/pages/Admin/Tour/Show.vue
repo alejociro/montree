@@ -286,7 +286,7 @@ const mapsUrl = computed(() => {
                             class="size-4"
                             :class="
                                 filled
-                                    ? 'fill-amber-400 text-amber-400'
+                                    ? 'fill-primary text-primary'
                                     : 'text-muted-foreground/30'
                             "
                         />
@@ -519,9 +519,7 @@ const mapsUrl = computed(() => {
                         :key="index"
                         class="flex items-start gap-2"
                     >
-                        <Check
-                            class="mt-0.5 size-4 shrink-0 text-emerald-600"
-                        />
+                        <Check class="mt-0.5 size-4 shrink-0 text-primary" />
                         <span class="text-foreground">{{ item }}</span>
                     </li>
                 </ul>

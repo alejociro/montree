@@ -357,7 +357,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                         <Link
                             v-if="isSuperAdmin"
                             href="/super-admin/dashboard"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
                         >
                             {{ $t('Ir al panel') }}
                         </Link>
@@ -365,7 +365,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                             href="/logout"
                             method="post"
                             as="button"
-                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                            class="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
                         >
                             {{ $t('Cerrar sesión') }}
                         </Link>
@@ -373,13 +373,13 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     <template v-else>
                         <Link
                             href="/login"
-                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                            class="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
                         >
                             {{ $t('Iniciar sesión') }}
                         </Link>
                         <Link
                             :href="start().url"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
                         >
                             {{ $t('Comenzar gratis') }}
                         </Link>
@@ -543,7 +543,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                     <div class="float-revenue">
                         <TrendingUp
                             class="size-4"
-                            style="color: #4a7c59; flex-shrink: 0"
+                            style="color: var(--brand-site); flex-shrink: 0"
                         />
                         <div>
                             <p class="float-notif-title">
@@ -744,7 +744,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 <div class="reveal pain-cta">
                     <CheckCircle
                         class="size-5"
-                        style="color: #4a7c59; flex-shrink: 0"
+                        style="color: var(--brand-site); flex-shrink: 0"
                     />
                     <p>
                         {{
@@ -1016,9 +1016,11 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
                 <div class="footer-brand-col">
                     <div class="brand">
                         <div class="brand-icon"><Leaf class="size-4" /></div>
-                        <span class="brand-name" style="color: #f2ede4">{{
-                            $t('Montree')
-                        }}</span>
+                        <span
+                            class="brand-name"
+                            style="color: var(--brand-cream)"
+                            >{{ $t('Montree') }}</span
+                        >
                     </div>
                     <p class="footer-desc">
                         {{
@@ -1067,15 +1069,15 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
    TOKENS — on .page-root so scoped CSS can read them
 ════════════════════════════════════════════════════════════ */
 .page-root {
-    --cream: #f2ede4;
-    --green-dark: #2a4a34;
-    --green-darker: #1a3a2a;
-    --green-mid: #4a7c59;
-    --green-light: #b8cbb0;
-    --green-pale: #eef4ec;
-    --text-dark: #2a4a34;
-    --text-muted: #5e6e61;
-    --border: #d6e2d0;
+    --cream: var(--brand-cream);
+    --green-dark: var(--brand-green);
+    --green-darker: var(--brand-ink);
+    --green-mid: var(--brand-site);
+    --green-light: var(--brand-on-ink);
+    --green-pale: var(--brand-green-100);
+    --text-dark: var(--brand-ink);
+    --text-muted: var(--brand-muted);
+    --border: var(--brand-line);
     --ff-display: 'Playfair Display', Georgia, serif;
     --ff-body: 'Inter', system-ui, sans-serif;
 
@@ -1356,7 +1358,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 }
 .hero-disclaimer {
     font-size: 0.8rem;
-    color: #a0a89a;
+    color: var(--brand-muted);
     margin-bottom: 2.75rem;
     animation: fade-up 0.6s ease 0.42s both;
 }
@@ -2269,7 +2271,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
     display: grid;
     gap: 1.75rem;
     background: var(--green-dark);
-    color: #f2ede4;
+    color: var(--brand-cream);
     border-radius: 18px;
     padding: 2.25rem 2rem;
     margin-bottom: 2.5rem;
@@ -2534,7 +2536,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
     box-shadow: 0 4px 20px rgba(74, 124, 89, 0.3);
 }
 .pricing-btn--hot:hover {
-    background: #3a6347;
+    background: var(--brand-green-600);
     box-shadow: 0 6px 28px rgba(74, 124, 89, 0.45);
     transform: translateY(-1px);
 }
@@ -2623,7 +2625,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
     transition: all 0.22s ease;
 }
 .btn-cta-primary:hover {
-    background: #fff;
+    background: var(--brand-card);
     box-shadow: 0 8px 36px rgba(242, 237, 228, 0.22);
     transform: translateY(-2px);
 }
@@ -2662,7 +2664,7 @@ const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
    FOOTER
 ════════════════════════════════════════════════════════════ */
 .site-footer {
-    background: #1a3a2a;
+    background: var(--brand-ink);
     border-top: 1px solid rgba(184, 203, 176, 0.1);
     padding-top: 3.5rem;
     padding-bottom: 1.5rem;

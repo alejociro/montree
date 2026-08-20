@@ -196,7 +196,7 @@ function goBack(): void {
                 class="relative flex h-60 items-center justify-center bg-cover bg-center"
                 :style="{ backgroundImage: `url(${heroImage})` }"
             >
-                <div class="absolute inset-0 bg-[#172e24]/60"></div>
+                <div class="absolute inset-0 bg-brand-ink/60"></div>
                 <div class="relative space-y-2 px-4 text-center text-white">
                     <CheckCircle class="mx-auto size-10" />
                     <h1 class="text-3xl font-bold">

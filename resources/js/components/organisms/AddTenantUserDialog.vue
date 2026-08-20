@@ -113,7 +113,7 @@ function submit(): void {
                         :placeholder="$t('Carlos Díaz')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.name" class="text-xs text-red-600">
+                    <p v-if="errors.name" class="text-xs text-destructive">
                         {{ errors.name }}
                     </p>
                 </div>
@@ -127,7 +127,7 @@ function submit(): void {
                         :placeholder="$t('carlos@agencia.com')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.email" class="text-xs text-red-600">
+                    <p v-if="errors.email" class="text-xs text-destructive">
                         {{ errors.email }}
                     </p>
                 </div>
@@ -153,7 +153,7 @@ function submit(): void {
                             }}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <p v-if="errors.role" class="text-xs text-red-600">
+                    <p v-if="errors.role" class="text-xs text-destructive">
                         {{ errors.role }}
                     </p>
                 </div>

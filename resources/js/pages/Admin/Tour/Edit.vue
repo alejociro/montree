@@ -26,6 +26,7 @@ import {
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
 import type {
     SupportedCurrency,
     Tour,
@@ -70,6 +71,7 @@ const initialValues = computed<TourFormPayload>(() => ({
         description: step.description ?? '',
         duration_label: step.duration_label ?? '',
     })),
+    stops: tourStopDraftsFrom(props.tour.stops ?? []),
 }));
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues.value }));
@@ -88,6 +90,7 @@ function normalizePayload(data: TourFormPayload): TourSubmitPayload {
         meeting_point: data.meeting_point === '' ? null : data.meeting_point,
         short_description:
             data.short_description === '' ? null : data.short_description,
+        stops: tourStopsPayload(data.stops),
     };
 }
 

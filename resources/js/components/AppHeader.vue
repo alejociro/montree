@@ -55,8 +55,7 @@ const page = usePage();
 const auth = computed(() => page.props.auth);
 const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 
-const activeItemStyles =
-    'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const activeItemStyles = 'text-foreground';
 
 type NotifItem = {
     id: string;
@@ -151,7 +150,7 @@ const mainNavItems: NavItem[] = [
                             }}</SheetTitle>
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon
-                                    class="size-6 fill-current text-black dark:text-white"
+                                    class="size-6 fill-current text-foreground"
                                 />
                             </SheetHeader>
                             <div
@@ -219,7 +218,7 @@ const mainNavItems: NavItem[] = [
                                 </Link>
                                 <div
                                     v-if="isCurrentUrl(item.href)"
-                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
+                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-brand-ink"
                                 ></div>
                             </NavigationMenuItem>
                         </NavigationMenuList>
@@ -323,7 +322,7 @@ const mainNavItems: NavItem[] = [
                                         :alt="auth.user.name"
                                     />
                                     <AvatarFallback
-                                        class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                                        class="rounded-lg bg-muted font-semibold text-foreground"
                                     >
                                         {{ getInitials(auth.user?.name) }}
                                     </AvatarFallback>
@@ -343,7 +342,7 @@ const mainNavItems: NavItem[] = [
             class="flex w-full border-b border-sidebar-border/70"
         >
             <div
-                class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"
+                class="mx-auto flex h-12 w-full items-center justify-start px-4 text-muted-foreground md:max-w-7xl"
             >
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </div>

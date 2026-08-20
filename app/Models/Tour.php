@@ -100,6 +100,11 @@ class Tour extends Model
         return $this->hasMany(TourItinerary::class)->orderBy('step_number');
     }
 
+    public function stops(): HasMany
+    {
+        return $this->hasMany(TourStop::class)->orderBy('position');
+    }
+
     public function dates(): HasMany
     {
         return $this->hasMany(TourDate::class);

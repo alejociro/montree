@@ -759,7 +759,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                     class="size-4"
                                     :class="
                                         star <= testimonial.rating
-                                            ? 'fill-amber-400 text-amber-400'
+                                            ? 'fill-primary text-primary'
                                             : 'text-muted-foreground/30'
                                     "
                                     aria-hidden="true"

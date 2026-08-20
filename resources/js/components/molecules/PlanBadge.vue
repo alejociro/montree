@@ -10,12 +10,12 @@ const props = defineProps<{
 const planClasses = computed(() => {
     switch (props.plan) {
         case 'enterprise':
-            return 'bg-indigo-100 text-indigo-900 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-100';
+            return 'border-brand-ink bg-brand-ink text-brand-cream';
         case 'professional':
-            return 'bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-100';
+            return 'bg-secondary text-primary border-secondary';
         case 'basic':
         default:
-            return 'bg-zinc-100 text-zinc-900 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100';
+            return 'bg-muted text-foreground border-border';
     }
 });
 

@@ -20,7 +20,7 @@ final class TourPagesController extends Controller
     {
         Gate::authorize('view', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return Inertia::render('Admin/Tour/Show', [
             'tour' => (new TourResource($tour))->resolve(),
@@ -50,7 +50,7 @@ final class TourPagesController extends Controller
     {
         Gate::authorize('update', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return Inertia::render('Admin/Tour/Edit', [
             'tour' => (new TourResource($tour))->resolve(),

@@ -20,14 +20,14 @@ useTenantBranding();
         <Head :title="$t('Agencia temporalmente no disponible')" />
 
         <div
-            class="flex size-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400"
+            class="flex size-16 items-center justify-center rounded-full bg-accent text-accent-foreground"
         >
             <CircleSlash class="size-8" />
         </div>
 
         <div class="max-w-md space-y-3">
             <p
-                class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
+                class="text-xs font-semibold tracking-widest text-accent-foreground uppercase"
             >
                 {{ $t('503 · Temporalmente no disponible') }}
             </p>

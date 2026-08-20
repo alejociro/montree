@@ -146,7 +146,7 @@ function submit(): void {
                         :placeholder="$t('Eco Adventures')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.name" class="text-xs text-red-600">
+                    <p v-if="errors.name" class="text-xs text-destructive">
                         {{ errors.name }}
                     </p>
                 </div>
@@ -163,12 +163,12 @@ function submit(): void {
                         autocomplete="off"
                         @input="slugTouched = true"
                     />
-                    <p class="text-xs text-zinc-400">
+                    <p class="text-xs text-muted-foreground">
                         {{ $t('La agencia vivirá en') }}
                         <span class="font-mono">{{ form.slug || 'slug' }}</span
                         >.montree.app
                     </p>
-                    <p v-if="errors.slug" class="text-xs text-red-600">
+                    <p v-if="errors.slug" class="text-xs text-destructive">
                         {{ errors.slug }}
                     </p>
                 </div>
@@ -193,7 +193,7 @@ function submit(): void {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p v-if="errors.plan" class="text-xs text-red-600">
+                    <p v-if="errors.plan" class="text-xs text-destructive">
                         {{ errors.plan }}
                     </p>
                 </div>
@@ -211,7 +211,7 @@ function submit(): void {
                         />
                         <p
                             v-if="errors.admin_name"
-                            class="text-xs text-red-600"
+                            class="text-xs text-destructive"
                         >
                             {{ errors.admin_name }}
                         </p>
@@ -229,7 +229,7 @@ function submit(): void {
                         />
                         <p
                             v-if="errors.admin_email"
-                            class="text-xs text-red-600"
+                            class="text-xs text-destructive"
                         >
                             {{ errors.admin_email }}
                         </p>

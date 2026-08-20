@@ -1,53 +1,32 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
-import {
-    CalendarOff,
-    ChevronLeft,
-    Clock,
-    MapPin,
-    Mountain,
-    Star,
-    Users,
-    X,
-} from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import { index as tourReviewsIndex } from '@/actions/App/Http/Controllers/Api/V1/PublicReviewController';
-import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
+import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import ReviewCard from '@/components/molecules/ReviewCard.vue';
-import { Badge } from '@/components/ui/badge';
+import TourFactGrid from '@/components/molecules/TourFactGrid.vue';
+import TourInclusionList from '@/components/molecules/TourInclusionList.vue';
+import TourItineraryDay from '@/components/molecules/TourItineraryDay.vue';
+import TourLogisticsCard from '@/components/molecules/TourLogisticsCard.vue';
+import TourBookingCard from '@/components/organisms/TourBookingCard.vue';
+import TourGallery from '@/components/organisms/TourGallery.vue';
+import TourRouteMapSection from '@/components/organisms/TourRouteMapSection.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { categoryLabel } from '@/lib/categories';
-import { formatTourDate, intlLocale } from '@/lib/format';
+import {
+    routeStopsFromTour,
+    stopIndexForItineraryStep,
+} from '@/lib/tour-route';
 import { index as catalogIndex } from '@/routes/catalog';
-import { show as tourShow } from '@/routes/tours';
-import type {
-    ReviewSummary,
-    TourDetail,
-    TourDetailDate,
-    TourDetailImage,
-} from '@/types/tour-detail';
+import type { CatalogTour } from '@/types/catalog';
+import type { ReviewSummary, TourDetail, TourFact } from '@/types/tour-detail';
 
-const { t } = useTranslations();
+const { t, tChoice } = useTranslations();
 
 defineOptions({ layout: PublicLayout });
-
-interface CatalogTour {
-    id: number;
-    slug: string;
-    name: string;
-    short_description: string | null;
-    base_price: string;
-    currency: string;
-    duration_hours: number;
-    difficulty: string;
-    category: { id: number; name: string; slug: string } | null;
-    cover_image_url: string | null;
-    rating_average: string;
-    rating_count: number;
-}
 
 const props = defineProps<{
     tour: TourDetail;
@@ -57,13 +36,61 @@ const props = defineProps<{
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
-const mapUrl = computed(() => {
-    if (!props.tour.meeting_latitude || !props.tour.meeting_longitude) {
-        return null;
+const routeStops = computed(() => routeStopsFromTour(props.tour));
+
+const mapSection = ref<InstanceType<typeof TourRouteMapSection> | null>(null);
+
+const pickupStopIndex = computed(() => {
+    const index = routeStops.value.findIndex((stop) => stop.kind === 'pickup');
+
+    return index === -1 ? null : index;
+});
+
+/** Paso del itinerario → índice de su parada, para el botón "Ver en el mapa". */
+const stopIndexByStep = computed(() =>
+    props.tour.itinerary.reduce<Record<number, number>>((map, step) => {
+        const index = stopIndexForItineraryStep(
+            routeStops.value,
+            step.step_number,
+        );
+
+        if (index !== null) {
+            map[step.step_number] = index;
+        }
+
+        return map;
+    }, {}),
+);
+
+/** El offset del header sticky obliga a scrollear a mano: `scrollIntoView` lo tapa. */
+const MAP_SCROLL_OFFSET = 70;
+const MAP_SELECT_DELAY_MS = 350;
+
+function showStopOnMap(index: number | undefined): void {
+    const section = document.getElementById('ruta');
+
+    if (index === undefined || section === null) {
+        return;
     }
 
-    return `https://maps.google.com/?q=${props.tour.meeting_latitude},${props.tour.meeting_longitude}`;
-});
+    window.scrollTo({
+        top:
+            section.getBoundingClientRect().top +
+            window.scrollY -
+            MAP_SCROLL_OFFSET,
+        behavior: 'smooth',
+    });
+    window.setTimeout(
+        () => mapSection.value?.selectStop(index),
+        MAP_SELECT_DELAY_MS,
+    );
+}
+
+const routeNote = computed(() =>
+    props.tour.meeting_point === null
+        ? null
+        : t('Punto de encuentro: :place.', { place: props.tour.meeting_point }),
+);
 
 const difficultyLabel = computed(() => {
     const map: Record<string, string> = {
@@ -74,6 +101,52 @@ const difficultyLabel = computed(() => {
     };
 
     return map[props.tour.difficulty] ?? props.tour.difficulty;
+});
+
+const durationLabel = computed(() =>
+    t(':count h', { count: props.tour.duration_hours }),
+);
+
+/** Chips del encabezado: solo se pintan los que el tour respalda con datos. */
+const highlightChips = computed(() => {
+    const chips: string[] = [];
+
+    if (pickupStopIndex.value !== null) {
+        chips.push(t('Recogida incluida'));
+    }
+
+    chips.push(t('Grupo máx. :count', { count: props.tour.default_capacity }));
+    chips.push(t('Dificultad: :level', { level: difficultyLabel.value }));
+
+    return chips;
+});
+
+const facts = computed<TourFact[]>(() => {
+    const list: TourFact[] = [
+        { label: t('Duración'), value: durationLabel.value },
+        { label: t('Dificultad'), value: difficultyLabel.value },
+        {
+            label: t('Grupo máx.'),
+            value: tChoice(
+                ':count persona|:count personas',
+                props.tour.default_capacity,
+            ),
+        },
+    ];
+
+    if (props.tour.category) {
+        list.push({
+            label: t('Categoría'),
+            value: categoryLabel(props.tour.category.name),
+        });
+    } else if (routeStops.value.length > 0) {
+        list.push({
+            label: t('Paradas'),
+            value: String(routeStops.value.length),
+        });
+    }
+
+    return list;
 });
 
 const reviews = ref<ReviewSummary[]>([]);
@@ -141,640 +214,348 @@ onMounted(() => {
     }
 });
 
-const activeImageIndex = ref(0);
-const lightboxOpen = ref(false);
-
-const activeImage = computed<TourDetailImage | null>(
-    () => props.tour.images[activeImageIndex.value] ?? null,
-);
-
-function openLightbox(index: number) {
-    activeImageIndex.value = index;
-    lightboxOpen.value = true;
-}
-
-function closeLightbox() {
-    lightboxOpen.value = false;
-}
-
-function nextImage() {
-    activeImageIndex.value =
-        (activeImageIndex.value + 1) % props.tour.images.length;
-}
-
-function prevImage() {
-    activeImageIndex.value =
-        (activeImageIndex.value - 1 + props.tour.images.length) %
-        props.tour.images.length;
-}
-
-function formatTourPrice(price: string, currency: string): string {
-    return new Intl.NumberFormat(intlLocale(), {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 0,
-    }).format(Number(price));
-}
-
-const selectableDates = computed<TourDetailDate[]>(() =>
+const selectableDates = computed(() =>
     props.tour.future_dates.filter(
         (date) => !date.is_full && date.status === 'open',
     ),
 );
 
 const selectedDateId = ref<number | null>(null);
-
-const selectedDate = computed<TourDetailDate | null>(
-    () =>
-        props.tour.future_dates.find(
-            (date) => date.id === selectedDateId.value,
-        ) ?? null,
-);
-
-const bookingUrl = computed(() =>
-    selectedDate.value
-        ? `/booking/new?tour_date_id=${selectedDate.value.id}`
-        : null,
-);
-
-function dateOptionLabel(date: TourDetailDate): string {
-    const label = formatTourDate(date.starts_at, {
-        withWeekday: true,
-        withTime: true,
-    });
-    const price = formatTourPrice(date.effective_price, props.tour.currency);
-
-    return t(':date · :seats cupos · :price', {
-        date: label,
-        seats: date.available_seats,
-        price,
-    });
-}
 </script>
 
 <template>
     <Head :title="tour.name" />
 
-    <!-- Breadcrumb -->
-    <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+    <div class="mx-auto w-full max-w-[1180px] px-4 sm:px-7">
+        <!-- Breadcrumb -->
+        <nav
+            class="flex flex-wrap items-center gap-2 pt-5.5 pb-3.5 text-[11px] tracking-[0.08em] text-muted-foreground uppercase"
+        >
             <Link
                 :href="catalogIndex().url"
                 class="transition hover:text-foreground"
             >
                 {{ $t('Tours') }}
             </Link>
-            <ChevronLeft class="size-3.5 rotate-180" />
-            <span v-if="tour.category" class="transition hover:text-foreground">
-                {{ categoryLabel(tour.category.name) }}
-            </span>
-            <ChevronLeft v-if="tour.category" class="size-3.5 rotate-180" />
+            <template v-if="tour.category">
+                <span aria-hidden="true">›</span>
+                <span>{{ categoryLabel(tour.category.name) }}</span>
+            </template>
+            <span aria-hidden="true">›</span>
             <span class="truncate text-foreground">{{ tour.name }}</span>
         </nav>
-    </div>
 
-    <!-- Main 2-column layout -->
-    <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div class="grid gap-8 lg:grid-cols-2">
-            <!-- LEFT: Image gallery -->
-            <div class="space-y-3">
-                <div class="relative">
-                    <div
-                        class="aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-2xl bg-muted"
-                        @click="openLightbox(activeImageIndex)"
-                    >
-                        <img
-                            v-if="activeImage?.url"
-                            :src="activeImage.url"
-                            :alt="activeImage.alt_text ?? tour.name"
-                            class="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                    </div>
-                    <FavoriteButton
-                        v-if="isAuthenticated"
-                        :tour-id="tour.id"
-                        :initial-favorite="tour.is_favorite"
-                        class="absolute top-3 right-3"
-                    />
-                </div>
-
-                <!-- Thumbnails -->
-                <div
-                    v-if="tour.images.length > 1"
-                    class="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1"
+        <!-- Título, meta y chips -->
+        <div class="flex flex-wrap items-end justify-between gap-8">
+            <div>
+                <h1
+                    class="max-w-[16ch] text-[34px] leading-[1.02] font-semibold tracking-tight lg:text-[44px]"
                 >
-                    <button
-                        v-for="(img, i) in tour.images"
-                        :key="img.id"
-                        type="button"
-                        class="aspect-square w-20 flex-none snap-start overflow-hidden rounded-lg border-2 transition"
-                        :class="
-                            i === activeImageIndex
-                                ? 'border-primary'
-                                : 'border-transparent opacity-70 hover:opacity-100'
-                        "
-                        @click="activeImageIndex = i"
-                    >
-                        <img
-                            v-if="img.url"
-                            :src="img.url"
-                            :alt="img.alt_text ?? tour.name"
-                            class="h-full w-full object-cover"
-                        />
-                    </button>
-                </div>
-
-                <!-- Includes -->
-                <div v-if="tour.includes.length > 0" class="space-y-3 pt-2">
-                    <h2 class="text-base font-semibold">
-                        {{ $t('¿Qué incluye?') }}
-                    </h2>
-                    <ul
-                        class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground"
-                    >
-                        <li
-                            v-for="(item, i) in tour.includes"
-                            :key="i"
-                            class="flex items-start gap-2"
-                        >
-                            <span class="mt-0.5 shrink-0 text-primary">✓</span>
-                            {{ item }}
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Requirements -->
-                <div v-if="tour.requirements.length > 0" class="space-y-3">
-                    <h2 class="text-base font-semibold">
-                        {{ $t('Requisitos') }}
-                    </h2>
-                    <ul class="space-y-1.5 text-sm text-muted-foreground">
-                        <li
-                            v-for="(item, i) in tour.requirements"
-                            :key="i"
-                            class="flex items-start gap-2"
-                        >
-                            <span class="mt-0.5 shrink-0">•</span>
-                            {{ item }}
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- RIGHT: Tour info -->
-            <div class="space-y-6">
-                <!-- Category badge -->
-                <Badge v-if="tour.category" variant="secondary" class="text-xs">
-                    {{ categoryLabel(tour.category.name) }}
-                </Badge>
-
-                <!-- Tour name -->
-                <h1 class="text-2xl leading-tight font-bold sm:text-3xl">
                     {{ tour.name }}
                 </h1>
-
-                <!-- Quick stats -->
                 <div
-                    class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground"
+                    class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-muted-foreground"
                 >
-                    <span class="flex items-center gap-1.5">
-                        <Clock class="size-4" />
-                        {{ tour.duration_hours }} horas
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        <Mountain class="size-4" />
-                        {{ difficultyLabel }}
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        <Users class="size-4" />
+                    <span v-if="tour.rating_count > 0">
+                        <b class="font-semibold text-foreground">{{
+                            tour.rating_average
+                        }}</b>
+                        <span class="ml-1 text-primary" aria-hidden="true">{{
+                            '★'.repeat(Math.round(Number(tour.rating_average)))
+                        }}</span>
+                        ·
                         {{
-                            $t('Hasta :count personas', {
-                                count: tour.default_capacity,
-                            })
+                            $tc(
+                                ':count reseña|:count reseñas',
+                                tour.rating_count,
+                            )
                         }}
                     </span>
-                    <span
-                        v-if="tour.rating_count > 0"
-                        class="flex items-center gap-1"
-                    >
-                        <Star class="size-4 fill-amber-400 text-amber-400" />
-                        {{ tour.rating_average }}
-                        <span class="text-muted-foreground"
-                            >({{ tour.rating_count }})</span
-                        >
-                    </span>
-                </div>
-
-                <!-- Description -->
-                <div class="space-y-2">
-                    <p
-                        class="text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
-                    >
-                        {{ tour.short_description ?? tour.description }}
-                    </p>
-                </div>
-
-                <!-- Itinerary timeline -->
-                <div v-if="tour.itinerary.length > 0" class="space-y-3">
-                    <h2 class="text-lg font-semibold">
-                        {{ $t('Itinerario') }}
-                    </h2>
-                    <div class="relative space-y-0 pl-6">
-                        <div
-                            class="absolute top-2 bottom-2 left-[9px] w-0.5 bg-primary/20"
-                        />
-                        <div
-                            v-for="step in tour.itinerary"
-                            :key="step.step_number"
-                            class="relative pb-5 last:pb-0"
-                        >
-                            <div
-                                class="absolute top-1 -left-6 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
-                            >
-                                {{ step.step_number }}
-                            </div>
-                            <div>
-                                <p class="leading-tight font-medium">
-                                    {{ step.title }}
-                                </p>
-                                <p
-                                    v-if="step.duration_label"
-                                    class="text-xs text-muted-foreground"
-                                >
-                                    {{ step.duration_label }}
-                                </p>
-                                <p
-                                    v-if="step.description"
-                                    class="mt-1 text-sm text-muted-foreground"
-                                >
-                                    {{ step.description }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Availability / booking -->
-                <div class="space-y-3 rounded-2xl border bg-muted/30 p-5">
-                    <h2 class="text-lg font-semibold">
-                        {{ $t('Disponibilidad') }}
-                    </h2>
-
-                    <template v-if="selectableDates.length > 0">
-                        <div class="space-y-1.5">
-                            <label
-                                for="tour-date-select"
-                                class="text-sm font-medium text-foreground"
-                            >
-                                {{ $t('Selecciona una fecha') }}
-                            </label>
-                            <select
-                                id="tour-date-select"
-                                v-model="selectedDateId"
-                                class="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm capitalize shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
-                            >
-                                <option :value="null" disabled>
-                                    {{ $t('Seleccionar fecha') }}
-                                </option>
-                                <option
-                                    v-for="date in selectableDates"
-                                    :key="date.id"
-                                    :value="date.id"
-                                >
-                                    {{ dateOptionLabel(date) }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <!-- Selected date details -->
-                        <div
-                            v-if="selectedDate"
-                            class="flex items-center justify-between rounded-lg border bg-background px-4 py-3"
-                        >
-                            <span
-                                class="flex items-center gap-1.5 text-sm text-muted-foreground"
-                            >
-                                <Users class="size-4 text-primary" />
-                                {{
-                                    $tc(
-                                        ':count cupo disponible|:count cupos disponibles',
-                                        selectedDate.available_seats,
-                                    )
-                                }}
-                            </span>
-                            <span class="text-right">
-                                <span class="block font-bold text-primary">{{
-                                    formatTourPrice(
-                                        selectedDate.effective_price,
-                                        tour.currency,
-                                    )
-                                }}</span>
-                                <span class="text-xs text-muted-foreground">{{
-                                    $t('por persona')
-                                }}</span>
-                            </span>
-                        </div>
-
-                        <Button
-                            v-if="bookingUrl"
-                            as-child
-                            size="lg"
-                            class="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                            <Link :href="bookingUrl">{{
-                                $t('Reservar ahora')
-                            }}</Link>
-                        </Button>
-                        <Button v-else size="lg" class="w-full" disabled>
-                            {{ $t('Reservar ahora') }}
-                        </Button>
-                    </template>
-
-                    <div
-                        v-else
-                        class="rounded-xl border border-dashed bg-background px-4 py-6 text-center"
-                    >
-                        <CalendarOff
-                            class="mx-auto size-8 text-muted-foreground/40"
-                        />
-                        <p class="mt-3 font-medium text-foreground">
-                            {{ $t('Sin fechas disponibles') }}
-                        </p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{
-                                tour.future_dates.length === 0
-                                    ? $t(
-                                          'Todavía no hay salidas programadas para esta experiencia. Vuelve pronto para reservar.',
-                                      )
-                                    : $t(
-                                          'Por ahora no quedan cupos abiertos. Vuelve pronto para nuevas salidas.',
-                                      )
-                            }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Meeting point -->
-                <div v-if="tour.meeting_point || mapUrl" class="space-y-2">
-                    <h2 class="text-lg font-semibold">
-                        {{ $t('Punto de encuentro') }}
-                    </h2>
-                    <div
-                        class="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
-                        <MapPin class="mt-0.5 size-4 shrink-0 text-primary" />
-                        <div>
-                            <p v-if="tour.meeting_point">
-                                {{ tour.meeting_point }}
-                            </p>
-                            <a
-                                v-if="mapUrl"
-                                :href="mapUrl"
-                                target="_blank"
-                                rel="noopener"
-                                class="text-primary hover:underline"
-                            >
-                                {{ $t('Ver en Google Maps →') }}
-                            </a>
-                        </div>
-                    </div>
+                    <span v-if="tour.meeting_point">{{
+                        tour.meeting_point
+                    }}</span>
+                    <span>{{ durationLabel }}</span>
                 </div>
             </div>
+
+            <ul class="flex flex-wrap gap-2">
+                <li
+                    v-for="chip in highlightChips"
+                    :key="chip"
+                    class="rounded-full bg-secondary px-3 py-1.5 text-[12.5px] font-medium text-secondary-foreground"
+                >
+                    {{ chip }}
+                </li>
+            </ul>
         </div>
-    </div>
 
-    <!-- Reviews section -->
-    <section class="border-t bg-muted/30">
-        <div class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <h2 class="mb-8 text-2xl font-bold">
-                {{ $t('Calificaciones y reseñas') }}
-            </h2>
+        <!-- Galería -->
+        <div class="mt-5">
+            <TourGallery
+                :images="tour.images"
+                :tour-id="tour.id"
+                :tour-name="tour.name"
+                :is-favorite="tour.is_favorite"
+                :is-authenticated="isAuthenticated"
+            />
+        </div>
 
-            <div v-if="tour.rating_count > 0" class="grid gap-8 lg:grid-cols-3">
-                <div class="lg:col-span-1">
+        <!-- Contenido + columna de reserva -->
+        <div
+            class="grid gap-10 pt-8 pb-14 lg:grid-cols-[minmax(0,1fr)_366px] lg:items-start"
+        >
+            <main class="min-w-0">
+                <!-- Descripción y datos duros -->
+                <section class="pt-1.5 pb-6">
+                    <p
+                        class="max-w-[62ch] text-[16.5px] whitespace-pre-line text-foreground/85"
+                    >
+                        {{ tour.description }}
+                    </p>
+                    <TourFactGrid :facts="facts" />
+                </section>
+
+                <!-- Itinerario -->
+                <section
+                    v-if="tour.itinerary.length > 0"
+                    class="border-t border-border py-6"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Itinerario') }}
+                    </h2>
+                    <p class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground">
+                        {{
+                            $t(
+                                'Cada paso está anclado a un punto del mapa: toca "Ver en el mapa" para ubicarlo.',
+                            )
+                        }}
+                    </p>
+                    <TourItineraryDay
+                        v-for="step in tour.itinerary"
+                        :key="step.step_number"
+                        :step="step"
+                        :mappable="
+                            stopIndexByStep[step.step_number] !== undefined
+                        "
+                        @show-on-map="
+                            showStopOnMap(stopIndexByStep[step.step_number])
+                        "
+                    />
+                </section>
+
+                <!-- Ruta y puntos de encuentro -->
+                <TourRouteMapSection
+                    v-if="routeStops.length > 0"
+                    ref="mapSection"
+                    class="border-t border-border py-6"
+                    :stops="routeStops"
+                    :note="routeNote"
+                />
+
+                <!-- Punto de encuentro sin coordenadas: no hay mapa que dibujar -->
+                <section
+                    v-else-if="tour.meeting_point"
+                    class="border-t border-border py-6"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Punto de encuentro') }}
+                    </h2>
+                    <p class="mt-2 text-[13.5px] text-muted-foreground">
+                        {{ tour.meeting_point }}
+                    </p>
+                </section>
+
+                <!-- Qué incluye -->
+                <section
+                    v-if="tour.includes.length > 0 || tour.excludes.length > 0"
+                    class="border-t border-border py-6"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Qué incluye') }}
+                    </h2>
+                    <TourInclusionList
+                        :includes="tour.includes"
+                        :excludes="tour.excludes"
+                    />
+                </section>
+
+                <!-- Recomendaciones -->
+                <section
+                    v-if="tour.requirements.length > 0"
+                    class="border-t border-border py-6"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Recomendaciones') }}
+                    </h2>
+                    <ul
+                        class="mt-2 max-w-[62ch] space-y-1.5 text-[13.5px] text-muted-foreground"
+                    >
+                        <li
+                            v-for="(item, index) in tour.requirements"
+                            :key="`requirement-${index}`"
+                            class="flex items-start gap-2"
+                        >
+                            <span class="mt-0.5 shrink-0" aria-hidden="true"
+                                >•</span
+                            >
+                            {{ item }}
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Calificaciones y reseñas -->
+                <section class="border-t border-border py-6">
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Calificaciones y reseñas') }}
+                    </h2>
+
                     <div
-                        class="sticky top-24 rounded-xl border bg-background p-6"
+                        v-if="tour.rating_count > 0"
+                        class="mt-4.5 grid gap-[34px] lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start"
                     >
                         <RatingBreakdown
                             :distribution="tour.rating_distribution"
                             :average="tour.rating_average"
                             :count="tour.rating_count"
                         />
-                    </div>
-                </div>
 
-                <div class="space-y-4 lg:col-span-2">
-                    <div v-if="reviewsLoading" class="space-y-4">
-                        <div
-                            v-for="n in 3"
-                            :key="`review-skel-${n}`"
-                            class="h-28 animate-pulse rounded-lg border bg-muted"
-                        />
+                        <div class="space-y-3.5">
+                            <div v-if="reviewsLoading" class="space-y-3.5">
+                                <div
+                                    v-for="n in 2"
+                                    :key="`review-skel-${n}`"
+                                    class="h-32 animate-pulse rounded-2xl bg-muted"
+                                />
+                            </div>
+
+                            <div
+                                v-else-if="reviewsLoadError"
+                                class="rounded-2xl border border-dashed border-border p-6 text-center"
+                            >
+                                <p class="text-sm text-muted-foreground">
+                                    {{
+                                        $t('No se pudieron cargar las reseñas.')
+                                    }}
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="mt-3"
+                                    @click="loadReviews(1)"
+                                >
+                                    {{ $t('Reintentar') }}
+                                </Button>
+                            </div>
+
+                            <template v-else>
+                                <ReviewCard
+                                    v-for="review in reviews"
+                                    :key="review.id"
+                                    :review="review"
+                                />
+                                <div
+                                    v-if="hasMoreReviews"
+                                    class="pt-2 text-center"
+                                >
+                                    <button
+                                        type="button"
+                                        class="text-sm font-medium text-primary transition hover:text-brand-ink hover:underline"
+                                        :disabled="loadingMoreReviews"
+                                        @click="loadReviews(reviewsPage + 1)"
+                                    >
+                                        {{
+                                            loadingMoreReviews
+                                                ? $t('Cargando...')
+                                                : $t('Ver más reseñas')
+                                        }}
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
                     </div>
 
                     <div
-                        v-else-if="reviewsLoadError"
-                        class="rounded-lg border border-dashed p-6 text-center"
+                        v-else
+                        class="mt-4.5 rounded-2xl border border-dashed border-border p-8 text-center"
                     >
-                        <p class="text-sm text-muted-foreground">
-                            {{ $t('No se pudieron cargar las reseñas.') }}
+                        <p class="font-medium">
+                            {{ $t('Aún no hay reseñas') }}
                         </p>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="mt-3"
-                            @click="loadReviews(1)"
-                        >
-                            {{ $t('Reintentar') }}
-                        </Button>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{
+                                $t(
+                                    'Sé el primero en compartir tu experiencia después de completar el tour.',
+                                )
+                            }}
+                        </p>
                     </div>
+                </section>
+            </main>
 
-                    <template v-else>
-                        <ReviewCard
-                            v-for="review in reviews"
-                            :key="review.id"
-                            :review="review"
-                        />
-                        <div v-if="hasMoreReviews" class="pt-2 text-center">
-                            <Button
-                                variant="outline"
-                                :disabled="loadingMoreReviews"
-                                @click="loadReviews(reviewsPage + 1)"
-                            >
-                                {{
-                                    loadingMoreReviews
-                                        ? $t('Cargando...')
-                                        : $t('Ver más reseñas')
-                                }}
-                            </Button>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <div v-else class="rounded-xl border border-dashed p-8 text-center">
-                <Star class="mx-auto size-10 text-muted-foreground/30" />
-                <p class="mt-3 font-medium">{{ $t('Aún no hay reseñas') }}</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    {{
-                        $t(
-                            'Sé el primero en compartir tu experiencia después de completar el tour.',
-                        )
-                    }}
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Related tours -->
-    <Deferred data="relatedTours">
-        <template #fallback>
-            <section
-                class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+            <TourBookingCard
+                :tour="tour"
+                :dates="selectableDates"
+                :selected-date-id="selectedDateId"
+                :pickup-stop-index="pickupStopIndex"
+                @update:selected-date-id="selectedDateId = $event"
+                @show-pickup="showStopOnMap(pickupStopIndex ?? undefined)"
             >
-                <h2 class="mb-6 text-2xl font-bold">
-                    {{ $t('Otras actividades que te podrían gustar') }}
-                </h2>
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div v-for="n in 4" :key="n" class="space-y-3">
+                <template #logistics>
+                    <TourLogisticsCard
+                        v-if="routeStops.length > 0"
+                        :stops="routeStops"
+                        @select="showStopOnMap($event)"
+                    />
+                </template>
+            </TourBookingCard>
+        </div>
+
+        <!-- Otras actividades -->
+        <Deferred data="relatedTours">
+            <template #fallback>
+                <section class="border-t border-border pt-8 pb-14">
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Otras actividades que te podrían gustar') }}
+                    </h2>
+                    <div
+                        class="mt-4.5 grid gap-4.5 sm:grid-cols-2 lg:grid-cols-4"
+                    >
                         <div
-                            class="aspect-[4/3] animate-pulse rounded-xl bg-muted"
+                            v-for="n in 4"
+                            :key="`related-skel-${n}`"
+                            class="h-64 animate-pulse rounded-2xl bg-muted"
                         />
-                        <div class="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                        <div class="h-3 w-1/2 animate-pulse rounded bg-muted" />
                     </div>
+                </section>
+            </template>
+
+            <section
+                v-if="relatedTours && relatedTours.length > 0"
+                class="border-t border-border pt-8 pb-14"
+            >
+                <div
+                    class="flex flex-wrap items-baseline justify-between gap-3"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Otras actividades que te podrían gustar') }}
+                    </h2>
+                    <Link
+                        :href="catalogIndex().url"
+                        class="text-sm font-medium text-primary transition hover:text-brand-ink hover:underline"
+                    >
+                        {{ $t('Ver todas ↗') }}
+                    </Link>
+                </div>
+
+                <div class="mt-4.5 grid gap-4.5 sm:grid-cols-2 lg:grid-cols-4">
+                    <HomeTourCard
+                        v-for="related in relatedTours"
+                        :key="related.id"
+                        :tour="related"
+                        :is-authenticated="isAuthenticated"
+                    />
                 </div>
             </section>
-        </template>
-
-        <section
-            v-if="relatedTours && relatedTours.length > 0"
-            class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
-        >
-            <div class="mb-6 flex items-center justify-between">
-                <h2 class="text-2xl font-bold">
-                    {{ $t('Otras actividades que te podrían gustar') }}
-                </h2>
-                <Link
-                    :href="catalogIndex().url"
-                    class="text-sm font-medium text-primary transition hover:underline"
-                >
-                    {{ $t('Ver todos →') }}
-                </Link>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link
-                    v-for="related in relatedTours"
-                    :key="related.id"
-                    :href="tourShow(related.slug).url"
-                    class="group overflow-hidden rounded-xl border bg-background transition hover:shadow-md"
-                >
-                    <div class="aspect-[4/3] overflow-hidden bg-muted">
-                        <img
-                            v-if="related.cover_image_url"
-                            :src="related.cover_image_url"
-                            :alt="related.name"
-                            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                    </div>
-                    <div class="space-y-1.5 p-4">
-                        <Badge
-                            v-if="related.category"
-                            variant="secondary"
-                            class="text-[10px]"
-                        >
-                            {{ categoryLabel(related.category.name) }}
-                        </Badge>
-                        <h3 class="leading-tight font-semibold">
-                            {{ related.name }}
-                        </h3>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="font-bold text-primary">
-                                {{
-                                    formatTourPrice(
-                                        related.base_price,
-                                        related.currency,
-                                    )
-                                }}
-                            </span>
-                            <span
-                                v-if="related.rating_count > 0"
-                                class="flex items-center gap-1 text-muted-foreground"
-                            >
-                                <Star
-                                    class="size-3 fill-amber-400 text-amber-400"
-                                />
-                                {{ related.rating_average }}
-                            </span>
-                        </div>
-                    </div>
-                </Link>
-            </div>
-        </section>
-    </Deferred>
-
-    <!-- Lightbox -->
-    <Teleport to="body">
-        <div
-            v-if="lightboxOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-            @click.self="closeLightbox"
-            @keydown.escape="closeLightbox"
-        >
-            <button
-                type="button"
-                class="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
-                @click="closeLightbox"
-            >
-                <X class="size-6" />
-            </button>
-
-            <button
-                v-if="tour.images.length > 1"
-                type="button"
-                class="absolute left-4 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
-                @click="prevImage"
-            >
-                <ChevronLeft class="size-6" />
-            </button>
-
-            <div class="max-h-[85vh] max-w-[90vw]">
-                <img
-                    v-if="activeImage?.url"
-                    :src="activeImage.url"
-                    :alt="activeImage.alt_text ?? tour.name"
-                    class="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
-                />
-            </div>
-
-            <button
-                v-if="tour.images.length > 1"
-                type="button"
-                class="absolute right-4 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
-                @click="nextImage"
-            >
-                <ChevronLeft class="size-6 rotate-180" />
-            </button>
-
-            <!-- Lightbox thumbnails -->
-            <div
-                v-if="tour.images.length > 1"
-                class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2"
-            >
-                <button
-                    v-for="(img, i) in tour.images"
-                    :key="img.id"
-                    type="button"
-                    class="size-2.5 rounded-full transition"
-                    :class="
-                        i === activeImageIndex
-                            ? 'bg-white'
-                            : 'bg-white/40 hover:bg-white/70'
-                    "
-                    @click="activeImageIndex = i"
-                />
-            </div>
-        </div>
-    </Teleport>
+        </Deferred>
+    </div>
 </template>

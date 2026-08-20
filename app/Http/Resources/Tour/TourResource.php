@@ -52,6 +52,11 @@ class TourResource extends JsonResource
                 fn () => TourItineraryStepResource::collection($this->itineraries)->resolve(),
                 fn () => [],
             ),
+            'stops' => $this->whenLoaded(
+                'stops',
+                fn () => TourStopResource::collection($this->stops)->resolve(),
+                fn () => [],
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
