@@ -11,9 +11,14 @@ use Illuminate\Support\Facades\DB;
 final class RatingDistribution
 {
     /**
-     * @return array<int, int> keys 1..5
+     * WHY: devuelve un objeto, no un array. `JsonResource` re-indexa con
+     * `array_values` cualquier array cuyas claves sean todas numéricas, así que
+     * el mapa estrella→conteo salía al front como la lista `[2,1,0,0,0]` y se
+     * perdía a qué estrella pertenecía cada conteo.
+     *
+     * @return object{5: int, 4: int, 3: int, 2: int, 1: int}
      */
-    public static function forTour(Tour $tour): array
+    public static function forTour(Tour $tour): object
     {
         $counts = DB::table('reviews')
             ->where('tour_id', $tour->id)
@@ -24,12 +29,12 @@ final class RatingDistribution
             ->pluck('total', 'rating')
             ->all();
 
-        return [
-            5 => (int) ($counts[5] ?? 0),
-            4 => (int) ($counts[4] ?? 0),
-            3 => (int) ($counts[3] ?? 0),
-            2 => (int) ($counts[2] ?? 0),
-            1 => (int) ($counts[1] ?? 0),
+        return (object) [
+            '5' => (int) ($counts[5] ?? 0),
+            '4' => (int) ($counts[4] ?? 0),
+            '3' => (int) ($counts[3] ?? 0),
+            '2' => (int) ($counts[2] ?? 0),
+            '1' => (int) ($counts[1] ?? 0),
         ];
     }
 }

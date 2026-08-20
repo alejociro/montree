@@ -97,6 +97,35 @@ final class PublicTourDetailTest extends TestCase
         $response->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_rating_distribution_keeps_the_star_of_every_count(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $tenant->makeCurrent();
+
+        $tour = Tour::factory()->create(['slug' => 'cocora-rated', 'status' => TourStatus::Active]);
+        Review::factory()->count(2)->for($tour)->create([
+            'rating' => 5,
+            'status' => ReviewStatus::Approved,
+            'approved_at' => now(),
+        ]);
+        Review::factory()->for($tour)->create([
+            'rating' => 4,
+            'status' => ReviewStatus::Approved,
+            'approved_at' => now(),
+        ]);
+
+        $response = $this->getJson('http://demo.montree.test/api/v1/tours/cocora-rated');
+
+        // WHY: con claves numéricas el resource re-indexaba el mapa y lo mandaba
+        // como lista, así que el detalle pintaba los conteos en la estrella errónea.
+        $response->assertOk()
+            ->assertJsonPath('data.rating_distribution.5', 2)
+            ->assertJsonPath('data.rating_distribution.4', 1)
+            ->assertJsonPath('data.rating_distribution.3', 0)
+            ->assertJsonPath('data.rating_distribution.2', 0)
+            ->assertJsonPath('data.rating_distribution.1', 0);
+    }
+
     public function test_favorite_toggle_requires_auth(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
