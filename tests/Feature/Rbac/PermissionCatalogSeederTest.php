@@ -25,7 +25,7 @@ final class PermissionCatalogSeederTest extends TestCase
      * que enumeran tiene 38. Manda la enumeración; el número es un error de conteo en los
      * dos documentos y quedó anotado en `tasks.md` para `montree-spec-updater`.
      */
-    public const CATALOG_SIZE = 38;
+    public const CATALOG_SIZE = 39;
 
     /**
      * @var array<string, array<int, string>>
@@ -35,7 +35,7 @@ final class PermissionCatalogSeederTest extends TestCase
         'Productos' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'Salidas' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'Logistica' => ['logistics.view', 'logistics.manage'],
-        'Reservas' => ['bookings.view', 'bookings.update', 'payments.refund'],
+        'Reservas' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view', 'payments.refund'],
         'Promociones' => ['promotions.view', 'promotions.create', 'promotions.update', 'promotions.delete'],
         'Newsletter' => ['newsletter.view', 'newsletter.send'],
         'Resenas' => ['reviews.view', 'reviews.moderate', 'reviews.respond'],
@@ -97,6 +97,8 @@ final class PermissionCatalogSeederTest extends TestCase
             'tours.view',
         ], $this->permissionsOf(UserRole::Operator));
         $this->assertSame([
+            // D7 de tours-admin-passengers: el guía ve EPS y observaciones; `sales`, no.
+            'bookings.passengers.medical.view',
             'departures.view',
             'guide.schedule.view',
             'guide.travelers.view',

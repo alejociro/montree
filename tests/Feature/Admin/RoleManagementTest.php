@@ -283,7 +283,7 @@ final class RoleManagementTest extends TestCase
         $response = $this->actingAs($admin)->getJson($this->url());
 
         $response->assertOk();
-        $response->assertJsonCount(38, 'meta.available_permissions');
+        $response->assertJsonCount(39, 'meta.available_permissions');
         $response->assertJsonPath('meta.available_permissions.0.slug', 'dashboard.view');
         $response->assertJsonPath('meta.available_permissions.0.module', 'dashboard');
     }
