@@ -59,6 +59,27 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /*
+      Paleta cruda del handoff «Detalle de tour con mapa». Los tokens
+      semánticos de arriba se derivan de ella; estas utilidades
+      (bg-brand-ink, text-brand-muted, border-brand-line…) son para los
+      lugares del diseño que piden un color concreto y no un rol.
+    */
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-green: var(--brand-green);
+    --color-brand-green-600: var(--brand-green-600);
+    --color-brand-green-100: var(--brand-green-100);
+    --color-brand-cream: var(--brand-cream);
+    --color-brand-card: var(--brand-card);
+    --color-brand-tan: var(--brand-tan);
+    --color-brand-text: var(--brand-text);
+    --color-brand-muted: var(--brand-muted);
+    --color-brand-line: var(--brand-line);
+    --color-brand-drop: var(--brand-drop);
+    --color-brand-site: var(--brand-site);
+    --color-brand-on-ink: var(--brand-on-ink);
+    --color-brand-ink-line: var(--brand-ink-line);
 }
 
 /*
@@ -90,78 +111,102 @@
 }
 
 :root {
-    /* MONTREE — nature palette (light) */
-    --background: #faf5ed;
-    --foreground: #172e24;
-    --card: #ffffff;
-    --card-foreground: #172e24;
-    --popover: #ffffff;
-    --popover-foreground: #172e24;
-    --primary: #76846a;
-    --primary-foreground: #ffffff;
-    --secondary: #ede5d5;
-    --secondary-foreground: #172e24;
-    --muted: #e8e0d0;
-    --muted-foreground: #5a6655;
-    --accent: #d4c9b4;
-    --accent-foreground: #2e4a38;
-    --destructive: hsl(0 75% 52%);
-    --destructive-foreground: #ffffff;
-    --border: #d4c9b4;
-    --input: #d4c9b4;
-    --ring: #76846a;
-    --chart-1: #76846a;
-    --chart-2: #9aab8a;
-    --chart-3: hsl(45 85% 58%);
-    --chart-4: hsl(25 70% 55%);
-    --chart-5: hsl(150 40% 38%);
-    --radius: 0.75rem;
-    --sidebar-background: #ece4d4;
-    --sidebar-foreground: #172e24;
-    --sidebar-primary: #76846a;
-    --sidebar-primary-foreground: #f5ecdc;
-    --sidebar-accent: #d4c9b4;
-    --sidebar-accent-foreground: #2e4a38;
-    --sidebar-border: #d4c9b4;
-    --sidebar-ring: #76846a;
-    --sidebar: #ece4d4;
+    /*
+      MONTREE — paleta del handoff «Detalle de tour con mapa» (light).
+      Tokens crudos tal como los define el design system del handoff;
+      no se usan directo en componentes salvo por las utilidades brand-*.
+    */
+    --brand-ink: #14301f; /* header, footer, CTA hover, tab activa */
+    --brand-green: #1d4630; /* CTA, títulos sobre claro, zona del tour */
+    --brand-green-600: #2f6b45; /* acento, pin de recogida, sendero, barras */
+    --brand-green-100: #e3ece5; /* chips, hovers, fondos suaves */
+    --brand-cream: #f6f1e4; /* fondo de página */
+    --brand-card: #fffdf8; /* superficie de tarjetas */
+    --brand-tan: #f1e4c9; /* destacados: nota del mapa, testimonio */
+    --brand-text: #22261f; /* texto principal */
+    --brand-muted: #6d7268; /* texto secundario, traslados punteados */
+    --brand-line: #e2ddcd; /* bordes y separadores */
+    --brand-drop: #b4562a; /* pin y línea de regreso, «no incluye» */
+    --brand-site: #4b7f5f; /* pin de paradas del recorrido */
+    --brand-on-ink: #cfdbcf; /* texto sobre superficies ink */
+    --brand-ink-line: #2b4a36; /* separadores sobre superficies ink */
+
+    /* Roles semánticos derivados de la paleta */
+    --background: var(--brand-cream);
+    --foreground: var(--brand-text);
+    --card: var(--brand-card);
+    --card-foreground: var(--brand-text);
+    --popover: var(--brand-card);
+    --popover-foreground: var(--brand-text);
+    --primary: var(--brand-green);
+    --primary-foreground: var(--brand-card);
+    --secondary: var(--brand-green-100);
+    --secondary-foreground: var(--brand-green);
+    --muted: var(--brand-green-100);
+    --muted-foreground: var(--brand-muted);
+    --accent: var(--brand-tan);
+    --accent-foreground: var(--brand-green);
+    --destructive: var(--brand-drop);
+    --destructive-foreground: var(--brand-card);
+    --border: var(--brand-line);
+    --input: var(--brand-line);
+    --ring: var(--brand-green-600);
+    --chart-1: var(--brand-green);
+    --chart-2: var(--brand-green-600);
+    --chart-3: var(--brand-site);
+    --chart-4: var(--brand-drop);
+    --chart-5: var(--brand-muted);
+    --radius: 0.75rem; /* 12px: cards internas del handoff */
+    --sidebar-background: var(--brand-green-100);
+    --sidebar-foreground: var(--brand-ink);
+    --sidebar-primary: var(--brand-green);
+    --sidebar-primary-foreground: var(--brand-card);
+    --sidebar-accent: var(--brand-tan);
+    --sidebar-accent-foreground: var(--brand-green);
+    --sidebar-border: var(--brand-line);
+    --sidebar-ring: var(--brand-green-600);
+    --sidebar: var(--brand-green-100);
 }
 
 .dark {
-    /* MONTREE — nature palette (dark) */
-    --background: #172e24;
-    --foreground: #f5ecdc;
-    --card: #1e3b2c;
-    --card-foreground: #f5ecdc;
-    --popover: #1e3b2c;
-    --popover-foreground: #f5ecdc;
-    --primary: #9aab8a;
-    --primary-foreground: #172e24;
-    --secondary: #2a3d2e;
-    --secondary-foreground: #f5ecdc;
-    --muted: #1a2e22;
-    --muted-foreground: #9aab8a;
-    --accent: #1e3b2c;
-    --accent-foreground: #b4c4a8;
-    --destructive: hsl(0 70% 55%);
-    --destructive-foreground: #f5ecdc;
-    --border: #2a3d2e;
-    --input: #2a3d2e;
-    --ring: #9aab8a;
-    --chart-1: #9aab8a;
-    --chart-2: #b4c4a8;
-    --chart-3: hsl(45 80% 60%);
-    --chart-4: hsl(25 70% 60%);
-    --chart-5: hsl(150 40% 55%);
-    --sidebar-background: #0f1f17;
-    --sidebar-foreground: #d4c9b4;
-    --sidebar-primary: #9aab8a;
-    --sidebar-primary-foreground: #172e24;
-    --sidebar-accent: #1a3025;
-    --sidebar-accent-foreground: #b4c4a8;
-    --sidebar-border: #1a3025;
-    --sidebar-ring: #9aab8a;
-    --sidebar: #0f1f17;
+    /*
+      MONTREE — modo oscuro. El handoff no define paleta oscura, así que
+      se arma con sus propios tokens: ink como fondo, green como
+      superficie y on-ink/ink-line para texto y separadores.
+    */
+    --background: var(--brand-ink);
+    --foreground: var(--brand-cream);
+    --card: var(--brand-green);
+    --card-foreground: var(--brand-cream);
+    --popover: var(--brand-green);
+    --popover-foreground: var(--brand-cream);
+    --primary: var(--brand-green-600);
+    --primary-foreground: var(--brand-cream);
+    --secondary: var(--brand-green);
+    --secondary-foreground: var(--brand-green-100);
+    --muted: var(--brand-green);
+    --muted-foreground: var(--brand-on-ink);
+    --accent: var(--brand-green);
+    --accent-foreground: var(--brand-green-100);
+    --destructive: var(--brand-drop);
+    --destructive-foreground: var(--brand-cream);
+    --border: var(--brand-ink-line);
+    --input: var(--brand-ink-line);
+    --ring: var(--brand-green-600);
+    --chart-1: var(--brand-green-600);
+    --chart-2: var(--brand-site);
+    --chart-3: var(--brand-green-100);
+    --chart-4: var(--brand-drop);
+    --chart-5: var(--brand-on-ink);
+    --sidebar-background: var(--brand-ink);
+    --sidebar-foreground: var(--brand-on-ink);
+    --sidebar-primary: var(--brand-green-600);
+    --sidebar-primary-foreground: var(--brand-cream);
+    --sidebar-accent: var(--brand-green);
+    --sidebar-accent-foreground: var(--brand-green-100);
+    --sidebar-border: var(--brand-ink-line);
+    --sidebar-ring: var(--brand-green-600);
+    --sidebar: var(--brand-ink);
 }
 
 @layer base {
@@ -170,5 +215,49 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/*
+  Marcadores del mapa de ruta (TourRouteMapSection).
+  Leaflet inyecta estos nodos fuera del árbol de Vue vía `divIcon`, así que
+  sus clases no pueden vivir en un componente: van acá con el resto de tokens.
+*/
+@layer components {
+    .leaflet-container {
+        font-family: inherit;
+    }
+
+    .tour-route-endpoint {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 30px;
+    }
+
+    .tour-route-pin {
+        display: grid;
+        place-items: center;
+        flex: none;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        box-shadow:
+            0 0 0 3px var(--card),
+            0 3px 10px rgb(0 0 0 / 0.25);
+    }
+
+    .tour-route-chip {
+        flex: none;
+        white-space: nowrap;
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: var(--foreground);
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 99px;
+        box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
     }
 }

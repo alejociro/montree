@@ -15,11 +15,13 @@ import { index as tourReviewsIndex } from '@/actions/App/Http/Controllers/Api/V1
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import ReviewCard from '@/components/molecules/ReviewCard.vue';
+import TourRouteMapSection from '@/components/organisms/TourRouteMapSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatTourDate } from '@/lib/format';
+import { routeStopsFromTour } from '@/lib/tour-route';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
 import type {
@@ -56,13 +58,13 @@ const props = defineProps<{
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
-const mapUrl = computed(() => {
-    if (!props.tour.meeting_latitude || !props.tour.meeting_longitude) {
-        return null;
-    }
+const routeStops = computed(() => routeStopsFromTour(props.tour));
 
-    return `https://maps.google.com/?q=${props.tour.meeting_latitude},${props.tour.meeting_longitude}`;
-});
+const routeNote = computed(() =>
+    props.tour.meeting_point === null
+        ? null
+        : t('Punto de encuentro: :place.', { place: props.tour.meeting_point }),
+);
 
 const difficultyLabel = computed(() => {
     const map: Record<string, string> = {
@@ -501,8 +503,11 @@ function dateOptionLabel(date: TourDetailDate): string {
                     </div>
                 </div>
 
-                <!-- Meeting point -->
-                <div v-if="tour.meeting_point || mapUrl" class="space-y-2">
+                <!-- Meeting point: solo cuando no hay coordenadas para el mapa de ruta -->
+                <div
+                    v-if="routeStops.length === 0 && tour.meeting_point"
+                    class="space-y-2"
+                >
                     <h2 class="text-lg font-semibold">
                         {{ $t('Punto de encuentro') }}
                     </h2>
@@ -510,24 +515,19 @@ function dateOptionLabel(date: TourDetailDate): string {
                         class="flex items-start gap-2 text-sm text-muted-foreground"
                     >
                         <MapPin class="mt-0.5 size-4 shrink-0 text-primary" />
-                        <div>
-                            <p v-if="tour.meeting_point">
-                                {{ tour.meeting_point }}
-                            </p>
-                            <a
-                                v-if="mapUrl"
-                                :href="mapUrl"
-                                target="_blank"
-                                rel="noopener"
-                                class="text-primary hover:underline"
-                            >
-                                {{ $t('Ver en Google Maps →') }}
-                            </a>
-                        </div>
+                        <p>{{ tour.meeting_point }}</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Ruta y puntos de encuentro -->
+    <div
+        v-if="routeStops.length > 0"
+        class="mx-auto w-full max-w-7xl px-4 pb-6 sm:px-6 lg:px-8"
+    >
+        <TourRouteMapSection :stops="routeStops" :note="routeNote" />
     </div>
 
     <!-- Reviews section -->
