@@ -155,7 +155,7 @@ function submit(): void {
 
             <div class="flex items-center gap-3 border-t border-input pt-6">
                 <Button type="submit" :disabled="saving">
-                    {{ saving ? 'Creando…' : 'Crear borrador' }}
+                    {{ saving ? $t('Creando…') : $t('Crear borrador') }}
                 </Button>
                 <Link :href="indexPage().url">
                     <Button type="button" variant="ghost">{{

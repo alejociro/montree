@@ -38,6 +38,7 @@ import { useApi } from '@/composables/useApi';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import { useTranslations } from '@/composables/useTranslations';
+import { intlLocale } from '@/lib/format';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 const { t } = useTranslations();
@@ -287,7 +288,7 @@ const mainNavItems: NavItem[] = [
                                         {{
                                             new Date(
                                                 n.created_at,
-                                            ).toLocaleString('es-CO')
+                                            ).toLocaleString(intlLocale())
                                         }}
                                     </p>
                                 </div>

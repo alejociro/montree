@@ -205,7 +205,7 @@ onMounted(load);
         <header class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">{{ $t('Promociones') }}</h1>
             <Button @click="showCreateForm = !showCreateForm">
-                {{ showCreateForm ? 'Cancelar' : 'Nueva promoción' }}
+                {{ showCreateForm ? $t('Cancelar') : $t('Nueva promoción') }}
             </Button>
         </header>
 
@@ -283,7 +283,7 @@ onMounted(load);
                 </div>
             </div>
             <Button :disabled="submitting || !form.code" @click="submitCreate">
-                {{ submitting ? 'Guardando...' : 'Crear' }}
+                {{ submitting ? $t('Guardando...') : $t('Crear') }}
             </Button>
         </section>
 
@@ -429,7 +429,11 @@ onMounted(load);
                         :disabled="submitting || !form.code"
                         @click="submitEdit"
                     >
-                        {{ submitting ? 'Guardando...' : 'Guardar cambios' }}
+                        {{
+                            submitting
+                                ? $t('Guardando...')
+                                : $t('Guardar cambios')
+                        }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

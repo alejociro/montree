@@ -41,7 +41,7 @@ const ratingLabel = computed(() => {
             :value="grossLabel"
             :icon="DollarSign"
             :trend="revenue.growth_pct"
-            trend-label="vs periodo anterior"
+            :trend-label="$t('vs periodo anterior')"
         />
         <StatCard
             :title="$t('Ingresos netos')"
@@ -54,13 +54,15 @@ const ratingLabel = computed(() => {
             :value="formatNumber(bookings.total)"
             :icon="TicketCheck"
             :trend="bookings.growth_pct"
-            trend-label="vs periodo anterior"
+            :trend-label="$t('vs periodo anterior')"
         />
         <StatCard
             :title="$t('Rating promedio')"
             :value="ratingLabel"
             :icon="Star"
-            :description="`${formatNumber(rating.count)} reseñas`"
+            :description="
+                $t(':count reseñas', { count: formatNumber(rating.count) })
+            "
         />
         <StatCard
             :title="$t('Ocupación próxima')"

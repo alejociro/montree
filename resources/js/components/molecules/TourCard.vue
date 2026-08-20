@@ -44,8 +44,8 @@ defineProps<Props>();
                 :aria-pressed="tour.is_favorite"
                 :aria-label="
                     tour.is_favorite
-                        ? 'Quitar de favoritos'
-                        : 'Agregar a favoritos'
+                        ? $t('Quitar de favoritos')
+                        : $t('Agregar a favoritos')
                 "
             >
                 <Heart
@@ -83,7 +83,7 @@ defineProps<Props>();
             <p class="mt-auto pt-2 text-sm font-semibold text-foreground">
                 {{ formatCurrency(tour.base_price, tour.currency) }}
                 <span class="text-xs font-normal text-muted-foreground">
-                    /persona
+                    {{ $t('/persona') }}
                 </span>
             </p>
         </div>

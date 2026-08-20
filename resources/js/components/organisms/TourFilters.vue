@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from '@/composables/useTranslations';
+import { categoryLabel } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 import type { TourCategory, TourStatus } from '@/types/tour';
 
@@ -110,7 +111,7 @@ function setSearch(value: string | number): void {
                             :key="category.id"
                             :value="String(category.id)"
                         >
-                            {{ category.name }}
+                            {{ categoryLabel(category.name) }}
                         </SelectItem>
                     </SelectGroup>
                 </SelectContent>

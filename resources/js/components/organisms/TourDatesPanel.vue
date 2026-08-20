@@ -343,10 +343,10 @@ onMounted(() => {
             <p class="mt-3 font-medium text-foreground">
                 {{
                     activeTab === 'upcoming'
-                        ? 'Sin salidas próximas'
+                        ? $t('Sin salidas próximas')
                         : activeTab === 'past'
-                          ? 'Sin salidas pasadas'
-                          : 'Sin salidas canceladas'
+                          ? $t('Sin salidas pasadas')
+                          : $t('Sin salidas canceladas')
                 }}
             </p>
             <p
@@ -381,10 +381,16 @@ onMounted(() => {
                             class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground"
                         >
                             <span>
-                                {{ date.booked_count }}/{{
-                                    date.capacity
+                                {{
+                                    $t(
+                                        ':booked/:capacity reservados · :available cupos',
+                                        {
+                                            booked: date.booked_count,
+                                            capacity: date.capacity,
+                                            available: date.available_seats,
+                                        },
+                                    )
                                 }}
-                                reservados · {{ date.available_seats }} cupos
                             </span>
                             <span class="font-medium text-foreground">
                                 {{ priceLabel(date) }}

@@ -121,8 +121,11 @@ onMounted(load);
             <Button :disabled="sending || !subject || !bodyHtml" @click="send">
                 {{
                     sending
-                        ? 'Encolando...'
-                        : `Enviar a ${totalActive} suscriptores`
+                        ? $t('Encolando...')
+                        : $tc(
+                              '{0}Sin suscriptores activos|{1}Enviar a :count suscriptor|[2,*]Enviar a :count suscriptores',
+                              totalActive,
+                          )
                 }}
             </Button>
         </section>

@@ -168,7 +168,11 @@ function submit(): void {
                         {{ $t('Cancelar') }}
                     </Button>
                     <Button type="submit" :disabled="processing">
-                        {{ processing ? 'Agregando…' : 'Agregar usuario' }}
+                        {{
+                            processing
+                                ? $t('Agregando…')
+                                : $t('Agregar usuario')
+                        }}
                     </Button>
                 </DialogFooter>
             </form>

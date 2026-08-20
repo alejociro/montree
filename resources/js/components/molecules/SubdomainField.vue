@@ -76,7 +76,7 @@ const statusMessage = computed(() => {
     if (props.status === 'unavailable') {
         switch (props.reason) {
             case 'taken':
-                return 'Ese subdominio ya fue reclamado.';
+                return t('Ese subdominio ya fue reclamado.');
             case 'reserved':
                 return t('Ese subdominio está reservado, elige otro.');
             case 'invalid_format':

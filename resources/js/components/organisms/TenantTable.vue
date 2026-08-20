@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { ChevronRight } from 'lucide-vue-next';
 import PlanBadge from '@/components/molecules/PlanBadge.vue';
 import TenantStatusBadge from '@/components/molecules/TenantStatusBadge.vue';
+import { intlLocale } from '@/lib/format';
 import type { SuperAdminTenantSummary } from '@/types';
 
 defineProps<{
@@ -21,7 +22,7 @@ function formatCurrency(value: string | null): string {
         return value;
     }
 
-    return number.toLocaleString('es-CO', {
+    return number.toLocaleString(intlLocale(), {
         style: 'currency',
         currency: 'COP',
         maximumFractionDigits: 0,

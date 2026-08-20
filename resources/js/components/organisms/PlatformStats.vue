@@ -2,6 +2,7 @@
 import { Building2, DollarSign, ShoppingBag, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import PlatformStatCard from '@/components/molecules/PlatformStatCard.vue';
+import { intlLocale } from '@/lib/format';
 import type { PlatformMetrics } from '@/types';
 
 const props = defineProps<{
@@ -16,7 +17,7 @@ function formatNumber(value: number | undefined): string {
         return '—';
     }
 
-    return value.toLocaleString('es-CO');
+    return value.toLocaleString(intlLocale());
 }
 
 function formatCurrency(value: string | undefined): string {
@@ -24,7 +25,7 @@ function formatCurrency(value: string | undefined): string {
         return '—';
     }
 
-    return Number(value).toLocaleString('es-CO', {
+    return Number(value).toLocaleString(intlLocale(), {
         style: 'currency',
         currency: 'COP',
         maximumFractionDigits: 0,
@@ -37,7 +38,11 @@ function formatCurrency(value: string | undefined): string {
         <PlatformStatCard
             :title="$t('Tenants activos')"
             :value="formatNumber(totals?.active_tenants)"
-            :description="`de ${formatNumber(totals?.tenants)} totales`"
+            :description="
+                $t('de :total totales', {
+                    total: formatNumber(totals?.tenants),
+                })
+            "
             :icon="Building2"
         />
         <PlatformStatCard
@@ -56,7 +61,11 @@ function formatCurrency(value: string | undefined): string {
         <PlatformStatCard
             :title="$t('Comisión plataforma')"
             :value="formatCurrency(totals?.platform_commission_this_month)"
-            :description="`Sobre ${formatCurrency(totals?.revenue_this_month)} facturados`"
+            :description="
+                $t('Sobre :amount facturados', {
+                    amount: formatCurrency(totals?.revenue_this_month),
+                })
+            "
             :icon="DollarSign"
         />
     </div>

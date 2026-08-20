@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { categoryLabel } from '@/lib/categories';
 import type {
     SupportedCurrency,
     TourCategory,
@@ -192,7 +193,7 @@ const meetingErrors = computed(() => ({
                                 :key="category.id"
                                 :value="String(category.id)"
                             >
-                                {{ category.name }}
+                                {{ categoryLabel(category.name) }}
                             </SelectItem>
                         </SelectGroup>
                     </SelectContent>

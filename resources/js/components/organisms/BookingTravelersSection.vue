@@ -275,8 +275,17 @@ function slotLabel(slot: TravelerSlot, index: number): string {
         </div>
 
         <p class="text-sm text-muted-foreground">
-            Adultos: {{ adultsCompleted }}/{{ adultsCount }} · Menores:
-            {{ minorsCompleted }}/{{ minorsCount }}
+            {{
+                $t(
+                    'Adultos: :adultsDone/:adults · Menores: :minorsDone/:minors',
+                    {
+                        adultsDone: adultsCompleted,
+                        adults: adultsCount,
+                        minorsDone: minorsCompleted,
+                        minors: minorsCount,
+                    },
+                )
+            }}
         </p>
 
         <p
@@ -374,7 +383,9 @@ function slotLabel(slot: TravelerSlot, index: number): string {
             </p>
 
             <Button type="submit" :disabled="saving">
-                {{ saving ? 'Guardando…' : 'Guardar datos de viajeros' }}
+                {{
+                    saving ? $t('Guardando…') : $t('Guardar datos de viajeros')
+                }}
             </Button>
         </form>
     </section>

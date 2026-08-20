@@ -266,7 +266,7 @@ const testimonials = [
     {
         avatar: 'MT',
         name: 'Miguel Torres',
-        role: 'Operador, Sierra Nevada Tours',
+        role: t('Operador, Sierra Nevada Tours'),
         text: t(
             'Por primera vez sé exactamente cuánto gano, cuáles tours son más rentables y qué guías necesitan apoyo. Cambió todo.',
         ),
@@ -282,7 +282,7 @@ const plans = [
         items: [
             t('Hasta 5 tours activos'),
             t('Reservas ilimitadas'),
-            'Subdominio incluido',
+            t('Subdominio incluido'),
             t('Cobros con Bre-B y PSE'),
             t('Dashboard básico'),
             t('Soporte por email'),
@@ -296,8 +296,8 @@ const plans = [
         period: '/mes',
         desc: t('Para agencias en crecimiento que quieren escalar sin límites'),
         items: [
-            'Tours ilimitados',
-            'Dominio personalizado',
+            t('Tours ilimitados'),
+            t('Dominio personalizado'),
             t('Gestión de equipo completa'),
             t('Dashboard + métricas avanzadas'),
             'Newsletter integrado',

@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { intlLocale } from '@/lib/format';
 
 const { t } = useTranslations();
 
@@ -141,7 +142,7 @@ function formatDate(date: string | null): string {
         return '';
     }
 
-    return new Date(date).toLocaleDateString('es-CO', {
+    return new Date(date).toLocaleDateString(intlLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -209,7 +210,7 @@ onMounted(load);
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
                             <span class="font-medium">{{
-                                r.user?.name ?? 'Anónimo'
+                                r.user?.name ?? $t('Anónimo')
                             }}</span>
                             <span class="text-amber-500"
                                 >{{ '★'.repeat(r.rating)
@@ -226,15 +227,15 @@ onMounted(load);
                             >
                                 {{
                                     r.status === 'pending'
-                                        ? 'Pendiente'
+                                        ? $t('Pendiente')
                                         : r.status === 'approved'
-                                          ? 'Aprobada'
-                                          : 'Rechazada'
+                                          ? $t('Aprobada')
+                                          : $t('Rechazada')
                                 }}
                             </Badge>
                         </div>
                         <p class="text-sm text-muted-foreground">
-                            {{ r.tour?.name ?? 'Tour eliminado' }} ·
+                            {{ r.tour?.name ?? $t('Tour eliminado') }} ·
                             {{ formatDate(r.created_at) }}
                         </p>
                     </div>
@@ -313,8 +314,8 @@ onMounted(load);
                     >
                         {{
                             respondSubmitting
-                                ? 'Enviando...'
-                                : 'Enviar respuesta'
+                                ? $t('Enviando...')
+                                : $t('Enviar respuesta')
                         }}
                     </Button>
                 </DialogFooter>

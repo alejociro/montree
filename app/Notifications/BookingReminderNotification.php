@@ -46,12 +46,12 @@ final class BookingReminderNotification extends Notification implements ShouldQu
     public function toMail(mixed $notifiable): MailMessage
     {
         $mail = (new MailMessage)
-            ->subject("Recordatorio: tu tour {$this->tourName} es mañana")
-            ->line("Tu tour \"{$this->tourName}\" es mañana.")
-            ->line("Fecha: {$this->startsAt}");
+            ->subject(__('Recordatorio: tu tour :tour es mañana', ['tour' => $this->tourName]))
+            ->line(__('Tu tour ":tour" es mañana.', ['tour' => $this->tourName]))
+            ->line(__('Fecha: :date', ['date' => $this->startsAt]));
 
         if ($this->meetingPoint) {
-            $mail->line("Punto de encuentro: {$this->meetingPoint}");
+            $mail->line(__('Punto de encuentro: :place', ['place' => $this->meetingPoint]));
         }
 
         return $mail

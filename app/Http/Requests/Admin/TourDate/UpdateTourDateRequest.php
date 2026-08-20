@@ -42,7 +42,7 @@ final class UpdateTourDateRequest extends StoreTourDateRequest
             $tourDate = $this->route('tourDate');
 
             if ($tourDate instanceof TourDate && (int) $value < $tourDate->booked_count) {
-                $fail("La capacidad no puede ser menor que las {$tourDate->booked_count} reservas actuales.");
+                $fail(__('La capacidad no puede ser menor que las :count reservas actuales.', ['count' => $tourDate->booked_count]));
             }
         };
     }

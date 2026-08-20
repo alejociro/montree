@@ -135,13 +135,13 @@ const allowedNextStatuses = computed<TourStatusType[]>(() => {
 function statusLabel(status: TourStatusType): string {
     switch (status) {
         case 'active':
-            return 'Publicar';
+            return t('Publicar');
         case 'paused':
-            return 'Pausar';
+            return t('Pausar');
         case 'archived':
-            return 'Archivar';
+            return t('Archivar');
         case 'draft':
-            return 'Volver a borrador';
+            return t('Volver a borrador');
         default:
             return status;
     }
@@ -291,7 +291,7 @@ function deleteTour(): void {
 
                 <div class="flex items-center gap-3 border-t border-input pt-6">
                     <Button type="submit" :disabled="saving">
-                        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+                        {{ saving ? $t('Guardando…') : $t('Guardar cambios') }}
                     </Button>
                     <span
                         v-if="form.isDirty && !saving"

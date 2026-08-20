@@ -105,23 +105,19 @@ const hotelFields: LogisticsField[] = [
             <LogisticsCrudPanel
                 v-if="activeTab === 'routes'"
                 kind="routes"
-                singular="Ruta"
-                feminine
-                empty-label="Aún no tienes rutas"
+                :empty-label="$t('Aún no tienes rutas')"
                 :fields="routeFields"
             />
             <LogisticsCrudPanel
                 v-else-if="activeTab === 'providers'"
                 kind="providers"
-                singular="Proveedor"
-                empty-label="Aún no tienes proveedores"
+                :empty-label="$t('Aún no tienes proveedores')"
                 :fields="providerFields"
             />
             <LogisticsCrudPanel
                 v-else
                 kind="hotels"
-                singular="Hotel"
-                empty-label="Aún no tienes hoteles"
+                :empty-label="$t('Aún no tienes hoteles')"
                 :fields="hotelFields"
             />
         </div>

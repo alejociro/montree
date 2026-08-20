@@ -22,7 +22,9 @@ const resent = ref(false);
 
 const heading = computed(() =>
     props.agencyName
-        ? `Revisa tu email para activar ${props.agencyName}`
+        ? t('Revisa tu email para activar :agency', {
+              agency: props.agencyName,
+          })
         : t('Revisa tu email para activar tu agencia'),
 );
 

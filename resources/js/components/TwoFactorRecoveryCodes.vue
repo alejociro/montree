@@ -61,8 +61,11 @@ onMounted(async () => {
                         :is="isRecoveryCodesVisible ? EyeOff : Eye"
                         class="size-4"
                     />
-                    {{ isRecoveryCodesVisible ? 'Hide' : 'View' }} recovery
-                    codes
+                    {{
+                        isRecoveryCodesVisible
+                            ? $t('Ocultar códigos de recuperación')
+                            : $t('Ver códigos de recuperación')
+                    }}
                 </Button>
 
                 <Form
