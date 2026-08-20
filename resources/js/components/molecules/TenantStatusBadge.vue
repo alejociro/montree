@@ -34,5 +34,5 @@ const label = computed(() => {
 </script>
 
 <template>
-    <Badge variant="outline" :class="statusClasses">{{ label }}</Badge>
+    <Badge variant="outline" :class="statusClasses">{{ $t(label) }}</Badge>
 </template>

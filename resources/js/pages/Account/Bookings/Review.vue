@@ -178,7 +178,7 @@ function submit() {
                 :disabled="submitting || rating === 0"
                 class="w-full"
             >
-                {{ submitting ? 'Enviando...' : 'Enviar reseña' }}
+                {{ submitting ? $t('Enviando...') : $t('Enviar reseña') }}
             </Button>
         </form>
     </div>

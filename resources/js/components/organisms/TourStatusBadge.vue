@@ -39,5 +39,5 @@ const label = computed(() => {
 </script>
 
 <template>
-    <Badge :variant="variant">{{ label }}</Badge>
+    <Badge :variant="variant">{{ $t(label) }}</Badge>
 </template>

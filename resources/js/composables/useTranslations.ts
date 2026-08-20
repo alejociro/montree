@@ -132,3 +132,8 @@ export function useTranslations(): UseTranslationsReturn {
         setLocale,
     };
 }
+
+/**
+ * Idioma activo fuera de un componente. Mismo singleton reactivo que `translate`.
+ */
+export const currentLocale = (): string => useTranslations().locale.value;

@@ -187,7 +187,7 @@ function removeImage(): void {
                 :disabled="isUploading"
                 @click="openFilePicker"
             >
-                {{ isUploading ? 'Subiendo...' : 'Seleccionar imagen' }}
+                {{ isUploading ? $t('Subiendo...') : $t('Seleccionar imagen') }}
             </Button>
         </div>
 

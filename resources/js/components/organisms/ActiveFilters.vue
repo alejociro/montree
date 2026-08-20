@@ -2,6 +2,7 @@
 import { X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useTranslations } from '@/composables/useTranslations';
+import { categoryLabel } from '@/lib/categories';
 import { formatCurrency } from '@/lib/format';
 import type { CatalogCategory } from '@/types/catalog';
 import type { TourDifficulty } from '@/types/tour';
@@ -29,19 +30,19 @@ const emit = defineEmits<{
 
 const difficultyLabel: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
-    moderate: 'Moderado',
+    moderate: t('Moderado'),
     hard: t('Difícil'),
-    extreme: 'Extremo',
+    extreme: t('Extremo'),
 };
 
-const categoryLabel = computed(() => {
+const selectedCategoryLabel = computed(() => {
     if (!props.category) {
         return null;
     }
 
-    return (
+    return categoryLabel(
         props.categories.find((category) => category.slug === props.category)
-            ?.name ?? props.category
+            ?.name ?? props.category,
     );
 });
 
@@ -55,10 +56,14 @@ const priceLabel = computed(() => {
     }
 
     if (props.priceMin !== null) {
-        return `Desde ${formatCurrency(props.priceMin, props.currency)}`;
+        return t('Desde :amount', {
+            amount: formatCurrency(props.priceMin, props.currency),
+        });
     }
 
-    return `Hasta ${formatCurrency(props.priceMax ?? 0, props.currency)}`;
+    return t('Hasta :amount', {
+        amount: formatCurrency(props.priceMax ?? 0, props.currency),
+    });
 });
 
 const hasAny = computed(
@@ -92,12 +97,12 @@ function emitClear(
             <X class="size-3" />
         </button>
         <button
-            v-if="categoryLabel"
+            v-if="selectedCategoryLabel"
             type="button"
             class="inline-flex items-center gap-1 rounded-full border border-border bg-accent px-2.5 py-1 text-xs text-accent-foreground transition hover:bg-accent/80"
             @click="emitClear('category')"
         >
-            <span>{{ categoryLabel }}</span>
+            <span>{{ selectedCategoryLabel }}</span>
             <X class="size-3" />
         </button>
         <button

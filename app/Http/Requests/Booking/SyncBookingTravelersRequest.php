@@ -70,11 +70,11 @@ final class SyncBookingTravelersRequest extends FormRequest
             }
 
             if ($adults > $booking->adults_count) {
-                $v->errors()->add('travelers', "La reserva admite máximo {$booking->adults_count} adultos.");
+                $v->errors()->add('travelers', __('La reserva admite máximo :count adultos.', ['count' => $booking->adults_count]));
             }
 
             if ($minors > $booking->minors_count) {
-                $v->errors()->add('travelers', "La reserva admite máximo {$booking->minors_count} menores.");
+                $v->errors()->add('travelers', __('La reserva admite máximo :count menores.', ['count' => $booking->minors_count]));
             }
         });
     }

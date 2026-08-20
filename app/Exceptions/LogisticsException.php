@@ -42,7 +42,11 @@ final class LogisticsException extends \Exception implements HttpExceptionInterf
     {
         return new self(
             'RESOURCE_IN_USE',
-            sprintf('No se puede eliminar: %s en uso por %d salida(s).', $resource, $count),
+            trans_choice(
+                '{1}No se puede eliminar: :resource en uso por :count salida.|[2,*]No se puede eliminar: :resource en uso por :count salidas.',
+                $count,
+                ['resource' => $resource, 'count' => $count],
+            ),
             409,
         );
     }

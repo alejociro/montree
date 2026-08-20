@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { intlLocale } from '@/lib/format';
 
 type FavoriteItem = {
     id: number;
@@ -35,7 +36,7 @@ onMounted(async () => {
 });
 
 function formatPrice(amount: string, currency: string) {
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency,
         maximumFractionDigits: 0,

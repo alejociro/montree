@@ -252,7 +252,7 @@ function resetForm(): void {
                         :disabled="saving"
                         data-test="save-tenant-configuration"
                     >
-                        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+                        {{ saving ? $t('Guardando…') : $t('Guardar cambios') }}
                     </Button>
 
                     <Button

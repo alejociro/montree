@@ -16,6 +16,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { index as catalogIndex } from '@/routes/catalog';
 import type {
@@ -25,6 +26,8 @@ import type {
     CatalogSort,
 } from '@/types/catalog';
 import type { TourDifficulty } from '@/types/tour';
+
+const { tChoice } = useTranslations();
 
 defineOptions({ layout: PublicLayout });
 
@@ -71,11 +74,7 @@ const hasActiveFilters = computed(
 const totalLabel = computed(() => {
     const total = props.tours?.meta.total ?? 0;
 
-    if (total === 1) {
-        return '1 tour disponible';
-    }
-
-    return `${total} tours disponibles`;
+    return tChoice(':count tour disponible|:count tours disponibles', total);
 });
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null;

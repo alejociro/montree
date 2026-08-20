@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useTranslations } from '@/composables/useTranslations';
+import { categoryLabel } from '@/lib/categories';
 import type { CatalogCategory } from '@/types/catalog';
 import { TOUR_DIFFICULTIES } from '@/types/tour';
 import type { TourDifficulty } from '@/types/tour';
@@ -39,9 +40,9 @@ const emit = defineEmits<{
 
 const difficultyLabel: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
-    moderate: 'Moderado',
+    moderate: t('Moderado'),
     hard: t('Difícil'),
-    extreme: 'Extremo',
+    extreme: t('Extremo'),
 };
 
 function toggleCategory(slug: string, currentSelected: string | null): void {
@@ -115,7 +116,9 @@ function handleDifficultyUpdate(value: unknown): void {
                                 class="size-3"
                             />
                         </span>
-                        <span class="flex-1 truncate">{{ category.name }}</span>
+                        <span class="flex-1 truncate">{{
+                            categoryLabel(category.name)
+                        }}</span>
                         <span
                             v-if="category.tours_count > 0"
                             class="text-xs text-muted-foreground"

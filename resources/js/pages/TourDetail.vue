@@ -19,7 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
-import { formatTourDate } from '@/lib/format';
+import { categoryLabel } from '@/lib/categories';
+import { formatTourDate, intlLocale } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
 import type {
@@ -67,9 +68,9 @@ const mapUrl = computed(() => {
 const difficultyLabel = computed(() => {
     const map: Record<string, string> = {
         easy: t('Fácil'),
-        moderate: 'Moderado',
+        moderate: t('Moderado'),
         hard: t('Difícil'),
-        extreme: 'Extremo',
+        extreme: t('Extremo'),
     };
 
     return map[props.tour.difficulty] ?? props.tour.difficulty;
@@ -168,7 +169,7 @@ function prevImage() {
 }
 
 function formatTourPrice(price: string, currency: string): string {
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency,
         maximumFractionDigits: 0,
@@ -203,7 +204,11 @@ function dateOptionLabel(date: TourDetailDate): string {
     });
     const price = formatTourPrice(date.effective_price, props.tour.currency);
 
-    return `${label} · ${date.available_seats} cupos · ${price}`;
+    return t(':date · :seats cupos · :price', {
+        date: label,
+        seats: date.available_seats,
+        price,
+    });
 }
 </script>
 
@@ -221,7 +226,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             </Link>
             <ChevronLeft class="size-3.5 rotate-180" />
             <span v-if="tour.category" class="transition hover:text-foreground">
-                {{ tour.category.name }}
+                {{ categoryLabel(tour.category.name) }}
             </span>
             <ChevronLeft v-if="tour.category" class="size-3.5 rotate-180" />
             <span class="truncate text-foreground">{{ tour.name }}</span>
@@ -320,7 +325,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             <div class="space-y-6">
                 <!-- Category badge -->
                 <Badge v-if="tour.category" variant="secondary" class="text-xs">
-                    {{ tour.category.name }}
+                    {{ categoryLabel(tour.category.name) }}
                 </Badge>
 
                 <!-- Tour name -->
@@ -450,8 +455,12 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 class="flex items-center gap-1.5 text-sm text-muted-foreground"
                             >
                                 <Users class="size-4 text-primary" />
-                                {{ selectedDate.available_seats }} cupos
-                                disponibles
+                                {{
+                                    $tc(
+                                        ':count cupo disponible|:count cupos disponibles',
+                                        selectedDate.available_seats,
+                                    )
+                                }}
                             </span>
                             <span class="text-right">
                                 <span class="block font-bold text-primary">{{
@@ -494,8 +503,12 @@ function dateOptionLabel(date: TourDetailDate): string {
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{
                                 tour.future_dates.length === 0
-                                    ? 'Todavía no hay salidas programadas para esta experiencia. Vuelve pronto para reservar.'
-                                    : 'Por ahora no quedan cupos abiertos. Vuelve pronto para nuevas salidas.'
+                                    ? $t(
+                                          'Todavía no hay salidas programadas para esta experiencia. Vuelve pronto para reservar.',
+                                      )
+                                    : $t(
+                                          'Por ahora no quedan cupos abiertos. Vuelve pronto para nuevas salidas.',
+                                      )
                             }}
                         </p>
                     </div>
@@ -590,8 +603,8 @@ function dateOptionLabel(date: TourDetailDate): string {
                             >
                                 {{
                                     loadingMoreReviews
-                                        ? 'Cargando...'
-                                        : 'Ver más reseñas'
+                                        ? $t('Cargando...')
+                                        : $t('Ver más reseñas')
                                 }}
                             </Button>
                         </div>
@@ -671,7 +684,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                             variant="secondary"
                             class="text-[10px]"
                         >
-                            {{ related.category.name }}
+                            {{ categoryLabel(related.category.name) }}
                         </Badge>
                         <h3 class="leading-tight font-semibold">
                             {{ related.name }}

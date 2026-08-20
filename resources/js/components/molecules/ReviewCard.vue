@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { intlLocale } from '@/lib/format';
 import type { ReviewSummary } from '@/types/tour-detail';
 
 const props = defineProps<{ review: ReviewSummary }>();
 
 const formattedDate = computed(() =>
     props.review.created_at
-        ? new Date(props.review.created_at).toLocaleDateString('es-CO', {
+        ? new Date(props.review.created_at).toLocaleDateString(intlLocale(), {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
@@ -20,7 +21,7 @@ const formattedDate = computed(() =>
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <span class="font-medium">{{
-                    review.author_name ?? 'Anónimo'
+                    review.author_name ?? $t('Anónimo')
                 }}</span>
                 <span class="text-sm text-muted-foreground"
                     >· {{ formattedDate }}</span

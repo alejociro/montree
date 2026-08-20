@@ -209,7 +209,9 @@ onMounted(loadStats);
                     </p>
                 </div>
                 <Button type="submit" :disabled="processing">
-                    {{ processing ? 'Guardando...' : 'Guardar cambios' }}
+                    {{
+                        processing ? $t('Guardando...') : $t('Guardar cambios')
+                    }}
                 </Button>
             </form>
         </section>

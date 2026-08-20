@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { intlLocale } from '@/lib/format';
 
 const { t } = useTranslations();
 
@@ -88,7 +89,7 @@ const minorsMax = computed(() =>
 );
 
 const formattedPrice = computed(() =>
-    new Intl.NumberFormat('es-CO', {
+    new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency: props.tourDate.currency,
         maximumFractionDigits: 0,
@@ -96,7 +97,7 @@ const formattedPrice = computed(() =>
 );
 
 const formattedTotal = computed(() =>
-    new Intl.NumberFormat('es-CO', {
+    new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency: props.tourDate.currency,
         maximumFractionDigits: 0,
@@ -249,7 +250,7 @@ async function submit(): Promise<void> {
                         $t(':tour · :date · :price por persona', {
                             tour: tour.name,
                             date: new Date(tourDate.starts_at).toLocaleString(
-                                'es-CO',
+                                intlLocale(),
                             ),
                             price: formattedPrice,
                         })
@@ -382,8 +383,12 @@ async function submit(): Promise<void> {
                         class="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm"
                     >
                         <span class="text-muted-foreground">
-                            {{ totalTravelers }}
-                            {{ totalTravelers === 1 ? 'viajero' : 'viajeros' }}
+                            {{
+                                $tc(
+                                    ':count viajero|:count viajeros',
+                                    totalTravelers,
+                                )
+                            }}
                             × {{ formattedPrice }}
                         </span>
                         <span class="font-semibold text-foreground">
@@ -462,7 +467,11 @@ async function submit(): Promise<void> {
                         class="w-full bg-foreground text-background hover:bg-foreground/90"
                         :disabled="submitting"
                     >
-                        {{ submitting ? 'Procesando...' : 'Realizar pago' }}
+                        {{
+                            submitting
+                                ? $t('Procesando...')
+                                : $t('Realizar pago')
+                        }}
                     </Button>
                 </div>
             </form>

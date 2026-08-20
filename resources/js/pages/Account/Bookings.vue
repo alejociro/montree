@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue';
 import SetPasswordCard from '@/components/organisms/SetPasswordCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatBookingStatus, formatTourDate } from '@/lib/format';
+import { formatBookingStatus, formatTourDate, intlLocale } from '@/lib/format';
 
 type BookingSummary = {
     booking_number: string;
@@ -39,7 +39,7 @@ onMounted(async () => {
 });
 
 function formatPrice(amount: string, currency: string) {
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency,
         maximumFractionDigits: 0,
@@ -76,7 +76,13 @@ function formatPrice(amount: string, currency: string) {
                             </Link>
                             <p class="text-sm text-muted-foreground">
                                 {{ formatTourDate(b.starts_at) }} ·
-                                {{ b.travelers_count }} viajero(s) ·
+                                {{
+                                    $tc(
+                                        ':count viajero|:count viajeros',
+                                        b.travelers_count,
+                                    )
+                                }}
+                                ·
                                 {{ formatPrice(b.total_amount, b.currency) }}
                             </p>
                         </div>

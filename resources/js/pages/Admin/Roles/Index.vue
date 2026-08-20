@@ -114,7 +114,7 @@ function destroyRole(): void {
     deleting.value = true;
     void api.delete(destroyRoleRoute.url(role.id), {
         onSuccess: () => {
-            toast.success(`Rol "${role.label}" eliminado`);
+            toast.success(t('Rol ":role" eliminado', { role: role.label }));
             deleteTarget.value = null;
             void load();
         },
@@ -218,12 +218,18 @@ onMounted(load);
                                     <p
                                         class="text-sm text-muted-foreground tabular-nums"
                                     >
-                                        {{ role.permissions_count }} permisos ·
-                                        {{ role.users_count }}
                                         {{
-                                            role.users_count === 1
-                                                ? 'miembro'
-                                                : 'miembros'
+                                            $tc(
+                                                ':count permiso|:count permisos',
+                                                role.permissions_count,
+                                            )
+                                        }}
+                                        ·
+                                        {{
+                                            $tc(
+                                                ':count miembro|:count miembros',
+                                                role.users_count,
+                                            )
                                         }}
                                     </p>
                                 </div>
@@ -294,12 +300,18 @@ onMounted(load);
                                     <p
                                         class="text-sm text-muted-foreground tabular-nums"
                                     >
-                                        {{ role.permissions_count }} permisos ·
-                                        {{ role.users_count }}
                                         {{
-                                            role.users_count === 1
-                                                ? 'miembro'
-                                                : 'miembros'
+                                            $tc(
+                                                ':count permiso|:count permisos',
+                                                role.permissions_count,
+                                            )
+                                        }}
+                                        ·
+                                        {{
+                                            $tc(
+                                                ':count miembro|:count miembros',
+                                                role.users_count,
+                                            )
                                         }}
                                     </p>
                                 </div>
@@ -309,7 +321,9 @@ onMounted(load);
                                         size="sm"
                                         @click="openRole(role)"
                                     >
-                                        {{ canManage ? 'Editar' : 'Ver' }}
+                                        {{
+                                            canManage ? $t('Editar') : $t('Ver')
+                                        }}
                                     </Button>
 
                                     <Tooltip
@@ -389,7 +403,7 @@ onMounted(load);
                         :disabled="deleting"
                         @click="destroyRole"
                     >
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
+                        {{ deleting ? $t('Eliminando...') : $t('Eliminar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

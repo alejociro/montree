@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
-import { formatBookingStatus } from '@/lib/format';
+import { formatBookingStatus, intlLocale } from '@/lib/format';
 import type { BookingTraveler } from '@/types/booking';
 
 const { t } = useTranslations();
@@ -80,7 +80,7 @@ const heroImage = computed(
 );
 
 function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency: props.booking.currency,
         maximumFractionDigits: 0,
@@ -98,7 +98,7 @@ function formatDate(iso: string | null): string {
         return '—';
     }
 
-    return new Intl.DateTimeFormat('es-CO', {
+    return new Intl.DateTimeFormat(intlLocale(), {
         dateStyle: 'medium',
         timeStyle: 'short',
     }).format(date);
@@ -520,11 +520,11 @@ function goBack(): void {
                                     {{ $t('Viajeros') }}
                                 </dt>
                                 <dd class="text-card-foreground">
-                                    {{ booking.travelers_count }}
                                     {{
-                                        booking.travelers_count === 1
-                                            ? 'persona'
-                                            : 'personas'
+                                        $tc(
+                                            ':count persona|:count personas',
+                                            booking.travelers_count,
+                                        )
                                     }}
                                 </dd>
                             </div>
@@ -723,7 +723,7 @@ function goBack(): void {
                         >
                             {{
                                 processing
-                                    ? 'Procesando...'
+                                    ? $t('Procesando...')
                                     : `Pagar ${formatCurrency(amountToPay)}`
                             }}
                         </Button>

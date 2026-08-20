@@ -114,7 +114,9 @@ const nameError = computed(() => {
     }
 
     if (name.value.trim().length > NAME_MAX_LENGTH) {
-        return `El nombre no puede superar los ${NAME_MAX_LENGTH} caracteres.`;
+        return t('El nombre no puede superar los :max caracteres.', {
+            max: NAME_MAX_LENGTH,
+        });
     }
 
     return '';
@@ -327,7 +329,7 @@ watch(
 
             <DialogFooter>
                 <Button variant="outline" type="button" @click="close">
-                    {{ isReadonly ? 'Cerrar' : 'Cancelar' }}
+                    {{ isReadonly ? $t('Cerrar') : $t('Cancelar') }}
                 </Button>
                 <Button
                     v-if="!isReadonly && !loadError"
@@ -335,7 +337,7 @@ watch(
                     :disabled="!canSubmit"
                     @click="submit"
                 >
-                    {{ saving ? 'Guardando...' : 'Guardar' }}
+                    {{ saving ? $t('Guardando...') : $t('Guardar') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

@@ -97,9 +97,9 @@ function errorFor(index: number, field: string): string | undefined {
             class="space-y-3 rounded-lg border border-input bg-card p-4"
         >
             <div class="flex items-center justify-between">
-                <span class="text-sm font-medium"
-                    >Paso {{ step.step_number }}</span
-                >
+                <span class="text-sm font-medium">{{
+                    $t('Paso :number', { number: step.step_number })
+                }}</span>
                 <div class="flex items-center gap-1">
                     <Button
                         type="button"

@@ -477,7 +477,9 @@ function resendInvitation(member: TeamMember): void {
         {},
         {
             onSuccess: () => {
-                toast.success(`Invitación reenviada a ${member.email}`);
+                toast.success(
+                    t('Invitación reenviada a :email', { email: member.email }),
+                );
             },
             onError: (errors) =>
                 toast.error(
@@ -564,7 +566,7 @@ onMounted(() => {
                     </div>
                 </div>
                 <Button :disabled="sending || !inviteEmail" @click="invite">
-                    {{ sending ? 'Enviando...' : 'Invitar' }}
+                    {{ sending ? $t('Enviando...') : $t('Invitar') }}
                 </Button>
             </section>
 
@@ -686,15 +688,19 @@ onMounted(() => {
                         <p class="font-medium">
                             {{
                                 hasActiveFilters
-                                    ? 'Sin miembros para estos filtros'
-                                    : 'Todavía no hay nadie en el equipo'
+                                    ? $t('Sin miembros para estos filtros')
+                                    : $t('Todavía no hay nadie en el equipo')
                             }}
                         </p>
                         <p class="text-sm text-muted-foreground">
                             {{
                                 hasActiveFilters
-                                    ? 'Prueba ajustar o limpiar los filtros.'
-                                    : 'Invita a tu primer miembro con el formulario de arriba.'
+                                    ? $t(
+                                          'Prueba ajustar o limpiar los filtros.',
+                                      )
+                                    : $t(
+                                          'Invita a tu primer miembro con el formulario de arriba.',
+                                      )
                             }}
                         </p>
                     </div>
@@ -793,8 +799,8 @@ onMounted(() => {
                                             <MailPlus class="size-4" />
                                             {{
                                                 resendingFor === member.id
-                                                    ? 'Reenviando...'
-                                                    : 'Reenviar invitación'
+                                                    ? $t('Reenviando...')
+                                                    : $t('Reenviar invitación')
                                             }}
                                         </Button>
                                         <Button
@@ -942,7 +948,7 @@ onMounted(() => {
                         "
                         @click="submitRoles"
                     >
-                        {{ savingRoles ? 'Guardando...' : 'Guardar' }}
+                        {{ savingRoles ? $t('Guardando...') : $t('Guardar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

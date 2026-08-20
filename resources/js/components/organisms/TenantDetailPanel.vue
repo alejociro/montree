@@ -27,6 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/composables/useTranslations';
+import { intlLocale } from '@/lib/format';
 import type {
     SuperAdminTenantSummary,
     TenantPlan,
@@ -61,7 +62,7 @@ function formatCurrency(value: string | null): string {
         return '—';
     }
 
-    return Number(value).toLocaleString('es-CO', {
+    return Number(value).toLocaleString(intlLocale(), {
         style: 'currency',
         currency: 'COP',
         maximumFractionDigits: 0,
@@ -494,7 +495,9 @@ const timezones = [
                                 >
                                     <Upload class="size-4" />
                                     {{
-                                        logoFile ? logoFile.name : 'Subir logo'
+                                        logoFile
+                                            ? logoFile.name
+                                            : $t('Subir logo')
                                     }}
                                     <input
                                         type="file"
@@ -522,7 +525,7 @@ const timezones = [
                                     {{
                                         faviconFile
                                             ? faviconFile.name
-                                            : 'Subir favicon'
+                                            : $t('Subir favicon')
                                     }}
                                     <input
                                         type="file"
@@ -552,7 +555,7 @@ const timezones = [
                                     {{
                                         heroImageFile
                                             ? heroImageFile.name
-                                            : 'Subir imagen hero'
+                                            : $t('Subir imagen hero')
                                     }}
                                     <input
                                         type="file"
@@ -793,7 +796,9 @@ const timezones = [
                 >
                     <Button type="submit" :disabled="processing">
                         {{
-                            processing ? 'Guardando…' : 'Guardar configuración'
+                            processing
+                                ? $t('Guardando…')
+                                : $t('Guardar configuración')
                         }}
                     </Button>
                 </div>

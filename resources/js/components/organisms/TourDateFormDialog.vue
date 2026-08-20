@@ -239,7 +239,7 @@ function submit(): void {
         <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>
-                    {{ isEditing ? 'Editar salida' : 'Nueva salida' }}
+                    {{ isEditing ? $t('Editar salida') : $t('Nueva salida') }}
                 </DialogTitle>
                 <DialogDescription>
                     {{
@@ -474,10 +474,10 @@ function submit(): void {
                     <Button type="submit" :disabled="processing">
                         {{
                             processing
-                                ? 'Guardando…'
+                                ? $t('Guardando…')
                                 : isEditing
-                                  ? 'Guardar salida'
-                                  : 'Crear salida'
+                                  ? $t('Guardar salida')
+                                  : $t('Crear salida')
                         }}
                     </Button>
                 </DialogFooter>
