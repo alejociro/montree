@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Booking;
+use App\Models\BookingTraveler;
 use App\Models\Review;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Observers\TenantConfigurationObserver;
 use App\Observers\TenantObserver;
 use App\Policies\BookingPolicy;
+use App\Policies\BookingTravelerPolicy;
 use App\Policies\ReviewPolicy;
 use App\Policies\SuperAdminTenantPolicy;
 use App\Policies\TenantPolicy;
@@ -100,6 +102,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configurePolicies(): void
     {
         Gate::policy(Booking::class, BookingPolicy::class);
+        Gate::policy(BookingTraveler::class, BookingTravelerPolicy::class);
         Gate::policy(Review::class, ReviewPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Tour::class, TourPolicy::class);
