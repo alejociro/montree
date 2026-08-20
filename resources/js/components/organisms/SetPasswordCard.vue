@@ -70,7 +70,7 @@ const mustSetPassword = computed(
             </div>
 
             <Button type="submit" :disabled="processing">
-                {{ processing ? 'Guardando...' : 'Guardar contraseña' }}
+                {{ processing ? $t('Guardando...') : $t('Guardar contraseña') }}
             </Button>
         </Form>
     </section>

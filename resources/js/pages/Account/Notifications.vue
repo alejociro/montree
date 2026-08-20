@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
+import { intlLocale } from '@/lib/format';
 
 type DbNotification = {
     id: string;
@@ -140,7 +141,9 @@ onMounted(load);
                         {{ notificationTitle(n) }}
                     </p>
                     <p class="text-xs text-muted-foreground">
-                        {{ new Date(n.created_at).toLocaleString('es-CO') }}
+                        {{
+                            new Date(n.created_at).toLocaleString(intlLocale())
+                        }}
                     </p>
                 </div>
                 <Button

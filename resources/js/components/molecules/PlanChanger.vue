@@ -68,7 +68,7 @@ function submit(): void {
             :disabled="processing || selected === currentPlan"
             @click="submit"
         >
-            {{ processing ? 'Procesando...' : 'Aplicar' }}
+            {{ processing ? $t('Procesando...') : $t('Aplicar') }}
         </Button>
     </div>
 </template>

@@ -55,7 +55,7 @@ final class PromotionInvalidException extends RuntimeException implements HttpEx
     {
         return new self(
             'PROMOTION_MIN_AMOUNT_NOT_MET',
-            "Este código requiere un monto mínimo de {$minAmount}.",
+            __('Este código requiere un monto mínimo de :amount.', ['amount' => $minAmount]),
         );
     }
 

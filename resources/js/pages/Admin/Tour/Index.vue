@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { intlLocale } from '@/lib/format';
 import type {
     PaginatedTours,
     TourCategory,
@@ -136,7 +137,7 @@ function formatPrice(amount: string, code: string): string {
         return `${code} ${amount}`;
     }
 
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
         currency: code,
         maximumFractionDigits: 0,
@@ -253,7 +254,9 @@ function formatPrice(amount: string, code: string): string {
                                 <TourStatusBadge :status="tour.status" />
                             </div>
                             <CardDescription class="line-clamp-2">
-                                {{ tour.short_description || 'Sin resumen' }}
+                                {{
+                                    tour.short_description || $t('Sin resumen')
+                                }}
                             </CardDescription>
                         </CardHeader>
                     </Link>
@@ -271,8 +274,12 @@ function formatPrice(amount: string, code: string): string {
                                 }}
                             </p>
                             <p class="text-xs text-muted-foreground">
-                                {{ tour.duration_hours }}h ·
-                                {{ tour.default_capacity }} pers.
+                                {{
+                                    $t(':hours h · :capacity pers.', {
+                                        hours: tour.duration_hours,
+                                        capacity: tour.default_capacity,
+                                    })
+                                }}
                             </p>
                         </div>
                         <div class="flex items-center gap-2">

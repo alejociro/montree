@@ -132,7 +132,7 @@ defineExpose({ closeDialog });
                         {{ $t('Cancelar') }}
                     </Button>
                     <Button :disabled="processing" @click="submit">
-                        {{ processing ? 'Procesando...' : 'Confirmar' }}
+                        {{ processing ? $t('Procesando...') : $t('Confirmar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

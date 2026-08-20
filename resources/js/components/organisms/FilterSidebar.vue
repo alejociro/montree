@@ -39,9 +39,9 @@ const emit = defineEmits<{
 
 const difficultyLabel: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
-    moderate: 'Moderado',
+    moderate: t('Moderado'),
     hard: t('Difícil'),
-    extreme: 'Extremo',
+    extreme: t('Extremo'),
 };
 
 function toggleCategory(slug: string, currentSelected: string | null): void {

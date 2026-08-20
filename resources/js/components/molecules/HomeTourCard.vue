@@ -104,7 +104,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                 <span class="text-base font-bold text-foreground">
                     {{ formatCurrency(tour.base_price, tour.currency) }}
                 </span>
-                <span class="text-xs">/persona</span>
+                <span class="text-xs">{{ $t('/persona') }}</span>
             </p>
         </div>
     </article>

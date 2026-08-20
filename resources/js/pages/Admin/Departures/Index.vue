@@ -578,15 +578,19 @@ onMounted(() => {
                         <p class="font-medium text-foreground">
                             {{
                                 hasActiveFilters
-                                    ? 'Sin salidas para estos filtros'
-                                    : 'Todavía no hay salidas'
+                                    ? $t('Sin salidas para estos filtros')
+                                    : $t('Todavía no hay salidas')
                             }}
                         </p>
                         <p class="text-sm text-muted-foreground">
                             {{
                                 hasActiveFilters
-                                    ? 'Prueba ajustar o limpiar los filtros.'
-                                    : 'Programa salidas desde el detalle de cada tour.'
+                                    ? $t(
+                                          'Prueba ajustar o limpiar los filtros.',
+                                      )
+                                    : $t(
+                                          'Programa salidas desde el detalle de cada tour.',
+                                      )
                             }}
                         </p>
                     </div>

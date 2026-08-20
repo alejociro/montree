@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 
@@ -35,6 +36,38 @@ final class Locale
         $default = (string) config('app.locale');
 
         return self::isSupported($default) ? $default : (self::supported()[0] ?? 'es');
+    }
+
+    /**
+     * Cuenta explícita del idioma de un request: preferencia del usuario, cookie,
+     * navegador, default. Un valor fuera del catálogo no aborta — cae al siguiente
+     * escalón.
+     *
+     * WHY: vive acá y no dentro del middleware porque una ruta inexistente nunca pasa
+     * por el grupo `web`: el 404 se renderiza desde el handler de excepciones, donde
+     * `SetLocale` jamás corrió y la página salía siempre en español.
+     */
+    public static function resolveFor(Request $request): string
+    {
+        $user = $request->user();
+
+        if ($user !== null && self::isSupported($user->locale)) {
+            return (string) $user->locale;
+        }
+
+        $cookie = $request->cookie('locale');
+
+        if (is_string($cookie) && self::isSupported($cookie)) {
+            return $cookie;
+        }
+
+        $preferred = $request->getPreferredLanguage(self::supported());
+
+        if (is_string($preferred) && self::isSupported($preferred)) {
+            return $preferred;
+        }
+
+        return self::default();
     }
 
     /**

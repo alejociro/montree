@@ -141,8 +141,12 @@ onMounted(loadDates);
                                 />
                             </div>
                             <span class="text-xs text-muted-foreground">
-                                {{ date.booked_count }}/{{ date.capacity }}
-                                cupos
+                                {{
+                                    $t(':booked/:capacity cupos', {
+                                        booked: date.booked_count,
+                                        capacity: date.capacity,
+                                    })
+                                }}
                             </span>
                         </div>
 

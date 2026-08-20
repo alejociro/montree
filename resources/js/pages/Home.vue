@@ -21,10 +21,13 @@ import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageC
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
+import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import type { CatalogCategory, CatalogTour } from '@/types/catalog';
+
+const { t } = useTranslations();
 import type {
     HomePromotion,
     HomeTestimonial,
@@ -90,7 +93,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
         withTime: true,
     });
 
-    return `${start} hasta ${end}`;
+    return t(':start hasta :end', { start, end });
 }
 </script>
 
@@ -122,7 +125,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 >
                     {{
                         configuration?.tagline ||
-                        'Encuentra tu próxima aventura'
+                        $t('Encuentra tu próxima aventura')
                     }}
                 </h1>
                 <p
@@ -130,7 +133,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 >
                     {{
                         configuration?.description ||
-                        'Explora experiencias inolvidables con nosotros'
+                        $t('Explora experiencias inolvidables con nosotros')
                     }}
                 </p>
 
@@ -269,11 +272,11 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 {{ category.name }}
                             </p>
                             <p class="mt-0.5 text-xs text-muted-foreground">
-                                {{ category.tours_count }}
                                 {{
-                                    category.tours_count === 1
-                                        ? 'tour'
-                                        : 'tours'
+                                    $tc(
+                                        ':count tour|:count tours',
+                                        category.tours_count,
+                                    )
                                 }}
                             </p>
                         </div>
@@ -603,7 +606,11 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                             <span
                                 class="absolute top-4 left-4 rounded-full bg-destructive px-3.5 py-1.5 text-sm font-extrabold tracking-wide text-destructive-foreground shadow-lg"
                             >
-                                {{ promo.discount_label }} OFF
+                                {{
+                                    $t(':discount OFF', {
+                                        discount: promo.discount_label,
+                                    })
+                                }}
                             </span>
                         </div>
                         <div class="flex flex-1 flex-col gap-2 p-5">
@@ -775,7 +782,8 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 >
                                     <span class="font-medium text-foreground">
                                         {{
-                                            testimonial.author_name ?? 'Viajero'
+                                            testimonial.author_name ??
+                                            $t('Viajero')
                                         }}
                                     </span>
                                     <template v-if="testimonial.tour">

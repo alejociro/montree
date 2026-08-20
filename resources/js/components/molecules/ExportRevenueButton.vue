@@ -212,7 +212,7 @@ function handleFormatChange(value: AcceptableValue): void {
                     {{ $t('Cancelar') }}
                 </Button>
                 <Button type="button" :disabled="isExporting" @click="submit">
-                    {{ isExporting ? 'Generando…' : 'Descargar' }}
+                    {{ isExporting ? $t('Generando…') : $t('Descargar') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

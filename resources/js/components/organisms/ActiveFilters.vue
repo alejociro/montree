@@ -29,9 +29,9 @@ const emit = defineEmits<{
 
 const difficultyLabel: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
-    moderate: 'Moderado',
+    moderate: t('Moderado'),
     hard: t('Difícil'),
-    extreme: 'Extremo',
+    extreme: t('Extremo'),
 };
 
 const categoryLabel = computed(() => {
@@ -55,10 +55,14 @@ const priceLabel = computed(() => {
     }
 
     if (props.priceMin !== null) {
-        return `Desde ${formatCurrency(props.priceMin, props.currency)}`;
+        return t('Desde :amount', {
+            amount: formatCurrency(props.priceMin, props.currency),
+        });
     }
 
-    return `Hasta ${formatCurrency(props.priceMax ?? 0, props.currency)}`;
+    return t('Hasta :amount', {
+        amount: formatCurrency(props.priceMax ?? 0, props.currency),
+    });
 });
 
 const hasAny = computed(
