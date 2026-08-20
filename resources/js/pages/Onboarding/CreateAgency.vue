@@ -37,7 +37,7 @@ const highlights = [
         <Head :title="$t('Crea tu agencia — Montree')" />
 
         <aside
-            class="relative hidden overflow-hidden bg-emerald-900 px-10 py-12 text-emerald-50 lg:flex lg:flex-col lg:justify-between"
+            class="relative hidden overflow-hidden bg-primary px-10 py-12 text-brand-green-100 lg:flex lg:flex-col lg:justify-between"
         >
             <div
                 class="absolute inset-0 opacity-40"
@@ -57,7 +57,7 @@ const highlights = [
                 class="relative z-10 inline-flex items-center gap-2"
             >
                 <span
-                    class="flex size-9 items-center justify-center rounded-lg bg-emerald-500 text-white"
+                    class="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"
                 >
                     <Leaf class="size-5" />
                 </span>
@@ -82,7 +82,7 @@ const highlights = [
                         class="flex items-start gap-3"
                     >
                         <span
-                            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-200"
+                            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-brand-green-100"
                         >
                             <component :is="item.icon" class="size-5" />
                         </span>
@@ -90,7 +90,7 @@ const highlights = [
                             <p class="font-medium text-white">
                                 {{ item.title }}
                             </p>
-                            <p class="text-sm text-emerald-100/80">
+                            <p class="text-sm text-brand-green-100">
                                 {{ item.body }}
                             </p>
                         </div>
@@ -98,7 +98,7 @@ const highlights = [
                 </ul>
             </div>
 
-            <p class="relative z-10 text-sm text-emerald-100/70">
+            <p class="relative z-10 text-sm text-brand-green-100">
                 {{
                     $t(
                         'Sin tarjeta de crédito · 14 días de prueba en el plan Professional.',
@@ -116,7 +116,7 @@ const highlights = [
                     class="mb-8 inline-flex items-center gap-2 lg:hidden"
                 >
                     <span
-                        class="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white"
+                        class="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
                     >
                         <Leaf class="size-4" />
                     </span>
@@ -144,7 +144,7 @@ const highlights = [
                     {{ $t('¿Ya tienes una agencia?') }}
                     <Link
                         :href="login().url"
-                        class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
+                        class="font-medium text-primary underline-offset-4 hover:underline"
                     >
                         {{ $t('Inicia sesión') }}
                     </Link>

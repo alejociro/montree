@@ -229,33 +229,28 @@ const statusMeta: Record<
 > = {
     open: {
         label: t('Abierta'),
-        classes:
-            'border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+        classes: 'border-transparent bg-secondary text-primary',
     },
     full: {
         label: t('Llena'),
-        classes:
-            'border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+        classes: 'border-transparent bg-accent text-accent-foreground',
     },
     closed: {
         label: t('Cerrada'),
-        classes:
-            'border-transparent bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+        classes: 'border-transparent bg-muted text-foreground',
     },
     in_progress: {
         label: t('En curso'),
         classes:
-            'border-transparent bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
+            'border-transparent bg-primary text-primary-foreground',
     },
     finished: {
         label: t('Finalizada'),
-        classes:
-            'border-transparent bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+        classes: 'border-transparent bg-muted text-muted-foreground',
     },
     cancelled: {
         label: t('Cancelada'),
-        classes:
-            'border-transparent bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
+        classes: 'border-transparent bg-destructive/10 text-destructive',
     },
 };
 
@@ -275,11 +270,11 @@ function occupancyBarClass(date: TourDateGlobalAdmin): string {
     const percent = occupancyPercent(date);
 
     if (percent >= 100) {
-        return 'bg-red-500';
+        return 'bg-destructive';
     }
 
     if (percent >= 80) {
-        return 'bg-amber-500';
+        return 'bg-accent';
     }
 
     return 'bg-primary';
@@ -769,7 +764,7 @@ onMounted(() => {
                                             @click="openCancel(date)"
                                         >
                                             <Ban
-                                                class="size-4 text-amber-600"
+                                                class="size-4 text-accent-foreground"
                                             />
                                         </Button>
                                     </div>

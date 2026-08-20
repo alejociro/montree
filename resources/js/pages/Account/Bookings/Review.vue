@@ -135,7 +135,7 @@ function submit() {
                         class="text-3xl transition-colors focus:outline-none"
                         :class="
                             star <= (hoverRating || rating)
-                                ? 'text-amber-500'
+                                ? 'text-primary'
                                 : 'text-muted-foreground/30'
                         "
                         @mouseenter="hoverRating = star"

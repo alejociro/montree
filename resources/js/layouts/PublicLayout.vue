@@ -124,7 +124,7 @@ const hasSocialLinks = computed(() => {
         <main class="flex-1">
             <slot />
         </main>
-        <footer class="bg-[#2B3B2E] text-white">
+        <footer class="bg-brand-ink text-brand-on-ink">
             <div
                 class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8"
             >
@@ -132,7 +132,7 @@ const hasSocialLinks = computed(() => {
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
                         {{ $t('Información de Contacto') }}
                     </h3>
-                    <ul class="space-y-3 text-sm text-white/70">
+                    <ul class="space-y-3 text-sm text-brand-on-ink">
                         <li class="flex items-start gap-2">
                             <MapPin class="mt-0.5 size-4 shrink-0" />
                             <span>{{
@@ -171,7 +171,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Facebook')"
-                            class="text-white/70 transition hover:text-white"
+                            class="text-brand-on-ink transition hover:text-brand-cream"
                         >
                             <svg
                                 class="size-5"
@@ -190,7 +190,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Instagram')"
-                            class="text-white/70 transition hover:text-white"
+                            class="text-brand-on-ink transition hover:text-brand-cream"
                         >
                             <svg
                                 class="size-5"
@@ -209,7 +209,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Twitter')"
-                            class="text-white/70 transition hover:text-white"
+                            class="text-brand-on-ink transition hover:text-brand-cream"
                         >
                             <svg
                                 class="size-5"
@@ -228,7 +228,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('YouTube')"
-                            class="text-white/70 transition hover:text-white"
+                            class="text-brand-on-ink transition hover:text-brand-cream"
                         >
                             <svg
                                 class="size-5"
@@ -247,7 +247,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('TikTok')"
-                            class="text-white/70 transition hover:text-white"
+                            class="text-brand-on-ink transition hover:text-brand-cream"
                         >
                             <svg
                                 class="size-5"
@@ -264,9 +264,9 @@ const hasSocialLinks = computed(() => {
                 </div>
             </div>
 
-            <div class="border-t border-white/10">
+            <div class="border-t border-brand-ink-line">
                 <div
-                    class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-4 text-xs text-white/50 sm:px-6 lg:px-8"
+                    class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-4 text-xs text-brand-on-ink/70 sm:px-6 lg:px-8"
                 >
                     <span
                         >&copy; {{ new Date().getFullYear() }}

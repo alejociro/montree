@@ -85,12 +85,7 @@ const showNameFallback = computed(
         </span>
         <AppLogoIcon
             v-else
-            :class="
-                cn(
-                    'fill-current text-foreground dark:text-white',
-                    iconSizeClass,
-                )
-            "
+            :class="cn('fill-current text-foreground', iconSizeClass)"
         />
     </span>
 </template>

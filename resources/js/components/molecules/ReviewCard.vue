@@ -27,7 +27,7 @@ const formattedDate = computed(() =>
                     >· {{ formattedDate }}</span
                 >
             </div>
-            <span class="text-amber-500">{{ '★'.repeat(review.rating) }}</span>
+            <span class="text-primary">{{ '★'.repeat(review.rating) }}</span>
         </div>
         <h3 v-if="review.title" class="font-medium">{{ review.title }}</h3>
         <p v-if="review.body" class="text-sm text-muted-foreground">

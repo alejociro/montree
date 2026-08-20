@@ -17,7 +17,7 @@ defineProps<Props>();
 
         <span class="inline-flex items-center gap-2 text-muted-foreground">
             <span
-                class="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white"
+                class="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
             >
                 <Leaf class="size-4" />
             </span>
@@ -28,14 +28,14 @@ defineProps<Props>();
         </span>
 
         <div
-            class="flex size-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400"
+            class="flex size-16 items-center justify-center rounded-full bg-accent text-accent-foreground"
         >
             <Clock class="size-8" />
         </div>
 
         <div class="max-w-md space-y-3">
             <p
-                class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
+                class="text-xs font-semibold tracking-widest text-accent-foreground uppercase"
             >
                 {{ $t('Pendiente de activación') }}
             </p>

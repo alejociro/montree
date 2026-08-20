@@ -26,14 +26,14 @@ function occupancyColor(pct: number | null): string {
     }
 
     if (pct >= 80) {
-        return 'bg-emerald-500';
+        return 'bg-primary';
     }
 
     if (pct >= 50) {
-        return 'bg-amber-500';
+        return 'bg-accent';
     }
 
-    return 'bg-sky-500';
+    return 'bg-secondary-foreground';
 }
 </script>
 

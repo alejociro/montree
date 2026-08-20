@@ -188,7 +188,7 @@ watch(period, () => {
 
                     <div
                         v-if="snapshot.pending_reviews_count > 0"
-                        class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200"
+                        class="flex items-start gap-3 rounded-xl border border-accent-foreground/25 bg-accent p-4 text-sm text-accent-foreground"
                     >
                         <Inbox class="size-5 flex-none" />
                         <div>

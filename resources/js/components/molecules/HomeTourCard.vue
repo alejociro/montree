@@ -85,7 +85,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                     class="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground"
                     :title="`${tour.rating_average} de 5`"
                 >
-                    <Star class="size-3.5 fill-amber-400 text-amber-400" />
+                    <Star class="size-3.5 fill-primary text-primary" />
                     {{ Number(tour.rating_average).toFixed(1) }}
                     <span class="font-normal text-muted-foreground"
                         >({{ tour.rating_count }})</span

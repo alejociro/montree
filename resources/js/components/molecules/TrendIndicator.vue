@@ -29,9 +29,9 @@ const direction = computed<'up' | 'down' | 'flat' | 'unknown'>(() => {
 const colorClass = computed(() => {
     switch (direction.value) {
         case 'up':
-            return 'text-emerald-600 dark:text-emerald-400';
+            return 'text-primary';
         case 'down':
-            return 'text-rose-600 dark:text-rose-400';
+            return 'text-destructive';
         default:
             return 'text-muted-foreground';
     }

@@ -406,7 +406,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                         v-if="tour.rating_count > 0"
                         class="flex items-center gap-1"
                     >
-                        <Star class="size-4 fill-amber-400 text-amber-400" />
+                        <Star class="size-4 fill-primary text-primary" />
                         {{ tour.rating_average }}
                         <span class="text-muted-foreground"
                             >({{ tour.rating_count }})</span
@@ -773,7 +773,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                                 class="flex items-center gap-1 text-muted-foreground"
                             >
                                 <Star
-                                    class="size-3 fill-amber-400 text-amber-400"
+                                    class="size-3 fill-primary text-primary"
                                 />
                                 {{ related.rating_average }}
                             </span>
@@ -839,7 +839,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                     class="size-2.5 rounded-full transition"
                     :class="
                         i === activeImageIndex
-                            ? 'bg-white'
+                            ? 'bg-card'
                             : 'bg-white/40 hover:bg-white/70'
                     "
                     @click="activeImageIndex = i"

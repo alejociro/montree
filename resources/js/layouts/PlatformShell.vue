@@ -73,7 +73,7 @@ onMounted(() => {
                         <Link
                             v-if="isSuperAdmin"
                             href="/super-admin/dashboard"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
                         >
                             {{ $t('Ir al panel') }}
                         </Link>
@@ -81,13 +81,13 @@ onMounted(() => {
                     <template v-else>
                         <Link
                             href="/login"
-                            class="inline-flex text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                            class="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
                         >
                             {{ $t('Iniciar sesión') }}
                         </Link>
                         <Link
                             :href="start().url"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
                         >
                             {{ $t('Comenzar gratis') }}
                         </Link>
@@ -105,9 +105,11 @@ onMounted(() => {
                 <div class="footer-brand-col">
                     <div class="brand">
                         <div class="brand-icon"><Leaf class="size-4" /></div>
-                        <span class="brand-name" style="color: #f2ede4">{{
-                            $t('Montree')
-                        }}</span>
+                        <span
+                            class="brand-name"
+                            style="color: var(--brand-cream)"
+                            >{{ $t('Montree') }}</span
+                        >
                     </div>
                     <p class="footer-desc">
                         {{
@@ -155,15 +157,15 @@ onMounted(() => {
    TOKENS — on .page-root so scoped CSS can read them
 ════════════════════════════════════════════════════════════ */
 .page-root {
-    --cream: #f2ede4;
-    --green-dark: #2a4a34;
-    --green-darker: #1a3a2a;
-    --green-mid: #4a7c59;
-    --green-light: #b8cbb0;
-    --green-pale: #eef4ec;
-    --text-dark: #2a4a34;
-    --text-muted: #5e6e61;
-    --border: #d6e2d0;
+    --cream: var(--brand-cream);
+    --green-dark: var(--brand-green);
+    --green-darker: var(--brand-ink);
+    --green-mid: var(--brand-site);
+    --green-light: var(--brand-on-ink);
+    --green-pale: var(--brand-green-100);
+    --text-dark: var(--brand-ink);
+    --text-muted: var(--brand-muted);
+    --border: var(--brand-line);
     --ff-display: 'Playfair Display', Georgia, serif;
     --ff-body: 'Inter', system-ui, sans-serif;
 
@@ -446,7 +448,7 @@ onMounted(() => {
    FOOTER
 ════════════════════════════════════════════════════════════ */
 .page-root .site-footer {
-    background: #1a3a2a;
+    background: var(--brand-ink);
     border-top: 1px solid rgba(184, 203, 176, 0.1);
     padding-top: 3.5rem;
     padding-bottom: 1.5rem;

@@ -212,7 +212,7 @@ onMounted(load);
                             <span class="font-medium">{{
                                 r.user?.name ?? $t('Anónimo')
                             }}</span>
-                            <span class="text-amber-500"
+                            <span class="text-primary"
                                 >{{ '★'.repeat(r.rating)
                                 }}{{ '☆'.repeat(5 - r.rating) }}</span
                             >

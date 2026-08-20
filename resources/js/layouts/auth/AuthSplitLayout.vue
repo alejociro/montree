@@ -27,7 +27,9 @@ const { configuration, displayName } = useTenant();
         <!-- Left panel: branded hero -->
         <div
             class="relative hidden h-full flex-col overflow-hidden lg:flex"
-            :class="configuration?.hero_image_url ? 'bg-black' : 'bg-[#2B3B2E]'"
+            :class="
+                configuration?.hero_image_url ? 'bg-brand-ink' : 'bg-brand-green'
+            "
         >
             <!-- Background image with overlay -->
             <img
@@ -38,7 +40,7 @@ const { configuration, displayName } = useTenant();
             />
             <div
                 v-else
-                class="absolute inset-0 bg-gradient-to-br from-[#2B3B2E] via-[#3A5240] to-[#2B3B2E]"
+                class="absolute inset-0 bg-gradient-to-br from-brand-ink via-brand-green to-brand-ink"
             />
 
             <!-- Decorative pattern -->
