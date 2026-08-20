@@ -84,6 +84,110 @@ class TranslationCatalogTest extends TestCase
     }
 
     /**
+     * Valores dentro de `{{ }}` que no son copy: identificadores, símbolos, datos de
+     * contacto de ejemplo y códigos de moneda.
+     *
+     * @var list<string>
+     */
+    private const NON_COPY_LITERALS = [
+        '', ' ', ' *', ', ', '+', '9+', '—', '★', '☆', 'USD',
+        'approved', 'expired', 'past', 'pending', 'percentage', 'slug', 'upcoming',
+        'Calle 123, Siempre Viva', '+57 3009910019', 'contacto@ecotravel.com',
+    ];
+
+    /**
+     * WHY: el test de arriba solo ve lo que ya está dentro de un `t(...)`. El hueco real
+     * que dejó pasar la primera pasada del feature fue el otro: copy escrito crudo dentro
+     * de una interpolación —`{{ saving ? 'Guardando…' : 'Guardar cambios' }}`— que nunca
+     * llega al catálogo y se queda en español dentro de una pantalla en inglés.
+     */
+    public function test_no_raw_string_literals_inside_template_interpolations(): void
+    {
+        $offenders = [];
+
+        foreach ($this->sourceFiles() as $file) {
+            if (! str_ends_with($file, '.vue')) {
+                continue;
+            }
+
+            $contents = (string) file_get_contents($file);
+
+            if (preg_match('/<template>(.*)<\/template>/s', $contents, $template) !== 1) {
+                continue;
+            }
+
+            preg_match_all('/\{\{(.*?)\}\}/s', $template[1], $interpolations);
+
+            foreach ($interpolations[1] as $expression) {
+                // Fuera lo que ya está traducido: `$t('...')`, `$tc('...')`, `t('...')`.
+                $bare = preg_replace(
+                    "/\\\$?t(?:c|Choice)?\(\s*'(?:[^'\\\\]|\\\\.)*'/",
+                    'T(',
+                    $expression,
+                );
+
+                preg_match_all("/'((?:[^'\\\\]|\\\\.)*)'/", (string) $bare, $literals);
+
+                foreach ($literals[1] as $literal) {
+                    if (in_array($literal, self::NON_COPY_LITERALS, true)) {
+                        continue;
+                    }
+
+                    $offenders[] = basename($file).": '".$literal."'";
+                }
+            }
+        }
+
+        $this->assertSame([], $offenders, sprintf(
+            "Hay %d textos sin traducir dentro de una interpolación:\n- %s",
+            count($offenders),
+            implode("\n- ", array_slice($offenders, 0, 20)),
+        ));
+    }
+
+    /**
+     * WHY: `trans_choice()` no se comporta como `__()`. Cuando la clave no existe para el
+     * idioma activo, Laravel resuelve el mensaje en el `fallback_locale` (`localeForChoice`)
+     * en vez de devolver la clave. Con la convención de este proyecto —la clave ES el texto
+     * en español— eso significa que una clave plural ausente de `lang/es.json` sale en
+     * inglés dentro de la app en español. La entrada identidad es lo que lo evita.
+     */
+    public function test_every_plural_key_is_declared_in_the_spanish_catalog(): void
+    {
+        $spanish = json_decode((string) file_get_contents($this->basePath('lang/es.json')), true);
+
+        $this->assertIsArray($spanish);
+
+        $missing = [];
+
+        foreach ($this->sourceFiles() as $file) {
+            if (! str_ends_with($file, '.php')) {
+                continue;
+            }
+
+            preg_match_all(
+                "/trans_choice\(\s*'((?:[^'\\\\]|\\\\.)*)'/s",
+                (string) file_get_contents($file),
+                $matches,
+            );
+
+            foreach ($matches[1] as $key) {
+                $key = str_replace("\\'", "'", $key);
+
+                if (! array_key_exists($key, $spanish)) {
+                    $missing[] = $key;
+                }
+            }
+        }
+
+        $this->assertSame([], $missing, sprintf(
+            "Hay %d claves de `trans_choice` sin entrada identidad en lang/es.json:\n- %s",
+            count($missing),
+            implode("\n- ", $missing),
+        ));
+    }
+
+    /**
      * @return list<string>
      */
     private function sourceKeys(): array
@@ -94,7 +198,7 @@ class TranslationCatalogTest extends TestCase
             $contents = (string) file_get_contents($file);
 
             $pattern = str_ends_with($file, '.php')
-                ? "/__\(\s*'((?:[^'\\\\]|\\\\.)*)'/"
+                ? "/(?:__|trans_choice)\(\s*'((?:[^'\\\\]|\\\\.)*)'/"
                 : "/(?:\\\$t|\\\$tc|\bt|\btChoice|\btranslate|\btranslateChoice)\(\s*'((?:[^'\\\\]|\\\\.)*)'/";
 
             preg_match_all($pattern, $contents, $matches);

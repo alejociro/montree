@@ -60,7 +60,7 @@ function occupancyColor(pct: number | null): string {
                 >
                     <div class="min-w-0">
                         <p class="truncate text-sm font-medium">
-                            {{ date.tour_name ?? 'Tour eliminado' }}
+                            {{ date.tour_name ?? $t('Tour eliminado') }}
                         </p>
                         <p class="mt-1 text-xs text-muted-foreground">
                             {{ formatDateTime(date.starts_at) }}

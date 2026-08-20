@@ -80,9 +80,9 @@ final class RegisterAgencyRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'agency_name' => 'nombre de la agencia',
-            'subdomain' => 'subdominio',
-            'founder_name' => 'nombre',
+            'agency_name' => __('nombre de la agencia'),
+            'subdomain' => __('subdominio'),
+            'founder_name' => __('nombre'),
             'email' => __('correo electrónico'),
             'password' => __('contraseña'),
             'password_confirmation' => __('confirmación de contraseña'),

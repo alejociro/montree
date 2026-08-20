@@ -42,7 +42,7 @@ function confirmUnsubscribe() {
             {{ $t('¿Confirmas que quieres dejar de recibir nuestros emails?') }}
         </p>
         <Button v-if="!done" :disabled="processing" @click="confirmUnsubscribe">
-            {{ processing ? 'Procesando...' : 'Confirmar baja' }}
+            {{ processing ? $t('Procesando...') : $t('Confirmar baja') }}
         </Button>
         <p v-else class="text-primary">
             {{

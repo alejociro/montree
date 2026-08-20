@@ -15,13 +15,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { intlLocale } from '@/lib/format';
 import type {
     DashboardPeriodKey,
     DashboardResponse,
     DashboardSnapshot,
 } from '@/types/dashboard';
 
-const { t } = useTranslations();
+const { t, tChoice } = useTranslations();
 
 const period = ref<DashboardPeriodKey>('last_30_days');
 const snapshot = ref<DashboardSnapshot | null>(null);
@@ -52,11 +53,11 @@ const rangeLabel = computed(() => {
     }
 
     const start = new Date(snapshot.value.period.start).toLocaleDateString(
-        'es-CO',
+        intlLocale(),
         { day: 'numeric', month: 'short' },
     );
     const end = new Date(snapshot.value.period.end).toLocaleDateString(
-        'es-CO',
+        intlLocale(),
         { day: 'numeric', month: 'short', year: 'numeric' },
     );
 
@@ -68,9 +69,7 @@ const isRefreshing = computed(() => isLoading.value && snapshot.value !== null);
 const pendingReviewsLabel = computed(() => {
     const count = snapshot.value?.pending_reviews_count ?? 0;
 
-    return count === 1
-        ? t('1 reseña pendiente')
-        : `${count} reseñas pendientes`;
+    return tChoice(':count reseña pendiente|:count reseñas pendientes', count);
 });
 
 async function loadDashboard(): Promise<void> {
@@ -110,7 +109,11 @@ watch(period, () => {
         >
             <Heading
                 :title="$t('Dashboard')"
-                :description="`Resumen de la operación de ${tenant?.name ?? 'tu agencia'}.`"
+                :description="
+                    $t('Resumen de la operación de :agency.', {
+                        agency: tenant?.name ?? $t('tu agencia'),
+                    })
+                "
             />
 
             <div class="flex flex-wrap items-center gap-2">

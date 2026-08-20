@@ -1,9 +1,25 @@
-import { translate } from '@/composables/useTranslations';
+import { currentLocale, translate } from '@/composables/useTranslations';
+
+/**
+ * Etiqueta BCP-47 con la que `Intl` formatea fechas, montos y numeros.
+ *
+ * WHY: sin esto todo el formato quedaba clavado en `es-CO` y una pantalla en ingles
+ * mostraba "24 de agosto de 2026" y "hace 2 minutos". El idioma de la app manda; el
+ * parametro explicito sigue ganando para los pocos casos que fijan una region.
+ */
+const INTL_LOCALES: Record<string, string> = {
+    es: 'es-CO',
+    en: 'en-US',
+};
+
+export function intlLocale(locale?: string): string {
+    return locale ?? INTL_LOCALES[currentLocale()] ?? 'es-CO';
+}
 
 export function formatCurrency(
     amount: string | number,
     currency: string,
-    locale = 'es-CO',
+    locale?: string,
 ): string {
     const value =
         typeof amount === 'number' ? amount : Number.parseFloat(amount);
@@ -13,7 +29,7 @@ export function formatCurrency(
     }
 
     try {
-        return new Intl.NumberFormat(locale, {
+        return new Intl.NumberFormat(intlLocale(locale), {
             style: 'currency',
             currency,
             maximumFractionDigits: 0,
@@ -23,41 +39,41 @@ export function formatCurrency(
     }
 }
 
-export function formatNumber(value: number, locale = 'es-CO'): string {
-    return new Intl.NumberFormat(locale).format(value);
+export function formatNumber(value: number, locale?: string): string {
+    return new Intl.NumberFormat(intlLocale(locale)).format(value);
 }
 
-export function formatPercent(value: number | null, locale = 'es-CO'): string {
+export function formatPercent(value: number | null, locale?: string): string {
     if (value === null) {
         return 'N/A';
     }
 
-    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)}%`;
+    return `${new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 1 }).format(value)}%`;
 }
 
-export function formatDateTime(iso: string, locale = 'es-CO'): string {
+export function formatDateTime(iso: string, locale?: string): string {
     const date = new Date(iso);
 
     if (Number.isNaN(date.getTime())) {
         return iso;
     }
 
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
         dateStyle: 'medium',
         timeStyle: 'short',
     }).format(date);
 }
 
-export function formatDate(iso: string, locale = 'es-CO'): string {
+export function formatDate(iso: string, locale?: string): string {
     const date = new Date(iso);
 
     if (Number.isNaN(date.getTime())) {
         return iso;
     }
 
-    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-        date,
-    );
+    return new Intl.DateTimeFormat(intlLocale(locale), {
+        dateStyle: 'medium',
+    }).format(date);
 }
 
 const RELATIVE_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
@@ -69,7 +85,7 @@ const RELATIVE_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
 ];
 
 /**
- * Fecha relativa en espanol: "hace 3 días", "hace un momento".
+ * Fecha relativa en el idioma activo: "hace 3 días" / "3 days ago".
  *
  * Para distancias de mas de un mes devuelve la fecha absoluta: "hace 7 meses"
  * dice menos que "12 de enero de 2026" cuando lo que se busca es saber si la
@@ -78,7 +94,7 @@ const RELATIVE_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
 export function formatRelativeDate(
     iso: string,
     now: Date = new Date(),
-    locale = 'es-CO',
+    locale?: string,
 ): string {
     const date = new Date(iso);
 
@@ -97,7 +113,9 @@ export function formatRelativeDate(
         return translate('hace un momento');
     }
 
-    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    const formatter = new Intl.RelativeTimeFormat(intlLocale(locale), {
+        numeric: 'auto',
+    });
 
     for (const [unit, unitSeconds] of RELATIVE_UNITS) {
         if (absolute >= unitSeconds) {
@@ -116,7 +134,7 @@ type TourDateOptions = {
 export function formatTourDate(
     iso: string,
     options: TourDateOptions = {},
-    locale = 'es-CO',
+    locale?: string,
 ): string {
     const { withWeekday = true, withTime = true } = options;
     const date = new Date(iso);
@@ -140,7 +158,9 @@ export function formatTourDate(
         formatOptions.minute = '2-digit';
     }
 
-    return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+    return new Intl.DateTimeFormat(intlLocale(locale), formatOptions).format(
+        date,
+    );
 }
 
 const bookingStatusLabels: Record<string, string> = {

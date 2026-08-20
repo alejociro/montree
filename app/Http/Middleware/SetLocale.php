@@ -15,39 +15,15 @@ final class SetLocale
      * Fija el idioma del request. Corre en el grupo `web` después de ResolveTenant y
      * antes de HandleInertiaRequests, que comparte el catálogo ya resuelto.
      *
+     * La cuenta de escalones vive en `Locale::resolveFor()`: el handler de errores la
+     * necesita para las rutas que nunca llegan a este middleware.
+     *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        app()->setLocale($this->resolve($request));
+        app()->setLocale(Locale::resolveFor($request));
 
         return $next($request);
-    }
-
-    /**
-     * Cuenta explícita: preferencia del usuario, cookie, navegador, default.
-     * Un valor fuera del catálogo no aborta — cae al siguiente escalón.
-     */
-    private function resolve(Request $request): string
-    {
-        $user = $request->user();
-
-        if ($user !== null && Locale::isSupported($user->locale)) {
-            return (string) $user->locale;
-        }
-
-        $cookie = $request->cookie('locale');
-
-        if (is_string($cookie) && Locale::isSupported($cookie)) {
-            return $cookie;
-        }
-
-        $preferred = $request->getPreferredLanguage(Locale::supported());
-
-        if (is_string($preferred) && Locale::isSupported($preferred)) {
-            return $preferred;
-        }
-
-        return Locale::default();
     }
 }

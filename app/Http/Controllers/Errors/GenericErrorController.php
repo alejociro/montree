@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RoleHomeResolver;
+use App\Support\Locale;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,9 +36,17 @@ final class GenericErrorController extends Controller
             return null;
         }
 
+        // WHY: una ruta inexistente no pasa por el grupo `web`, asi que ni SetLocale ni
+        // HandleInertiaRequests corrieron: sin idioma resuelto y sin catalogo compartido la
+        // pagina de error salia siempre en espanol, incluso con la app en ingles.
+        app()->setLocale(Locale::resolveFor($request));
+
         return Inertia::render('Errors/Generic', [
             'status' => $status,
             'homeUrl' => $this->homeUrl($request),
+            'locale' => app()->getLocale(),
+            'locales' => Locale::options(),
+            'translations' => Locale::translations(app()->getLocale()),
         ])
             ->toResponse($request)
             ->setStatusCode($status);

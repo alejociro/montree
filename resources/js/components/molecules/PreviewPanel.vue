@@ -55,7 +55,9 @@ const safeSecondary = computed(() =>
                     <h3 class="mt-1 text-lg font-semibold">
                         {{
                             tagline ||
-                            'Aventuras inolvidables, en armonía con la naturaleza.'
+                            $t(
+                                'Aventuras inolvidables, en armonía con la naturaleza.',
+                            )
                         }}
                     </h3>
                 </div>

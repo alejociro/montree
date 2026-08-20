@@ -38,19 +38,58 @@ type CrudController = {
 
 type Props = {
     kind: LogisticsResourceKind;
-    singular: string;
-    feminine?: boolean;
     fields: LogisticsField[];
     emptyLabel: string;
 };
 
 const props = defineProps<Props>();
 
-const newLabel = computed(
-    () =>
-        `${props.feminine ? t('Nueva') : t('Nuevo')} ${props.singular.toLowerCase()}`,
-);
-const pastSuffix = computed(() => (props.feminine ? 'a' : 'o'));
+/**
+ * Copy completo por recurso en vez de armarlo con `singular` + genero.
+ *
+ * WHY: "Nueva" + "ruta" y el sufijo `eliminad{a|o}` son gramatica del castellano;
+ * al traducir salia "Nueva route". Cada frase entera es una clave y el ingles la
+ * resuelve sin depender del genero.
+ */
+const KIND_COPY: Record<
+    LogisticsResourceKind,
+    {
+        new: string;
+        edit: string;
+        search: string;
+        created: string;
+        updated: string;
+        deleted: string;
+    }
+> = {
+    routes: {
+        new: 'Nueva ruta',
+        edit: 'Editar ruta',
+        search: 'Buscar ruta',
+        created: 'Ruta creada.',
+        updated: 'Ruta actualizada.',
+        deleted: 'Ruta eliminada.',
+    },
+    providers: {
+        new: 'Nuevo proveedor',
+        edit: 'Editar proveedor',
+        search: 'Buscar proveedor',
+        created: 'Proveedor creado.',
+        updated: 'Proveedor actualizado.',
+        deleted: 'Proveedor eliminado.',
+    },
+    hotels: {
+        new: 'Nuevo hotel',
+        edit: 'Editar hotel',
+        search: 'Buscar hotel',
+        created: 'Hotel creado.',
+        updated: 'Hotel actualizado.',
+        deleted: 'Hotel eliminado.',
+    },
+};
+
+const copy = computed(() => KIND_COPY[props.kind]);
+const newLabel = computed(() => t(copy.value.new));
 
 const api = useApi();
 
@@ -157,8 +196,8 @@ function submit(): void {
         onSuccess: () => {
             toast.success(
                 editingId.value === null
-                    ? `${props.singular} cread${pastSuffix.value}.`
-                    : `${props.singular} actualizad${pastSuffix.value}.`,
+                    ? t(copy.value.created)
+                    : t(copy.value.updated),
             );
             dialogOpen.value = false;
             void load();
@@ -182,13 +221,13 @@ function submit(): void {
 }
 
 function remove(row: LogisticsRow): void {
-    if (!confirm(`¿Eliminar "${row.name}"?`)) {
+    if (!confirm(t('¿Eliminar ":name"?', { name: row.name }))) {
         return;
     }
 
     void api.delete(controller.destroy(row.id).url, {
         onSuccess: () => {
-            toast.success(`${props.singular} eliminad${pastSuffix.value}.`);
+            toast.success(t(copy.value.deleted));
             void load();
         },
         onError: (received) => {
@@ -212,7 +251,7 @@ onMounted(load);
                     type="search"
                     :placeholder="$t('Buscar por nombre')"
                     class="pl-9"
-                    :aria-label="`Buscar ${singular}`"
+                    :aria-label="$t(copy.search)"
                 />
             </div>
             <Button size="sm" @click="openCreate">
@@ -263,7 +302,12 @@ onMounted(load);
                             {{ row.name }}
                         </p>
                         <Badge variant="outline">
-                            {{ row.tour_dates_count }} salida(s)
+                            {{
+                                $tc(
+                                    ':count salida|:count salidas',
+                                    row.tour_dates_count,
+                                )
+                            }}
                         </Badge>
                     </div>
                     <p
@@ -300,11 +344,7 @@ onMounted(load);
             <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
-                        {{
-                            editingId === null
-                                ? newLabel
-                                : `Editar ${singular.toLowerCase()}`
-                        }}
+                        {{ editingId === null ? newLabel : $t(copy.edit) }}
                     </DialogTitle>
                     <DialogDescription>
                         {{ $t('Los campos marcados con * son obligatorios.') }}
@@ -371,7 +411,9 @@ onMounted(load);
                                 v-if="processing"
                                 class="size-4 animate-spin"
                             />
-                            {{ editingId === null ? 'Crear' : 'Guardar' }}
+                            {{
+                                editingId === null ? $t('Crear') : $t('Guardar')
+                            }}
                         </Button>
                     </DialogFooter>
                 </form>

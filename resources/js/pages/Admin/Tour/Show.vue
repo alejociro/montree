@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import { show as publicTourShow } from '@/routes/tours';
 import type { Tour, TourDifficulty, TourShowStats } from '@/types/tour';
@@ -48,9 +49,9 @@ const currency = computed(
 
 const difficultyLabels: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
-    moderate: 'Moderado',
+    moderate: t('Moderado'),
     hard: t('Difícil'),
-    extreme: 'Extremo',
+    extreme: t('Extremo'),
 };
 
 const difficultyLabel = computed(
@@ -163,7 +164,7 @@ const mapsUrl = computed(() => {
                         variant="secondary"
                         class="bg-white/15 text-white backdrop-blur-sm"
                     >
-                        {{ props.tour.category.name }}
+                        {{ categoryLabel(props.tour.category.name) }}
                     </Badge>
                 </div>
 
@@ -213,9 +214,16 @@ const mapsUrl = computed(() => {
                     {{ props.stats.bookings.total }}
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">
-                    {{ props.stats.bookings.confirmed }} confirmadas ·
-                    {{ props.stats.bookings.pending_payment }} pendientes ·
-                    {{ props.stats.bookings.cancelled }} canceladas
+                    {{
+                        $t(
+                            ':confirmed confirmadas · :pending pendientes · :cancelled canceladas',
+                            {
+                                confirmed: props.stats.bookings.confirmed,
+                                pending: props.stats.bookings.pending_payment,
+                                cancelled: props.stats.bookings.cancelled,
+                            },
+                        )
+                    }}
                 </p>
             </div>
 

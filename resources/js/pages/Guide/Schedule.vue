@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { intlLocale } from '@/lib/format';
 
 type ScheduleItem = {
     id: number;
@@ -70,7 +71,7 @@ async function openTravelers(item: ScheduleItem) {
 }
 
 function formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('es-CO', {
+    return new Date(date).toLocaleDateString(intlLocale(), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -79,7 +80,7 @@ function formatDate(date: string): string {
 }
 
 function formatTime(date: string): string {
-    return new Date(date).toLocaleTimeString('es-CO', {
+    return new Date(date).toLocaleTimeString(intlLocale(), {
         hour: '2-digit',
         minute: '2-digit',
     });
@@ -115,7 +116,12 @@ function formatTime(date: string): string {
                         </p>
                     </div>
                     <Badge variant="secondary">
-                        {{ d.capacity_booked }}/{{ d.capacity_total }} viajeros
+                        {{
+                            $t(':booked/:total viajeros', {
+                                booked: d.capacity_booked,
+                                total: d.capacity_total,
+                            })
+                        }}
                     </Badge>
                 </div>
             </li>
@@ -125,7 +131,11 @@ function formatTime(date: string): string {
             <DialogContent class="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
-                        Viajeros — {{ selectedDate?.tour.name }}
+                        {{
+                            $t('Viajeros — :tour', {
+                                tour: selectedDate?.tour.name ?? '',
+                            })
+                        }}
                     </DialogTitle>
                     <p
                         v-if="selectedDate"

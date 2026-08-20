@@ -119,3 +119,45 @@ Tablas: `users` (columna nueva `locale`).
 ## Changelog
 
 - `2026-08-19` — Creación inicial.
+- `2026-08-19` — Segunda pasada: auditoría vista por vista con la app en inglés
+  (navegación real del panel de agencia, super admin, guía, cuenta y público). Cierra
+  cinco huecos que la primera pasada no cubría:
+  1. **Formato de fecha, hora, moneda y número** estaba clavado en `es-CO`
+     (`lib/format.ts` y ~20 llamadas sueltas a `Intl`): una pantalla en inglés mostraba
+     "24 de agosto de 2026" y "hace 2 minutos". Ahora `intlLocale()` resuelve la etiqueta
+     BCP-47 desde el idioma activo.
+  2. **Copy crudo dentro de interpolaciones** (`{{ saving ? 'Guardando…' : 'Guardar cambios' }}`):
+     69 textos en 34 componentes. Cubierto por un test nuevo.
+  3. **Catálogos traducidos en el punto de render** sin entrada en `lang/en.json`
+     (las 17 etiquetas de respaldo de `config/permissions.ts`, `Subdominio`, `Menú`,
+     los badges de estado de tour y tenant, las dificultades `Moderado`/`Extremo`).
+  4. **Gramática del castellano armada en código**: `LogisticsCrudPanel` componía
+     "Nueva"/"Nuevo" + `singular` y el sufijo `eliminad{a|o}`, que en inglés daba
+     "Nueva route". Reemplazado por copy completo por recurso.
+  5. **Páginas de error**: una ruta inexistente no pasa por el grupo `web`, así que ni
+     `SetLocale` ni `HandleInertiaRequests` corrían y el 404 salía siempre en español.
+     La cadena de resolución se mudó a `Locale::resolveFor()` y `GenericErrorController`
+     comparte `locale`/`locales`/`translations`.
+
+  Además: `trans_choice()` no se comporta como `__()` — si la clave no existe para el
+  idioma activo, Laravel resuelve el mensaje en el `fallback_locale`, así que una clave
+  plural ausente de `lang/es.json` salía **en inglés dentro de la app en español**. Las
+  claves de `trans_choice` llevan entrada identidad en `lang/es.json` y hay un test que
+  lo verifica.
+- `2026-08-20` — Tercera pasada: recorrido con navegador real sobre la app compilada,
+  con sesión iniciada por cada rol (agencia, super admin, guía, cliente) y el idioma
+  forzado a inglés. Recorridas 30 vistas entre los dos dominios (`demo.montree.test`
+  y el central). Quedaban tres textos crudos, todos dentro de interpolaciones o
+  atributos, que la pasada anterior no alcanzó:
+  1. `Admin/Dashboard.vue` — el subtítulo `Resumen de la operación de ${tenant.name}`
+     se armaba como template literal. Ahora es `$t('Resumen de la operación de :agency.')`
+     con el nombre como reemplazo.
+  2. `Admin/Newsletter/Index.vue` — el rótulo del botón de envío contaba suscriptores
+     en un template literal. Pasa a `$tc` con las tres formas (cero, singular, plural).
+  3. `molecules/TourCard.vue` — el `aria-label` del botón de favorito era literal en
+     castellano. Un atributo no se ve en pantalla, así que ninguna revisión visual lo
+     detecta: solo lo encontró el volcado de `aria-label`/`placeholder`/`title`.
+
+  El resto de lo que aparece en castellano con la app en inglés es **contenido
+  sembrado** (nombres de tours de demo, la descripción del tenant, los hoteles), no
+  copy de interfaz: no se traduce.
