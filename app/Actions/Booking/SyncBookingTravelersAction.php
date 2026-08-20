@@ -23,6 +23,13 @@ final class SyncBookingTravelersAction
             throw BookingException::travelersLocked();
         }
 
+        // WHY (D10): la ventana solo cierra el camino del viajero. El panel
+        // llama a UpdatePassengerAction directamente y sigue editando hasta la
+        // salida, porque el cambio de ultima hora lo hace la agencia.
+        if ($booking->isTravelerEditWindowClosed()) {
+            throw BookingException::travelerEditWindowClosed($booking->travelerEditDeadline());
+        }
+
         return DB::transaction(function () use ($booking, $travelers): Booking {
             $existing = $booking->travelers()->get()->keyBy('id');
             $keptIds = [];

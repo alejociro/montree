@@ -66,6 +66,8 @@ decisiones: `proyectos/montree/tablero/paginas/tourspax.md`.
   su EPS ni a sus observaciones médicas: vendo, no atiendo emergencias.
 - Como **viajero**, quiero registrar mis datos de salud y mi contacto de emergencia al completar
   los datos de mi reserva, para no tener que dictarlos el día del tour.
+- Como **guía**, quiero que la planilla que imprimo el día anterior sea la que se sube al vehículo:
+  que el viajero no pueda cambiar un contacto de emergencia después de que la tengo en papel.
 - Como **admin/operator**, quiero corregir o completar los datos de un pasajero desde el panel
   cuando el viajero no los llenó.
 - Como **guía o admin**, quiero imprimir la planilla y exportarla a CSV para llevarla en papel.
@@ -94,6 +96,24 @@ decisiones: `proyectos/montree/tablero/paginas/tourspax.md`.
 - **Given** cualquier salida, **when** se consulta la ficha pública del tour, **then** ninguna
   respuesta pública incluye `eps`, `eps_other`, `medical_notes`, documento ni contacto de
   emergencia.
+
+### Ventana de edición del viajero (Decisión 8 · D10)
+
+- **Given** un titular de reserva y una salida que empieza en más de 24 h, **when** edita los datos
+  de sus acompañantes, **then** se guardan.
+- **Given** ese mismo titular y una salida que empieza en menos de 24 h, **when** intenta guardar,
+  **then** `409` con `BOOKING_TRAVELER_EDIT_WINDOW_CLOSED` y el mensaje lo remite a la agencia.
+- **Given** una reserva cuya ventana ya cerró, **when** el **administrador de la agencia** edita al
+  pasajero desde el panel o registra un pago manual, **then** funciona igual que siempre: la
+  ventana **no** aplica al panel. El cambio de última hora se hace por la agencia.
+- **Given** una reserva sin salida resuelta o sin `starts_at`, **then** el deadline es `null` y
+  **no** bloquea.
+- **Given** una salida ya iniciada, **then** la ventana está cerrada.
+- **Given** el formulario de datos de la reserva, **when** la ventana ya cerró, **then** se muestra
+  en **solo lectura** con el aviso de hasta cuándo se podía editar — no se deja escribir para
+  después devolver un `409`.
+- El plazo es configurable (`config/montree.php` → `passengers.traveler_edit_cutoff_hours`); 24 h
+  es el default, no una constante en la lógica.
 
 ### Dato de salud y el rol `sales` (Decisión 7)
 
@@ -236,7 +256,12 @@ decisiones: `proyectos/montree/tablero/paginas/tourspax.md`.
   (solo `confirmed` y `completed`); en el panel se pueden ver con el filtro correspondiente.
 - Reserva sin viajeros cargados (`booking_travelers` vacío): la planilla muestra una fila de
   marcador de posición con el titular y «Datos pendientes», no la esconde. Un guía que no vea a
-  esa persona en la lista la dejaría fuera del vehículo.
+  esa persona en la lista la dejaría fuera del vehículo. Esa fila **conserva el bloque `payment`**
+  (solo se anulan los campos de la persona): es una reserva con dinero, y sin él el «Total por
+  cobrar» del pie no cuadraría.
+- Reserva comprada a menos de 24 h de la salida: nace con la ventana de edición **ya cerrada**. El
+  titular carga a sus acompañantes por la agencia. Es el caso raro, y el correcto: la planilla del
+  guía ya está impresa.
 - Documento repetido en la misma salida: se advierte, no se bloquea (hay homónimos y errores de
   digitación; bloquear impide cerrar la planilla el día del tour).
 - Salida cancelada: la planilla se conserva en modo lectura con el aviso de cancelación, y sus
@@ -281,7 +306,8 @@ GET    /api/v1/admin/guides/availability?from&to
 POST   /api/v1/admin/bookings/{bookingNumber}/passengers
 PUT    /api/v1/admin/passengers/{traveler}
 POST   /api/v1/admin/bookings/{bookingNumber}/payments        (pago manual)
-PUT    /api/v1/bookings/{bookingNumber}/travelers             (existente, se amplía)
+GET    /api/v1/bookings/{bookingNumber}                       (existente, se documenta; D10)
+PUT    /api/v1/bookings/{bookingNumber}/travelers             (existente, se amplía; ventana D10)
 POST   /api/v1/admin/tours/{tour}/dates                       (existente, endurecido)
 PUT    /api/v1/admin/tour-dates/{tourDate}                    (existente, endurecido)
 PATCH  /api/v1/admin/tour-dates/{tourDate}/guide              (existente, endurecido)
@@ -336,7 +362,7 @@ Tablas: `booking_travelers` (ampliada), `bookings`, `payments`, `tour_dates` (`g
 
 ## Decisiones abiertas
 
-**Ninguna.** Las siete decisiones quedaron ratificadas por producto el 2026-08-20 en dos rondas
+**Ninguna.** Las ocho decisiones quedaron ratificadas por producto el 2026-08-20 en tres rondas
 (detalle y fundamento en `proyectos/montree/tablero/paginas/tourspax.md` y en
 [`plan.md`](./plan.md) §2):
 
@@ -349,6 +375,13 @@ Tablas: `booking_travelers` (ampliada), `bookings`, `payments`, `tour_dates` (`g
 | 5 | El saldo del pasajero se calcula, no se guarda | D3 · Fase 3 |
 | 6 | El checklist de publicación avisa; no bloquea más de lo que ya bloquea | D7 · Fase 7 |
 | 7 | `sales` no ve EPS ni observaciones: permiso `bookings.passengers.medical.view` | D2 · Fases 1 y 3 |
+| 8 | El viajero edita a sus acompañantes hasta 24 h antes de la salida; la agencia, siempre | D10 · Fase 2 (backend, hecho) y Fase 4 (formulario) |
+
+Tres puntos que estaban anotados como observación quedaron **ratificados como comportamiento
+correcto** el 2026-08-20, no como deuda: (a) la zona del guía **ignora** `tour_date_id` y `status`
+en vez de devolver `422`; (b) la fila de marcador de posición **conserva `payment`**; (c) el pago
+manual se queda como está —referencia dentro de `gateway_response`, sin notificación— y se revisa
+cuando entre la pasarela de pagos.
 
 Queda una sola coordinación operativa, que no bloquea hasta la Fase 8: **cuándo se resiembra el
 entorno de QA**. El recálculo de `ends_at`, el `NOT NULL` y el reparto de guías reescriben lo que
@@ -369,3 +402,25 @@ el equipo esté mirando en ese momento.
   del guía a un **detalle de tour en modo lectura**, no solo la planilla; (e) la paleta se
   reformula como «el color principal es el del tenant» y solo los semánticos quedan fijos; (f) se
   fija que ninguna decisión se toma sobre el contenido de una base de datos de prueba.
+- `2026-08-20` — **Decisión 8 (D10): ventana de edición de pasajeros por el viajero.** El titular
+  edita a sus acompañantes hasta 24 h antes de `tour_date.starts_at` (configurable en
+  `config/montree.php` → `passengers.traveler_edit_cutoff_hours`); después queda congelada **solo
+  para él**. El administrador de la agencia no se ve afectado. Razón: el guía imprime la planilla
+  el día anterior; si el dato cambia después, el papel miente y el contacto de emergencia impreso
+  deja de servir. Entran una user story del guía, un bloque de acceptance criteria, dos edge cases
+  y la fila 8 de la tabla de decisiones. Backend ya implementado; falta el formulario del viajero
+  (Fase 4).
+- `2026-08-20` — Ratificación de tres puntos que estaban anotados como observación y **dejan de ser
+  deuda**: la zona del guía ignora `tour_date_id` y `status` en vez de devolver `422`; la fila de
+  marcador de posición conserva `payment` (solo se anulan los campos de la persona); el pago manual
+  se queda como está y se revisa con la futura pasarela. Detalle en el Changelog de
+  [`contracts.md`](./contracts.md).
+
+---
+
+## TODO
+
+- [ ] **Fase 4 · frontend.** El formulario del viajero (`BookingTravelersSection.vue` y su página)
+  todavía deja escribir con la ventana cerrada y recibe el `409`. Debe consumir
+  `can_edit_travelers` / `travelers_edit_deadline` y pintarse en solo lectura con el aviso de hasta
+  cuándo se podía editar. Ítem añadido al checklist de la Fase 4 en [`tasks.md`](./tasks.md).

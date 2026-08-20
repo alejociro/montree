@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentType;
+use Carbon\CarbonInterface;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -122,6 +123,35 @@ class Booking extends Model
             BookingStatus::Expired,
             BookingStatus::Refunded,
         ], true);
+    }
+
+    /**
+     * Hasta cuándo el titular puede editar la planilla de sus acompañantes (D10):
+     * `starts_at` menos la ventana de `config('montree.passengers')`. `null`
+     * cuando la reserva no tiene salida o la salida no tiene hora: sin fecha
+     * contra la que comparar, no se bloquea a nadie.
+     *
+     * Deliberadamente fuera de isLocked(): el panel de la agencia y el pago
+     * manual comparten esa guarda y NO les aplica esta ventana.
+     */
+    public function travelerEditDeadline(): ?CarbonInterface
+    {
+        $startsAt = $this->tourDate?->starts_at;
+
+        if ($startsAt === null) {
+            return null;
+        }
+
+        return $startsAt->copy()->subHours(
+            (int) config('montree.passengers.traveler_edit_cutoff_hours'),
+        );
+    }
+
+    public function isTravelerEditWindowClosed(): bool
+    {
+        $deadline = $this->travelerEditDeadline();
+
+        return $deadline !== null && now()->greaterThanOrEqualTo($deadline);
     }
 
     /**

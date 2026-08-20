@@ -32,6 +32,8 @@ final class BookingResource extends JsonResource
             'currency' => $this->currency,
             'special_requests' => $this->special_requests,
             'contact_snapshot' => $this->contact_snapshot,
+            'can_edit_travelers' => ! $this->isLocked() && ! $this->isTravelerEditWindowClosed(),
+            'travelers_edit_deadline' => $this->travelerEditDeadline()?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
             'confirmed_at' => $this->confirmed_at?->toIso8601String(),
             'tour' => $this->whenLoaded('tour', fn () => [

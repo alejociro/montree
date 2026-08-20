@@ -37,7 +37,7 @@ el handoff reutilizando los organisms existentes (`TourForm`, `TourDatesPanel`,
 
 ## 2. Decisiones
 
-Las siete quedaron **ratificadas por producto el 2026-08-20**. Ninguna está abierta.
+Las diez quedaron **ratificadas por producto el 2026-08-20**. Ninguna está abierta.
 
 ### D1 — El guía ve todo, no toca nada, y no entra al panel
 
@@ -242,6 +242,39 @@ Dos bordes que cerrar, y que tampoco salen del handoff:
 
 **Fuera de alcance:** el solape de un guía **entre agencias**. Un usuario guía pertenece a un
 tenant; si mañana una persona guía para dos, la regla no la protege.
+
+### D10 — Ventana de edición del viajero: fuera de `isLocked()`, en un solo punto
+
+Decisión 8 de producto (2026-08-20). El titular edita a sus acompañantes hasta **24 h antes** de
+`tour_dates.starts_at`; después la planilla se congela **solo para él**. El administrador de la
+agencia **no** se ve afectado: el cambio de última hora se resuelve por la agencia. Razón de
+negocio: el guía descarga o imprime la planilla el día anterior; si el dato cambia después, el
+papel miente y el contacto de emergencia impreso deja de servir.
+
+- **El plazo es configuración, no una constante.** `config/montree.php` →
+  `passengers.traveler_edit_cutoff_hours`, env `MONTREE_TRAVELER_EDIT_CUTOFF_HOURS`, default `24`.
+  El número 24 no aparece en ninguna rama de la lógica.
+- **Modelo:** `Booking::travelerEditDeadline(): ?CarbonInterface` y
+  `Booking::isTravelerEditWindowClosed(): bool`.
+- **La guarda NO entró en `Booking::isLocked()`.** Esa la comparten los tres caminos de escritura
+  —`SyncBookingTravelersAction`, `UpdatePassengerAction` y `RegisterManualPaymentAction`—; metida
+  ahí habría congelado también el panel y el pago manual, que son justo por donde se resuelve el
+  cambio de última hora. Se aplica en **un solo punto**: `SyncBookingTravelersAction`, después de
+  `isLocked()`.
+- **Error `409` con código `BOOKING_TRAVELER_EDIT_WINDOW_CLOSED`**
+  (`BookingException::travelerEditWindowClosed()`), misma forma que el `BOOKING_TRAVELERS_LOCKED`
+  que ya emite ese camino: los dos son regla de **estado**, no problema del payload.
+- **Contrato:** `BookingResource` gana `can_edit_travelers` (bool) y `travelers_edit_deadline`
+  (ISO8601 o `null`). Sin ellos el frontend no puede hacer otra cosa que dejar escribir y chocar
+  contra el `409`.
+- **Bordes:** sin salida o sin `starts_at` ⇒ deadline `null` ⇒ no bloquea (a nivel de esquema
+  `bookings.tour_date_id` y `tour_dates.starts_at` son `NOT NULL`, así que el caso solo se alcanza
+  con la relación sin resolver: se cubre con test unitario, no con uno de HTTP que tendría que
+  falsear el esquema). Salida ya iniciada ⇒ bloqueada por la misma comparación, sin rama aparte.
+- **Tests:** `tests/Feature/Passengers/TravelerEditWindowTest.php` (7) y
+  `tests/Unit/Booking/TravelerEditDeadlineTest.php` (2).
+- **Pendiente:** el formulario del viajero (Fase 4) debe consumir los dos campos y renderizarse en
+  solo lectura con el aviso, en vez de dejar escribir para recibir un `409`.
 
 ---
 
@@ -448,6 +481,8 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
 | **D9** `ends_at` enviado por el cliente ⇒ 422; `ends_at` derivado correcto para un tour de 51 h | `tests/Feature/TourDates/EndsAtDerivationTest.php` |
 | **D9** cambiar `duration_hours` lista las salidas que quedarían en solape | `tests/Feature/Tours/DurationChangeImpactTest.php` |
 | La factory y el seeder no pueden producir un solape | `tests/Feature/TourDates/SeederIntegrityTest.php` |
+| **D10** ventana abierta guarda · ventana cerrada ⇒ `409 BOOKING_TRAVELER_EDIT_WINDOW_CLOSED` · el panel y el pago manual siguen funcionando con la ventana cerrada | `tests/Feature/Passengers/TravelerEditWindowTest.php` |
+| **D10** deadline `null` sin salida o sin `starts_at`; salida iniciada ⇒ cerrada; el cutoff sale de config | `tests/Unit/Booking/TravelerEditDeadlineTest.php` |
 
 ---
 
@@ -466,3 +501,20 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
 | El select de guía se construye dos veces | La Fase 5 (disponibilidad) va **antes** que la Fase 6 (rediseño) |
 | El handoff pide módulos que no existen (Reservas, Pagos, Guías) | Son `href="#"` en el prototipo; declarados fuera de alcance en la spec |
 | La resiembra pisa lo que QA está mirando | Coordinación explícita antes de correr las migraciones en ese entorno (Fase 8) |
+| El viajero escribe con la ventana ya cerrada y solo se entera por un `409` | El formulario consume `can_edit_travelers`/`travelers_edit_deadline` y se pinta en solo lectura (Fase 4) |
+
+---
+
+## Changelog
+
+- `2026-08-20` — Redacción inicial del plan técnico con las decisiones D1–D9.
+- `2026-08-20` — **D10 — ventana de edición del viajero.** Se documenta la decisión técnica ya
+  implementada: cutoff configurable, dos métodos en `Booking`, guarda aplicada **solo** en
+  `SyncBookingTravelersAction` y deliberadamente **fuera** de `isLocked()` (que comparten el panel
+  y el pago manual), `409 BOOKING_TRAVELER_EDIT_WINDOW_CLOSED`, y dos campos nuevos en
+  `BookingResource`. Se agregan las dos filas de tests de §5 y el riesgo del formulario que deja
+  escribir sin poder guardar.
+- `2026-08-20` — Ratificados como comportamiento correcto (no como deuda): la zona del guía ignora
+  `tour_date_id`/`status`, la fila de marcador de posición conserva `payment`, y el pago manual se
+  queda con la referencia dentro de `gateway_response` y sin notificación hasta que entre la
+  pasarela. Detalle en [`contracts.md`](./contracts.md) `## Changelog`.

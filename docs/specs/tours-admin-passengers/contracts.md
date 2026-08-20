@@ -68,8 +68,16 @@ comprobaciones distintas para el mismo dato es la forma habitual de que una se o
 catálogo no lo referencian.
 
 **Fila de marcador de posición.** Una reserva sin viajeros cargados devuelve un objeto con
-`"id": null`, `full_name` = nombre del titular de la reserva y el resto de campos en `null`
-(edge case de la spec). El frontend lo pinta como «Datos pendientes».
+`"id": null` y `full_name` = nombre del titular de la reserva (edge case de la spec). El frontend
+lo pinta como «Datos pendientes».
+
+Lo que queda en `null` son **los campos de la persona** que todavía no se cargó
+(`document_type`, `document_number`, `email`, `phone`, `emergency_contact_*`, `eps`, `eps_label`,
+`eps_other`, `medical_notes`, `dietary_restrictions`). Los campos que son **hechos de la reserva**
+se emiten con su valor real: `booking_number`, `tour_date_id`, `departure_starts_at` y **`payment`
+completo**. Ratificado por producto el 2026-08-20: el pie de la tabla muestra «Total por cobrar» y
+esa fila representa una reserva con dinero pendiente; con `payment` en `null` el total mentiría
+justo en el caso en que más interesa (nadie cargó los datos, probablemente tampoco pagó).
 
 ---
 
@@ -144,8 +152,15 @@ elimina: nadie lo consume desde el frontend.
 
 ### Query params
 
-`segment`, `q`, `per_page`, `page` — idénticos al endpoint del panel. **No** acepta
-`tour_date_id` (la salida va en la ruta) ni `status` (fijo en `confirmed` + `completed`).
+`segment`, `q`, `per_page`, `page` — idénticos al endpoint del panel.
+
+`tour_date_id` y `status` **se ignoran**: la salida va en la ruta y los estados son fijos
+(`confirmed` + `completed`). Enviarlos **no** produce `422` — se descartan en silencio. Ratificado
+por producto el 2026-08-20 como el comportamiento correcto, no como una desviación: un cliente que
+reutilice el mismo composable de la planilla del panel manda esos dos parámetros de más y no tiene
+sentido romperle la pantalla por un dato que de todos modos no puede cambiar nada. La tolerancia
+es solo de forma: hay test de que `?status[]=pending_payment` **no** le abre al guía ninguna
+reserva que no le corresponda, y `?tour_date_id=<otra salida>` no cambia la planilla devuelta.
 
 ### Response 200
 
@@ -410,6 +425,93 @@ del drawer.
 | `409` | Reserva cancelada, expirada o reembolsada. |
 | `422` | `amount` mayor al saldo pendiente. |
 
+### Decisiones cerradas el 2026-08-20 (no son pendientes)
+
+- **`reference` se persiste dentro de `payments.gateway_response` como `{"reference": …}`.** No hay
+  columna propia y **no se abre migración** por ella: es un texto libre que hoy nadie consulta ni
+  busca. Producto decidió integrar una pasarela de pagos más adelante; ese trabajo revisa el modelo
+  de `payments` completo y es el momento de decidir si la referencia merece columna e índice.
+- **El pago manual no notifica.** `ProcessPaymentAction` manda `BookingConfirmedNotification` al
+  completar un pago de pasarela; el pago de mostrador lo registra alguien que ya está frente al
+  cliente, y un correo de «pago recibido» a quien acaba de entregar el efectivo no aporta.
+  Se revisa junto con la pasarela, no antes.
+
+---
+
+## Shape compartido: `BookingResource` (zona del viajero)
+
+Lo devuelven `POST /api/v1/bookings`, `GET /api/v1/bookings/{bookingNumber}` y
+`PUT /api/v1/bookings/{bookingNumber}/travelers`
+(`app/Http/Resources/Booking/BookingResource.php`). No estaba documentado aquí; se escribe con el
+shape **real de hoy**, incluidos los dos campos de D10.
+
+```json
+{
+  "data": {
+    "booking_number": "9f1c…",
+    "status": "confirmed",
+    "travelers_count": 3,
+    "adults_count": 2,
+    "minors_count": 1,
+    "subtotal": "540000.00",
+    "discount_amount": "0.00",
+    "total_amount": "540000.00",
+    "paid_amount": "540000.00",
+    "currency": "COP",
+    "special_requests": null,
+    "contact_snapshot": { "full_name": "…", "email": "…", "phone": "…" },
+    "can_edit_travelers": true,
+    "travelers_edit_deadline": "2026-09-13T06:00:00-05:00",
+    "expires_at": null,
+    "confirmed_at": "2026-08-20T10:12:33-05:00",
+    "tour": { "id": 31, "slug": "valle-de-cocora", "name": "Valle de Cocora" },
+    "tour_date": { "id": 88, "starts_at": "2026-09-14T06:00:00-05:00", "ends_at": "…" },
+    "promotion": { "id": 7, "code": "COCORA10" },
+    "travelers": [ /* BookingTravelerResource[] */ ],
+    "created_at": "2026-08-19T21:40:02-05:00"
+  }
+}
+```
+
+| Campo | Notas |
+|---|---|
+| `tour` · `tour_date` · `promotion` · `travelers` | `whenLoaded`: **ausentes** si la relación no se cargó. `promotion` es `null` cuando la reserva no tiene ninguna. |
+| `contact_snapshot` | JSON tal cual se guardó al crear la reserva. |
+| `can_edit_travelers` | **Nuevo (D10).** `boolean`. `true` solo si la reserva no está bloqueada (`cancelled` / `expired` / `refunded`) **y** la ventana de edición del viajero sigue abierta. |
+| `travelers_edit_deadline` | **Nuevo (D10).** `string` ISO8601 o `null`. Instante hasta el que el titular puede editar a sus acompañantes: `tour_date.starts_at − passengers.traveler_edit_cutoff_hours`. `null` cuando la reserva no tiene salida resuelta o la salida no tiene `starts_at`: en ese caso **no bloquea**. |
+
+`travelers[]` es `BookingTravelerResource`: `id`, `full_name`, `is_minor`, `email`, `phone`,
+`document_type`, `document_number`, `birth_date`, y **solo para el dueño de la reserva**
+(`booking.user_id === auth()->id()`) el bloque `emergency_contact_name`,
+`emergency_contact_relationship`, `emergency_contact_phone`, `eps`, `eps_label`, `eps_other`,
+`medical_notes` y `dietary_restrictions`.
+
+### GET /api/v1/bookings/{bookingNumber}
+
+**Auth:** required · Alcance por **pertenencia**: `bookings.user_id === auth()->id()`
+(`routes/api.php:79`). Carga `tour`, `tourDate`, `travelers` y `promotion`.
+
+| Código | Cuándo |
+|---|---|
+| `404` | `BOOKING_NOT_FOUND` — inexistente, de otro tenant o de otro usuario. No se distingue: decir «existe pero no es tuya» ya filtra información. |
+
+### Ventana de edición del viajero (D10)
+
+El titular edita a sus acompañantes hasta **24 h antes** de `tour_dates.starts_at`; pasada esa
+hora la planilla se congela **solo para él**. Configurable en
+`config/montree.php` → `passengers.traveler_edit_cutoff_hours`
+(env `MONTREE_TRAVELER_EDIT_CUTOFF_HOURS`, default `24`).
+
+**El panel de la agencia no se ve afectado.** `PUT /api/v1/admin/passengers/{traveler}`,
+`POST /api/v1/admin/bookings/{bookingNumber}/passengers` y
+`POST /api/v1/admin/bookings/{bookingNumber}/payments` mantienen su contrato **sin cambios**: el
+cambio de última hora se resuelve por la agencia. Razón de negocio: el guía descarga o imprime la
+planilla el día anterior; si el dato cambia después, el papel miente y el contacto de emergencia
+impreso deja de servir.
+
+Casos borde del deadline: sin salida o sin `starts_at` ⇒ `null` ⇒ **no** bloquea. Salida ya
+iniciada o pasada ⇒ bloqueada (la cubre la misma comparación `now() >= starts_at − cutoff`).
+
 ---
 
 ## PUT /api/v1/bookings/{bookingNumber}/travelers (existente — se amplía)
@@ -427,6 +529,30 @@ la máscara del permiso médico.
 
 El resto del contrato (upsert por `id`, límites de `adults_count`/`minors_count`, `404` ajeno,
 `409` cancelada) no cambia.
+
+### Response 200
+
+`{ "data": { /* BookingResource, ver arriba */ } }` — incluye `can_edit_travelers` y
+`travelers_edit_deadline`.
+
+### Errores
+
+| Código | `error_code` | Cuándo |
+|---|---|---|
+| `404` | `BOOKING_NOT_FOUND` | Reserva inexistente o de otro usuario. |
+| `409` | `BOOKING_TRAVELERS_LOCKED` | Reserva `cancelled`, `expired` o `refunded`. |
+| `409` | `BOOKING_TRAVELER_EDIT_WINDOW_CLOSED` | **Nuevo (D10).** Se pasó la ventana de edición del titular. El mensaje nombra el deadline y remite a la agencia. |
+| `422` | — | Validación del payload (`eps_other` faltante con `eps = other`, etc.). |
+
+Cuerpo del error: `{ "message": "…", "error_code": "…" }` (`BookingException::toResponse()`).
+
+**Por qué `409` y no `422`:** es una regla de **estado**, no un problema del payload — la misma
+familia que el `BOOKING_TRAVELERS_LOCKED` que ya emite este camino. El payload puede ser
+impecable y aun así llegar tarde.
+
+**Orden de las guardas:** primero `isLocked()` (reserva cancelada/expirada/reembolsada), después la
+ventana. Una reserva cancelada devuelve `BOOKING_TRAVELERS_LOCKED` aunque también esté fuera de
+ventana.
 
 ---
 
@@ -448,3 +574,30 @@ menú (F018): si el item aparece, la ruta responde 200.
 El guía **no** entra a `/admin/*`: `routes/web.php:79` lo cierra con `tenant_admin.only` +
 `can:dashboard.view`. El handoff pide «el mismo componente para guía y administrador» y se cumple
 a nivel de **componente**, no de ruta.
+
+---
+
+## Changelog
+
+- `2026-08-20` — Redacción inicial de los contratos del feature.
+- `2026-08-20` — **D10, ventana de edición del viajero.** Se documenta por primera vez el shape de
+  `BookingResource` y el endpoint `GET /api/v1/bookings/{bookingNumber}`, con los dos campos nuevos
+  `can_edit_travelers` (bool) y `travelers_edit_deadline` (ISO8601 o `null`), y se agrega a
+  `PUT /api/v1/bookings/{bookingNumber}/travelers` el error
+  `409 BOOKING_TRAVELER_EDIT_WINDOW_CLOSED` con su tabla de errores completa. Razón: la regla ya
+  está implementada y el contrato no la describía; los dos campos son la única forma que tiene el
+  frontend de no llevar al usuario a un `409`. **Breaking para el frontend de la zona del viajero**
+  (contrato ampliado, no roto: los campos son aditivos y el `409` es un camino de error nuevo).
+  **Sin cambio** para los endpoints del panel (`/api/v1/admin/*`): el administrador no queda
+  sujeto a la ventana, a propósito.
+- `2026-08-20` — **Fila de marcador de posición: `payment` se emite, y esa es LA regla.** Antes el
+  contrato decía «el resto de campos en `null`» y la implementación se había anotado como
+  desviación. Ratificado por producto: solo van en `null` los campos de la persona; sin `payment`,
+  el «Total por cobrar» del pie mentiría.
+- `2026-08-20` — **La zona del guía ignora `tour_date_id` y `status` en vez de devolver `422`.**
+  Antes el contrato decía «no acepta». Ratificado por producto como comportamiento correcto:
+  tolerancia de parámetros extra, con test de que ignorarlos no le abre al guía nada que no le
+  corresponda.
+- `2026-08-20` — **Pago manual: cerrado como está.** La `reference` sigue dentro de
+  `gateway_response` y el registro no notifica. Se revisa cuando entre la pasarela de pagos; deja
+  de figurar como pendiente abierto.

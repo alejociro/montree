@@ -86,6 +86,10 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 - [ ] Página `Guide/Passengers.vue` + ruta + enlace desde `Guide/Schedule.vue`
 - [ ] Página `Guide/TourShow.vue`: contenido, ruta y mapa (`TourRouteMapSection` de PR #15), itinerario, logística, **sus** salidas y la planilla, sin ninguna acción de escritura
 - [ ] Estados loading (skeleton de filas), error y vacío
+- [ ] **(añadido 2026-08-20 · D10)** El formulario del viajero (`BookingTravelersSection.vue` y su
+      página) consume `can_edit_travelers` y `travelers_edit_deadline` de `BookingResource`: con la
+      ventana cerrada se pinta en **solo lectura** con el aviso de hasta cuándo se podía editar y el
+      camino de contacto con la agencia. Nada de dejar escribir para devolver un `409`
 - [ ] Cadenas nuevas en `lang/en.json`
 
 ## Fase 5 — Guía obligatorio y disponibilidad (`montree-backend-dev` + `montree-frontend-dev`) · ~2 días
@@ -210,11 +214,12 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   (D5), que no es columna. La búsqueda sí baja a SQL por `BookingTraveler::scopeSearch()`.
   Contrapartida: la planilla de una salida se carga entera en memoria. Es una salida, no un
   catálogo; si algún día un tour tuviera miles de reservas, esto es lo primero que hay que revisar.
-- **Desviación menor del contrato: la fila de marcador de posición conserva los campos de la
-  reserva.** El contrato dice «`id: null`, `full_name` del titular y el resto en `null`»; lo que
-  quedan en `null` son los campos **de la persona**. `booking_number`, `tour_date_id`,
-  `departure_starts_at` y `payment` se emiten, porque son hechos de la reserva y no del pasajero
-  que falta: sin `payment`, esa fila no sumaría al pie de la tabla y el total por cobrar mentiría.
+- ~~**Desviación menor del contrato:**~~ **RATIFICADO (2026-08-20) — es LA regla, no una
+  desviación. La fila de marcador de posición conserva los campos de la reserva.** Lo que queda en
+  `null` son los campos **de la persona**. `booking_number`, `tour_date_id`, `departure_starts_at`
+  y `payment` se emiten, porque son hechos de la reserva y no del pasajero que falta: sin
+  `payment`, esa fila no sumaría al pie de la tabla y el total por cobrar mentiría. `contracts.md
+  §0` ya está corregido con este texto; no hay nada que cambiar en el código.
 - **`UpdatePassengerAction::handle()` pasó a recibir el `Booking`.** Con él dentro llegó la guarda
   de estado (`Booking::isLocked()`: cancelada, expirada o reembolsada), que antes vivía suelto en
   `SyncBookingTravelersAction` con dos estados en vez de tres. Ahora los tres caminos de escritura
@@ -225,15 +230,21 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   payload, la semántica de reemplazo completo de `UpdatePassengerAction` los escribiría como `null`
   y `sales` terminaría borrando la alergia que el guía necesita — justo lo que D7 prohíbe.
 - **`payments` no tiene columna para la referencia del pago manual.** Va dentro de
-  `gateway_response` como `{"reference": …}`. No se abrió migración: la Fase 3 no toca esquema y
-  una columna nueva por un texto libre que nadie consulta no lo justifica. Si mañana se quiere
-  buscar por referencia, ahí sí.
+  `gateway_response` como `{"reference": …}`. **DECIDIDO (2026-08-20): se queda así.** No se abre
+  migración por un texto libre que hoy nadie consulta. Producto decidió integrar una pasarela de
+  pagos más adelante; ese trabajo revisa `payments` completo y es ahí donde se decide si la
+  referencia merece columna e índice. **No es un pendiente abierto.**
 - **`RegisterManualPaymentAction` no notifica.** `ProcessPaymentAction` manda
   `BookingConfirmedNotification` al completar el pago; el pago de mostrador lo registra alguien que
-  ya está frente al cliente. Queda anotado por si producto lo quiere.
-- **La zona del guía ignora `tour_date_id` y `status`** en vez de devolver 422, como pide el
-  contrato («no acepta»): la salida va en la ruta y los estados son fijos. Hay test de que
-  `?status[]=pending_payment` no le abre nada.
+  ya está frente al cliente. **DECIDIDO (2026-08-20): se queda así**, y se revisa junto con la
+  pasarela de pagos. **No es un pendiente abierto.**
+- **La zona del guía ignora `tour_date_id` y `status`** en vez de devolver 422. **RATIFICADO
+  (2026-08-20): ignorar es lo correcto, no se cambia.** La salida ya va en la ruta y los estados
+  son fijos, así que ninguno de los dos parámetros puede cambiar nada; romperle la pantalla a un
+  cliente que reutilice el composable del panel —que sí los manda— sería castigar una tolerancia
+  inofensiva. La tolerancia es solo de forma: hay test de que `?status[]=pending_payment` **no** le
+  abre al guía ninguna reserva que no le corresponda. `contracts.md` ya dice «se ignoran» en vez
+  de «no acepta».
 - **El CSV se emite con `fputcsv`, que en PHP 8.4 entrecomilla los campos con espacios.** El
   encabezado sale como `"Nombre completo","Tipo de documento",Documento,…`: es el mismo CSV del
   contrato, citado. El test compara la fila ya parseada, no la cadena.
@@ -250,6 +261,64 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   `Guide/TourDatePassengerExportController` y `Guide/GuideTourController`).
 
 
+### D10 — ventana de edición del viajero (2026-08-20)
+
+Decisión nueva ratificada por producto: el titular edita a sus acompañantes hasta **24 h antes**
+de `tour_dates.starts_at`; pasada esa hora la planilla se congela **solo para él**.
+
+- [x] `config/montree.php` → `passengers.traveler_edit_cutoff_hours` (env `MONTREE_TRAVELER_EDIT_CUTOFF_HOURS`, default 24). El 24 no aparece en ninguna rama de la lógica.
+- [x] `Booking::travelerEditDeadline(): ?CarbonInterface` y `Booking::isTravelerEditWindowClosed(): bool`
+- [x] La guarda se aplica **solo** en `SyncBookingTravelersAction`, después de `isLocked()`
+- [x] `BookingException::travelerEditWindowClosed()` — mismo tipo y misma forma (`message` + `error_code`) que `travelersLocked()`, `409`, código `BOOKING_TRAVELER_EDIT_WINDOW_CLOSED`
+- [x] `BookingResource`: `can_edit_travelers` (bool) y `travelers_edit_deadline` (ISO8601 o `null`)
+- [x] Cadena nueva en `lang/en.json`
+- [x] `tests/Feature/Passengers/TravelerEditWindowTest.php` (7) + `tests/Unit/Booking/TravelerEditDeadlineTest.php` (2)
+
+Notas:
+
+- **El cutoff NO entró en `Booking::isLocked()`.** Esa guarda la comparten los tres caminos de
+  escritura (`SyncBookingTravelersAction:22`, `UpdatePassengerAction:45`,
+  `RegisterManualPaymentAction:30`); metido ahí, habría congelado también el panel y el pago
+  manual, que son justo por donde se resuelve el cambio de última hora.
+- **Sin salida o sin `starts_at` ⇒ `deadline = null` ⇒ no bloquea.** A nivel de esquema
+  `bookings.tour_date_id` y `tour_dates.starts_at` son `NOT NULL`, así que el caso solo se alcanza
+  con la relación no resuelta; se cubre con un test unitario, no con uno de HTTP que tendría que
+  falsear el esquema.
+- **Salida ya iniciada o pasada:** la cubre la misma comparación (`now() >= starts_at - cutoff`),
+  sin rama aparte.
+- **Se eligió `409`, no `422`**, por coherencia con el `BOOKING_TRAVELERS_LOCKED` que ya emite ese
+  mismo camino: los dos son una regla de estado, no un problema del payload.
+- ~~**CONTRATO PENDIENTE DE ACTUALIZAR.**~~ **RESUELTO (2026-08-20).** `contracts.md` ya tiene la
+  sección «Shape compartido: `BookingResource` (zona del viajero)» con el shape real, el endpoint
+  `GET /api/v1/bookings/{bookingNumber}`, los dos campos nuevos (`can_edit_travelers: boolean`,
+  `travelers_edit_deadline: string|null` ISO8601), el bloque «Ventana de edición del viajero (D10)»
+  y la tabla de errores de `PUT /api/v1/bookings/{bookingNumber}/travelers` con
+  `409 BOOKING_TRAVELER_EDIT_WINDOW_CLOSED`. La decisión quedó además como **fila 8** de la tabla
+  de decisiones de `spec.md` y como **D10** en `plan.md §2`.
+- [ ] **Pendiente de frontend (Fase 4).** El formulario del viajero todavía deja escribir con la
+  ventana cerrada y solo se entera por el `409`. Ítem añadido al checklist de la Fase 4.
+- **Verificación:** `php artisan test --compact` → 661/661 (era 652, +9). `vendor/bin/pint --dirty`
+  en verde.
+
+
 ## Pendiente heredado
 
 - [ ] Borrar las ramas `backup/pre-author-fix-*` cuando el usuario confirme
+
+---
+
+## Changelog
+
+- `2026-08-20` — Generación inicial a partir de `plan.md`.
+- `2026-08-20` — Se registran las notas de implementación de las Fases 2 y 3.
+- `2026-08-20` — **D10 (ventana de edición del viajero).** Se marca el bloque backend como hecho
+  (661/661 en la suite, +9) y se **añade un ítem al checklist de la Fase 4**: el formulario del
+  viajero debe consumir `can_edit_travelers`/`travelers_edit_deadline` y pintarse en solo lectura
+  con el aviso, en vez de dejar escribir y recibir el `409`. La nota «CONTRATO PENDIENTE DE
+  ACTUALIZAR» queda **resuelta**: `contracts.md` ya documenta `BookingResource`,
+  `GET /api/v1/bookings/{bookingNumber}` y el error nuevo.
+- `2026-08-20` — Tres observaciones de la Fase 3 pasan de deuda a **comportamiento ratificado**:
+  (a) la zona del guía ignora `tour_date_id`/`status`; (b) la fila de marcador de posición conserva
+  `payment`; (c) el pago manual se queda como está —referencia en `gateway_response`, sin
+  notificación— y se revisa cuando entre la pasarela de pagos. Ninguna de las tres genera trabajo
+  pendiente. Se conserva el texto original tachado para no perder el rastro.

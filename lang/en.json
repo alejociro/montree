@@ -748,6 +748,7 @@
     "Los campos marcados con * son obligatorios.": "Fields marked with * are required.",
     "Los correos electrónicos no coinciden.": "The email addresses do not match.",
     "Los datos de cada viajero (nombre, documento, etc.) se completan después de reservar, desde el detalle de tu reserva.": "Each traveler's details (name, ID, etc.) are filled in after booking, from your booking detail.",
+    "Los datos de los viajeros se podían editar hasta el :deadline. Para un cambio de última hora, contacta a la agencia.": "Traveler details could be edited until :deadline. For a last-minute change, contact the agency.",
     "Los enlaces de confirmación caducan por seguridad. Ingresa tu correo y te enviamos uno nuevo.": "Confirmation links expire for security reasons. Enter your email and we will send you a new one.",
     "Los nombres y apellidos son obligatorios.": "First and last names are required.",
     "Los nuevos límites aplican de inmediato. Si tienes dudas, escríbenos.": "The new limits apply immediately. If you have questions, write to us.",
