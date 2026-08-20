@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\TourDateDisplayStatus;
 use App\Enums\TourDateStatus;
+use Carbon\CarbonPeriod;
 use Database\Factories\TourDateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $tenant_id
  * @property int $tour_id
- * @property int|null $guide_id
+ * @property int $guide_id
  * @property int|null $route_id
  * @property int|null $provider_id
  * @property Carbon $starts_at
@@ -91,6 +92,33 @@ class TourDate extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Días calendario que la salida le ocupa al guía: `[date(starts_at) …
+     * date(ends_at)]`. Un tour de 5 días bloquea los 5 aunque el último termine
+     * a las 9 de la mañana (D9).
+     */
+    public function occupiedDays(): CarbonPeriod
+    {
+        $end = $this->ends_at ?? $this->starts_at;
+
+        return CarbonPeriod::create(
+            $this->starts_at->copy()->startOfDay(),
+            '1 day',
+            $end->copy()->startOfDay(),
+        );
+    }
+
+    /**
+     * Salidas que ocupan al guía. Una `cancelled` libera sus días (D9).
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeOccupying(Builder $query): Builder
+    {
+        return $query->whereIn('status', [TourDateStatus::Open, TourDateStatus::Closed]);
     }
 
     /**
