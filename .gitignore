@@ -34,3 +34,7 @@ yarn-error.log
 /tour-detail-*.png
 /e2e-audit.cjs
 /*.png
+
+# Paquete de handoff de diseño: material de referencia local, no código del proyecto
+/design_handoff_*
+/*.zip
