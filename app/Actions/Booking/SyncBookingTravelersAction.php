@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Booking;
 
 use App\Actions\Passengers\UpdatePassengerAction;
-use App\Enums\BookingStatus;
 use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\BookingTraveler;
@@ -13,8 +12,6 @@ use Illuminate\Support\Facades\DB;
 
 final class SyncBookingTravelersAction
 {
-    private const LOCKED_STATUSES = [BookingStatus::Cancelled, BookingStatus::Expired];
-
     public function __construct(private UpdatePassengerAction $updatePassenger) {}
 
     /**
@@ -22,7 +19,7 @@ final class SyncBookingTravelersAction
      */
     public function handle(Booking $booking, array $travelers): Booking
     {
-        if (in_array($booking->status, self::LOCKED_STATUSES, true)) {
+        if ($booking->isLocked()) {
             throw BookingException::travelersLocked();
         }
 
@@ -35,6 +32,7 @@ final class SyncBookingTravelersAction
                 $passenger = $id === null ? null : $existing->get($id);
 
                 $keptIds[] = $this->updatePassenger->handle(
+                    $booking,
                     $passenger ?? $booking->travelers()->make(),
                     $traveler,
                 )->id;

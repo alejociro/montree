@@ -58,8 +58,22 @@ final class BookingException extends \Exception implements HttpExceptionInterfac
         return new self('BOOKING_NOT_FOUND', __('No encontramos la reserva indicada.'), 404);
     }
 
+    public static function travelersComplete(int $travelersCount): self
+    {
+        return new self(
+            'BOOKING_TRAVELERS_COMPLETE',
+            __('La reserva ya tiene sus :count pasajeros cargados.', ['count' => $travelersCount]),
+            409,
+        );
+    }
+
+    public static function paymentsLocked(): self
+    {
+        return new self('BOOKING_PAYMENTS_LOCKED', __('No es posible registrar pagos sobre una reserva cancelada, expirada o reembolsada.'), 409);
+    }
+
     public static function travelersLocked(): self
     {
-        return new self('BOOKING_TRAVELERS_LOCKED', __('No es posible editar los viajeros de una reserva cancelada o expirada.'), 409);
+        return new self('BOOKING_TRAVELERS_LOCKED', __('No es posible editar los viajeros de una reserva cancelada, expirada o reembolsada.'), 409);
     }
 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Passengers;
 
 use App\Enums\Eps;
+use App\Exceptions\BookingException;
+use App\Models\Booking;
 use App\Models\BookingTraveler;
 
 /**
@@ -38,9 +40,14 @@ final class UpdatePassengerAction
     /**
      * @param  array<string, mixed>  $attributes
      */
-    public function handle(BookingTraveler $passenger, array $attributes): BookingTraveler
+    public function handle(Booking $booking, BookingTraveler $passenger, array $attributes): BookingTraveler
     {
+        if ($booking->isLocked()) {
+            throw BookingException::travelersLocked();
+        }
+
         $passenger->fill($this->normalize($attributes))->save();
+        $passenger->setRelation('booking', $booking);
 
         return $passenger;
     }

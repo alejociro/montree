@@ -111,6 +111,20 @@ class Booking extends Model
     }
 
     /**
+     * Estados en los que la reserva ya no admite escritura: ni pasajeros ni
+     * pagos. Una sola lista para los tres caminos que escriben sobre ella
+     * (sync del viajero, panel y pago manual).
+     */
+    public function isLocked(): bool
+    {
+        return in_array($this->status, [
+            BookingStatus::Cancelled,
+            BookingStatus::Expired,
+            BookingStatus::Refunded,
+        ], true);
+    }
+
+    /**
      * Saldo de la reserva. El dinero vive en `bookings` y `payments`; esto no es
      * una columna (D5).
      *
