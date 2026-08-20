@@ -241,8 +241,7 @@ const statusMeta: Record<
     },
     in_progress: {
         label: t('En curso'),
-        classes:
-            'border-transparent bg-primary text-primary-foreground',
+        classes: 'border-transparent bg-primary text-primary-foreground',
     },
     finished: {
         label: t('Finalizada'),

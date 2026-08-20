@@ -28,7 +28,9 @@ const { configuration, displayName } = useTenant();
         <div
             class="relative hidden h-full flex-col overflow-hidden lg:flex"
             :class="
-                configuration?.hero_image_url ? 'bg-brand-ink' : 'bg-brand-green'
+                configuration?.hero_image_url
+                    ? 'bg-brand-ink'
+                    : 'bg-brand-green'
             "
         >
             <!-- Background image with overlay -->

@@ -63,6 +63,7 @@ export function useTourRouteMap(
     let markers: LeafletMarker[] = [];
     let clusterMarker: LeafletMarker | null = null;
     let grouped: boolean | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     const pickupIndex = computed(() =>
         options.stops.value.findIndex((stop) => stop.kind === 'pickup'),
@@ -400,7 +401,18 @@ export function useTourRouteMap(
         map.on('mouseout', () => map?.scrollWheelZoom.disable());
 
         status.value = 'ready';
-        window.setTimeout(() => map?.invalidateSize(), 0);
+
+        // WHY: Leaflet mide el contenedor al montar. En el detalle de tour el mapa
+        // vive en una columna más angosta que la ventana, así que la primera medida
+        // llega corta y el encuadre queda desplazado: hay que re-medir y volver a
+        // aplicar la vista. El observer cubre el resto de cambios de ancho.
+        window.setTimeout(() => {
+            map?.invalidateSize();
+            showView(activeView.value);
+        }, 0);
+
+        resizeObserver = new ResizeObserver(() => map?.invalidateSize());
+        resizeObserver.observe(element);
     }
 
     watch(
@@ -414,6 +426,8 @@ export function useTourRouteMap(
     );
 
     onBeforeUnmount(() => {
+        resizeObserver?.disconnect();
+        resizeObserver = null;
         map?.remove();
         map = null;
         markers = [];

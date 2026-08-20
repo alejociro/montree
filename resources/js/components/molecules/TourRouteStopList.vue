@@ -43,8 +43,8 @@ watch(
             class="grid w-full grid-cols-[30px_1fr] gap-3 border-b border-l-[3px] border-border px-4 py-3.5 text-left transition last:border-b-0"
             :class="
                 index === selectedIndex
-                    ? 'border-l-primary bg-secondary'
-                    : 'border-l-transparent hover:bg-secondary/60'
+                    ? 'border-l-brand-green-600 bg-brand-green-100'
+                    : 'border-l-transparent hover:bg-brand-green-100/60'
             "
             @click="emit('select', index)"
         >

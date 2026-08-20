@@ -58,6 +58,7 @@ final class PublicTourResource extends JsonResource
             ])->values(),
             'requirements' => $this->requirements ?? [],
             'includes' => $this->includes ?? [],
+            'excludes' => $this->excludes ?? [],
             'stops' => TourStopResource::collection($this->stops)->resolve(),
             'meeting_point' => $this->meeting_point,
             'meeting_latitude' => $this->meeting_latitude,

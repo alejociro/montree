@@ -203,6 +203,23 @@ class DemoTenantSeeder extends Seeder
                 'meeting_latitude' => 4.5350,
                 'meeting_longitude' => -75.6813,
                 'status' => TourStatus::Active,
+                'includes' => [
+                    'Alojamiento 2 noches en Salento',
+                    'Comidas durante la caminata',
+                    'Guía experto certificado',
+                    'Equipo necesario y seguro',
+                ],
+                'excludes' => [
+                    'Vuelos hacia Armenia',
+                    'Bebidas alcohólicas',
+                    'Actividades no mencionadas',
+                    'Propinas',
+                ],
+                'requirements' => [
+                    'Usa ropa de senderismo adecuada y calzado resistente.',
+                    'Mantente hidratado durante todo el recorrido.',
+                    'Lleva impermeable: la lluvia en el valle es frecuente después del mediodía.',
+                ],
             ])
             ->create();
 

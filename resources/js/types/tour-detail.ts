@@ -15,6 +15,12 @@ export type TourDetailItineraryStep = {
     duration_label: string | null;
 };
 
+/** Dato duro del tour, en la rejilla de cuatro que va bajo la descripción. */
+export type TourFact = {
+    label: string;
+    value: string;
+};
+
 export type TourDetailDate = {
     id: number;
     starts_at: string;
@@ -48,6 +54,7 @@ export type TourDetail = {
     itinerary: TourDetailItineraryStep[];
     requirements: string[];
     includes: string[];
+    excludes: string[];
     stops: TourRouteStop[];
     meeting_point: string | null;
     meeting_latitude: string | null;

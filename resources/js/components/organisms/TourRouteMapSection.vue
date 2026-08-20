@@ -62,12 +62,12 @@ defineExpose({ selectStop });
 </script>
 
 <template>
-    <section id="ruta" class="scroll-mt-[70px] space-y-4">
+    <section id="ruta" class="min-w-0 scroll-mt-[70px] space-y-4">
         <div>
-            <h2 class="text-2xl font-bold">
+            <h2 class="text-[26px] font-semibold tracking-tight">
                 {{ $t('Ruta y puntos de encuentro') }}
             </h2>
-            <p class="mt-1 text-sm text-muted-foreground">
+            <p class="mt-1 text-[13.5px] text-muted-foreground">
                 {{
                     $t(
                         'Recogida, zona del tour, ruta completa y punto de regreso. Toca cualquier parada para centrarla.',
@@ -78,20 +78,24 @@ defineExpose({ selectStop });
 
         <div
             v-if="availableViews.length > 0"
-            role="tablist"
-            class="flex w-max gap-1.5 rounded-full bg-secondary p-1"
+            class="-mx-1 overflow-x-auto px-1"
         >
-            <button
-                v-for="view in availableViews"
-                :key="view"
-                type="button"
-                role="tab"
-                :aria-selected="activeView === view"
-                class="rounded-full px-4 py-2 text-[13px] font-semibold text-secondary-foreground transition aria-selected:bg-brand-ink aria-selected:text-brand-cream"
-                @click="showView(view)"
+            <div
+                role="tablist"
+                class="flex w-max gap-1.5 rounded-full bg-brand-green-100 p-1"
             >
-                {{ viewLabels[view] }}
-            </button>
+                <button
+                    v-for="view in availableViews"
+                    :key="view"
+                    type="button"
+                    role="tab"
+                    :aria-selected="activeView === view"
+                    class="rounded-full px-4 py-2 text-[13px] font-semibold text-brand-green transition aria-selected:bg-brand-ink aria-selected:text-brand-cream"
+                    @click="showView(view)"
+                >
+                    {{ viewLabels[view] }}
+                </button>
+            </div>
         </div>
 
         <div
