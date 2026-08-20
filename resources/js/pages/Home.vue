@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import type { CatalogCategory, CatalogTour } from '@/types/catalog';
@@ -193,7 +194,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 class="size-3.5"
                                 aria-hidden="true"
                             />
-                            {{ category.name }}
+                            {{ categoryLabel(category.name) }}
                             <span class="text-white/60"
                                 >({{ category.tours_count }})</span
                             >
@@ -269,7 +270,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         </span>
                         <div>
                             <p class="text-sm font-bold text-foreground">
-                                {{ category.name }}
+                                {{ categoryLabel(category.name) }}
                             </p>
                             <p class="mt-0.5 text-xs text-muted-foreground">
                                 {{

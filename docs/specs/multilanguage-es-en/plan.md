@@ -149,6 +149,15 @@ pueden llamar a `t()` donde se declaran y por eso se traducen en su punto de ren
 (`Breadcrumbs.vue`, `NavMain.vue`, `PermissionPicker.vue`, `AuthSplitLayout.vue`), un solo lugar
 cada uno en vez de N páginas.
 
+Mismo tratamiento para el catálogo de categorías por defecto (`config/montree.php` →
+`default_categories`): son datos en la base, pero el texto lo escribe la aplicación y sale igual en
+todas las agencias, así que se traducen en el render con `categoryLabel()`
+(`resources/js/lib/categories.ts`), usado en las diez pantallas que muestran el nombre de una
+categoría. Las categorías que crea una agencia salen tal cual, porque `t()` devuelve la clave
+cuando no hay entrada. El archivo declara además la lista literal de nombres: `TranslationCatalogTest`
+solo mira `app/`, `resources/js` y `resources/views`, y sin ese literal marcaría las entradas como
+huérfanas por vivir su única fuente en `config/`.
+
 ## 4. Tests
 
 ### Feature tests (backend)

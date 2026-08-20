@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import { show as publicTourShow } from '@/routes/tours';
 import type { Tour, TourDifficulty, TourShowStats } from '@/types/tour';
@@ -163,7 +164,7 @@ const mapsUrl = computed(() => {
                         variant="secondary"
                         class="bg-white/15 text-white backdrop-blur-sm"
                     >
-                        {{ props.tour.category.name }}
+                        {{ categoryLabel(props.tour.category.name) }}
                     </Badge>
                 </div>
 

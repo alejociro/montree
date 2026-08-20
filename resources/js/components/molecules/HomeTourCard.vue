@@ -4,6 +4,7 @@ import { Sparkles, Star } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
+import { categoryLabel } from '@/lib/categories';
 import { formatCurrency } from '@/lib/format';
 import type { CatalogTour } from '@/types/catalog';
 
@@ -51,7 +52,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                 v-if="tour.category"
                 class="absolute top-3 left-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur"
             >
-                {{ tour.category.name }}
+                {{ categoryLabel(tour.category.name) }}
             </span>
 
             <span

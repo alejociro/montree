@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { categoryLabel } from '@/lib/categories';
 import { formatTourDate, intlLocale } from '@/lib/format';
 import { index as catalogIndex } from '@/routes/catalog';
 import { show as tourShow } from '@/routes/tours';
@@ -225,7 +226,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             </Link>
             <ChevronLeft class="size-3.5 rotate-180" />
             <span v-if="tour.category" class="transition hover:text-foreground">
-                {{ tour.category.name }}
+                {{ categoryLabel(tour.category.name) }}
             </span>
             <ChevronLeft v-if="tour.category" class="size-3.5 rotate-180" />
             <span class="truncate text-foreground">{{ tour.name }}</span>
@@ -324,7 +325,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             <div class="space-y-6">
                 <!-- Category badge -->
                 <Badge v-if="tour.category" variant="secondary" class="text-xs">
-                    {{ tour.category.name }}
+                    {{ categoryLabel(tour.category.name) }}
                 </Badge>
 
                 <!-- Tour name -->
@@ -683,7 +684,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                             variant="secondary"
                             class="text-[10px]"
                         >
-                            {{ related.category.name }}
+                            {{ categoryLabel(related.category.name) }}
                         </Badge>
                         <h3 class="leading-tight font-semibold">
                             {{ related.name }}
