@@ -55,21 +55,21 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 3 — API de la planilla (`montree-backend-dev`) · ~2,5 días
 
-- [ ] `App\Queries\PassengerManifestQuery` con eager loading y resumen
-- [ ] `PassengerResource` con el **único** `mergeWhen()` del permiso médico sobre `eps`, `eps_label`, `eps_other` y `medical_notes`
-- [ ] `PassengerManifestSummary` (omite `with_notes` sin el permiso) y `DepartureOptionResource`
-- [ ] `meta.can_view_medical` en la respuesta de las dos zonas
-- [ ] `PassengerManifestRequest`: query params + **403** en `segment=obs` sin el permiso médico
-- [ ] `Api\V1\Admin\TourPassengerController@index` + ruta con `can:bookings.view`
-- [ ] `Api\V1\Guide\TourDatePassengerController@index` + ruta con `can:guide.travelers.view` y comprobación `tourDate.guide_id === auth()->id()`
-- [ ] `Api\V1\Guide\GuideTourController@show` — detalle en lectura, alcance por pertenencia, `my_departures` filtrado
-- [ ] Eliminar `GuideController@travelers` y su ruta (`routes/api.php:91`)
-- [ ] Exportadores CSV (panel y guía), streamed, con BOM UTF-8; **sin** las columnas `EPS` y `Observaciones` cuando falta el permiso — no vacías, ausentes
-- [ ] `StorePassengerAction` / `UpdatePassengerAction` + Form Requests + `PassengerController`, con la **máscara de escritura** (`prepareForValidation()` descarta los tres campos sensibles; no rechaza la petición)
-- [ ] `RegisterManualPaymentAction` + `BookingPaymentController@store`
-- [ ] `BookingTravelerPolicy` registrada
-- [ ] Tests de la tabla de `plan.md §5`: privacidad, aislamiento, conteo de consultas, y los **cinco** de la Decisión 7 (campos, segmento, CSV, escritura, `with_notes`)
-- [ ] `php artisan wayfinder:generate` (con PHP 8.4 en el PATH)
+- [x] `App\Queries\PassengerManifestQuery` con eager loading y resumen
+- [x] `PassengerResource` con el **único** `mergeWhen()` del permiso médico sobre `eps`, `eps_label`, `eps_other` y `medical_notes`
+- [x] `PassengerManifestSummary` (omite `with_notes` sin el permiso) y `DepartureOptionResource`
+- [x] `meta.can_view_medical` en la respuesta de las dos zonas
+- [x] `PassengerManifestRequest`: query params + **403** en `segment=obs` sin el permiso médico
+- [x] `Api\V1\Admin\TourPassengerController@index` + ruta con `can:bookings.view`
+- [x] `Api\V1\Guide\TourDatePassengerController@index` + ruta con `can:guide.travelers.view` y comprobación `tourDate.guide_id === auth()->id()`
+- [x] `Api\V1\Guide\GuideTourController@show` — detalle en lectura, alcance por pertenencia, `my_departures` filtrado
+- [x] Eliminar `GuideController@travelers` y su ruta (`routes/api.php:91`)
+- [x] Exportadores CSV (panel y guía), streamed, con BOM UTF-8; **sin** las columnas `EPS` y `Observaciones` cuando falta el permiso — no vacías, ausentes
+- [x] `StorePassengerAction` / `UpdatePassengerAction` + Form Requests + `PassengerController`, con la **máscara de escritura** (`prepareForValidation()` descarta los tres campos sensibles; no rechaza la petición)
+- [x] `RegisterManualPaymentAction` + `BookingPaymentController@store`
+- [x] `BookingTravelerPolicy` registrada
+- [x] Tests de la tabla de `plan.md §5`: privacidad, aislamiento, conteo de consultas, y los **cinco** de la Decisión 7 (campos, segmento, CSV, escritura, `with_notes`)
+- [x] `php artisan wayfinder:generate` (con PHP 8.4 en el PATH)
 
 ## Fase 4 — Planilla + zona del guía (`montree-frontend-dev`) · ~3 días
 
@@ -192,6 +192,63 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   render SSR del componente con un viajero de `eps = other` (5 radios, uno marcado, campo libre
   visible con su valor, observaciones y aviso de privacidad). **No** se pudo abrir el navegador
   desde este entorno: la comprobación visual y el foco real quedan para la Fase 8.
+
+### Fase 3 — API de la planilla (2026-08-20)
+
+- **El único chequeo del permiso médico vive en `PassengerResource::canViewMedical()`, y la
+  regla en `BookingTravelerPolicy::viewMedical`.** Las otras cuatro superficies (segmento,
+  resumen, CSV y máscara de escritura) preguntan por el mismo gate, no por el string del permiso:
+  el nombre `bookings.passengers.medical.view` aparece una sola vez en todo el backend.
+- **La respuesta se memoiza en `$request->attributes`.** Con teams activos, cada `can()` vuelve a
+  leer los roles del usuario: una planilla de 50 filas disparaba 119 consultas, 105 de ellas para
+  preguntar dos veces por fila lo mismo. Lo encontró
+  `PassengerManifestQueryCountTest`, que ahora exige menos de 20.
+- **La planilla no sale de una sola consulta paginada sobre `booking_travelers`.** Son dos
+  acotadas —viajeros y reservas sin viajeros— que se mezclan en memoria y se paginan con un
+  `LengthAwarePaginator` construido a mano. Motivos: (a) la fila de marcador de posición del edge
+  case no existe como registro; (b) los segmentos `due`/`paid` se deciden sobre dinero **derivado**
+  (D5), que no es columna. La búsqueda sí baja a SQL por `BookingTraveler::scopeSearch()`.
+  Contrapartida: la planilla de una salida se carga entera en memoria. Es una salida, no un
+  catálogo; si algún día un tour tuviera miles de reservas, esto es lo primero que hay que revisar.
+- **Desviación menor del contrato: la fila de marcador de posición conserva los campos de la
+  reserva.** El contrato dice «`id: null`, `full_name` del titular y el resto en `null`»; lo que
+  quedan en `null` son los campos **de la persona**. `booking_number`, `tour_date_id`,
+  `departure_starts_at` y `payment` se emiten, porque son hechos de la reserva y no del pasajero
+  que falta: sin `payment`, esa fila no sumaría al pie de la tabla y el total por cobrar mentiría.
+- **`UpdatePassengerAction::handle()` pasó a recibir el `Booking`.** Con él dentro llegó la guarda
+  de estado (`Booking::isLocked()`: cancelada, expirada o reembolsada), que antes vivía suelto en
+  `SyncBookingTravelersAction` con dos estados en vez de tres. Ahora los tres caminos de escritura
+  —viajero, panel y pago manual— comparten la misma lista. Efecto colateral asumido: el viajero ya
+  no puede editar los pasajeros de una reserva **reembolsada**; antes sí.
+- **La máscara de escritura no borra: sustituye.** `prepareForValidation()` reemplaza los tres
+  campos sensibles por lo que ya está guardado (en un alta, `null`). Si solo se quitaran del
+  payload, la semántica de reemplazo completo de `UpdatePassengerAction` los escribiría como `null`
+  y `sales` terminaría borrando la alergia que el guía necesita — justo lo que D7 prohíbe.
+- **`payments` no tiene columna para la referencia del pago manual.** Va dentro de
+  `gateway_response` como `{"reference": …}`. No se abrió migración: la Fase 3 no toca esquema y
+  una columna nueva por un texto libre que nadie consulta no lo justifica. Si mañana se quiere
+  buscar por referencia, ahí sí.
+- **`RegisterManualPaymentAction` no notifica.** `ProcessPaymentAction` manda
+  `BookingConfirmedNotification` al completar el pago; el pago de mostrador lo registra alguien que
+  ya está frente al cliente. Queda anotado por si producto lo quiere.
+- **La zona del guía ignora `tour_date_id` y `status`** en vez de devolver 422, como pide el
+  contrato («no acepta»): la salida va en la ruta y los estados son fijos. Hay test de que
+  `?status[]=pending_payment` no le abre nada.
+- **El CSV se emite con `fputcsv`, que en PHP 8.4 entrecomilla los campos con espacios.** El
+  encabezado sale como `"Nombre completo","Tipo de documento",Documento,…`: es el mismo CSV del
+  contrato, citado. El test compara la fila ya parseada, no la cadena.
+- **12 cadenas nuevas en `lang/en.json`** (encabezados del CSV y mensajes de error).
+  `TranslationCatalogTest` falla si falta una o si sobra una huérfana; el mensaje de reserva
+  bloqueada cambió de texto y hubo que retirar el viejo.
+- **`GuideRouteAccessTest` apunta ahora a `/passengers`.** Era el único consumidor de la ruta
+  eliminada; sus tres casos (guía propio, operador, admin ajeno) siguen valiendo igual contra el
+  endpoint nuevo.
+- **Verificación**: `php artisan test --compact` → 652/652 (era 603, +49). `vendor/bin/pint
+  --dirty` en verde. `php artisan wayfinder:generate` sin errores (genera
+  `TourPassengerController`, `TourPassengerExportController`, `PassengerController`,
+  `BookingPaymentController`, `Guide/TourDatePassengerController`,
+  `Guide/TourDatePassengerExportController` y `Guide/GuideTourController`).
+
 
 ## Pendiente heredado
 
