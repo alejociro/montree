@@ -30,10 +30,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useTenantGuides } from '@/composables/useTenantGuides';
 import { categoryLabel } from '@/lib/categories';
+import { TOUR_FORM_STEP_IDS } from '@/types/tour';
 import type {
     SupportedCurrency,
     TourCategory,
     TourFormPayload,
+    TourFormStepId,
     TourItineraryDraft,
     TourStopDraft,
 } from '@/types/tour';
@@ -44,9 +46,22 @@ type Props = {
     modelValue: TourFormPayload;
     errors: Errors;
     categories: TourCategory[];
+    /**
+     * Bloques a renderizar. Por defecto, todos —así lo usa «crear»—. «Editar»
+     * reparte los mismos bloques entre dos pestañas montando dos instancias
+     * sobre el mismo `modelValue`; el formulario sigue sin saber de pestañas,
+     * solo de qué trozo de sí mismo dibuja.
+     */
+    sections?: TourFormStepId[];
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    sections: () => [...TOUR_FORM_STEP_IDS],
+});
+
+function shows(section: TourFormStepId): boolean {
+    return props.sections.includes(section);
+}
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: TourFormPayload): void;
@@ -128,7 +143,11 @@ const meetingErrors = computed(() => ({
 
 <template>
     <div class="space-y-4">
-        <section id="tour-block-general" class="scroll-mt-24">
+        <section
+            v-if="shows('general')"
+            id="tour-block-general"
+            class="scroll-mt-24"
+        >
             <Card>
                 <CardHeader>
                     <div class="flex items-start justify-between gap-4">
@@ -269,7 +288,11 @@ const meetingErrors = computed(() => ({
             </Card>
         </section>
 
-        <section id="tour-block-pricing" class="scroll-mt-24">
+        <section
+            v-if="shows('pricing')"
+            id="tour-block-pricing"
+            class="scroll-mt-24"
+        >
             <Card>
                 <CardHeader>
                     <div class="flex items-start justify-between gap-4">
@@ -347,7 +370,11 @@ const meetingErrors = computed(() => ({
             </Card>
         </section>
 
-        <section id="tour-block-detail" class="scroll-mt-24">
+        <section
+            v-if="shows('detail')"
+            id="tour-block-detail"
+            class="scroll-mt-24"
+        >
             <Card>
                 <CardHeader>
                     <div class="flex items-start justify-between gap-4">
@@ -395,7 +422,11 @@ const meetingErrors = computed(() => ({
             </Card>
         </section>
 
-        <section id="tour-block-route" class="scroll-mt-24">
+        <section
+            v-if="shows('route')"
+            id="tour-block-route"
+            class="scroll-mt-24"
+        >
             <Card>
                 <CardHeader>
                     <div class="flex items-start justify-between gap-4">
@@ -441,7 +472,11 @@ const meetingErrors = computed(() => ({
             </Card>
         </section>
 
-        <section id="tour-block-gallery" class="scroll-mt-24">
+        <section
+            v-if="shows('gallery')"
+            id="tour-block-gallery"
+            class="scroll-mt-24"
+        >
             <slot name="gallery" />
         </section>
     </div>

@@ -1,5 +1,6 @@
 import { translate } from '@/composables/useTranslations';
 import type { LatLngTuple } from '@/types/leaflet';
+import type { TourStopDraft } from '@/types/tour';
 import type { TourDetail } from '@/types/tour-detail';
 import type { TourRouteStop, TourRouteZone } from '@/types/tour-route';
 
@@ -179,4 +180,56 @@ export function stopIndexForItineraryStep(
     const index = stops.findIndex((stop) => stop.itinerary_step === stepNumber);
 
     return index === -1 ? null : index;
+}
+
+/**
+ * Paradas de la ruta a partir de los borradores que se están editando.
+ *
+ * WHY: el mapa de la pestaña «Ruta y mapa» tiene que reflejar lo que hay en el
+ * formulario ahora, no lo último guardado. El `code` del pin se calcula con la
+ * misma regla que `SyncTourStopsAction::codeFor()` —`A`, `1..n`, `B`— para que
+ * la vista previa y el mapa público no digan cosas distintas. Las paradas sin
+ * coordenadas válidas se omiten: no se pueden dibujar.
+ */
+export function routeStopsFromDrafts(drafts: TourStopDraft[]): TourRouteStop[] {
+    const stops: TourRouteStop[] = [];
+    let siteNumber = 0;
+
+    for (const draft of drafts) {
+        if (draft.kind === 'site') {
+            siteNumber += 1;
+        }
+
+        const latitude = Number.parseFloat(draft.latitude);
+        const longitude = Number.parseFloat(draft.longitude);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            continue;
+        }
+
+        stops.push({
+            kind: draft.kind,
+            code:
+                draft.kind === 'pickup'
+                    ? 'A'
+                    : draft.kind === 'drop'
+                      ? 'B'
+                      : String(siteNumber),
+            label: draft.label.trim() === '' ? null : draft.label.trim(),
+            name:
+                draft.name.trim() === ''
+                    ? translate('Sin nombre')
+                    : draft.name.trim(),
+            place: draft.place.trim() === '' ? null : draft.place.trim(),
+            time: draft.time.trim() === '' ? null : draft.time.trim(),
+            latitude,
+            longitude,
+            itinerary_step:
+                draft.itinerary_step === ''
+                    ? null
+                    : Number(draft.itinerary_step) || null,
+        });
+    }
+
+    return stops;
 }

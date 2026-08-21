@@ -110,7 +110,7 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 - [x] 5 tokens nuevos en `resources/css/app.css` (D5): `--brand-warn`, `--brand-warn-50`, `--brand-drop-50`, `--brand-green-50`, `--brand-line-2` — **adelantados en la Fase 4**, que ya los necesitaba para el chip de pago y la observación resaltada. Con los nombres exactos de D5: esta fase no tiene nada que rehacer, solo usarlos
 - [x] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
 - [x] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
-- [ ] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
+- [x] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
 - [ ] **Detalle**: hero, pestañas `Resumen · Pasajeros · Ruta`, 4 KPIs, ocupación de próximas salidas, itinerario como línea de tiempo, mapa de solo lectura
 - [ ] Nada de «Falta guía»: no existe el estado (D7). Se eliminan etiqueta, acción, select ámbar y opción «Sin asignar»
 - [ ] `fit()` (`invalidateSize()` + `fitBounds()`) al activarse cada pestaña con mapa
@@ -231,6 +231,79 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente
   tampoco tenía la herramienta de navegador; los breakpoints 390/430/768/1024/1280/1440 quedan para
   el barrido de la Fase 8.
+
+### Fase 6 — Editar (2026-08-20)
+
+- **`TourForm` estrena `sections`, y por eso la pestaña «Ruta y mapa» existe.** El bloque «Paso 4»
+  —punto de encuentro, itinerario y paradas— tenía que salir de «Contenido» sin que el formulario
+  supiera de pestañas. La solución es un prop `sections?: TourFormStepId[]` que por defecto trae los
+  cinco bloques: **«Crear» no cambia** (no pasa el prop, renderiza todo, verificado en `build` y en
+  el diff). «Editar» monta **dos instancias** sobre el mismo `modelValue`: una con
+  `general/pricing/detail/gallery` y otra con `route`. Los `id` de ancla no se duplican porque los
+  conjuntos son disjuntos, y por eso las dos pestañas pueden ir con `v-show` en vez de `v-if`: al
+  cambiar de pestaña no se pierde ni el foco ni el mapa.
+- **`fit()` nuevo en `useTourRouteMap`, expuesto por `TourRouteMapSection`.** Un mapa de Leaflet
+  montado dentro de una pestaña oculta mide 0×0 y se queda gris. Al activarse «Ruta y mapa» se llama
+  `fit()` (`invalidateSize()` + reencuadre de la vista activa). Es aditivo: el detalle público y la
+  zona del guía no cambian de comportamiento. **La pantalla «Detalle» puede usar lo mismo.**
+- **El mapa de la pestaña dibuja los BORRADORES, no lo guardado.** `routeStopsFromDrafts()`
+  (`lib/tour-route.ts`) arma las paradas desde el formulario y calcula el `code` del pin con la misma
+  regla que `SyncTourStopsAction::codeFor()` (`A`, `1..n`, `B`). Las paradas sin coordenadas válidas
+  se omiten: no se pueden dibujar. Sin paradas no hay tarjeta de mapa.
+- **`TourDeparturesTable` reemplaza a `TourDatesPanel`, que se elimina.** Solo lo usaba esta página.
+  La tabla nueva trae la ocupación (`OccupancyBar`, por `--primary`), los tres ámbitos
+  (próximas/pasadas/canceladas) y las acciones; los diálogos —alta/edición de salida y cancelación—
+  los hospeda la página, y los datos salen del composable `useTourDepartures`.
+- **El `GuideSelect` de la Fase 5 se monta SOLO en la fila que se toca.** Cada instancia consulta la
+  agenda para SU rango (`GET /admin/guides/availability?from&to`): montarlo en las veinte filas
+  serían veinte consultas al abrir la pestaña. La celda muestra el nombre del guía como botón y al
+  pulsarlo se convierte en el select con disponibilidad y motivos. **Nada de «Falta guía» (D7)**: no
+  hay etiqueta ámbar, ni acción «Asignar guía», ni opción «Sin asignar» — se revisaron
+  `TourDatesPanel` (eliminado), `TourDateFormDialog` y `UpcomingDatesTable` y no quedaba ninguna.
+- **`PATCH /admin/tour-dates/{tourDate}/guide` responde `{id, guide_id}`, no la salida.** Así que
+  tras asignar hay que recargar la lista para ver el nombre nuevo y el estado recalculado. Es un
+  viaje de más por asignación; si el endpoint devolviera `TourDateResource` se resolvería en el sitio.
+- **Los contadores de las pestañas son datos reales o no son.** «Salidas (n)» sale de las salidas no
+  canceladas que ya se piden para la tabla. «Pasajeros (n)» sale de `meta.summary.total_passengers`
+  de la planilla, que se pide una vez al montar con `per_page=10` (`useTourManifestSummary`): lo que
+  interesa es el `meta`, no las filas. Mientras el dato no llegue **no se dibuja el contador** en vez
+  de un `0` que se leería como «no hay nadie».
+- **`TourImpactCard` no inventa ninguna de sus tres cifras**: pasajeros con reserva activa y saldos
+  pendientes salen del mismo `meta.summary`; las salidas abiertas, del `status === 'open'` de la
+  lista. Sin `bookings.view` no hay resumen y la tarjeta lo dice; el bloque de pasajeros
+  simplemente no se pinta.
+- **La pestaña «Pasajeros» reutiliza `PassengerManifest` tal cual (Fase 4), no una versión reducida.**
+  El handoff pinta una mini-lista con «Abrir lista completa →» hacia el detalle; con el organism ya
+  hecho, media planilla habría sido un segundo componente que mantener para mostrar menos. Va con
+  `v-if` —no `v-show`— porque dispara su fetch al montarse, y solo aparece con `bookings.view` (regla
+  de oro del menú, F018). **Limitación:** `PassengerManifest` no recibe filtro inicial, así que el
+  botón «Pasajeros» de una fila abre la pestaña y la salida se elige en el selector de la propia
+  planilla.
+- **Contador de cambios en la savebar existente.** `StickySaveBar` con sus slots `note`/`actions`:
+  «N cambios sin guardar» comparando el `payload` actual contra `initialValues` campo por campo
+  (`form.isDirty` solo responde sí/no), más «Descartar». Sin cambios cae al contador de condiciones
+  de publicación, que es lo que hay que mirar cuando no hay nada que guardar.
+- **El 422 de `duration_hours` sube a un `Alert` de la página.** El mensaje del servidor nombra las
+  salidas que quedarían en solape y estaba condenado a aparecer bajo un input de otra pestaña: ahora
+  se muestra arriba y la vista salta a «Contenido». `ends_at` no es input en ningún camino.
+- **Estado del tour: los botones se mudaron al head** (como el handoff) y la tarjeta «Estado» del
+  riel desaparece; el riel queda con progreso, checklist e impacto. Se agregó el mensaje de
+  `TOUR_NEEDS_GUIDE_TO_ACTIVATE`, que la pantalla no traducía y caía al texto genérico.
+- **`TourTabs` (molecule) es nuevo y lo hereda «Detalle».** Subrayado en `--primary`, `role="tablist"`,
+  `aria-selected` y contador opcional. Evita el tercer copiar-pegar de la misma barra.
+- **Datos que la pantalla necesita y el backend hoy no entrega:** el autor de la última edición («por
+  Eduardo U.» en la maqueta; solo hay `updated_at`, así que se muestra «Última edición hace 2 h» sin
+  nombre), «N reservas dependen de este tour» en el subtítulo del head (existe agregado en la
+  tarjeta de impacto, no en el head), «Duplicar tour» (no hay endpoint) y el aviso de la maqueta de
+  que cambiar una parada de recogida notifica a los pasajeros (`NotifyPickupChangeAction` es de la
+  Fase 7: hoy no existe, así que no se promete). Ninguno se dibujó.
+- **El riel no tiene scroll-spy en «Editar»** (sí en «Crear»): con los bloques repartidos en dos
+  pestañas, un `IntersectionObserver` sobre secciones ocultas marca pasos que nadie está viendo. El
+  paso activo se marca al pulsarlo.
+- **Verificación.** `pint --dirty`, `types:check`, `lint:check`, `format:check`, `build` y
+  `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente
+  tampoco tenía la herramienta; los breakpoints 390/430/768/1024/1280/1440 y los 0 errores de consola
+  quedan para el barrido de la Fase 8.
 
 ### Fase 2 — backend (2026-08-20)
 
