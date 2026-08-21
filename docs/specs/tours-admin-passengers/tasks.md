@@ -197,6 +197,48 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   tampoco tenía la herramienta; los breakpoints 390/430/768/1024/1280/1440 y los 0 errores de
   consola quedan para el barrido de la Fase 8 (por eso el ítem de responsive sigue sin marcar).
 
+### Fase 6 — datos del Index (backend) (2026-08-20)
+
+- **Los dos bloques que el Index dibujaba con `v-if` ya tienen dato.** `TourPagesController@index`
+  manda la prop `stats` (`TourIndexStats`) y `TourSummaryResource` emite `operations`
+  (`TourOperationalSummary`), ambos con la forma exacta ya tipada en `resources/js/types/tour.ts`.
+  Formas documentadas en `contracts.md`, sección «Cifras del listado de tours del panel».
+- **Un solo criterio para el detalle y el listado.** `BuildTourIndexStatsAction` reusa el de
+  `BuildTourShowStatsAction`: salida futura en `open` o `full`, pagos `completed`, dinero derivado
+  de `bookings` (D5). Dos precisiones que quedaron escritas en el contrato: la ocupación del
+  encabezado mira la **misma ventana de 30 días** que el conteo de salidas, y `next_starts_at` mira
+  **todas** las futuras — si la próxima cae en el día 45, la fecha sigue siendo cierta aunque el
+  contador diga 0.
+- **`pending_balance` no viaja sin `bookings.view`.** Es dinero de pasajeros: el mismo permiso que
+  abre la planilla (`BookingPolicy@viewAny`). `operator` tiene `tours.view` y entra al listado, así
+  que la clave se **omite**, no se manda en cero. Consecuencia mínima en el frontend, y era
+  obligatoria para no romper la pantalla: `TourIndexStats.pending_balance` pasa a opcional y
+  `TourKpiGrid` deja de pintar ese KPI cuando no llega (antes leía `pending_balance.passengers` sin
+  guarda y habría reventado para un operador). Es lo único que se tocó fuera del backend.
+- **`operations` sin N+1: subconsultas correlacionadas, no relaciones por fila.**
+  `App\Queries\TourOperationalSummaryQuery` cuelga cinco agregados del `select` (fecha, cupos y
+  capacidad de la próxima salida, viajeros y viajeros con saldo). `TourIndexQueryCountTest` corre
+  el mismo listado con 3 y con 30 tours —cada uno con salida, reserva y pasajeros— y exige el
+  **mismo** conteo de consultas; mide en caliente porque la primera petición paga el catálogo de
+  permisos.
+- **El campo es condicional, no universal.** `TourSummaryResource` lo sirve solo si la consulta
+  adjuntó los agregados (`ops_*`): el selector de tours de promociones usa el mismo Resource y ahí
+  `operations` no existe, en vez de ceros que se leerían como «este tour no tiene pasajeros».
+- **Órdenes nuevos: los tres del handoff entran.** `next_departure`, `occupancy` y `revenue` se
+  resuelven en SQL con la misma subconsulta correlacionada que alimenta `operations`; ninguno
+  quedó fuera. `revenue` es el más caro (subconsulta con `join` a `payments`) y ordenar obliga a
+  evaluarla sobre todo el catálogo del tenant, no solo sobre la página: aceptable porque el plan
+  más alto tope 500 tours (`TenantPlan::limits()['max_tours']`). Si algún día ese tope sube, este
+  orden es el primer candidato a materializarse. **Falta el mapeo en el frontend**:
+  `TOUR_SORT_PARAMS` y las opciones del select de `TourFilters` siguen con los cuatro de siempre —
+  se dejó al agente de frontend, que es quien pone las etiquetas.
+- **`passengers_with_due` sí viaja sin `bookings.view`**, a diferencia de `pending_balance`: es un
+  conteo de personas, no una cifra de dinero, y es la misma información operativa que ya da la
+  ocupación. Si producto lo considera dinero, se cubre con el mismo `mergeWhen`.
+- **Verificación.** `pint --dirty`, `types:check`, `lint:check`, `format:check`, `build` y
+  `php artisan test --compact` en verde: **702/702** (692 antes, +10 de este cambio). Sin
+  comprobación en navegador: este agente tampoco tenía la herramienta.
+
 ### Fase 6 — Index (2026-08-20)
 
 - **Huecos de datos, no datos inventados.** La maqueta pinta cuatro KPIs y, por tarjeta, próxima

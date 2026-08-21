@@ -193,8 +193,9 @@ export type TourShowStats = {
 
 /**
  * Cifras operativas por tour del listado del panel: próxima salida, pasajeros y
- * saldo. Opcional a propósito — hoy `TourSummaryResource` no las emite; la
- * tarjeta oculta el bloque hasta que el backend las mande.
+ * saldo. Opcional a propósito — `TourSummaryResource` solo las emite cuando la
+ * consulta las adjunta (el listado del panel sí, el selector de promociones no);
+ * la tarjeta oculta el bloque cuando no llegan.
  */
 export type TourOperationalSummary = {
     next_departure_at: string | null;
@@ -223,7 +224,11 @@ export type TourIndexStats = {
         total_capacity: number;
         rate: number;
     };
-    pending_balance: {
+    /**
+     * Dinero de pasajeros: el backend lo omite para quien no tiene
+     * `bookings.view` (un operador, por ejemplo). Ausente, no en cero.
+     */
+    pending_balance?: {
         passengers: number;
         amount: string;
         currency: string;

@@ -61,18 +61,24 @@ const kpis = computed<Kpi[]>(() => {
                 capacity: formatNumber(occupancy.total_capacity),
             }),
         },
-        {
-            key: 'due',
-            label: t('Pasajeros con saldo'),
-            value: formatNumber(pending_balance.passengers),
-            detail: t(':amount por cobrar', {
-                amount: formatCurrency(
-                    pending_balance.amount,
-                    pending_balance.currency,
-                ),
-            }),
-            alert: true,
-        },
+        // WHY: sin `bookings.view` el backend no manda el saldo. Se cae el KPI
+        // entero en vez de pintar un cero que se leería como «no se debe nada».
+        ...(pending_balance === undefined
+            ? []
+            : [
+                  {
+                      key: 'due',
+                      label: t('Pasajeros con saldo'),
+                      value: formatNumber(pending_balance.passengers),
+                      detail: t(':amount por cobrar', {
+                          amount: formatCurrency(
+                              pending_balance.amount,
+                              pending_balance.currency,
+                          ),
+                      }),
+                      alert: true,
+                  },
+              ]),
     ];
 });
 </script>

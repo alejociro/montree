@@ -557,6 +557,85 @@ ventana.
 
 ---
 
+## Cifras del listado de tours del panel
+
+Dos entregas distintas para la misma pantalla (`Admin/Tour/Index`): los KPIs del encabezado viajan
+como **prop de Inertia** en `GET /admin/tours`, y las cifras por tarjeta como **campo del recurso**
+en `GET /api/v1/admin/tours`, que es de donde el listado se refiltra.
+
+### Prop `stats` de `GET /admin/tours` (`TourIndexStats`)
+
+```json
+{
+  "tours": { "active": 12, "draft": 3, "paused": 1, "archived": 4 },
+  "upcoming_departures": { "count": 7, "next_starts_at": "2026-08-24T08:00:00+00:00" },
+  "occupancy": { "booked_seats": 48, "total_capacity": 120, "rate": 40 },
+  "pending_balance": { "passengers": 9, "amount": "3250000.00", "currency": "COP" }
+}
+```
+
+| Bloque | Cómo se calcula |
+|---|---|
+| `tours` | Conteo por estado de los tours **no borrados** del tenant. Los cuatro estados de `TourStatus` siempre viajan, en cero si no hay ninguno. |
+| `upcoming_departures.count` | Salidas del tenant en `open` o `full` con `starts_at` en los **próximos 30 días**. |
+| `upcoming_departures.next_starts_at` | `MIN(starts_at)` de **todas** las salidas futuras en `open` o `full`, sin recortar a 30 días: si la más cercana cae fuera de la ventana, la fecha sigue siendo cierta. `null` sin salidas futuras. ISO 8601. |
+| `occupancy` | `SUM(booked_count)` y `SUM(capacity)` de las salidas de la **misma ventana de 30 días**. `rate` es el porcentaje entero; `0` cuando no hay cupo declarado (no se divide por cero). |
+| `pending_balance` | Reservas `confirmed` o `completed` con `paid_amount < total_amount`: `passengers` es `SUM(travelers_count)` y `amount` es `SUM(total_amount - paid_amount)` con dos decimales y punto. `currency` es la de `tenant_configurations`. |
+
+**`pending_balance` es dinero de pasajeros y tiene permiso propio: `bookings.view`.** Sin él la
+clave **no viaja** — no viaja en cero, que se leería como «no se debe nada». Es el caso de
+`operator`, que tiene `tours.view` y entra al listado. El chequeo es el mismo que abre la planilla
+(`BookingPolicy@viewAny`). En el tipo de TypeScript el campo es opcional y el KPI de saldo
+desaparece del encabezado cuando falta.
+
+El criterio de salida futura (`open` o `full`, `starts_at > now`) y el de dinero cobrado son los de
+`BuildTourShowStatsAction`: el detalle y el listado no cuentan la misma cosa de dos maneras.
+
+### Campo `operations` de `TourSummaryResource` (`TourOperationalSummary`)
+
+```json
+{
+  "next_departure_at": "2026-08-24T08:00:00+00:00",
+  "passengers_count": 5,
+  "occupancy": { "occupied": 5, "capacity": 12 },
+  "passengers_with_due": 2
+}
+```
+
+Todo se refiere a **la próxima salida** del tour: la primera en `open` o `full` con
+`starts_at > now`.
+
+| Campo | Cómo se calcula |
+|---|---|
+| `next_departure_at` | `starts_at` de esa salida, ISO 8601. `null` si el tour no tiene ninguna próxima. |
+| `passengers_count` | `SUM(travelers_count)` de las reservas `confirmed` o `completed` de esa salida — los mismos estados por defecto de la planilla. |
+| `occupancy.occupied` / `occupancy.capacity` | `booked_count` y `capacity` de esa salida: cupos tomados, no personas cargadas. Por eso puede diferir de `passengers_count` (una reserva `pending_payment` retiene cupo y no suma pasajeros). |
+| `passengers_with_due` | Viajeros de esa salida cuya **reserva** aún debe (`paid_amount < total_amount`). El saldo es de la reserva, no de la persona (D5). |
+
+**`operations` viaja solo cuando la consulta adjuntó los agregados** de
+`App\Queries\TourOperationalSummaryQuery` — hoy, el índice del panel. El mismo Resource sirve al
+selector de tours de promociones, y ahí el campo **no existe**: sin cifras que mostrar, ausencia
+antes que ceros. Es aditivo; nada de lo que ya emitía cambia.
+
+**Sin N+1:** las cuatro cifras son subconsultas correlacionadas del `select`, no relaciones
+cargadas por fila. `TourIndexQueryCountTest` compara el mismo listado con 3 y con 30 tours y exige
+el **mismo** número de consultas.
+
+### Órdenes de `GET /api/v1/admin/tours`
+
+`sort` acepta, además de `created_at`, `name`, `base_price` y `status`:
+
+| `sort` | Ordena por |
+|---|---|
+| `next_departure` | `starts_at` de la próxima salida. Un tour sin salidas próximas ordena como `NULL`. |
+| `occupancy` | `booked_count / capacity` de la próxima salida; capacidad 0 cuenta como vacía. |
+| `revenue` | Suma de los pagos `completed` de las reservas del tour. |
+
+`direction` sigue siendo `asc` o `desc` (por defecto `desc`), y un `sort` desconocido sigue cayendo
+en `created_at` en vez de responder `422`.
+
+---
+
 ## Rutas Inertia
 
 | Ruta | Página | Middleware / permiso |
@@ -580,6 +659,12 @@ a nivel de **componente**, no de ruta.
 
 ## Changelog
 
+- `2026-08-20` — **Cifras del listado de tours del panel.** Se documentan por primera vez la prop
+  `stats` de `GET /admin/tours` (`TourIndexStats`) y el campo `operations` de
+  `TourSummaryResource` (`TourOperationalSummary`), más los tres órdenes nuevos
+  (`next_departure`, `occupancy`, `revenue`). **Aditivo**: nada de lo que el listado ya emitía
+  cambia. `pending_balance` queda sujeto a `bookings.view` y se **omite** sin el permiso, con el
+  mismo criterio de la planilla; en TypeScript el campo pasa a opcional.
 - `2026-08-20` — Redacción inicial de los contratos del feature.
 - `2026-08-20` — **D10, ventana de edición del viajero.** Se documenta por primera vez el shape de
   `BookingResource` y el endpoint `GET /api/v1/bookings/{bookingNumber}`, con los dos campos nuevos
