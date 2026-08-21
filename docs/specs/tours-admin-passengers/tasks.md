@@ -111,10 +111,10 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 - [x] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
 - [x] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
 - [x] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
-- [ ] **Detalle**: hero, pestañas `Resumen · Pasajeros · Ruta`, 4 KPIs, ocupación de próximas salidas, itinerario como línea de tiempo, mapa de solo lectura
-- [ ] Nada de «Falta guía»: no existe el estado (D7). Se eliminan etiqueta, acción, select ámbar y opción «Sin asignar»
-- [ ] `fit()` (`invalidateSize()` + `fitBounds()`) al activarse cada pestaña con mapa
-- [ ] Los primarios, el subrayado de pestaña, las barras de ocupación y el pin de recogida van por `--primary` (color del tenant); los estados, por los tokens semánticos fijos
+- [x] **Detalle**: hero, pestañas `Resumen · Pasajeros · Ruta`, 4 KPIs, ocupación de próximas salidas, itinerario como línea de tiempo, mapa de solo lectura
+- [x] Nada de «Falta guía»: no existe el estado (D7). Se eliminan etiqueta, acción, select ámbar y opción «Sin asignar»
+- [x] `fit()` (`invalidateSize()` + `fitBounds()`) al activarse cada pestaña con mapa
+- [x] Los primarios, el subrayado de pestaña, las barras de ocupación y el pin de recogida van por `--primary` (color del tenant); los estados, por los tokens semánticos fijos
 - [ ] Responsive: `1180px` colapsa a una columna; verificar 390/430/768/1024/1280/1440 sin desbordamiento horizontal
 
 ## Fase 7 — Reglas restantes (`montree-backend-dev`) · ~0,5 día
@@ -142,6 +142,60 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 ---
 
 ## Notas durante implementación
+
+### Fase 6 — Detalle (2026-08-20)
+
+- **Tres pestañas de verdad: `Resumen · Pasajeros (n) · Ruta`,** con el `TourTabs` de «Editar» —
+  ningún tercer copiar-pegar de la barra. «Ruta» solo existe si hay algo que dibujar
+  (`routeStopsFromTour`: las paradas guardadas o, sin ellas, el punto de encuentro); «Pasajeros»
+  solo con `bookings.view`. El contador de la pestaña sale de `meta.summary.total_passengers`
+  (`useTourManifestSummary`, la misma llamada que usa «Editar»): mientras no llega, no se dibuja.
+- **`KpiCard` (atom) nuevo, compartido con el Index.** `TourKpiGrid` pasó a usarlo y el detalle
+  monta sus cuatro KPIs con el mismo componente; el estilo `alert` (`--brand-drop`) vive en un solo
+  sitio. Verificado que el Index no cambia de aspecto: mismas clases, mismo `v-for`.
+- **Los 4 KPIs, todos con dato real.** Reservas, Pasajeros e «Ingresos cobrados» salen de
+  `BuildTourShowStatsAction`. El cuarto es **«Saldo pendiente»** desde `meta.summary`
+  (`total_due_amount` + `with_due`), con esqueleto mientras carga; **sin `bookings.view` no hay
+  saldo que mostrar y ese hueco lo ocupa «Calificación»**, que siempre es dato del tour. La
+  maqueta pinta además «de $3.250.000 facturados» bajo los ingresos: el total facturado no existe
+  en la respuesta, así que no se dibujó.
+- **Ocupación de las próximas salidas.** La cifra agregada (`stats.occupancy_upcoming`) va en una
+  `OccupancyBar` por `--primary` y debajo la lista de salidas —`TourUpcomingDatesList`, que
+  también estrena `OccupancyBar` en vez de su barra a mano—, cada una con «Ver pasajeros» (emite y
+  abre la pestaña; la planilla no acepta filtro inicial, la salida se elige en su selector). Sin
+  salidas próximas: vacío explícito con «Programar salida».
+- **Itinerario como línea de tiempo** al lado de la ocupación, en dos columnas que colapsan en
+  `1180px`. Los conectores usan `--brand-line-2`; el número del paso, `--primary`.
+- **Mapa de solo lectura** en la pestaña «Ruta»: `TourRouteMapSection` tal cual, con `v-show` y
+  `fit()` en el `watch` de la pestaña (`invalidateSize()` + reencuadre) — el mismo camino que
+  «Editar». Con `v-if` se recrearía Leaflet en cada visita. La tarjeta lleva «Editar paradas» y,
+  si hay coordenadas de encuentro, el enlace a Google Maps.
+- **Barrido de «Falta guía» (D7), cerrado para todo el feature.** `grep` por `Sin asignar`,
+  `unassigned`, `needs_guide`, `falta guía`, `missing guide`, `sin guía` y `asignar guía` sobre
+  `resources`, `app`, `routes`, `lang`, `tests` y `database`: no queda ni etiqueta, ni acción, ni
+  opción, ni select ámbar. Lo único que sobrevive con ese nombre es el permiso RBAC
+  `departures.assign_guide` («Asignar guía a una salida»), que es la capacidad de cambiar el guía
+  —no un estado de falta— y los comentarios/mensajes que explican la regla.
+- **Reparto `--primary` vs. tokens fijos, verificado en las cuatro pantallas.** Dos correcciones:
+  (a) el estado de una **salida** se pintaba con las variantes de `Badge` —«Abierta» en
+  `--primary`— igual que le pasaba a `TourStatusBadge` antes del Index; nace
+  `molecules/TourDateStatusBadge.vue` con los tokens fijos y lo usan `TourDeparturesTable` (Editar)
+  y `TourUpcomingDatesList` (Detalle). (b) el **pin de recogida** iba por `--brand-green-600`;
+  D5 lo pone en `--primary`, así que `ROUTE_COLOR_TOKENS.pickup` pasa a `--primary` con el mismo
+  fallback. Los demás pines (zona, regreso, traslado) siguen fijos porque son semánticos. Nota:
+  `routeColor()` cachea el valor computado, así que si `useTenantBranding` escribiera `--primary`
+  después del primer mapa, ese primer render usaría el color anterior — hoy la marca se aplica en
+  el arranque, antes de montar cualquier mapa.
+- **Datos que la pantalla necesita y el backend hoy no entrega:** el total **facturado** del tour
+  (la maqueta lo pone bajo los ingresos cobrados), la fecha de vencimiento del saldo («vence el 25
+  oct»), y el saldo pendiente **sin** `bookings.view` — no hay una cifra agregada de dinero que
+  `sales` pueda ver sin la planilla. Ninguno se dibujó.
+- **Higiene de `lang/en.json`:** se agregaron 14 claves y se quitaron 5 que quedaron huérfanas al
+  reescribir la pantalla (`TranslationCatalogTest` las detecta y era lo único rojo de la suite).
+- **Verificación.** `pint --dirty`, `types:check`, `lint:check`, `format:check`, `build` y
+  `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente
+  tampoco tenía la herramienta; los breakpoints 390/430/768/1024/1280/1440 y los 0 errores de
+  consola quedan para el barrido de la Fase 8 (por eso el ítem de responsive sigue sin marcar).
 
 ### Fase 6 — Index (2026-08-20)
 

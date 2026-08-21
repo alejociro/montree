@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import MonoLabel from '@/components/atoms/MonoLabel.vue';
+import KpiCard from '@/components/atoms/KpiCard.vue';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
 import type { TourIndexStats } from '@/types/tour';
@@ -79,24 +79,13 @@ const kpis = computed<Kpi[]>(() => {
 
 <template>
     <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        <div
+        <KpiCard
             v-for="kpi in kpis"
             :key="kpi.key"
-            class="rounded-xl border p-4 md:px-[18px]"
-            :class="
-                kpi.alert
-                    ? 'border-brand-drop/20 bg-brand-drop-50'
-                    : 'border-border bg-card'
-            "
-        >
-            <MonoLabel>{{ kpi.label }}</MonoLabel>
-            <p
-                class="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums"
-                :class="kpi.alert ? 'text-brand-drop' : 'text-foreground'"
-            >
-                {{ kpi.value }}
-            </p>
-            <p class="mt-1 text-xs text-muted-foreground">{{ kpi.detail }}</p>
-        </div>
+            :label="kpi.label"
+            :value="kpi.value"
+            :detail="kpi.detail"
+            :alert="kpi.alert"
+        />
     </div>
 </template>

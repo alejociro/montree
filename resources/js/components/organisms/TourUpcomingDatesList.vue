@@ -8,37 +8,34 @@ import {
 } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { index as datesIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
-import { Badge } from '@/components/ui/badge';
+import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
+import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
-import type { TourDateAdmin, TourDateStatus } from '@/types/logistics';
-
-const { t } = useTranslations();
+import type { TourDateAdmin } from '@/types/logistics';
 
 type Props = {
     tourId: number;
     currency: string;
+    /** Sin `bookings.view` no se ofrece el atajo a la planilla (F018). */
+    canViewPassengers?: boolean;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    canViewPassengers: false,
+});
+
+const emit = defineEmits<{
+    /**
+     * «Ver pasajeros» de una salida. La planilla no acepta filtro inicial, así
+     * que la página solo abre la pestaña: la salida se elige en su selector.
+     */
+    (e: 'view-passengers', dateId: number): void;
+}>();
 
 const dates = ref<TourDateAdmin[]>([]);
 const loading = ref(true);
 const loadError = ref(false);
-
-const statusMeta: Record<
-    TourDateStatus,
-    {
-        label: string;
-        variant: 'default' | 'secondary' | 'destructive' | 'outline';
-    }
-> = {
-    open: { label: t('Abierta'), variant: 'default' },
-    full: { label: t('Completa'), variant: 'secondary' },
-    closed: { label: t('Cerrada'), variant: 'outline' },
-    cancelled: { label: t('Cancelada'), variant: 'destructive' },
-};
 
 async function loadDates(): Promise<void> {
     loading.value = true;
@@ -64,14 +61,6 @@ async function loadDates(): Promise<void> {
     } finally {
         loading.value = false;
     }
-}
-
-function occupancyRate(date: TourDateAdmin): number {
-    if (date.capacity <= 0) {
-        return 0;
-    }
-
-    return Math.min(100, Math.round((date.booked_count / date.capacity) * 100));
 }
 
 onMounted(loadDates);
@@ -124,31 +113,16 @@ onMounted(loadDates);
                             <p class="font-medium text-foreground capitalize">
                                 {{ formatTourDate(date.starts_at) }}
                             </p>
-                            <Badge :variant="statusMeta[date.status].variant">
-                                {{ statusMeta[date.status].label }}
-                            </Badge>
+                            <TourDateStatusBadge :status="date.status" />
                         </div>
 
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="h-1.5 w-28 overflow-hidden rounded-full bg-muted"
-                            >
-                                <div
-                                    class="h-full rounded-full bg-primary transition-all"
-                                    :style="{
-                                        width: `${occupancyRate(date)}%`,
-                                    }"
-                                />
-                            </div>
-                            <span class="text-xs text-muted-foreground">
-                                {{
-                                    $t(':booked/:capacity cupos', {
-                                        booked: date.booked_count,
-                                        capacity: date.capacity,
-                                    })
-                                }}
-                            </span>
-                        </div>
+                        <OccupancyBar
+                            class="max-w-xs"
+                            size="sm"
+                            :occupied="date.booked_count"
+                            :capacity="date.capacity"
+                            :label="$t('Cupos vendidos')"
+                        />
 
                         <div
                             class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
@@ -188,13 +162,27 @@ onMounted(loadDates);
                         </div>
                     </div>
 
-                    <span
-                        class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
-                    >
-                        {{
-                            formatCurrency(date.effective_price, props.currency)
-                        }}
-                    </span>
+                    <div class="flex shrink-0 flex-col items-end gap-2">
+                        <span
+                            class="text-sm font-semibold text-foreground tabular-nums"
+                        >
+                            {{
+                                formatCurrency(
+                                    date.effective_price,
+                                    props.currency,
+                                )
+                            }}
+                        </span>
+                        <Button
+                            v-if="props.canViewPassengers"
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="emit('view-passengers', date.id)"
+                        >
+                            {{ $t('Ver pasajeros') }}
+                        </Button>
+                    </div>
                 </div>
             </li>
         </ul>

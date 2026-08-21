@@ -11,7 +11,9 @@ import type { TourRouteStop, TourRouteZone } from '@/types/tour-route';
  * El fallback es la paleta del handoff, para SSR y para el primer render.
  */
 const ROUTE_COLOR_TOKENS = {
-    pickup: ['--brand-green-600', '#2f6b45'],
+    // D5: la recogida es el pin principal y va por `--primary`, el color del
+    // tenant. Los demás roles son semánticos y se quedan en tokens fijos.
+    pickup: ['--primary', '#2f6b45'],
     site: ['--brand-site', '#4b7f5f'],
     drop: ['--brand-drop', '#b4562a'],
     transfer: ['--brand-muted', '#6d7268'],
@@ -138,6 +140,17 @@ export function googleDirectionsUrl(stops: TourRouteStop[]): string | null {
     return `https://www.google.com/maps/dir/${legs.map(asPair).join('/')}`;
 }
 
+/** Lo que hace falta de un tour para dibujar su ruta: lo cumplen el detalle
+ * público y el `TourResource` del panel. */
+export type TourRouteSource = Pick<
+    TourDetail,
+    | 'name'
+    | 'stops'
+    | 'meeting_point'
+    | 'meeting_latitude'
+    | 'meeting_longitude'
+>;
+
 /**
  * Paradas de la ruta a partir del detalle público del tour.
  *
@@ -145,7 +158,7 @@ export function googleDirectionsUrl(stops: TourRouteStop[]): string | null {
  * punto de encuentro, que es el único dato geográfico que siempre existe, para
  * que el mapa muestre al menos la recogida en vez de desaparecer.
  */
-export function routeStopsFromTour(tour: TourDetail): TourRouteStop[] {
+export function routeStopsFromTour(tour: TourRouteSource): TourRouteStop[] {
     if (tour.stops.length > 0) {
         return tour.stops;
     }

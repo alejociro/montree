@@ -5,18 +5,14 @@ import { toast } from 'vue-sonner';
 import AssignGuideController from '@/actions/App/Http/Controllers/Api/V1/Admin/AssignGuideController';
 import GuideSelect from '@/components/molecules/GuideSelect.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
-import { Badge } from '@/components/ui/badge';
+import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { DepartureRange } from '@/types/guide-availability';
-import type {
-    LogisticsRef,
-    TourDateAdmin,
-    TourDateStatus,
-} from '@/types/logistics';
+import type { LogisticsRef, TourDateAdmin } from '@/types/logistics';
 
 const { t } = useTranslations();
 
@@ -110,19 +106,6 @@ const scopes = computed<{ key: Scope; label: string; count: number }[]>(() => [
         count: cancelled.value.length,
     },
 ]);
-
-const statusMeta: Record<
-    TourDateStatus,
-    {
-        label: string;
-        variant: 'default' | 'secondary' | 'destructive' | 'outline';
-    }
-> = {
-    open: { label: t('Abierta'), variant: 'default' },
-    full: { label: t('Completa'), variant: 'secondary' },
-    closed: { label: t('Cerrada'), variant: 'outline' },
-    cancelled: { label: t('Cancelada'), variant: 'destructive' },
-};
 
 function toDateOnly(value: Date): string {
     const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -347,9 +330,7 @@ function priceLabel(departure: TourDateAdmin): string {
                         >
                     </div>
 
-                    <Badge :variant="statusMeta[departure.status].variant">
-                        {{ statusMeta[departure.status].label }}
-                    </Badge>
+                    <TourDateStatusBadge :status="departure.status" />
 
                     <Button
                         v-if="props.canViewPassengers"
