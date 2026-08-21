@@ -34,7 +34,7 @@ final class SyncBookingTravelersRequest extends FormRequest
             'travelers.*.full_name' => ['required', 'string', 'max:255'],
             'travelers.*.is_minor' => ['required', 'boolean'],
             'travelers.*.document_type' => ['nullable', Rule::enum(DocumentType::class)],
-            'travelers.*.document_number' => ['nullable', 'string', 'max:255'],
+            'travelers.*.document_number' => ['nullable', 'string', 'max:40', 'required_with:travelers.*.document_type'],
             'travelers.*.birth_date' => ['nullable', 'date', 'before:today'],
             'travelers.*.nationality' => ['nullable', 'string', 'max:255'],
             'travelers.*.email' => ['nullable', 'email', 'max:255'],
