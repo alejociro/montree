@@ -22,9 +22,11 @@ final class HexToHsl
             return null;
         }
 
-        $red = hexdec(substr($clean, 0, 2)) / 255;
-        $green = hexdec(substr($clean, 2, 2)) / 255;
-        $blue = hexdec(substr($clean, 4, 2)) / 255;
+        // Cast to float on purpose: `0 / 255` and `255 / 255` return int in PHP,
+        // and an int 0 delta would slip past the achromatic guard below and divide by zero.
+        $red = (float) (hexdec(substr($clean, 0, 2)) / 255);
+        $green = (float) (hexdec(substr($clean, 2, 2)) / 255);
+        $blue = (float) (hexdec(substr($clean, 4, 2)) / 255);
 
         $max = max($red, $green, $blue);
         $min = min($red, $green, $blue);
