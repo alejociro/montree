@@ -81,6 +81,38 @@ final class GuideAvailabilityTest extends TestCase
         $response->assertCreated();
     }
 
+    public function test_a_full_departure_still_occupies_its_days(): void
+    {
+        // Agotada quiere decir vendida entera, no cancelada: el guía sale igual.
+        [$tenant, $admin, $guide] = $this->scenario();
+        $this->departure($this->tour(50, 'Valle de Cocora'), $guide, self::START, TourDateStatus::Full);
+        $other = $this->tour(6, 'Salento');
+
+        $response = $this->actingAs($admin)->postJson(
+            $this->host($tenant)."/api/v1/admin/tours/{$other->id}/dates",
+            ['starts_at' => '2026-09-13 06:00:00', 'capacity' => 10, 'guide_id' => $guide->id],
+        );
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('Valle de Cocora', $response->json('errors.guide_id.0'));
+    }
+
+    public function test_the_availability_endpoint_reports_a_full_departure_as_busy(): void
+    {
+        [$tenant, $admin, $guide] = $this->scenario();
+        $this->departure($this->tour(8, 'Valle de Cocora'), $guide, self::START, TourDateStatus::Full);
+
+        $response = $this->actingAs($admin)->getJson(
+            $this->host($tenant).'/api/v1/admin/guides/availability?from=2026-09-01&to=2026-09-30',
+        );
+
+        $response->assertOk();
+        $blocks = collect($response->json('data'))
+            ->firstWhere('id', $guide->id)['busy'] ?? [];
+
+        $this->assertNotEmpty($blocks, 'Una salida agotada debe seguir ocupando al guía.');
+    }
+
     public function test_editing_the_own_departure_is_not_a_false_positive(): void
     {
         [$tenant, $admin, $guide] = $this->scenario();

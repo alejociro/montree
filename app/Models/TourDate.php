@@ -122,14 +122,22 @@ class TourDate extends Model
     }
 
     /**
-     * Salidas que ocupan al guía. Una `cancelled` libera sus días (D9).
+     * Salidas que ocupan al guía. Solo una `cancelled` libera sus días (D9).
+     *
+     * WHY: `full` ocupa igual que `open`. Agotada quiere decir que se vendió
+     * entera, no que no se vaya a hacer: el guía sale esos días. Lo que decide
+     * la ocupación es si la salida ocurre, no si le quedan cupos.
      *
      * @param  Builder<TourDate>  $query
      * @return Builder<TourDate>
      */
     public function scopeOccupying(Builder $query): Builder
     {
-        return $query->whereIn('status', [TourDateStatus::Open, TourDateStatus::Closed]);
+        return $query->whereIn('status', [
+            TourDateStatus::Open,
+            TourDateStatus::Full,
+            TourDateStatus::Closed,
+        ]);
     }
 
     /**
