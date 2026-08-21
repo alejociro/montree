@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { AlertTriangle, ClipboardList, RefreshCw } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
-import {
-    schedule as scheduleUrl,
-    travelers as travelersUrl,
-} from '@/actions/App/Http/Controllers/Api/V1/GuideController';
+import { schedule as scheduleUrl } from '@/actions/App/Http/Controllers/Api/V1/GuideController';
 import { Badge } from '@/components/ui/badge';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslations } from '@/composables/useTranslations';
 import { intlLocale } from '@/lib/format';
+import { passengers as passengersRoute } from '@/routes/guide';
+import { show as guideTourRoute } from '@/routes/guide/tours';
+
+const { t } = useTranslations();
 
 type ScheduleItem = {
     id: number;
@@ -23,52 +22,45 @@ type ScheduleItem = {
     tour: { id: number; name: string; slug: string };
 };
 
-type Traveler = {
-    id: number;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    count: number;
-};
-
 const items = ref<ScheduleItem[]>([]);
 const loading = ref(true);
+const error = ref<string | null>(null);
 
-const travelerDialog = ref(false);
-const selectedDate = ref<ScheduleItem | null>(null);
-const travelers = ref<Traveler[]>([]);
-const loadingTravelers = ref(false);
+/**
+ * WHY: el diálogo de viajeros que vivía aquí desapareció con la Fase 3. Servía
+ * un endpoint recortado (nombre, email y teléfono) que se eliminó, y la planilla
+ * completa —documento, emergencia, EPS y observaciones— es ahora una pantalla
+ * propia. Desde la agenda se entra a ella, no se asoma.
+ */
+async function load(): Promise<void> {
+    loading.value = true;
+    error.value = null;
 
-onMounted(async () => {
     try {
-        const res = await fetch(scheduleUrl().url, {
+        const response = await fetch(scheduleUrl().url, {
             credentials: 'same-origin',
-            headers: { Accept: 'application/json' },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
         });
-        const json = await res.json();
-        items.value = json.data;
+
+        if (!response.ok) {
+            throw new Error(String(response.status));
+        }
+
+        const payload = (await response.json()) as { data: ScheduleItem[] };
+        items.value = payload.data;
+    } catch {
+        error.value = t('No pudimos cargar tu agenda.');
     } finally {
         loading.value = false;
     }
-});
-
-async function openTravelers(item: ScheduleItem) {
-    selectedDate.value = item;
-    travelerDialog.value = true;
-    loadingTravelers.value = true;
-    travelers.value = [];
-
-    try {
-        const res = await fetch(travelersUrl.url(item.id), {
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json' },
-        });
-        const json = await res.json();
-        travelers.value = json.data ?? [];
-    } finally {
-        loadingTravelers.value = false;
-    }
 }
+
+onMounted(() => {
+    void load();
+});
 
 function formatDate(date: string): string {
     return new Date(date).toLocaleDateString(intlLocale(), {
@@ -88,28 +80,51 @@ function formatTime(date: string): string {
 </script>
 
 <template>
-    <Head :title="$t('Mi agenda')" />
     <div class="container mx-auto max-w-3xl space-y-4 px-4 py-8">
+        <Head :title="$t('Mi agenda')" />
         <h1 class="text-2xl font-bold">{{ $t('Mi agenda') }}</h1>
-        <p v-if="loading" class="text-sm text-muted-foreground">
-            {{ $t('Cargando...') }}
-        </p>
+
+        <div
+            v-if="error"
+            class="flex flex-col items-center gap-3 rounded-xl border border-brand-drop/30 bg-brand-drop-50 p-8 text-center"
+        >
+            <AlertTriangle class="size-8 text-brand-drop" />
+            <p class="text-sm font-medium text-brand-drop">{{ error }}</p>
+            <Button variant="outline" size="sm" @click="load">
+                <RefreshCw class="size-4" />
+                {{ $t('Reintentar') }}
+            </Button>
+        </div>
+
+        <div v-else-if="loading" class="space-y-3">
+            <Skeleton
+                v-for="row in 3"
+                :key="row"
+                class="h-24 w-full rounded-lg"
+            />
+        </div>
+
         <div
             v-else-if="items.length === 0"
             class="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
         >
             {{ $t('No tienes tours asignados próximamente.') }}
         </div>
+
         <ul v-else class="space-y-3">
             <li
                 v-for="d in items"
                 :key="d.id"
-                class="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                @click="openTravelers(d)"
+                class="space-y-3 rounded-lg border p-4"
             >
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-medium">{{ d.tour.name }}</p>
+                        <Link
+                            :href="guideTourRoute(d.tour.id).url"
+                            class="font-medium underline-offset-4 hover:underline"
+                        >
+                            {{ d.tour.name }}
+                        </Link>
                         <p class="text-sm text-muted-foreground">
                             {{ formatDate(d.starts_at) }} ·
                             {{ formatTime(d.starts_at) }}
@@ -124,69 +139,21 @@ function formatTime(date: string): string {
                         }}
                     </Badge>
                 </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <Link :href="passengersRoute(d.id).url">
+                        <Button variant="outline" size="sm">
+                            <ClipboardList class="size-4" />
+                            {{ $t('Ver planilla de pasajeros') }}
+                        </Button>
+                    </Link>
+                    <Link :href="guideTourRoute(d.tour.id).url">
+                        <Button variant="ghost" size="sm">
+                            {{ $t('Ver el detalle del tour') }}
+                        </Button>
+                    </Link>
+                </div>
             </li>
         </ul>
-
-        <Dialog v-model:open="travelerDialog">
-            <DialogContent class="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            $t('Viajeros — :tour', {
-                                tour: selectedDate?.tour.name ?? '',
-                            })
-                        }}
-                    </DialogTitle>
-                    <p
-                        v-if="selectedDate"
-                        class="text-sm text-muted-foreground"
-                    >
-                        {{ formatDate(selectedDate.starts_at) }} ·
-                        {{ formatTime(selectedDate.starts_at) }}
-                    </p>
-                </DialogHeader>
-
-                <p
-                    v-if="loadingTravelers"
-                    class="text-sm text-muted-foreground"
-                >
-                    {{ $t('Cargando viajeros...') }}
-                </p>
-
-                <div
-                    v-else-if="travelers.length === 0"
-                    class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground"
-                >
-                    {{ $t('No hay viajeros registrados para esta fecha.') }}
-                </div>
-
-                <ul v-else class="space-y-3">
-                    <li
-                        v-for="t in travelers"
-                        :key="t.id"
-                        class="flex items-start justify-between gap-3 rounded-md border p-3"
-                    >
-                        <div class="space-y-0.5">
-                            <p class="font-medium">{{ t.name }}</p>
-                            <p
-                                v-if="t.email"
-                                class="text-sm text-muted-foreground"
-                            >
-                                {{ t.email }}
-                            </p>
-                            <p
-                                v-if="t.phone"
-                                class="text-sm text-muted-foreground"
-                            >
-                                {{ t.phone }}
-                            </p>
-                        </div>
-                        <Badge v-if="t.count > 1" variant="secondary">
-                            {{ t.count }} personas
-                        </Badge>
-                    </li>
-                </ul>
-            </DialogContent>
-        </Dialog>
     </div>
 </template>
