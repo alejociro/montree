@@ -1,5 +1,12 @@
-export type TourStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type TourDifficulty = 'easy' | 'moderate' | 'hard' | 'extreme';
+import {
+    TOUR_DIFFICULTY_VALUES,
+    TOUR_STATUS_VALUES,
+} from '@/types/enums.generated';
+import type { TourDifficulty, TourStatus } from '@/types/enums.generated';
+
+// WHY: los valores salen de `enums.generated.ts` (`php artisan enums:typescript`),
+// no de un espejo escrito a mano que se desincroniza en silencio.
+export type { TourDifficulty, TourStatus };
 
 export type TourCategory = {
     id: number;
@@ -56,6 +63,7 @@ export type TourSummary = {
     bookings_count?: number;
     rating_average: string;
     rating_count: number;
+    operations?: TourOperationalSummary;
     created_at: string;
     updated_at: string;
 };
@@ -183,6 +191,69 @@ export type TourShowStats = {
     next_date_starts_at: string | null;
 };
 
+/**
+ * Cifras operativas por tour del listado del panel: próxima salida, pasajeros y
+ * saldo. Opcional a propósito — hoy `TourSummaryResource` no las emite; la
+ * tarjeta oculta el bloque hasta que el backend las mande.
+ */
+export type TourOperationalSummary = {
+    next_departure_at: string | null;
+    passengers_count: number;
+    occupancy: {
+        occupied: number;
+        capacity: number;
+    };
+    passengers_with_due: number;
+};
+
+/** KPIs del encabezado del listado de tours del panel. */
+export type TourIndexStats = {
+    tours: {
+        active: number;
+        draft: number;
+        paused: number;
+        archived: number;
+    };
+    upcoming_departures: {
+        count: number;
+        next_starts_at: string | null;
+    };
+    occupancy: {
+        booked_seats: number;
+        total_capacity: number;
+        rate: number;
+    };
+    pending_balance: {
+        passengers: number;
+        amount: string;
+        currency: string;
+    };
+};
+
+/** Estado de la barra de filtros del listado de tours del panel. */
+export type TourIndexFilters = {
+    status: TourStatus | 'all';
+    category_id: number | null;
+    search: string;
+    sort: TourSortValue;
+};
+
+export type TourSortValue = 'recent' | 'name' | 'price_desc' | 'price_asc';
+
+/**
+ * Traducción del orden de la interfaz a los parámetros que acepta
+ * `Api\V1\Admin\TourController@index` (`SORTABLE_COLUMNS`).
+ */
+export const TOUR_SORT_PARAMS: Record<
+    TourSortValue,
+    { sort: string; direction: 'asc' | 'desc' }
+> = {
+    recent: { sort: 'created_at', direction: 'desc' },
+    name: { sort: 'name', direction: 'asc' },
+    price_desc: { sort: 'base_price', direction: 'desc' },
+    price_asc: { sort: 'base_price', direction: 'asc' },
+};
+
 export type PaginatedTours = {
     data: TourSummary[];
     links: {
@@ -201,18 +272,8 @@ export type PaginatedTours = {
     };
 };
 
-export const TOUR_STATUSES: TourStatus[] = [
-    'draft',
-    'active',
-    'paused',
-    'archived',
-];
-export const TOUR_DIFFICULTIES: TourDifficulty[] = [
-    'easy',
-    'moderate',
-    'hard',
-    'extreme',
-];
+export const TOUR_STATUSES: TourStatus[] = [...TOUR_STATUS_VALUES];
+export const TOUR_DIFFICULTIES: TourDifficulty[] = [...TOUR_DIFFICULTY_VALUES];
 export const SUPPORTED_CURRENCIES = [
     'USD',
     'COP',

@@ -108,7 +108,7 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 ## Fase 6 — Rediseño del CRUD (`montree-frontend-dev`, un commit por pantalla) · 3–4 días
 
 - [x] 5 tokens nuevos en `resources/css/app.css` (D5): `--brand-warn`, `--brand-warn-50`, `--brand-drop-50`, `--brand-green-50`, `--brand-line-2` — **adelantados en la Fase 4**, que ya los necesitaba para el chip de pago y la observación resaltada. Con los nombres exactos de D5: esta fase no tiene nada que rehacer, solo usarlos
-- [ ] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
+- [x] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
 - [ ] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
 - [ ] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
 - [ ] **Detalle**: hero, pestañas `Resumen · Pasajeros · Ruta`, 4 KPIs, ocupación de próximas salidas, itinerario como línea de tiempo, mapa de solo lectura
@@ -142,6 +142,44 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 ---
 
 ## Notas durante implementación
+
+### Fase 6 — Index (2026-08-20)
+
+- **Huecos de datos, no datos inventados.** La maqueta pinta cuatro KPIs y, por tarjeta, próxima
+  salida, pasajeros, ocupación y saldos. Hoy nada de eso sale del backend: `TourSummaryResource`
+  emite catálogo (nombre, precio, duración, cupo, categoría, portada, `images_count`,
+  `bookings_count`) y `TourPagesController@index` solo manda `categories`. Se implementaron los
+  componentes completos y la página los dibuja **condicionados a que el dato llegue**:
+  `TourKpiGrid` se monta con `v-if="props.stats"` y el bloque operativo de `TourAdminCard` con
+  `v-if="tour.operations"`. Sin backend no se ve nada — que es la verdad — en vez de ceros que se
+  leerían como «este tour no tiene pasajeros». Contratos propuestos, ya tipados en
+  `resources/js/types/tour.ts`: `TourIndexStats` (prop `stats` de la página) y
+  `TourOperationalSummary` (campo `operations` de `TourSummaryResource`).
+- **Orden: solo lo que la API sabe hacer.** El handoff ofrece «próxima salida · ocupación ·
+  ingresos · alfabético»; `TourController@index` acepta `created_at`, `name`, `base_price` y
+  `status`. El select ofrece más recientes / alfabético / precio mayor / precio menor, con el mapeo
+  a `sort` + `direction` en `TOUR_SORT_PARAMS`. Los tres órdenes agregados entran cuando entren las
+  cifras operativas.
+- **Nada de «Falta guía» (D7).** El Index no tenía ni etiqueta ni acción ni select de guía; no hubo
+  nada que quitar. Se verificó también que ningún estado nuevo lo reintroduzca.
+- **`TourStatusBadge` pasa a los tokens semánticos fijos (D5).** Usaba las variantes de `Badge`
+  (`default` = `--primary`), así que «Activo» se pintaba con el color del tenant: una agencia con el
+  principal en rojo mostraba «Activo» en rojo. Ahora: activo `--brand-green-*`, pausado
+  `--brand-warn-*`, archivado neutro, borrador contorno. Lo comparten Edit y Show.
+- **`OccupancyBar` es genérica** (`occupied`, `capacity`, `label?`, `hideValue?`, `size?`) y va
+  siempre por `--primary`: llenarse no es una alerta. La reutilizan Editar y Detalle.
+- **`TourFilters` absorbió la toolbar** en vez de nacer un componente nuevo: pills de estado
+  (`role="tablist"` + `aria-selected`), buscador con `label` oculto, categoría y orden. El estado
+  compartido se movió a `TourIndexFilters` en `types/tour.ts`.
+- **Enums.** `types/tour.ts` dejó de mantener a mano `TourStatus`/`TourDifficulty` y sus listas:
+  ahora reexporta `enums.generated.ts`.
+- **Fetch por `useHttp().submit()`** con la ruta de Wayfinder, como `Admin/Dashboard.vue`; antes era
+  `fetch()` a pelo. Estados: skeleton de 6 tarjetas al primer carga, spinner en el encabezado al
+  refiltrar, `Alert` con «Reintentar» en error y vacío explícito.
+- **Verificación.** `types:check`, `lint:check`, `format:check`, `build`, `pint --dirty` y
+  `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente no
+  tenía la herramienta de navegador disponible; queda para el barrido de la Fase 8 junto con los
+  breakpoints 390/430/768/1024/1280/1440.
 
 ### Fase 2 — backend (2026-08-20)
 
