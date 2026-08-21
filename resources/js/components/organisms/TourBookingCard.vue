@@ -116,7 +116,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                 <Link
                     v-if="bookingUrl"
                     :href="bookingUrl"
-                    class="mt-3.5 block rounded-full bg-primary px-4 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition hover:bg-brand-ink"
+                    class="mt-3.5 block rounded-full bg-primary px-4 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition hover:bg-primary-hover"
                 >
                     {{ $t('Reservar ahora') }}
                 </Link>

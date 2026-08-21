@@ -39,6 +39,7 @@
       paleta. `*-readable` es el mismo color corregido para LEERSE como texto
       —lo calcula `useTenantBranding` contra el fondo real (WCAG AA)—.
     */
+    --color-primary-hover: var(--primary-hover);
     --color-primary-soft: var(--primary-soft);
     --color-primary-soft-foreground: var(--primary-soft-foreground);
     --color-primary-readable: var(--primary-readable);
@@ -212,6 +213,10 @@
       Mezclar contra `--background` en vez de contra blanco resuelve además el
       modo oscuro: el mismo token se aclara en claro y se oscurece en oscuro.
     */
+    /* Estado hover de una superficie de marca: el mismo color, un paso más
+       cerca del texto de la página. Con el primario en rojo, oscurece rojo; en
+       modo oscuro, aclara. Antes el hover del CTA era verde tinta fijo. */
+    --primary-hover: color-mix(in oklab, var(--primary) 85%, var(--foreground));
     --primary-soft: color-mix(in oklab, var(--primary) 14%, var(--background));
     --primary-soft-foreground: var(--foreground);
     --primary-readable: var(--primary);
