@@ -286,3 +286,37 @@ export const SUPPORTED_CURRENCIES = [
 ] as const;
 
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
+/** Bloques del formulario del tour, en el orden en que se editan. */
+export const TOUR_FORM_STEP_IDS = [
+    'general',
+    'pricing',
+    'detail',
+    'route',
+    'gallery',
+] as const;
+
+export type TourFormStepId = (typeof TOUR_FORM_STEP_IDS)[number];
+
+/** Un bloque del formulario tal como lo pinta el riel de progreso. */
+export type TourFormStep = {
+    id: TourFormStepId;
+    /** `id` del `<section>` al que salta el riel. */
+    anchor: string;
+    label: string;
+    hint: string;
+    done: boolean;
+};
+
+/**
+ * Una condición del checklist de publicación. `blocking` distingue lo que el
+ * backend rechaza (Form Request + `ChangeTourStatusAction`) de lo que solo se
+ * recomienda: el checklist avisa, no inventa reglas (D7).
+ */
+export type TourPublishRequirement = {
+    id: string;
+    label: string;
+    done: boolean;
+    blocking: boolean;
+    hint?: string;
+};

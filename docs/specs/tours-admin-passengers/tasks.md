@@ -109,7 +109,7 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 - [x] 5 tokens nuevos en `resources/css/app.css` (D5): `--brand-warn`, `--brand-warn-50`, `--brand-drop-50`, `--brand-green-50`, `--brand-line-2` — **adelantados en la Fase 4**, que ya los necesitaba para el chip de pago y la observación resaltada. Con los nombres exactos de D5: esta fase no tiene nada que rehacer, solo usarlos
 - [x] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
-- [ ] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
+- [x] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
 - [ ] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
 - [ ] **Detalle**: hero, pestañas `Resumen · Pasajeros · Ruta`, 4 KPIs, ocupación de próximas salidas, itinerario como línea de tiempo, mapa de solo lectura
 - [ ] Nada de «Falta guía»: no existe el estado (D7). Se eliminan etiqueta, acción, select ámbar y opción «Sin asignar»
@@ -180,6 +180,57 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente no
   tenía la herramienta de navegador disponible; queda para el barrido de la Fase 8 junto con los
   breakpoints 390/430/768/1024/1280/1440.
+
+### Fase 6 — Crear (2026-08-20)
+
+- **El checklist refleja el backend, no la maqueta.** `ChangeTourStatusAction` solo bloquea la
+  activación por dos cosas: `images()->count() === 0` y `default_guide_id === null`. Lo demás que
+  «bloquea» lo bloquea antes `StoreTourRequest`/`UpdateTourRequest`, que exigen `name`,
+  `description`, `base_price`, `currency`, `duration_hours`, `difficulty` y `default_capacity`.
+  Entonces `TourPublishChecklist` lista como **obligatorias** nombre + descripción, precio + cupo +
+  duración, al menos una imagen y guía por defecto. **Desviación consciente**: `short_description`
+  aparece como **recomendada**, no como bloqueante — en el backend es `nullable` y marcarla como
+  bloqueante habría sido inventar una regla que nadie aplica. Las paradas de recogida y regreso van
+  también en recomendadas, como manda D7.
+- **La verdad de completitud vive en `useTourCompletion.ts`**, no en los componentes: el riel de
+  progreso y el checklist son dos vistas del mismo estado, y ese estado son las reglas del backend.
+  `TourProgressRail` y `TourPublishChecklist` son presentación pura. Lo reutiliza «Editar» pasándole
+  `imagesCount: tour.images.length` y sin `pendingCreation`.
+- **Galería en «crear»: hueco real, no cargador falso.** `TourImageUploader` sube contra
+  `/tours/{tour}/images` y en esta pantalla el tour todavía no existe. El bloque «Paso 5» explica
+  que las imágenes se cargan al guardar el borrador (que es lo que ya hacía el flujo: al crear se
+  redirige a la edición) en vez de fingir un dropzone que fallaría. `TourForm` estrena el slot
+  `#gallery` para que «editar» monte allí el cargador real.
+- **`ChipsInput` reemplaza los tres `<textarea>` de «una entrada por línea»** en incluye / no
+  incluye / requisitos. Enter o coma agregan, Retroceso con el campo vacío quita la última ficha,
+  cada «×» tiene `aria-label`, y el contador respeta los topes reales del Form Request (30 ítems por
+  lista, 200 caracteres por ítem). Se descartan duplicados exactos.
+- **`DifficultySelector` no se duplicó**: se le agregó `aria-pressed` por opción, `role="group"` y
+  foco visible. **Desviación de la tabla de D5**: la tarjeta activa se queda en `--primary` (como ya
+  estaba desplegada) en vez de pasar a `--brand-green-50`. Es una selección, no un estado, y con el
+  borde en el color del tenant un fondo verde fijo se vería roto en una agencia con otro principal.
+  `--brand-green-50` sí se usa en el hover de las fichas del `ChipsInput` y del riel.
+- **Nada de «Falta guía» (D7).** El select de guía por defecto perdió la opción «Sin guía por
+  defecto»: ahora el placeholder es un `<option disabled>` («Elige un guía»), igual que
+  `GuideSelect`. `default_guide_id` sigue siendo `nullable` al guardar el borrador —el backend lo
+  permite— y su ausencia se comunica por el checklist, no por un estado ámbar.
+- **`GuideSelect` de la Fase 5 no aplica acá y no se forzó.** Responde «quién está libre entre el
+  día X y el Y»; el guía por defecto del tour no tiene fechas, así que sin rango no hay agenda que
+  consultar. La lista salió a `useTenantGuides.ts` (el `fetch` al equipo que antes estaba dentro de
+  `TourForm`), reutilizable por «editar».
+- **Savebar sticky** en `molecules/StickySaveBar.vue`, con slots `note` y `actions`: «crear» pone el
+  contador de condiciones pendientes; «editar» pondrá su contador de cambios sin duplicar la barra.
+- **Riel a `320px` y colapso en `1180px`** con la variante arbitraria `min-[1180px]:` (el proyecto no
+  define breakpoints propios y `xl` es 1280). El riel es `sticky top-20` solo por encima de ese
+  ancho; debajo cae al final, en una columna.
+- **Datos que la pantalla no tiene y el backend hoy no entrega:** el «Borrador sin guardar · los
+  cambios se conservan 24 h» de la maqueta (no hay autosave ni borrador local: se reemplazó por el
+  contador de condiciones pendientes) y el botón «Vista previa» (no hay ruta pública para un tour que
+  todavía no existe). Ninguno se dibujó.
+- **Verificación.** `pint --dirty`, `types:check`, `lint:check`, `format:check`, `build` y
+  `php artisan test --compact` (692/692) en verde. **Sin comprobación en navegador**: este agente
+  tampoco tenía la herramienta de navegador; los breakpoints 390/430/768/1024/1280/1440 quedan para
+  el barrido de la Fase 8.
 
 ### Fase 2 — backend (2026-08-20)
 
