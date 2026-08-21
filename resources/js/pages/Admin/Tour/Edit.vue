@@ -15,6 +15,7 @@ import {
 import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
 import changeStatus from '@/actions/App/Http/Controllers/Api/V1/Admin/TourStatusController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
+import PickupChangeNotice from '@/components/molecules/PickupChangeNotice.vue';
 import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
 import type { TourTabItem } from '@/components/molecules/TourTabs.vue';
@@ -154,6 +155,8 @@ const imagesCount = computed<number>(() => props.tour.images.length);
 
 const { steps, requirements, blockingCount } = useTourCompletion(payload, {
     imagesCount,
+    // El reparto bloqueante/recomendado lo decide el servidor (D7).
+    serverRequirements: props.tour.publish_checklist,
 });
 
 /** El bloque «Ruta y mapa» vive en su propia pestaña; el resto, en «Contenido». */
@@ -182,6 +185,30 @@ function goToStep(step: TourFormStep): void {
 const mapSection = ref<InstanceType<typeof TourRouteMapSection> | null>(null);
 
 const previewStops = computed(() => routeStopsFromDrafts(payload.value.stops));
+
+/**
+ * Regla 6: si la recogida del formulario ya no es la guardada, el aviso deja de
+ * ser hipotético. Se compara lo que le importa al pasajero —dónde y a qué
+ * hora—, no el orden ni el resto de las paradas.
+ */
+const pickupChanged = computed<boolean>(() => {
+    const saved = (props.tour.stops ?? []).find(
+        (stop) => stop.kind === 'pickup',
+    );
+    const draft = payload.value.stops.find((stop) => stop.kind === 'pickup');
+
+    if (saved === undefined || draft === undefined) {
+        return saved !== draft;
+    }
+
+    return (
+        saved.name !== draft.name.trim() ||
+        (saved.place ?? '') !== draft.place.trim() ||
+        (saved.time ?? '') !== draft.time.trim() ||
+        Number(saved.latitude) !== Number(draft.latitude) ||
+        Number(saved.longitude) !== Number(draft.longitude)
+    );
+});
 
 /**
  * WHY: un mapa de Leaflet montado dentro de una pestaña oculta mide 0×0 y se
@@ -676,6 +703,11 @@ const lastEdited = computed<string | null>(() =>
                     tabindex="0"
                     class="space-y-4"
                 >
+                    <PickupChangeNotice
+                        :impact="props.tour.pickup_change_impact"
+                        :pending="pickupChanged"
+                    />
+
                     <TourForm
                         :model-value="payload"
                         :errors="formErrors"
@@ -825,6 +857,7 @@ const lastEdited = computed<string | null>(() =>
             :tour-id="props.tour.id"
             :editing="editingDate"
             :duration-hours="props.tour.duration_hours"
+            :default-guide-id="props.tour.default_guide_id"
             :guides="departureOptions.guides"
             :routes="departureOptions.routes"
             :providers="departureOptions.providers"

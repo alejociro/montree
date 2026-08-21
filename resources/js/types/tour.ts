@@ -94,8 +94,25 @@ export type Tour = {
     images: TourImage[];
     itinerary: TourItineraryStep[];
     stops: TourStop[];
+    /**
+     * Checklist «Para publicar» calculado por el servidor, que es quien rechaza
+     * la activación. La pantalla puede recalcular `done` sobre lo que hay en el
+     * formulario sin guardar, pero quién bloquea sale de aquí.
+     */
+    publish_checklist: TourPublishRequirement[];
+    /** A cuánta gente se le avisaría si se mueve la parada de recogida (regla 6). */
+    pickup_change_impact: TourPickupChangeImpact;
     created_at: string;
     updated_at: string;
+};
+
+/**
+ * Reservas vivas con salida por venir: lo que se notifica por correo al cambiar
+ * la parada de recogida. El mismo criterio con el que después se envía.
+ */
+export type TourPickupChangeImpact = {
+    bookings: number;
+    passengers: number;
 };
 
 export type TourItineraryDraft = {

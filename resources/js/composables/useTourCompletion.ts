@@ -12,6 +12,14 @@ export type UseTourCompletionOptions = {
     /** Imágenes ya cargadas en el tour; en «crear» todavía no existe ninguna. */
     imagesCount: Ref<number> | number;
     /**
+     * El checklist que emitió el servidor para este tour (`publish_checklist`).
+     * De ahí salen el orden, las etiquetas y —sobre todo— qué bloquea; `done`
+     * se recalcula aquí sobre lo que hay escrito, que es lo único que el
+     * servidor no puede saber todavía. En «crear» no existe: el tour aún no
+     * está guardado y se cae a la lista local.
+     */
+    serverRequirements?: TourPublishRequirement[];
+    /**
      * El tour todavía no está guardado, así que la galería no se puede tocar
      * aún. Cambia el texto de la condición, no la condición.
      */
@@ -40,12 +48,16 @@ function positiveNumber(value: string): boolean {
  * progreso y el checklist «Para publicar».
  *
  * WHY: vive fuera de los componentes a propósito. El riel y el checklist son
- * dos vistas de la misma verdad, y esa verdad son las reglas del backend —
- * `StoreTourRequest`/`UpdateTourRequest` para lo que ni siquiera deja guardar,
- * y `ChangeTourStatusAction` para lo que impide activar (imagen y guía por
- * defecto). Las paradas de recogida y regreso NO bloquean nada allá, así que
- * acá se marcan como recomendadas (D7): endurecerlas dejaría en borrador a
- * tours que hoy están activos.
+ * dos vistas de la misma verdad, y esa verdad son las reglas del backend. Desde
+ * la Fase 7 la lista la emite el servidor en `tour.publish_checklist`
+ * (`App\Services\Tour\TourPublishChecklist`, la misma que consulta
+ * `ChangeTourStatusAction`): de ahí salen el orden, las etiquetas y qué
+ * bloquea. Acá solo se recalcula `done` sobre lo que hay escrito sin guardar,
+ * que es lo único que el servidor todavía no puede saber.
+ *
+ * La lista local sobrevive para «crear», donde el tour aún no existe y no hay
+ * respuesta del servidor de la que partir. Es un espejo de la de PHP; si las
+ * dos se separan, manda la del servidor en cuanto el borrador se guarda.
  */
 export function useTourCompletion(
     payload: Ref<TourFormPayload>,
@@ -151,48 +163,79 @@ export function useTourCompletion(
         },
     ]);
 
-    const requirements = computed<TourPublishRequirement[]>(() => [
+    const localDone = computed<Record<string, boolean>>(() => ({
+        general: generalDone.value,
+        summary: filled(payload.value.short_description),
+        pricing: pricingDone.value,
+        image: images.value > 0,
+        guide: guideDone.value,
+        stops: hasPickup.value && hasDrop.value,
+    }));
+
+    const localRequirements = computed<TourPublishRequirement[]>(() => [
         {
             id: 'general',
             label: t('Nombre y descripción'),
-            done: generalDone.value,
-            blocking: true,
-        },
-        {
-            id: 'pricing',
-            label: t('Precio, cupo y duración'),
-            done: pricingDone.value,
-            blocking: true,
-        },
-        {
-            id: 'image',
-            label: t('Al menos una imagen'),
-            done: images.value > 0,
-            blocking: true,
-            hint:
-                options.pendingCreation === true
-                    ? t('Se cargan cuando el borrador ya existe.')
-                    : undefined,
-        },
-        {
-            id: 'guide',
-            label: t('Guía por defecto'),
-            done: guideDone.value,
+            done: localDone.value.general,
             blocking: true,
         },
         {
             id: 'summary',
             label: t('Resumen corto'),
-            done: filled(payload.value.short_description),
-            blocking: false,
+            done: localDone.value.summary,
+            blocking: true,
+        },
+        {
+            id: 'pricing',
+            label: t('Precio, cupo y duración'),
+            done: localDone.value.pricing,
+            blocking: true,
+        },
+        {
+            id: 'image',
+            label: t('Al menos una imagen'),
+            done: localDone.value.image,
+            blocking: true,
+            hint: imageHint(),
+        },
+        {
+            id: 'guide',
+            label: t('Guía por defecto'),
+            done: localDone.value.guide,
+            blocking: true,
         },
         {
             id: 'stops',
             label: t('Parada de recogida y de regreso'),
-            done: hasPickup.value && hasDrop.value,
+            done: localDone.value.stops,
             blocking: false,
         },
     ]);
+
+    function imageHint(): string | undefined {
+        return options.pendingCreation === true
+            ? t('Se cargan cuando el borrador ya existe.')
+            : undefined;
+    }
+
+    /**
+     * El servidor manda en el reparto bloqueante/recomendado; el formulario
+     * manda en si la condición ya se cumple con lo que hay escrito. Una
+     * condición que el servidor no conoce no se inventa aquí.
+     */
+    const requirements = computed<TourPublishRequirement[]>(() => {
+        const fromServer = options.serverRequirements;
+
+        if (fromServer === undefined || fromServer.length === 0) {
+            return localRequirements.value;
+        }
+
+        return fromServer.map((requirement) => ({
+            ...requirement,
+            done: localDone.value[requirement.id] ?? requirement.done,
+            hint: requirement.id === 'image' ? imageHint() : requirement.hint,
+        }));
+    });
 
     const blockingCount = computed<number>(
         () =>

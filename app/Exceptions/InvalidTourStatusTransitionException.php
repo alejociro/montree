@@ -45,6 +45,34 @@ final class InvalidTourStatusTransitionException extends RuntimeException implem
         return $exception;
     }
 
+    /**
+     * WHY (D7): el resumen corto es lo que se lee en el catálogo debajo del
+     * nombre. Publicar sin él deja la tarjeta pública muda, y la regla 4 del
+     * handoff lo pide desde el principio.
+     */
+    public static function needsSummary(): self
+    {
+        $exception = new self(TourStatus::Draft, TourStatus::Active);
+        $exception->message = __('Tour needs a short summary before activating.');
+        $exception->errorCode = 'TOUR_NEEDS_SUMMARY_TO_ACTIVATE';
+
+        return $exception;
+    }
+
+    /**
+     * Nombre, descripción, precio, cupo y duración los exige ya el Form
+     * Request, así que un tour guardado no debería llegar aquí sin ellos. Si
+     * llega —una fila vieja, una importación—, se dice en vez de dejar publicar.
+     */
+    public static function incomplete(): self
+    {
+        $exception = new self(TourStatus::Draft, TourStatus::Active);
+        $exception->message = __('Tour is missing required content before activating.');
+        $exception->errorCode = 'TOUR_INCOMPLETE_TO_ACTIVATE';
+
+        return $exception;
+    }
+
     public function getStatusCode(): int
     {
         return 422;

@@ -12,11 +12,6 @@ use Illuminate\Support\Carbon;
 
 final class UpdateTourDateAction
 {
-    private const ACTIVE_BOOKING_STATUSES = [
-        BookingStatus::PendingPayment->value,
-        BookingStatus::Confirmed->value,
-    ];
-
     /**
      * @param  array<string, mixed>  $data
      */
@@ -61,7 +56,7 @@ final class UpdateTourDateAction
     private function hasActiveBookings(TourDate $tourDate): bool
     {
         return $tourDate->bookings()
-            ->whereIn('status', self::ACTIVE_BOOKING_STATUSES)
+            ->whereIn('status', BookingStatus::activeValues())
             ->exists();
     }
 }

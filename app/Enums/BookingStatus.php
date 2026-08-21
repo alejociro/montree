@@ -13,6 +13,21 @@ enum BookingStatus: string
     case Refunded = 'refunded';
     case Expired = 'expired';
 
+    /**
+     * Reserva viva: la que todavía puede llevar gente a un tour. Es la misma
+     * lista que usan el borrado del tour y el cambio de fecha de una salida, y
+     * la que decide a quién se avisa cuando cambia una parada de recogida.
+     *
+     * @return array<int, string>
+     */
+    public static function activeValues(): array
+    {
+        return [
+            self::PendingPayment->value,
+            self::Confirmed->value,
+        ];
+    }
+
     public function label(): string
     {
         return match ($this) {
