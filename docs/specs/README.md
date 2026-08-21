@@ -47,6 +47,12 @@ Constitución, docs, sub-agents, slash commands, schema completo.
 ### Fase 5 — Crecimiento / adquisición
 16. [F016 — Onboarding self-serve de agencia](./F016-tenant-onboarding/spec.md) — depende de F002 (estado `pending`) y F001 (sesión aislada §10)
 
+### Rediseños y ampliaciones
+- [tours-admin-passengers — Planilla de pasajeros y rediseño del CRUD de tours](./tours-admin-passengers/spec.md) —
+  **supera a [F003](./F003-tour-crud/spec.md)** en las cuatro pantallas del panel de tours; añade la
+  planilla de la salida (panel y zona del guía), guía obligatorio por salida con control de
+  disponibilidad, y el permiso `bookings.passengers.medical.view` para el dato de salud
+
 ### Transversales
 - [multilanguage-es-en — Soporte multilenguaje (español / inglés)](./multilanguage-es-en/spec.md) — toca toda la UI, las validaciones y los correos; no bloquea ni depende de ningún feature de dominio
 

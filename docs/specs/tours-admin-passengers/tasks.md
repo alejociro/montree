@@ -115,7 +115,7 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 - [x] Nada de «Falta guía»: no existe el estado (D7). Se eliminan etiqueta, acción, select ámbar y opción «Sin asignar»
 - [x] `fit()` (`invalidateSize()` + `fitBounds()`) al activarse cada pestaña con mapa
 - [x] Los primarios, el subrayado de pestaña, las barras de ocupación y el pin de recogida van por `--primary` (color del tenant); los estados, por los tokens semánticos fijos
-- [ ] Responsive: `1180px` colapsa a una columna; verificar 390/430/768/1024/1280/1440 sin desbordamiento horizontal
+- [x] Responsive: `1180px` colapsa a una columna; verificar 390/430/768/1024/1280/1440 sin desbordamiento horizontal — **verificado en la Fase 8** en navegador real: 0 px de desbordamiento en las 24 combinaciones, y la rejilla de «Editar» pasa de `509px 320px` a una sola columna entre 1181 px y 1179 px
 
 ## Fase 7 — Reglas restantes (`montree-backend-dev`) · ~0,5 día
 
@@ -128,21 +128,56 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 8 — Cierre · ~1 día
 
-- [ ] Avisar al equipo de QA antes de correr las migraciones de la Fase 1 en su entorno: `ends_at`, `NOT NULL` y el reparto de guías reescriben lo que estén mirando
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `npm run types:check`, `npm run lint:check`, `npm run format:check`
-- [ ] `php artisan test --compact` (594/594 en `develop` al 2026-08-20: no debe bajar; 718/718 al cerrar la Fase 7)
-- [ ] `npm run build`
-- [ ] Navegador con las **tres** cuentas —admin, ventas y guía—: la Decisión 7 solo se ve comparando las dos primeras. 0 errores de consola
-- [ ] Navegador con **dos tenants de colores distintos** para comprobar la Decisión 4
-- [ ] `montree-reviewer` sobre el feature completo → GO
-- [ ] Actualizar el Changelog de `docs/specs/F003-tour-crud/spec.md` marcándola superada
-- [ ] Actualizar `docs/specs/README.md` con la entrada del feature
-- [ ] PR `feature/tours-admin-passenger-manifest` → `develop` (rama y mensajes en inglés, sin co-author)
+- [x] Aviso a QA redactado en [`aviso-qa.md`](./aviso-qa.md): qué reescribe cada migración, qué van a notar y qué probar. **Falta enviarlo** — el documento existe, la comunicación la hace una persona
+- [x] `vendor/bin/pint --dirty`
+- [x] `npm run types:check`, `npm run lint:check`, `npm run format:check`
+- [x] `php artisan test --compact` — **720/720** (594 en `develop`, 718 al cerrar la Fase 7, +2 del test de dialecto SQL)
+- [x] `npm run build`
+- [x] Navegador con las **tres** cuentas —admin, ventas y guía—. 0 errores de consola propios; el único error registrado es el `403` que devuelve `/admin/tours` al guía, que es la conducta correcta
+- [x] Navegador con **dos tenants de colores distintos** (`demo` verde `#16a34a`, `andes` morado `#7c3aed`): la barra de ocupación sigue al tenant y el badge de estado no
+- [x] Responsive verificado en 390 · 430 · 768 · 1024 · 1280 · 1440 sobre las cuatro pantallas: **cero desbordamiento horizontal** en las 24 cargas, y el corte de `1180px` colapsa la columna de ayudas de «Editar» como pide la maqueta (cierra el último item de la Fase 6)
+- [x] `montree-reviewer` sobre el feature completo
+- [x] Actualizar el Changelog de `docs/specs/F003-tour-crud/spec.md` marcándola superada
+- [x] Actualizar `docs/specs/README.md` con la entrada del feature
+- [ ] PR `feature/tours-admin-passenger-manifest` → `develop` (rama y mensajes en inglés, sin co-author) — **pendiente de que el usuario autorice el push**
 
 ---
 
 ## Notas durante implementación
+
+### Fase 8 — cierre (2026-08-21)
+
+Suite en **720/720** (+2); Pint, `types:check`, `lint:check`, `format:check` y `npm run build` en
+verde. Un commit de código, uno de documentación.
+
+1. **La suite corre sobre SQLite y la aplicación sobre MySQL, y eso dejó pasar un 500.** El listado
+   de tours reventaba al abrirlo: las cifras operativas buscaban la próxima salida con
+   `IN (subconsulta con LIMIT)`, forma que MySQL rechaza con el error 1235 —también en 9.6— y que
+   SQLite acepta sin chistar. La próxima salida es una fila, así que la comparación pasó a escalar
+   (`= (select … limit 1)`). El test nuevo (`tests/Unit/Queries/TourOperationalSummarySqlTest.php`)
+   vigila **la forma del SQL**, no el resultado: ningún `IN` de esa consulta puede llevar `LIMIT`.
+   Comprobado que falla sin la corrección.
+   - **Consecuencia de método:** mientras el motor de la suite no sea el de producción, la
+     verificación en navegador no es un lujo del cierre; es la única red que atrapa esta clase de
+     fallo. Los seis órdenes del listado y los endpoints de planilla, disponibilidad y detalle se
+     pasaron por MySQL uno a uno.
+2. **La Decisión 7 se comprobó comparando cuentas, no leyendo código.** Con `sales`: sin columna
+   «Observaciones», sin filtro «Con observaciones», sin conteo en el pie y con un CSV que no trae
+   EPS ni notas —pero con el total por cobrar intacto—. Con `guide`: la planilla completa, sin
+   acciones de escritura, y `403` en `/admin/tours`.
+3. **La Decisión 4 se comprobó con dos tenants y colores calculados.** `demo` (`#16a34a`) y `andes`
+   (`#7c3aed`): `--primary` y la barra de ocupación cambian con el tenant; el badge de estado
+   entrega exactamente el mismo `rgb(239, 246, 240)` / `rgb(47, 107, 69)` en los dos.
+4. **Responsive verificado a 390 · 430 · 768 · 1024 · 1280 · 1440** sobre las cuatro pantallas: 0 px
+   de desbordamiento en las 24 cargas, 0 errores de consola en las 24, y el corte de `1180px`
+   colapsando la columna de ayudas de «Editar» entre 1181 y 1179 px. Cierra el último item de la
+   Fase 6.
+5. **Dos observaciones que no son de este feature.** Las horas se pintan en el huso del navegador y
+   no en el `timezone` del tenant (`config('app.timezone')` es UTC): una salida guardada como
+   `07:00` se lee «2:00 a. m.» en un equipo en Bogotá. Y `TourFactory` fija `'currency' => 'USD'`
+   mientras el tenant demo declara `COP`, así que la misma pantalla muestra «US$ 480» y
+   «$ 90.000». La primera es una decisión de producto pendiente; la segunda, dato sembrado.
+
 
 ### Fase 7 — reglas restantes (2026-08-20)
 

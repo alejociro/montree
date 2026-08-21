@@ -521,7 +521,8 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
 | El rediseño del CRUD toca las 4 páginas a la vez | Va **después** de la planilla y de la disponibilidad, y por pantalla, un commit cada una |
 | El select de guía se construye dos veces | La Fase 5 (disponibilidad) va **antes** que la Fase 6 (rediseño) |
 | El handoff pide módulos que no existen (Reservas, Pagos, Guías) | Son `href="#"` en el prototipo; declarados fuera de alcance en la spec |
-| La resiembra pisa lo que QA está mirando | Coordinación explícita antes de correr las migraciones en ese entorno (Fase 8) |
+| La resiembra pisa lo que QA está mirando | Coordinación explícita antes de correr las migraciones en ese entorno; el aviso está redactado en [`aviso-qa.md`](./aviso-qa.md) (Fase 8) |
+| **La suite corre sobre SQLite y la aplicación sobre MySQL** | Ningún test puede atrapar una incompatibilidad de dialecto: la verificación en navegador de la Fase 8 es la que la encuentra. Ya pasó una vez (`IN` con `LIMIT`, error 1235 de MySQL) y quedó un test de forma del SQL; el riesgo de fondo sigue abierto mientras los dos motores no coincidan |
 | El viajero escribe con la ventana ya cerrada y solo se entera por un `409` | El formulario consume `can_edit_travelers`/`travelers_edit_deadline` y se pinta en solo lectura (Fase 4) |
 
 ---

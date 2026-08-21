@@ -424,12 +424,19 @@ el equipo esté mirando en ese momento.
   marcador de posición conserva `payment` (solo se anulan los campos de la persona); el pago manual
   se queda como está y se revisa con la futura pasarela. Detalle en el Changelog de
   [`contracts.md`](./contracts.md).
+- `2026-08-21` — **Fase 8: cierre.** Verificación en navegador con las tres cuentas y dos tenants,
+  responsive de 390 a 1440, revisión del feature y aviso a QA redactado
+  ([`aviso-qa.md`](./aviso-qa.md)). Un fallo real que la suite no podía ver: los tests corren sobre
+  SQLite y la aplicación sobre MySQL, y el listado de tours devolvía `500` por un
+  `IN (subconsulta con LIMIT)` que MySQL rechaza (error 1235). Corregido a comparación escalar, con
+  un test que vigila la forma del SQL. Esta spec queda como la vigente del panel de tours: F003 se
+  marcó superada en su propio Changelog.
 
 ---
 
 ## TODO
 
-- [ ] **Fase 4 · frontend.** El formulario del viajero (`BookingTravelersSection.vue` y su página)
-  todavía deja escribir con la ventana cerrada y recibe el `409`. Debe consumir
-  `can_edit_travelers` / `travelers_edit_deadline` y pintarse en solo lectura con el aviso de hasta
-  cuándo se podía editar. Ítem añadido al checklist de la Fase 4 en [`tasks.md`](./tasks.md).
+**Nada abierto.** El único pendiente que vivía aquí —el formulario del viajero con la ventana de
+edición cerrada— se cerró en la Fase 4: `Booking/Show.vue` pasa `can_edit_travelers` y
+`travelers_edit_deadline` a `BookingTravelersSection.vue`, que se pinta en solo lectura con la fecha
+límite en vez de dejar escribir para recibir un `409`.
