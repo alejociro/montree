@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingControlle
 use App\Http\Controllers\Api\V1\Admin\BookingPaymentController as AdminBookingPaymentController;
 use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideAvailabilityController;
 use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerController;
@@ -130,6 +131,7 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
     Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
     Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
+    Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
     Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
 
     Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')

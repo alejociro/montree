@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\TourDateDisplayStatus;
 use App\Enums\TourDateStatus;
+use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
 use Database\Factories\TourDateFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +93,16 @@ class TourDate extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * El fin de una salida no es un dato del cliente: sale de la duración del
+     * tour (D9). Un `ends_at` que miente es peor que uno vacío, porque la regla
+     * de disponibilidad se lo cree.
+     */
+    public static function deriveEndsAt(CarbonInterface $startsAt, int $durationHours): CarbonInterface
+    {
+        return $startsAt->copy()->addHours($durationHours);
     }
 
     /**

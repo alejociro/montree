@@ -34,5 +34,9 @@ final class ChangeTourStatusAction
         if ($tour->images()->count() === 0) {
             throw InvalidTourStatusTransitionException::needsImage();
         }
+
+        if ($tour->default_guide_id === null) {
+            throw InvalidTourStatusTransitionException::needsDefaultGuide();
+        }
     }
 }

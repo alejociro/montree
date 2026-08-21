@@ -31,6 +31,20 @@ final class InvalidTourStatusTransitionException extends RuntimeException implem
         return $exception;
     }
 
+    /**
+     * WHY (D7): publicar un tour sin guía por defecto deja salidas que nadie
+     * puede crear —el guía es obligatorio desde la Fase 1— o que hay que
+     * completar a mano una por una.
+     */
+    public static function needsDefaultGuide(): self
+    {
+        $exception = new self(TourStatus::Draft, TourStatus::Active);
+        $exception->message = __('Tour needs a default guide before activating.');
+        $exception->errorCode = 'TOUR_NEEDS_GUIDE_TO_ACTIVATE';
+
+        return $exception;
+    }
+
     public function getStatusCode(): int
     {
         return 422;
