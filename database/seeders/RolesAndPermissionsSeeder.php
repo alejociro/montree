@@ -26,7 +26,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'tours' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'departures' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'logistics' => ['logistics.view', 'logistics.manage'],
-        'bookings' => ['bookings.view', 'bookings.update', 'payments.refund'],
+        'bookings' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view', 'payments.refund'],
         'promotions' => ['promotions.view', 'promotions.create', 'promotions.update', 'promotions.delete'],
         'newsletter' => ['newsletter.view', 'newsletter.send'],
         'reviews' => ['reviews.view', 'reviews.moderate', 'reviews.respond'],
@@ -76,6 +76,8 @@ class RolesAndPermissionsSeeder extends Seeder
         'guide' => [
             'tours.view',
             'departures.view',
+            // D7: el guía sí ve el dato de salud — es su herramienta de campo.
+            'bookings.passengers.medical.view',
             'guide.schedule.view',
             'guide.travelers.view',
         ],

@@ -33,6 +33,7 @@ const {
     availableViews,
     selectStop,
     showView,
+    fit,
     mount,
 } = useTourRouteMap({
     container: mapContainer,
@@ -58,7 +59,7 @@ const hasDrop = computed(() =>
 );
 const directionsUrl = computed(() => googleDirectionsUrl(props.stops));
 
-defineExpose({ selectStop });
+defineExpose({ selectStop, fit });
 </script>
 
 <template>

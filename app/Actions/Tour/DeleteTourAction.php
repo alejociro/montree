@@ -22,10 +22,7 @@ final class DeleteTourAction
     private function hasBlockingBookings(Tour $tour): bool
     {
         return $tour->bookings()
-            ->whereIn('status', [
-                BookingStatus::PendingPayment->value,
-                BookingStatus::Confirmed->value,
-            ])
+            ->whereIn('status', BookingStatus::activeValues())
             ->exists();
     }
 }

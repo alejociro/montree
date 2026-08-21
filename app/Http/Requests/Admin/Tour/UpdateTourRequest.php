@@ -6,14 +6,18 @@ namespace App\Http\Requests\Admin\Tour;
 
 use App\Enums\TourDifficulty;
 use App\Enums\TourStopKind;
+use App\Http\Requests\Concerns\ValidatesTenantGuide;
 use App\Models\Category;
 use App\Models\Tour;
+use App\Queries\GuideAvailabilityQuery;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateTourRequest extends FormRequest
 {
+    use ValidatesTenantGuide;
+
     private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
 
     public function authorize(): bool
@@ -41,6 +45,7 @@ class UpdateTourRequest extends FormRequest
             'base_price' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999.99'],
             'currency' => ['sometimes', 'required', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
             'duration_hours' => ['sometimes', 'required', 'integer', 'min:1', 'max:240'],
+            'default_guide_id' => ['sometimes', 'nullable', 'integer', $this->guideRule()],
             'difficulty' => ['sometimes', 'required', 'string', Rule::in(array_column(TourDifficulty::cases(), 'value'))],
             'default_capacity' => ['sometimes', 'required', 'integer', 'min:1', 'max:500'],
             'meeting_point' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -75,6 +80,7 @@ class UpdateTourRequest extends FormRequest
     public function after(): array
     {
         return [
+            fn (Validator $validator) => $this->validateDurationChange($validator),
             function (Validator $validator): void {
                 $kinds = array_column((array) $this->input('stops', []), 'kind');
 
@@ -88,5 +94,35 @@ class UpdateTourRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    /**
+     * Cambiar `duration_hours` alarga retroactivamente el `ends_at` derivado de
+     * todas las salidas futuras del tour, y eso puede cruzar dos que hoy no se
+     * tocan (D9). Se avisa **antes** de guardar, con las salidas nombradas: el
+     * administrador decide si mueve una salida o deja la duración como estaba.
+     */
+    private function validateDurationChange(Validator $validator): void
+    {
+        $tour = $this->route('tour');
+        $duration = $this->input('duration_hours');
+
+        if (! $tour instanceof Tour || ! is_numeric($duration) || $validator->errors()->has('duration_hours')) {
+            return;
+        }
+
+        if ((int) $duration === $tour->duration_hours) {
+            return;
+        }
+
+        $conflicts = app(GuideAvailabilityQuery::class)->durationChangeConflicts($tour, (int) $duration);
+
+        if ($conflicts === []) {
+            return;
+        }
+
+        $validator->errors()->add('duration_hours', __('Con esa duración quedarían salidas en solape: :conflicts', [
+            'conflicts' => implode(' · ', $conflicts),
+        ]));
     }
 }

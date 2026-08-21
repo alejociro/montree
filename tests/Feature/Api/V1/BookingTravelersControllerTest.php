@@ -108,6 +108,28 @@ final class BookingTravelersControllerTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors('travelers');
     }
 
+    public function test_rejects_a_document_type_without_its_number(): void
+    {
+        [$tenant, $user, $booking] = $this->setupBooking(1, 0);
+
+        $this->actingAs($user)->putJson("http://demo.montree.test/api/v1/bookings/{$booking->booking_number}/travelers", [
+            'travelers' => [
+                ['full_name' => 'A', 'is_minor' => false, 'document_type' => 'cc'],
+            ],
+        ])->assertStatus(422)->assertJsonValidationErrors('travelers.0.document_number');
+    }
+
+    public function test_rejects_a_document_number_longer_than_the_panel_allows(): void
+    {
+        [$tenant, $user, $booking] = $this->setupBooking(1, 0);
+
+        $this->actingAs($user)->putJson("http://demo.montree.test/api/v1/bookings/{$booking->booking_number}/travelers", [
+            'travelers' => [
+                ['full_name' => 'A', 'is_minor' => false, 'document_number' => str_repeat('9', 41)],
+            ],
+        ])->assertStatus(422)->assertJsonValidationErrors('travelers.0.document_number');
+    }
+
     public function test_rejects_when_booking_is_cancelled(): void
     {
         [$tenant, $user, $booking] = $this->setupBooking(2, 0);

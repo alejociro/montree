@@ -141,6 +141,8 @@ Si un sub-agent necesita modificar un contrato, **detiene** su trabajo, propone 
 
 ### Backend → Frontend
 - Backend termina → ejecuta `php artisan wayfinder:generate` → frontend ya tiene las rutas tipadas.
+- Si el backend tocó un enum de `app/Enums`: `php artisan enums:typescript`. El frontend no
+  escribe espejos a mano; los tipos salen de `@/types/enums.generated`.
 - Backend documenta el shape del response final (debe matchear `contracts.md`; si difiere, actualizar contract antes).
 
 ### Frontend → Backend

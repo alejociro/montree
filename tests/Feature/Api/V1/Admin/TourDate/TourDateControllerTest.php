@@ -81,7 +81,6 @@ class TourDateControllerTest extends TestCase
             "http://demo.montree.test/api/v1/admin/tours/{$tour->id}/dates",
             [
                 'starts_at' => now()->addDays(10)->toIso8601String(),
-                'ends_at' => now()->addDays(10)->addHours(4)->toIso8601String(),
                 'capacity' => 12,
                 'price_override' => '950.00',
                 'notes' => 'Salida especial',

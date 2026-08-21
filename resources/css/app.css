@@ -80,6 +80,19 @@
     --color-brand-site: var(--brand-site);
     --color-brand-on-ink: var(--brand-on-ink);
     --color-brand-ink-line: var(--brand-ink-line);
+
+    /*
+      Semánticos fijos (D4/D5). NO siguen a `--primary`: «Pagado» en verde,
+      «Saldo pendiente» en terracota, avisos en ámbar y la observación médica
+      resaltada son ESTADOS, no marca. Colgados del color del tenant, una
+      agencia con el principal en rojo mostraría «Pagado» en rojo y la alerta
+      médica invisible.
+    */
+    --color-brand-warn: var(--brand-warn);
+    --color-brand-warn-50: var(--brand-warn-50);
+    --color-brand-drop-50: var(--brand-drop-50);
+    --color-brand-green-50: var(--brand-green-50);
+    --color-brand-line-2: var(--brand-line-2);
 }
 
 /*
@@ -131,6 +144,17 @@
     --brand-on-ink: #cfdbcf; /* texto sobre superficies ink */
     --brand-ink-line: #2b4a36; /* separadores sobre superficies ink */
 
+    /*
+      MONTREE — semánticos fijos del handoff «tours admin» (D4/D5).
+      Se quedan iguales para todas las agencias: `useTenantBranding` solo
+      reescribe `--primary`, `--secondary`, `--ring` y los `--sidebar-*`.
+    */
+    --brand-warn: #b98a17; /* avisos, tour pausado */
+    --brand-warn-50: #fdf6e3; /* fondo del aviso */
+    --brand-drop-50: #f7e6dc; /* fondo del KPI de saldo pendiente */
+    --brand-green-50: #eff6f0; /* hover de superficies, dificultad activa */
+    --brand-line-2: #efe9dc; /* separadores internos de tabla */
+
     /* Roles semánticos derivados de la paleta */
     --background: var(--brand-cream);
     --foreground: var(--brand-text);
@@ -174,6 +198,16 @@
       se arma con sus propios tokens: ink como fondo, green como
       superficie y on-ink/ink-line para texto y separadores.
     */
+    /*
+      Los semánticos fijos conservan su HUE en oscuro —verde, ámbar y
+      terracota siguen queriendo decir lo mismo— pero sus superficies `*-50`
+      se oscurecen: una tarjeta crema sobre fondo ink no se lee.
+    */
+    --brand-warn-50: #3a3117;
+    --brand-drop-50: #3b241a;
+    --brand-green-50: #1b3324;
+    --brand-line-2: var(--brand-ink-line);
+
     --background: var(--brand-ink);
     --foreground: var(--brand-cream);
     --card: var(--brand-green);

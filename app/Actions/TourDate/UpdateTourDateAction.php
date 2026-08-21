@@ -12,11 +12,6 @@ use Illuminate\Support\Carbon;
 
 final class UpdateTourDateAction
 {
-    private const ACTIVE_BOOKING_STATUSES = [
-        BookingStatus::PendingPayment->value,
-        BookingStatus::Confirmed->value,
-    ];
-
     /**
      * @param  array<string, mixed>  $data
      */
@@ -31,8 +26,15 @@ final class UpdateTourDateAction
         }
 
         $tourDate->fill(array_intersect_key($data, array_flip([
-            'starts_at', 'ends_at', 'capacity', 'price_override', 'notes', 'guide_id', 'route_id', 'provider_id',
+            'starts_at', 'capacity', 'price_override', 'notes', 'guide_id', 'route_id', 'provider_id',
         ])));
+
+        // WHY (D9): se rederiva siempre, no solo cuando cambia el inicio. Una
+        // salida vieja con un `ends_at` inventado se corrige la primera vez que
+        // alguien la toca, en vez de sobrevivir a la migración.
+        $tourDate->loadMissing('tour');
+        $tourDate->ends_at = TourDate::deriveEndsAt($tourDate->starts_at, $tourDate->tour->duration_hours);
+
         $tourDate->save();
 
         if (array_key_exists('hotel_ids', $data)) {
@@ -54,7 +56,7 @@ final class UpdateTourDateAction
     private function hasActiveBookings(TourDate $tourDate): bool
     {
         return $tourDate->bookings()
-            ->whereIn('status', self::ACTIVE_BOOKING_STATUSES)
+            ->whereIn('status', BookingStatus::activeValues())
             ->exists();
     }
 }

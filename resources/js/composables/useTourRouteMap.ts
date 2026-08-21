@@ -44,6 +44,12 @@ export type UseTourRouteMapReturn = {
     availableViews: Ref<TourRouteView[]>;
     selectStop: (index: number, fly?: boolean) => void;
     showView: (view: TourRouteView) => void;
+    /**
+     * Re-mide el contenedor y vuelve a encuadrar. Obligatorio cuando el mapa
+     * se montó dentro de una pestaña oculta: Leaflet mide 0×0 y el mapa queda
+     * en gris hasta que alguien lo redimensiona.
+     */
+    fit: () => void;
     mount: () => void;
 };
 
@@ -435,6 +441,15 @@ export function useTourRouteMap(
         grouped = null;
     });
 
+    function fit(): void {
+        if (map === null) {
+            return;
+        }
+
+        map.invalidateSize();
+        showView(activeView.value);
+    }
+
     return {
         status,
         selectedStopIndex,
@@ -442,6 +457,7 @@ export function useTourRouteMap(
         availableViews,
         selectStop,
         showView,
+        fit,
         mount: () => void mount(),
     };
 }

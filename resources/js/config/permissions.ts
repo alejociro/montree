@@ -1,7 +1,7 @@
 import type { PermissionModule, PermissionSummary } from '@/types/role';
 
 /**
- * Catalogo de los 38 permisos de F018, agrupado por modulo.
+ * Catalogo de los 39 permisos de F018, agrupado por modulo.
  *
  * **No es la fuente de verdad**: el catalogo real llega del backend en
  * `GET /api/v1/admin/roles` → `meta.available_permissions`
@@ -62,6 +62,7 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
     bookings: [
         ['bookings.view', 'Ver reservas'],
         ['bookings.update', 'Editar reservas'],
+        ['bookings.passengers.medical.view', 'Ver EPS y observaciones médicas'],
         ['payments.refund', 'Emitir reembolsos'],
     ],
     promotions: [
@@ -96,7 +97,7 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
     ],
 };
 
-/** Los 38 permisos como lista plana, en el orden del catalogo. */
+/** Los 39 permisos como lista plana, en el orden del catalogo. */
 export const PERMISSION_CATALOG: PermissionSummary[] = Object.entries(
     CATALOG_BY_MODULE,
 ).flatMap(([module, entries]) =>

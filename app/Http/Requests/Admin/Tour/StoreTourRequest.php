@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Tour;
 
 use App\Enums\TourDifficulty;
 use App\Enums\TourStopKind;
+use App\Http\Requests\Concerns\ValidatesTenantGuide;
 use App\Models\Category;
 use App\Models\Tour;
 use Illuminate\Contracts\Validation\Validator;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rule;
 
 class StoreTourRequest extends FormRequest
 {
+    use ValidatesTenantGuide;
+
     private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
 
     public function authorize(): bool
@@ -38,6 +41,7 @@ class StoreTourRequest extends FormRequest
             'base_price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
             'currency' => ['required', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
             'duration_hours' => ['required', 'integer', 'min:1', 'max:240'],
+            'default_guide_id' => ['nullable', 'integer', $this->guideRule()],
             'difficulty' => ['required', 'string', Rule::in(array_column(TourDifficulty::cases(), 'value'))],
             'default_capacity' => ['required', 'integer', 'min:1', 'max:500'],
             'meeting_point' => ['nullable', 'string', 'max:255'],
