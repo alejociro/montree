@@ -26,6 +26,9 @@ class TourResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status->value,
             'category_id' => $this->category_id,
+            // D7: el guía por defecto es obligatorio para publicar, así que el
+            // formulario del tour necesita poder leerlo y proponerlo.
+            'default_guide_id' => $this->default_guide_id,
             'category' => $this->whenLoaded('category', fn () => $this->category !== null
                 ? (new CategoryResource($this->category))->resolve()
                 : null),

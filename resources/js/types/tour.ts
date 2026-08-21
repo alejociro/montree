@@ -69,6 +69,7 @@ export type Tour = {
     status: TourStatus;
     category_id: number | null;
     category: TourCategory | null;
+    default_guide_id: number | null;
     base_price: string;
     currency: string;
     duration_hours: number;
@@ -124,6 +125,7 @@ export type TourStopPayload = {
 
 export type TourFormPayload = {
     name: string;
+    default_guide_id: number | null;
     short_description: string;
     description: string;
     category_id: number | null;

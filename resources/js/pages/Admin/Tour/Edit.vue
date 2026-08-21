@@ -57,6 +57,7 @@ const initialValues = computed<TourFormPayload>(() => ({
     base_price: props.tour.base_price,
     currency: props.tour.currency as SupportedCurrency,
     duration_hours: props.tour.duration_hours,
+    default_guide_id: props.tour.default_guide_id,
     difficulty: props.tour.difficulty,
     default_capacity: props.tour.default_capacity,
     meeting_point: props.tour.meeting_point ?? '',
@@ -364,6 +365,7 @@ function deleteTour(): void {
             <TourDatesPanel
                 :tour-id="props.tour.id"
                 :currency="props.tour.currency"
+                :duration-hours="props.tour.duration_hours"
             />
         </div>
     </div>

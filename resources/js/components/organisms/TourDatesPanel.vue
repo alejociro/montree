@@ -48,9 +48,13 @@ const { t } = useTranslations();
 type Props = {
     tourId: number;
     currency: string;
+    /** De acá sale el fin derivado de cada salida y el rango del guía (D9). */
+    durationHours?: number | null;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    durationHours: null,
+});
 
 const api = useApi();
 
@@ -471,6 +475,7 @@ onMounted(() => {
             v-model:open="dialogOpen"
             :tour-id="props.tourId"
             :editing="editing"
+            :duration-hours="props.durationHours"
             :guides="guides"
             :routes="routes"
             :providers="providers"

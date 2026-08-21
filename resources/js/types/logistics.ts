@@ -68,7 +68,6 @@ export interface TourDatesGlobalResponse {
 
 export interface TourDateFormInput {
     starts_at: string;
-    ends_at: string;
     capacity: number;
     price_override: string;
     notes: string;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AcceptableValue } from 'reka-ui';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { index as teamIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import CapacityInput from '@/components/molecules/CapacityInput.vue';
@@ -44,6 +45,47 @@ const emit = defineEmits<{
 }>();
 
 const value = computed(() => props.modelValue);
+
+/** Recorte de `TeamMemberResource`: `roles` viaja como objetos. */
+type TeamMember = { id: number; name: string; roles: { name: string }[] };
+
+const guides = ref<{ id: number; name: string }[]>([]);
+
+/**
+ * WHY (D7): publicar el tour exige guía por defecto, así que el formulario tiene
+ * que poder elegirlo. La lista sale del equipo del tenant, filtrada por rol,
+ * igual que en el panel de salidas.
+ */
+onMounted(async () => {
+    try {
+        const response = await fetch(teamIndex().url, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const payload = (await response.json()) as { data: TeamMember[] };
+        guides.value = payload.data
+            .filter((member) =>
+                (member.roles ?? []).some((role) => role.name === 'guide'),
+            )
+            .map((member) => ({ id: member.id, name: member.name }));
+    } catch {
+        guides.value = [];
+    }
+});
+
+function handleDefaultGuideChange(event: Event): void {
+    const raw = (event.target as HTMLSelectElement).value;
+
+    update('default_guide_id', raw === '' ? null : Number(raw));
+}
 
 function update<K extends keyof TourFormPayload>(
     key: K,
@@ -258,6 +300,35 @@ const meetingErrors = computed(() => ({
                     :error="errors.difficulty"
                     @update:model-value="(v) => update('difficulty', v)"
                 />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="default_guide_id">{{
+                    $t('Guía por defecto')
+                }}</Label>
+                <select
+                    id="default_guide_id"
+                    :value="value.default_guide_id ?? ''"
+                    class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    @change="handleDefaultGuideChange"
+                >
+                    <option value="">{{ $t('Sin guía por defecto') }}</option>
+                    <option
+                        v-for="guide in guides"
+                        :key="guide.id"
+                        :value="guide.id"
+                    >
+                        {{ guide.name }}
+                    </option>
+                </select>
+                <p class="text-xs text-muted-foreground">
+                    {{
+                        $t(
+                            'Se propone al programar cada salida. Es obligatorio para publicar el tour.',
+                        )
+                    }}
+                </p>
+                <InputError :message="errors.default_guide_id" />
             </div>
         </section>
 

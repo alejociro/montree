@@ -45,6 +45,7 @@ const initialValues: TourFormPayload = {
     base_price: '0',
     currency: (tenantCurrency.value ?? 'USD') as TourFormPayload['currency'],
     duration_hours: 4,
+    default_guide_id: null,
     difficulty: 'easy',
     default_capacity: 10,
     meeting_point: '',
