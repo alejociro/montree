@@ -98,6 +98,8 @@ final class TourOperationalSummaryQuery
     /**
      * Viajeros de la próxima salida. `$onlyWithDue` los estrecha a los de una
      * reserva que aún debe: el saldo es de la reserva, no de la persona (D5).
+     * Sin salida próxima la comparación queda contra `NULL` y la suma cae a 0,
+     * que es justo lo que la tarjeta tiene que mostrar.
      *
      * @return Builder<Booking>
      */
@@ -107,7 +109,11 @@ final class TourOperationalSummaryQuery
             ->selectRaw('COALESCE(SUM(travelers_count), 0)')
             ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Completed->value])
             ->when($onlyWithDue, fn (Builder $query): Builder => $query->whereColumn('paid_amount', '<', 'total_amount'))
-            ->whereIn('tour_date_id', $this->nextDeparture('id'));
+            // WHY: `=` y no `whereIn`. MySQL no admite `LIMIT` dentro de una subconsulta
+            // de `IN` («This version of MySQL doesn't yet support 'LIMIT & IN/ALL/ANY/SOME
+            // subquery'», comprobado en 9.6); como escalar sí la admite, y la próxima
+            // salida es una sola fila por definición.
+            ->where('tour_date_id', '=', $this->nextDeparture('id'));
     }
 
     /**
