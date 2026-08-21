@@ -540,24 +540,30 @@ const manifestSource = computed(
                         {{ $t('Este tour todavía no tiene itinerario.') }}
                     </p>
 
-                    <ol v-else class="mt-5 space-y-5">
+                    <!--
+                      El hilo entre pasos va ABSOLUTO, no como hermano flexible
+                      del número: con `space-y` entre `<li>` la línea terminaba
+                      en el borde del ítem y quedaba un hueco visible antes del
+                      círculo siguiente. Anclada al `<li>`, cruza también su
+                      relleno inferior y los pasos quedan encadenados.
+                    -->
+                    <ol v-else class="mt-5">
                         <li
                             v-for="(step, index) in props.tour.itinerary"
                             :key="step.step_number"
-                            class="flex gap-4"
+                            class="relative flex gap-4 pb-5 last:pb-0"
                         >
+                            <span
+                                v-if="index < props.tour.itinerary.length - 1"
+                                aria-hidden="true"
+                                class="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-brand-line-2"
+                            />
                             <div class="flex flex-col items-center">
                                 <span
                                     class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                                 >
                                     {{ step.step_number }}
                                 </span>
-                                <span
-                                    v-if="
-                                        index < props.tour.itinerary.length - 1
-                                    "
-                                    class="mt-1 w-px flex-1 bg-brand-line-2"
-                                />
                             </div>
                             <div class="min-w-0 pb-1">
                                 <div

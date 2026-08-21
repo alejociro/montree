@@ -25,7 +25,7 @@ defineOptions({
         v-slot="{ errors, processing }"
     >
         <div class="space-y-6">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password">{{ $t('Contraseña') }}</Label>
                 <PasswordInput
                     id="password"

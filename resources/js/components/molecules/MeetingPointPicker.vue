@@ -38,7 +38,7 @@ function update<K extends keyof MeetingPointValue>(
             :description="$t('Dónde reciben a los viajeros.')"
         />
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="meeting_point">{{
                 $t('Dirección o referencia')
             }}</Label>
@@ -52,7 +52,7 @@ function update<K extends keyof MeetingPointValue>(
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="meeting_latitude">{{ $t('Latitud') }}</Label>
                 <Input
                     id="meeting_latitude"
@@ -69,7 +69,7 @@ function update<K extends keyof MeetingPointValue>(
                 <InputError :message="errors?.meeting_latitude" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="meeting_longitude">{{ $t('Longitud') }}</Label>
                 <Input
                     id="meeting_longitude"

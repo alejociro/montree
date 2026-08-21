@@ -134,7 +134,7 @@ function handleFormatChange(value: AcceptableValue): void {
 
             <div class="grid gap-4 py-2">
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="export-from">{{ $t('Desde') }}</Label>
                         <Input
                             id="export-from"
@@ -143,7 +143,7 @@ function handleFormatChange(value: AcceptableValue): void {
                             :max="to"
                         />
                     </div>
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="export-to">{{ $t('Hasta') }}</Label>
                         <Input
                             id="export-to"
@@ -154,7 +154,7 @@ function handleFormatChange(value: AcceptableValue): void {
                     </div>
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label>{{ $t('Agrupar por') }}</Label>
                     <Select
                         :model-value="groupBy"
@@ -179,7 +179,7 @@ function handleFormatChange(value: AcceptableValue): void {
                     </Select>
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label>{{ $t('Formato') }}</Label>
                     <Select
                         :model-value="format"

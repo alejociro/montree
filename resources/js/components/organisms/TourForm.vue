@@ -165,7 +165,7 @@ const meetingErrors = computed(() => ({
                     </div>
                 </CardHeader>
                 <CardContent class="space-y-4">
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="name">{{ $t('Nombre') }}</Label>
                         <Input
                             id="name"
@@ -177,7 +177,7 @@ const meetingErrors = computed(() => ({
                         <InputError :message="errors.name" />
                     </div>
 
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="short_description">{{
                             $t('Resumen corto')
                         }}</Label>
@@ -201,7 +201,7 @@ const meetingErrors = computed(() => ({
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="category_id">{{
                                 $t('Categoría')
                             }}</Label>
@@ -236,7 +236,7 @@ const meetingErrors = computed(() => ({
                             <InputError :message="errors.category_id" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="default_guide_id">{{
                                 $t('Guía por defecto')
                             }}</Label>
@@ -268,7 +268,7 @@ const meetingErrors = computed(() => ({
                         </div>
                     </div>
 
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="description">{{
                             $t('Descripción completa')
                         }}</Label>
@@ -335,7 +335,7 @@ const meetingErrors = computed(() => ({
                             "
                         />
 
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="duration_hours">{{
                                 $t('Duración (horas)')
                             }}</Label>

@@ -44,7 +44,7 @@ function handleCurrency(value: AcceptableValue): void {
 </script>
 
 <template>
-    <div class="grid gap-2">
+    <div class="grid content-start gap-2">
         <Label :for="id">{{ label }}</Label>
         <div class="flex gap-2">
             <Input

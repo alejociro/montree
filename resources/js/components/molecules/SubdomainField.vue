@@ -107,7 +107,7 @@ const isInvalid = computed(
 </script>
 
 <template>
-    <div class="grid gap-2">
+    <div class="grid content-start gap-2">
         <Label :for="id">{{ $t(label) }}</Label>
 
         <div

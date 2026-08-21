@@ -174,7 +174,7 @@ function errorFor(index: number, field: string): string | undefined {
             </div>
 
             <div class="grid gap-3 md:grid-cols-[180px_1fr_140px]">
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-kind-${index}`">{{ $t('Tipo') }}</Label>
                     <Select
                         :model-value="stop.kind"
@@ -201,7 +201,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'kind')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-name-${index}`">{{
                         $t('Nombre')
                     }}</Label>
@@ -217,7 +217,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'name')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-time-${index}`">{{ $t('Hora') }}</Label>
                     <Input
                         :id="`stop-time-${index}`"
@@ -233,7 +233,7 @@ function errorFor(index: number, field: string): string | undefined {
             </div>
 
             <div class="grid gap-3 md:grid-cols-2">
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-place-${index}`">{{
                         $t('Lugar')
                     }}</Label>
@@ -249,7 +249,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'place')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-label-${index}`">{{
                         $t('Etiqueta en el mapa')
                     }}</Label>
@@ -267,7 +267,7 @@ function errorFor(index: number, field: string): string | undefined {
             </div>
 
             <div class="grid gap-3 md:grid-cols-3">
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-lat-${index}`">{{
                         $t('Latitud')
                     }}</Label>
@@ -283,7 +283,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'latitude')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-lng-${index}`">{{
                         $t('Longitud')
                     }}</Label>
@@ -299,7 +299,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'longitude')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`stop-step-${index}`">{{
                         $t('Paso del itinerario')
                     }}</Label>

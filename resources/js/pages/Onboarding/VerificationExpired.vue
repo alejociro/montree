@@ -113,7 +113,7 @@ function resend() {
                 novalidate
                 @submit.prevent="resend"
             >
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label for="email">{{ $t('Correo electrónico') }}</Label>
                     <Input
                         id="email"

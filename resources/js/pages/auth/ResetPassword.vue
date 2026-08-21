@@ -35,7 +35,7 @@ const inputEmail = ref(props.email);
         v-slot="{ errors, processing }"
     >
         <div class="grid gap-6">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
@@ -49,7 +49,7 @@ const inputEmail = ref(props.email);
                 <InputError :message="errors.email" class="mt-2" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password">{{ $t('Nueva contraseña') }}</Label>
                 <PasswordInput
                     id="password"
@@ -63,7 +63,7 @@ const inputEmail = ref(props.email);
                 <InputError :message="errors.password" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password_confirmation">{{
                     $t('Confirmar contraseña')
                 }}</Label>

@@ -131,7 +131,7 @@ function errorFor(index: number, field: string): string | undefined {
             </div>
 
             <div class="grid gap-3 md:grid-cols-[1fr_140px]">
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`step-title-${index}`">{{
                         $t('Título')
                     }}</Label>
@@ -147,7 +147,7 @@ function errorFor(index: number, field: string): string | undefined {
                     <InputError :message="errorFor(index, 'title')" />
                 </div>
 
-                <div class="grid gap-2">
+                <div class="grid content-start gap-2">
                     <Label :for="`step-duration-${index}`">{{
                         $t('Duración')
                     }}</Label>
@@ -165,7 +165,7 @@ function errorFor(index: number, field: string): string | undefined {
                 </div>
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label :for="`step-description-${index}`">{{
                     $t('Descripción')
                 }}</Label>

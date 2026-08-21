@@ -84,7 +84,7 @@ function onLocaleChange(value: AcceptableValue): void {
                 @update:model-value="(v) => update('timezone', v)"
             />
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="locale">{{ $t('Idioma') }}</Label>
                 <Select
                     :model-value="modelValue.locale"

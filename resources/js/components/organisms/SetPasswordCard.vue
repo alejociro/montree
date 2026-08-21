@@ -46,7 +46,7 @@ const mustSetPassword = computed(
             class="space-y-4"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="setup-password">{{ $t('Nueva contraseña') }}</Label>
                 <PasswordInput
                     id="setup-password"
@@ -57,7 +57,7 @@ const mustSetPassword = computed(
                 <InputError :message="errors.password" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="setup-password-confirmation">
                     {{ $t('Confirmar contraseña') }}
                 </Label>

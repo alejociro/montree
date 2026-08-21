@@ -50,7 +50,7 @@ const user = computed(() => page.props.auth.user);
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="name">{{ $t('Nombre') }}</Label>
                 <Input
                     id="name"
@@ -64,7 +64,7 @@ const user = computed(() => page.props.auth.user);
                 <InputError class="mt-2" :message="errors.name" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
