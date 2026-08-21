@@ -296,6 +296,12 @@ Cambios de contrato de las Decisiones 2 y 3:
 | `422` | `guide_id` ocupado en alguno de los días calendario de la salida. El mensaje nombra el rango y el tour: «Ocupado 12–14 sep · Valle de Cocora». |
 | `422` | `ends_at` enviado por el cliente. |
 
+**`guide_id` propuesto (Fase 7).** Al **crear**, si el cliente no manda `guide_id` y el tour tiene
+`default_guide_id`, el Form Request lo rellena antes de validar. Es una propuesta, no un atajo:
+pasa por pertenencia al tenant, rol `guide` y `GuideIsAvailable` igual que cualquier otro, así que
+un guía por defecto ocupado esos días devuelve el mismo `422`. Al **editar** no se propone nada:
+una actualización sin `guide_id` conserva el que la salida ya tenía.
+
 ## PATCH /api/v1/admin/tour-dates/{tourDate}/guide (existente — se endurece)
 
 `routes/api.php:119`, `AssignGuideController` → `App\Actions\Team\AssignGuideAction`, que hoy hace
@@ -309,6 +315,33 @@ crear solapes que antes no existían. La respuesta de validación lista las sali
 conflicto antes de guardar (`422` con el detalle, o confirmación explícita desde la UI).
 
 Al publicar (`status = active`), `default_guide_id` es **obligatorio**.
+
+### Aviso de cambio de recogida (regla 6, Fase 7)
+
+Cambiar la parada `pickup` de un tour con reservas vivas **notifica por correo** a los pasajeros
+afectados: `SyncTourStopsAction` fotografía la recogida antes de reescribir las paradas y
+`NotifyPickupChangeAction` encola `PickupPointChangedNotification` (mail + database) si la foto
+cambió. Cuenta como cambio el nombre, el lugar, la hora o las coordenadas, y también quitar o
+agregar la parada; reordenar el resto de las paradas o guardar la misma recogida no notifica a
+nadie. El despacho ocurre **después del commit**: las paradas se escriben dentro de la transacción
+de `UpdateTourAction`.
+
+Afectado = reserva en `pending_payment` o `confirmed` **y** salida por venir
+(`App\Queries\PickupChangeAudienceQuery`, la misma definición que alimenta el aviso de la UI).
+
+## `TourResource` — campos nuevos de la Fase 7
+
+| Campo | Forma | Para qué |
+|---|---|---|
+| `publish_checklist` | `[{ id, label, done, blocking }]` | El checklist «Para publicar» calculado por el servidor (`App\Services\Tour\TourPublishChecklist`). Ids: `general`, `summary`, `pricing`, `image`, `guide` (bloquean) y `stops` (recomendado). Es la **misma** lista que consulta `ChangeTourStatusAction`, así que la pantalla no puede prometer una condición que la activación no exija. |
+| `pickup_change_impact` | `{ bookings: int, passengers: int }` | A cuánta gente se le avisaría si se mueve la recogida. Se emite para poder advertirlo **antes** de guardar con el mismo criterio con el que después se envía. |
+
+### Errores nuevos de `PATCH /api/v1/admin/tours/{tour}/status`
+
+| Código | Cuándo |
+|---|---|
+| `TOUR_NEEDS_SUMMARY_TO_ACTIVATE` | Publicar sin resumen corto. Es lo que se lee en el catálogo debajo del nombre (regla 4 del handoff, D7). |
+| `TOUR_INCOMPLETE_TO_ACTIVATE` | Falta nombre, descripción, precio, cupo o duración. El Form Request ya los exige, así que solo lo alcanza una fila vieja o importada. |
 
 ---
 

@@ -410,6 +410,15 @@ el equipo esté mirando en ese momento.
   deja de servir. Entran una user story del guía, un bloque de acceptance criteria, dos edge cases
   y la fila 8 de la tabla de decisiones. Backend ya implementado; falta el formulario del viajero
   (Fase 4).
+- `2026-08-20` — **Fase 7: el resumen corto pasa a bloquear la publicación.** D7 y la regla 4 del
+  handoff ya lo listaban como condición de activación, pero no lo exigía nadie:
+  `short_description` es `nullable` en el Form Request, `ChangeTourStatusAction` solo miraba imagen
+  y guía, y el checklist del riel —la única lista que existía, en el frontend— lo pintaba como
+  recomendado. Con la lista unificada en `App\Services\Tour\TourPublishChecklist`, que emiten la
+  respuesta del tour y la activación, la contradicción tenía que resolverse hacia un lado: se
+  resuelve como dice la spec. Error nuevo `TOUR_NEEDS_SUMMARY_TO_ACTIVATE`. No afecta a los tours ya
+  activos —la condición se comprueba en la transición—, solo a quien pause uno y quiera volver a
+  publicarlo sin resumen. Las paradas siguen recomendadas, sin cambio.
 - `2026-08-20` — Ratificación de tres puntos que estaban anotados como observación y **dejan de ser
   deuda**: la zona del guía ignora `tour_date_id` y `status` en vez de devolver `422`; la fila de
   marcador de posición conserva `payment` (solo se anulan los campos de la persona); el pago manual

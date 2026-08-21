@@ -342,8 +342,12 @@ que ocupa. La usan `StoreTourDateRequest`, `UpdateTourDateRequest` y `AssignGuid
 - `App\Actions\TourDate\CreateTourDateAction` / `UpdateTourDateAction` (existentes) — **derivan**
   `ends_at` de `duration_hours`; `ends_at` deja de venir del cliente.
 - `App\Actions\Team\AssignGuideAction` (existente) — pasa a correr `GuideIsAvailable`.
-- `App\Actions\Tours\NotifyPickupChangeAction` — despacha la notificación de la regla 6 a los
-  pasajeros de las reservas activas del tour cuando cambia una parada `pickup`.
+- `App\Actions\Tour\NotifyPickupChangeAction` — despacha la notificación de la regla 6 a los
+  pasajeros de las reservas activas del tour cuando cambia una parada `pickup`. Lo llama
+  `SyncTourStopsAction`, que es por donde pasan las paradas en los dos caminos que las escriben:
+  fotografía la recogida antes de borrar y compara después. El despacho va con `DB::afterCommit`
+  porque el sync corre dentro de la transacción de `UpdateTourAction`. **Namespace corregido**:
+  `App\Actions\Tour`, como el resto de las acciones de tour, no `App\Actions\Tours`.
 
 ### Queries
 
@@ -353,6 +357,10 @@ que ocupa. La usan `StoreTourDateRequest`, `UpdateTourDateRequest` y `AssignGuid
   planilla de 50 filas son 50 reservas).
 - `App\Queries\GuideAvailabilityQuery` — los días ocupados por guía en un rango, para el select y
   para la regla.
+- `App\Queries\PickupChangeAudienceQuery` — quién queda afectado por un cambio de recogida:
+  reservas `pending_payment` o `confirmed` con la salida por venir. Una sola definición para el
+  aviso que la UI muestra antes de guardar (`pickup_change_impact`) y para el reparto real de la
+  notificación; contarlos por separado era garantizar que algún día no coincidieran.
 
 ### Form Requests
 
@@ -407,6 +415,17 @@ reparte guías **sin solaparlos**. `DemoTenantSeeder` genera una salida con pasa
 los tres casos que hay que poder ver —con saldo, con observaciones y con EPS «Otra»— y un tour de
 varios días para probar el bloqueo del guía. Con eso, **resembrar es la vía limpia** para dejar
 cualquier entorno conforme a las reglas nuevas.
+
+### Services
+
+`App\Services\Tour\TourPublishChecklist` — la lista única de lo que un tour necesita para
+publicarse (D7). La emite `TourResource` como `publish_checklist` y la consulta
+`ChangeTourStatusAction`: la pantalla no puede prometer una condición que la activación no exija.
+Bloquean `general`, `summary`, `pricing`, `image` y `guide`; `stops` se recomienda.
+
+`useTourCompletion` sigue recalculando `done` en vivo sobre el formulario sin guardar —el servidor
+no puede saber lo que aún no se escribió—, pero el orden, las etiquetas y el reparto
+bloqueante/recomendado los toma de esa respuesta.
 
 ### Notifications
 

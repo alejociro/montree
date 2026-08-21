@@ -119,18 +119,19 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 7 — Reglas restantes (`montree-backend-dev`) · ~0,5 día
 
-- [ ] `default_guide_id` se propone al crear una salida (`AdminTourDateController@store`)
-- [ ] Checklist de publicación calculado en la respuesta del tour (qué falta, por condición). Bloquean nombre, resumen, precio, cupo e imagen; las paradas se recomiendan (D7)
-- [ ] `NotifyPickupChangeAction` + `PickupPointChangedNotification` encolada, disparada desde `SyncTourStopsAction` cuando cambia una parada `pickup` y hay reservas activas
-- [ ] Aviso en la UI **antes** de guardar el cambio de recogida
-- [ ] Tests de las tres reglas
+- [x] `default_guide_id` se propone al crear una salida — **desviación**: no vive en el controlador sino en `StoreTourDateRequest::prepareForValidation()`, que lo rellena antes de validar. Así la propuesta pasa por pertenencia, rol y `GuideIsAvailable` en vez de esquivarlos; `UpdateTourDateRequest` lo desactiva, editar no propone nada
+- [x] Checklist de publicación calculado en la respuesta del tour (`publish_checklist`), con `App\Services\Tour\TourPublishChecklist` como lista única que **también** consume `ChangeTourStatusAction`. Bloquean nombre, resumen, precio, cupo, imagen y guía por defecto; las paradas se recomiendan (D7)
+- [x] **(añadido)** El resumen corto pasa a bloquear de verdad la activación (`TOUR_NEEDS_SUMMARY_TO_ACTIVATE`). Estaba listado como bloqueante en D7 y en la regla 4 del handoff, pero no lo exigía nadie: el Form Request lo tiene `nullable` y el checklist de la Fase 6 lo pintaba como recomendado
+- [x] `NotifyPickupChangeAction` + `PickupPointChangedNotification` encolada, disparada desde `SyncTourStopsAction` cuando cambia una parada `pickup` y hay reservas activas. Despacha con `DB::afterCommit`: las paradas se escriben dentro de la transacción de `UpdateTourAction`
+- [x] Aviso en la UI **antes** de guardar el cambio de recogida (`PickupChangeNotice.vue` en la pestaña «Ruta y mapa»), con la cuenta que emite el servidor y un texto más fuerte cuando la recogida del formulario ya difiere de la guardada
+- [x] Tests de las tres reglas: `DefaultGuideProposalTest` (5), `TourPublishChecklistTest` (5), `PickupChangeNotificationTest` (6)
 
 ## Fase 8 — Cierre · ~1 día
 
 - [ ] Avisar al equipo de QA antes de correr las migraciones de la Fase 1 en su entorno: `ends_at`, `NOT NULL` y el reparto de guías reescriben lo que estén mirando
 - [ ] `vendor/bin/pint --dirty`
 - [ ] `npm run types:check`, `npm run lint:check`, `npm run format:check`
-- [ ] `php artisan test --compact` (594/594 en `develop` al 2026-08-20: no debe bajar)
+- [ ] `php artisan test --compact` (594/594 en `develop` al 2026-08-20: no debe bajar; 718/718 al cerrar la Fase 7)
 - [ ] `npm run build`
 - [ ] Navegador con las **tres** cuentas —admin, ventas y guía—: la Decisión 7 solo se ve comparando las dos primeras. 0 errores de consola
 - [ ] Navegador con **dos tenants de colores distintos** para comprobar la Decisión 4
@@ -142,6 +143,45 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 ---
 
 ## Notas durante implementación
+
+### Fase 7 — reglas restantes (2026-08-20)
+
+Suite en **718/718** (+16); Pint, `types:check`, `lint:check`, `format:check` y `npm run build`
+en verde. Dos commits.
+
+1. **El checklist deja de vivir en dos sitios.** Hasta la Fase 6 la lista de condiciones existía
+   solo en `useTourCompletion.ts`, y ahí se le había marcado el resumen corto como *recomendado*
+   mientras D7 y la regla 4 del handoff lo listaban como bloqueante. Nadie lo notó porque nadie
+   lo exigía: `short_description` es `nullable` en el Form Request y `ChangeTourStatusAction`
+   solo miraba imagen y guía. Ahora la lista la emite `TourPublishChecklist`, la consumen la
+   respuesta del tour **y** la activación, y el resumen bloquea de verdad
+   (`TOUR_NEEDS_SUMMARY_TO_ACTIVATE`). El composable sigue recalculando `done` en vivo —tiene
+   que hacerlo, si no el checklist no reaccionaría al escribir— pero el orden, las etiquetas y
+   qué bloquea vienen del servidor. La lista local sobrevive solo para «crear», donde todavía no
+   hay tour guardado del que partir.
+   - **Consecuencia para tours ya activos:** ninguna mientras sigan activos. La condición se
+     comprueba en la transición, así que un tour publicado sin resumen se queda como está; solo
+     al pausarlo y volver a activarlo se le pedirá.
+2. **La propuesta del guía por defecto no podía ir en el controlador.** Puesta ahí, el guía
+   propuesto entraría al `create()` sin pasar por pertenencia al tenant, rol ni disponibilidad —
+   justo las tres validaciones que la Fase 5 acaba de montar. Vive en
+   `StoreTourDateRequest::prepareForValidation()`: rellena y deja que la validación haga su
+   trabajo, de modo que un guía por defecto ocupado esos días rechaza la salida igual que si lo
+   hubieran elegido a mano.
+3. **La notificación se despacha después del commit.** Las paradas se reescriben dentro de la
+   transacción de `UpdateTourAction`; encolar ahí mismo dejaba al worker leer el tour antes del
+   commit, o mandar correos por un cambio que terminó revertido. `DB::afterCommit`.
+4. **El aviso de la UI y el envío cuentan lo mismo.** `PickupChangeAudienceQuery` define una sola
+   vez quién es «afectado» —reserva `pending_payment` o `confirmed` y salida por venir—, y de ahí
+   salen tanto `pickup_change_impact` (lo que la pantalla promete antes de guardar) como el
+   reparto real. Contarlos por separado era garantizar que algún día no coincidieran.
+5. **`BookingStatus::activeValues()`** reemplaza las tres copias de la lista de estados vivos
+   (`DeleteTourAction`, `UpdateTourDateAction` y el código nuevo).
+
+**Pendiente para la Fase 8:** verificar en navegador el aviso de recogida y el checklist con las
+tres cuentas, y que el correo se vea bien en un cliente real (solo está probado con
+`Notification::fake`).
+
 
 ### Fase 6 — cierre de frontend (2026-08-20)
 
