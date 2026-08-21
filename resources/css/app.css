@@ -32,6 +32,20 @@
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
 
+    /*
+      Variantes de marca. `*-soft` es la superficie suave (chips, fondos de
+      icono, filas activas): el color de la agencia mezclado con el fondo de la
+      página, así que se aclara en claro y se oscurece en oscuro sin una segunda
+      paleta. `*-readable` es el mismo color corregido para LEERSE como texto
+      —lo calcula `useTenantBranding` contra el fondo real (WCAG AA)—.
+    */
+    --color-primary-soft: var(--primary-soft);
+    --color-primary-soft-foreground: var(--primary-soft-foreground);
+    --color-primary-readable: var(--primary-readable);
+    --color-secondary-soft: var(--secondary-soft);
+    --color-secondary-soft-foreground: var(--secondary-soft-foreground);
+    --color-secondary-readable: var(--secondary-readable);
+
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
 
@@ -164,8 +178,14 @@
     --popover-foreground: var(--brand-text);
     --primary: var(--brand-green);
     --primary-foreground: var(--brand-card);
-    --secondary: var(--brand-green-100);
-    --secondary-foreground: var(--brand-green);
+    /*
+      `--secondary` es un COLOR de marca, no un tinte. El tenant lo reemplaza
+      por el suyo y tiene que pesar igual que el primario allí donde el
+      elemento es secundario. La superficie suave que antes vivía aquí
+      (`--brand-green-100`) es ahora `--secondary-soft`.
+    */
+    --secondary: var(--brand-green-600);
+    --secondary-foreground: var(--brand-cream);
     --muted: var(--brand-green-100);
     --muted-foreground: var(--brand-muted);
     --accent: var(--brand-tan);
@@ -181,15 +201,49 @@
     --chart-4: var(--brand-drop);
     --chart-5: var(--brand-muted);
     --radius: 0.75rem; /* 12px: cards internas del handoff */
-    --sidebar-background: var(--brand-green-100);
-    --sidebar-foreground: var(--brand-ink);
-    --sidebar-primary: var(--brand-green);
-    --sidebar-primary-foreground: var(--brand-card);
-    --sidebar-accent: var(--brand-tan);
-    --sidebar-accent-foreground: var(--brand-green);
-    --sidebar-border: var(--brand-line);
-    --sidebar-ring: var(--brand-green-600);
-    --sidebar: var(--brand-green-100);
+
+    /*
+      Superficies suaves y barra lateral: DERIVADAS de `--primary` /
+      `--secondary` con `color-mix()`.
+
+      WHY: la agencia configura su color principal y esperaba verlo en la barra
+      lateral, no solo en los botones; y los fondos suaves estaban clavados en
+      verde (`--brand-green-100`), así que un tenant rojo tenía chips verdes.
+      Mezclar contra `--background` en vez de contra blanco resuelve además el
+      modo oscuro: el mismo token se aclara en claro y se oscurece en oscuro.
+    */
+    --primary-soft: color-mix(in oklab, var(--primary) 14%, var(--background));
+    --primary-soft-foreground: var(--foreground);
+    --primary-readable: var(--primary);
+    --secondary-soft: color-mix(
+        in oklab,
+        var(--secondary) 14%,
+        var(--background)
+    );
+    --secondary-soft-foreground: var(--foreground);
+    --secondary-readable: var(--secondary);
+
+    --sidebar-background: color-mix(
+        in oklab,
+        var(--primary) 10%,
+        var(--background)
+    );
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: color-mix(
+        in oklab,
+        var(--primary) 20%,
+        var(--background)
+    );
+    --sidebar-accent-foreground: var(--primary-readable);
+    --sidebar-border: color-mix(
+        in oklab,
+        var(--primary) 22%,
+        var(--background)
+    );
+    --sidebar-ring: var(--primary);
+    --sidebar: var(--sidebar-background);
 }
 
 .dark {
@@ -216,8 +270,8 @@
     --popover-foreground: var(--brand-cream);
     --primary: var(--brand-green-600);
     --primary-foreground: var(--brand-cream);
-    --secondary: var(--brand-green);
-    --secondary-foreground: var(--brand-green-100);
+    --secondary: var(--brand-green-600);
+    --secondary-foreground: var(--brand-cream);
     --muted: var(--brand-green);
     --muted-foreground: var(--brand-on-ink);
     --accent: var(--brand-green);
@@ -232,15 +286,33 @@
     --chart-3: var(--brand-green-100);
     --chart-4: var(--brand-drop);
     --chart-5: var(--brand-on-ink);
-    --sidebar-background: var(--brand-ink);
-    --sidebar-foreground: var(--brand-on-ink);
-    --sidebar-primary: var(--brand-green-600);
-    --sidebar-primary-foreground: var(--brand-cream);
-    --sidebar-accent: var(--brand-green);
-    --sidebar-accent-foreground: var(--brand-green-100);
-    --sidebar-border: var(--brand-ink-line);
-    --sidebar-ring: var(--brand-green-600);
-    --sidebar: var(--brand-ink);
+    /*
+      Las derivaciones de marca son las mismas de `:root` —mezclan contra
+      `--background`, que aquí ya es tinta—, así que no se repiten. Solo
+      cambian los pesos: sobre fondo oscuro un 10 % de color no se ve.
+    */
+    --primary-soft: color-mix(in oklab, var(--primary) 22%, var(--background));
+    --secondary-soft: color-mix(
+        in oklab,
+        var(--secondary) 22%,
+        var(--background)
+    );
+    --sidebar-background: color-mix(
+        in oklab,
+        var(--primary) 12%,
+        var(--background)
+    );
+    --sidebar-accent: color-mix(
+        in oklab,
+        var(--primary) 28%,
+        var(--background)
+    );
+    --sidebar-border: color-mix(
+        in oklab,
+        var(--primary) 30%,
+        var(--background)
+    );
+    --sidebar: var(--sidebar-background);
 }
 
 @layer base {

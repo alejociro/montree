@@ -61,7 +61,7 @@ const dueAmount = computed<string | null>(() =>
             <ul v-else class="space-y-2 text-[13px]">
                 <li
                     v-if="props.summary"
-                    class="flex items-start gap-2 rounded-lg bg-brand-green-50 px-2.5 py-2"
+                    class="flex items-start gap-2 rounded-lg bg-primary-soft px-2.5 py-2"
                 >
                     <Users class="mt-0.5 size-4 shrink-0 text-foreground/70" />
                     <span>

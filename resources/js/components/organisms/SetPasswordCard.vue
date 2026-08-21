@@ -21,7 +21,7 @@ const mustSetPassword = computed(
     >
         <div class="flex items-start gap-3">
             <span
-                class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-readable"
             >
                 <KeyRound class="size-5" />
             </span>

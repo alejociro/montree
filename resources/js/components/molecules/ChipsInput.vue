@@ -109,12 +109,12 @@ function onKeydown(event: KeyboardEvent): void {
                 <li
                     v-for="(item, index) in props.modelValue"
                     :key="`${item}-${index}`"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-secondary bg-brand-green-50 py-1 pr-1.5 pl-3 text-xs"
+                    class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-secondary/45 bg-secondary-soft py-1 pr-1.5 pl-3 text-xs text-secondary-soft-foreground"
                 >
                     <span>{{ item }}</span>
                     <button
                         type="button"
-                        class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         :aria-label="$t('Quitar :item', { item })"
                         @click="removeAt(index)"
                     >

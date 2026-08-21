@@ -76,7 +76,7 @@ function select(value: TourDifficulty): void {
                     cn(
                         'flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                         props.modelValue === option.value
-                            ? 'border-primary bg-primary/5 text-primary'
+                            ? 'border-primary bg-primary/5 text-primary-readable'
                             : 'border-input hover:border-primary/40 hover:bg-muted/40',
                     )
                 "

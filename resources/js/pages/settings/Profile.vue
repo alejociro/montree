@@ -93,7 +93,7 @@ const user = computed(() => page.props.auth.user);
 
                 <div
                     v-if="status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-primary"
+                    class="mt-2 text-sm font-medium text-primary-readable"
                 >
                     {{
                         $t(

@@ -445,7 +445,9 @@ function occupancy(departure: GuideDeparture): number {
             >
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="flex items-start gap-3">
-                        <MapPin class="mt-0.5 size-5 shrink-0 text-primary" />
+                        <MapPin
+                            class="mt-0.5 size-5 shrink-0 text-primary-readable"
+                        />
                         <div>
                             <MonoLabel>
                                 {{ $t('Punto de encuentro') }}

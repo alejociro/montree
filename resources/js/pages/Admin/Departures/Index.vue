@@ -229,7 +229,7 @@ const statusMeta: Record<
 > = {
     open: {
         label: t('Abierta'),
-        classes: 'border-transparent bg-secondary text-primary',
+        classes: 'border-transparent bg-secondary-soft text-secondary-readable',
     },
     full: {
         label: t('Llena'),

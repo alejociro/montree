@@ -45,7 +45,7 @@ const pending = computed<number>(
                 >
                     <Check
                         v-if="requirement.done"
-                        class="mt-0.5 size-4 shrink-0 text-primary"
+                        class="mt-0.5 size-4 shrink-0 text-primary-readable"
                         aria-hidden="true"
                     />
                     <Circle
@@ -82,7 +82,7 @@ const pending = computed<number>(
                     >
                         <Check
                             v-if="requirement.done"
-                            class="mt-0.5 size-4 shrink-0 text-primary"
+                            class="mt-0.5 size-4 shrink-0 text-primary-readable"
                             aria-hidden="true"
                         />
                         <Circle

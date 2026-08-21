@@ -29,7 +29,7 @@ const direction = computed<'up' | 'down' | 'flat' | 'unknown'>(() => {
 const colorClass = computed(() => {
     switch (direction.value) {
         case 'up':
-            return 'text-primary';
+            return 'text-primary-readable';
         case 'down':
             return 'text-destructive';
         default:

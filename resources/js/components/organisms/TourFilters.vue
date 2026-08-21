@@ -120,7 +120,7 @@ function setSearch(value: string | number): void {
                         'rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
                         modelValue.status === option.value
                             ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-brand-green-50 hover:text-foreground',
+                            : 'text-muted-foreground hover:bg-primary-soft hover:text-foreground',
                     )
                 "
                 @click="setStatus(option.value)"

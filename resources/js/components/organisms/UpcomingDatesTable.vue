@@ -33,7 +33,7 @@ function occupancyColor(pct: number | null): string {
         return 'bg-accent';
     }
 
-    return 'bg-secondary-foreground';
+    return 'bg-secondary';
 }
 </script>
 

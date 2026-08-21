@@ -52,7 +52,7 @@ defineProps<Props>();
                     class="size-4"
                     :class="
                         tour.is_favorite
-                            ? 'fill-primary text-primary'
+                            ? 'fill-primary text-primary-readable'
                             : 'text-foreground'
                     "
                 />

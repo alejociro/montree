@@ -31,9 +31,11 @@ const emit = defineEmits<{
                 <li v-for="(step, index) in props.steps" :key="step.id">
                     <button
                         type="button"
-                        class="flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-brand-green-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         :class="
-                            props.activeId === step.id ? 'bg-secondary' : ''
+                            props.activeId === step.id
+                                ? 'bg-secondary-soft text-secondary-soft-foreground'
+                                : ''
                         "
                         :aria-current="
                             props.activeId === step.id ? 'step' : undefined

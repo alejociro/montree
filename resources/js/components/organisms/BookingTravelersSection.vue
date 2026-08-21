@@ -523,7 +523,7 @@ function slotLabel(slot: TravelerSlot, index: number): string {
     <section class="space-y-4 rounded-lg border border-border bg-card p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-                <Users class="size-5 text-primary" />
+                <Users class="size-5 text-primary-readable" />
                 <h2 class="text-base font-semibold text-foreground">
                     {{ $t('Viajeros') }}
                 </h2>
@@ -537,7 +537,10 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                 <Badge v-else variant="outline">{{ $t('Opcional') }}</Badge>
             </div>
             <div class="flex items-center gap-2 text-sm">
-                <CheckCircle2 v-if="allCompleted" class="size-4 text-primary" />
+                <CheckCircle2
+                    v-if="allCompleted"
+                    class="size-4 text-primary-readable"
+                />
                 <span class="text-muted-foreground">
                     {{
                         $t(':done de :total completados', {

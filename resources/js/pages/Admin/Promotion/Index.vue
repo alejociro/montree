@@ -215,7 +215,7 @@ onMounted(load);
                 <p class="text-sm text-muted-foreground">{{ $t('Total') }}</p>
             </div>
             <div class="rounded-lg border p-4 text-center">
-                <p class="text-2xl font-bold text-primary">
+                <p class="text-2xl font-bold text-primary-readable">
                     {{ stats.active }}
                 </p>
                 <p class="text-sm text-muted-foreground">{{ $t('Activas') }}</p>

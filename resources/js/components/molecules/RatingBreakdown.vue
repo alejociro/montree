@@ -22,7 +22,7 @@ const stars = computed(() => '★'.repeat(Math.round(Number(props.average))));
         <p class="text-[56px] leading-none font-semibold tracking-tight">
             {{ average }}
         </p>
-        <p class="mt-2 tracking-[2px] text-primary" aria-hidden="true">
+        <p class="mt-2 tracking-[2px] text-primary-readable" aria-hidden="true">
             {{ stars }}
         </p>
         <p
@@ -37,7 +37,7 @@ const stars = computed(() => '★'.repeat(Math.round(Number(props.average))));
             class="grid grid-cols-[12px_1fr_34px] items-center gap-2.5 py-0.5 text-xs text-muted-foreground"
         >
             <span>{{ star }}</span>
-            <span class="h-1.5 overflow-hidden rounded-full bg-brand-green-100">
+            <span class="h-1.5 overflow-hidden rounded-full bg-secondary-soft">
                 <span
                     class="block h-full bg-primary"
                     :style="{

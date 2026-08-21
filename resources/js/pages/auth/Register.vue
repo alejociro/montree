@@ -30,7 +30,7 @@ const { isResolved, displayName } = useTenant();
 
     <p v-if="isResolved" class="mb-4 text-center text-sm text-muted-foreground">
         {{ $t('Crea tu cuenta en') }}
-        <span class="font-medium text-primary">{{ displayName }}</span>
+        <span class="font-medium text-primary-readable">{{ displayName }}</span>
         {{ $t('para reservar tours y guardar tus favoritos.') }}
     </p>
 

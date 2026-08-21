@@ -202,7 +202,7 @@ function resetForm(): void {
             <form class="space-y-10" @submit.prevent="submit">
                 <Alert
                     v-if="recentlySaved"
-                    class="border-primary/30 bg-primary/5 text-primary"
+                    class="border-primary/30 bg-primary/5 text-primary-readable"
                 >
                     <CheckCircle2 class="size-4" />
                     <AlertTitle>{{ $t('Cambios guardados') }}</AlertTitle>

@@ -174,7 +174,7 @@ function removeImage(): void {
 
             <Loader2
                 v-if="isUploading"
-                class="size-8 animate-spin text-primary"
+                class="size-8 animate-spin text-primary-readable"
             />
             <ImagePlus v-else class="size-8 text-muted-foreground" />
 

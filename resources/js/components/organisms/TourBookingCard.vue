@@ -104,7 +104,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                     v-if="selectedDate"
                     class="mt-2.5 flex items-center gap-1.5 text-[13px] text-muted-foreground"
                 >
-                    <Users class="size-4 text-primary" />
+                    <Users class="size-4 text-primary-readable" />
                     {{
                         $tc(
                             ':count cupo disponible|:count cupos disponibles',
@@ -154,7 +154,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             <button
                 v-if="pickupStopIndex !== null"
                 type="button"
-                class="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold text-primary transition hover:bg-brand-green-100"
+                class="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold text-primary-readable transition hover:bg-primary-soft"
                 @click="emit('show-pickup')"
             >
                 <MapPinned class="size-4" />

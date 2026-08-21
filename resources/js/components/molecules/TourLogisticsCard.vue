@@ -22,7 +22,7 @@ const emit = defineEmits<{
             v-for="(stop, index) in stops"
             :key="`${stop.code}-${index}`"
             type="button"
-            class="flex w-full gap-3 border-t border-border py-2.5 text-left text-[13.5px] transition first:border-t-0 hover:text-primary"
+            class="flex w-full gap-3 border-t border-border py-2.5 text-left text-[13.5px] transition first:border-t-0 hover:text-primary-readable"
             @click="emit('select', index)"
         >
             <span

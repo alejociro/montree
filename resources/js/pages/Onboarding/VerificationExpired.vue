@@ -99,7 +99,7 @@ function resend() {
             <div
                 v-if="resent"
                 role="status"
-                class="mt-6 flex items-center justify-center gap-2 rounded-md border border-secondary bg-secondary px-3 py-2.5 text-sm text-primary"
+                class="mt-6 flex items-center justify-center gap-2 rounded-md border border-secondary/40 bg-secondary-soft px-3 py-2.5 text-sm text-secondary-readable"
             >
                 <CheckCircle2 class="size-4 shrink-0" />
                 <span>{{
@@ -141,7 +141,7 @@ function resend() {
                 {{ $t('¿Ya confirmaste?') }}
                 <Link
                     :href="login().url"
-                    class="font-medium text-primary underline-offset-4 hover:underline"
+                    class="font-medium text-primary-readable underline-offset-4 hover:underline"
                 >
                     {{ $t('Inicia sesión') }}
                 </Link>

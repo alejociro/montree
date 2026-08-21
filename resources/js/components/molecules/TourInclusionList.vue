@@ -14,7 +14,7 @@ defineProps<{
                 class="flex items-start gap-2.5 border-b border-dashed border-border py-2 text-sm last:border-b-0"
             >
                 <span
-                    class="mt-0.5 grid size-[18px] flex-none place-items-center rounded-full bg-brand-green-100 text-[11px] font-bold text-brand-green"
+                    class="mt-0.5 grid size-[18px] flex-none place-items-center rounded-full bg-secondary-soft text-[11px] font-bold text-secondary-readable"
                     aria-hidden="true"
                 >
                     ✓

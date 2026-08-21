@@ -311,7 +311,7 @@ function priceLabel(departure: TourDateAdmin): string {
                         <button
                             v-else-if="departure.status !== 'cancelled'"
                             type="button"
-                            class="flex w-full items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-[13px] transition hover:bg-brand-green-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            class="flex w-full items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-[13px] transition hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             :disabled="savingGuideFor === departure.id"
                             :aria-label="$t('Cambiar el guía de esta salida')"
                             @click="editingGuideFor = departure.id"

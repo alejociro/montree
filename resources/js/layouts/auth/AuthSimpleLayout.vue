@@ -33,7 +33,7 @@ const { configuration, displayName } = useTenant();
                         <h1 class="text-xl font-medium">{{ title }}</h1>
                         <p
                             v-if="configuration?.tagline"
-                            class="text-center text-sm font-medium text-primary"
+                            class="text-center text-sm font-medium text-primary-readable"
                         >
                             {{ configuration.tagline }}
                         </p>

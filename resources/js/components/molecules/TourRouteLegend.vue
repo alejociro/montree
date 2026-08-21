@@ -54,7 +54,7 @@ defineProps<{
             :href="directionsUrl"
             target="_blank"
             rel="noopener"
-            class="ml-auto flex items-center gap-1.5 font-medium text-primary transition hover:underline"
+            class="ml-auto flex items-center gap-1.5 font-medium text-primary-readable transition hover:underline"
         >
             {{ $t('Abrir indicaciones') }}
             <ExternalLink class="size-3.5" />

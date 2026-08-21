@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { loadLeaflet } from '@/composables/useLeaflet';
 import { translate } from '@/composables/useTranslations';
+import { readableInk } from '@/lib/color';
 import {
     deriveZoneFromStops,
     routeColor,
@@ -54,7 +55,12 @@ export type UseTourRouteMapReturn = {
 };
 
 function markerHtml(stop: TourRouteStop, size: number): string {
-    return `<div class="tour-route-pin" style="width:${size}px;height:${size}px;background:${stopColor(stop)}">${stop.code}</div>`;
+    const background = stopColor(stop);
+
+    // El pin de recogida se pinta con `--primary`, el color del tenant: la
+    // tinta del número no puede ser blanca fija o desaparece con un primario
+    // claro. Los demás roles son fijos, pero el cálculo sirve igual.
+    return `<div class="tour-route-pin" style="width:${size}px;height:${size}px;background:${background};color:${readableInk(background)}">${stop.code}</div>`;
 }
 
 export function useTourRouteMap(

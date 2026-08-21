@@ -84,7 +84,7 @@ const rowLabel = computed(() =>
 
 <template>
     <tr
-        class="cursor-pointer border-b border-brand-line-2 align-top transition last:border-0 hover:bg-brand-green-50 focus-visible:bg-brand-green-50 focus-visible:outline-none"
+        class="cursor-pointer border-b border-brand-line-2 align-top transition last:border-0 hover:bg-primary-soft focus-visible:bg-primary-soft focus-visible:outline-none"
         tabindex="0"
         :aria-label="rowLabel"
         @click="emit('select', props.passenger)"

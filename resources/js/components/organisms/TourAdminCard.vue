@@ -78,7 +78,7 @@ const nextDeparture = computed<string>(() => {
                 />
                 <div
                     v-else
-                    class="flex size-full items-center justify-center bg-brand-green-50"
+                    class="flex size-full items-center justify-center bg-primary-soft"
                 >
                     <MonoLabel>{{ $t('Sin portada') }}</MonoLabel>
                 </div>

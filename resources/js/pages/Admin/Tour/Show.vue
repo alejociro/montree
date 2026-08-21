@@ -422,7 +422,7 @@ const manifestSource = computed(
                                 class="size-4"
                                 :class="
                                     filled
-                                        ? 'fill-primary text-primary'
+                                        ? 'fill-primary text-primary-readable'
                                         : 'text-muted-foreground/30'
                                 "
                             />
@@ -647,7 +647,7 @@ const manifestSource = computed(
                             class="flex items-start gap-2"
                         >
                             <Check
-                                class="mt-0.5 size-4 shrink-0 text-primary"
+                                class="mt-0.5 size-4 shrink-0 text-primary-readable"
                             />
                             <span class="text-foreground">{{ item }}</span>
                         </li>
@@ -778,7 +778,7 @@ const manifestSource = computed(
                 v-if="props.tour.meeting_point"
                 class="mt-4 flex items-start gap-2 text-sm text-muted-foreground"
             >
-                <MapPin class="mt-0.5 size-4 shrink-0 text-primary" />
+                <MapPin class="mt-0.5 size-4 shrink-0 text-primary-readable" />
                 <span>
                     <span class="font-medium text-foreground">
                         {{ $t('Punto de encuentro') }}:

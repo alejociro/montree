@@ -81,7 +81,7 @@ onMounted(load);
         <section class="space-y-3">
             <h2 class="text-lg font-semibold">
                 {{ $t('Suscriptores activos:') }}
-                <span class="text-primary">{{ totalActive }}</span>
+                <span class="text-primary-readable">{{ totalActive }}</span>
             </h2>
             <p v-if="loading" class="text-sm text-muted-foreground">
                 {{ $t('Cargando...') }}

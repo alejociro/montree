@@ -20,7 +20,9 @@ const number = computed(() => String(props.step.step_number).padStart(2, '0'));
     <div
         class="mb-2 grid grid-cols-[64px_1fr] items-start gap-4 rounded-xl border border-border bg-card px-3.5 py-4 sm:grid-cols-[64px_1fr_auto]"
     >
-        <p class="text-[11px] tracking-[0.08em] text-primary uppercase">
+        <p
+            class="text-[11px] tracking-[0.08em] text-primary-readable uppercase"
+        >
             {{ $t('Paso :number', { number }) }}
         </p>
         <div class="min-w-0">
@@ -41,7 +43,7 @@ const number = computed(() => String(props.step.step_number).padStart(2, '0'));
         <button
             v-if="mappable"
             type="button"
-            class="col-start-2 flex items-center gap-1.5 justify-self-start rounded-full border border-border px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap text-primary transition hover:border-brand-green-100 hover:bg-brand-green-100 sm:col-start-3 sm:self-center"
+            class="col-start-2 flex items-center gap-1.5 justify-self-start rounded-full border border-border px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap text-primary-readable transition hover:border-primary/25 hover:bg-primary-soft sm:col-start-3 sm:self-center"
             @click="emit('show-on-map')"
         >
             <MapPinned class="size-3.5" />
