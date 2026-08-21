@@ -374,9 +374,10 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   enum. Es candidato claro a una molécula `EpsSelector.vue` y a mover
   `DOCUMENT_TYPE_LABELS`/`EPS_LABELS` a `lib/`. No se hizo ahora para no tocar el componente
   del viajero más de lo que D10 exigía.
-- **Todavía no hay generación de enums PHP → TS.** Los espejos de `types/booking.ts` siguen
-  siendo manuales; el compilador avisa si falta un caso del mapa de etiquetas, pero no si el
-  enum de PHP cambió. Sigue siendo la deuda que ya anotó la Fase 2.
+- ~~**Todavía no hay generación de enums PHP → TS.**~~ **Resuelto el 2026-08-20**: los espejos
+  los genera `php artisan enums:typescript` en `resources/js/types/enums.generated.ts`, y la
+  suite falla si el archivo queda desactualizado. La deuda que arrastraba desde la Fase 2 se
+  cierra aquí.
 - **`Admin/Tour/Show.vue` quedó con pestañas «a mano»**, no con un componente de pestañas. La
   Fase 6 lo rehace con `Resumen · Pasajeros · Ruta` y ahí conviene extraer el `TourTabs`.
 - **La paginación de la planilla es Anterior/Siguiente**, sin números de página. Con 50 por
@@ -463,3 +464,27 @@ Notas:
   que la de la Fase 2: no hay navegador ni Playwright en el entorno. En su lugar se corrieron 34
   aserciones de comportamiento sobre HTML renderizado en servidor (máscara médica, composable de
   la planilla y formulario de D10). Detalle en las notas de la fase.
+- `2026-08-20` — **Cerradas las dos preguntas abiertas de la Fase 5.** Suite en **692/692**
+  (era 688, +4); Pint, `types:check`, `lint:check`, `format:check` y `npm run build` en verde.
+
+  1. **`scopeOccupying()` ahora incluye `full`.** Una salida agotada ocupa al guía igual que una
+     abierta: agotada significa vendida entera, no suspendida. Solo `cancelled` libera sus días.
+     Dos tests nuevos en `GuideAvailabilityTest`: la regla rechaza el solape contra una salida
+     `full`, y el endpoint de disponibilidad la reporta como bloque ocupado.
+  2. **El espejo de enums PHP → TS se genera.** `php artisan enums:typescript` vierte todos los
+     enums con respaldo de string de `app/Enums` a `resources/js/types/enums.generated.ts`
+     (`<ENUM>_VALUES as const` + la unión derivada). `--check` no escribe: falla si el archivo
+     está desactualizado, y `tests/Feature/Enums/TypeScriptEnumsAreInSyncTest.php` lo corre
+     dentro de la suite. El archivo generado está en `.prettierignore` y en los `ignores` de
+     ESLint, como los de Wayfinder.
+     - Se vierten **todos** los enums, no una lista marcada a mano: una lista es otra cosa que se
+       olvida de actualizar, y un tipo que la UI no usa no llega al bundle.
+     - Consumidores migrados: `types/booking.ts` (`DOCUMENT_TYPES`, `EPS_OPTIONS` pasan a ser
+       alias del generado, conservando el nombre que la UI ya importa), `types/logistics.ts`
+       (`TourDateStatus`, `TourDateDisplayStatus`), `types/tour-detail.ts` y
+       `config/roles.ts` (`BASE_ROLE_LABELS` pasa de `Record<string, string>` a
+       `Record<UserRole, string>`: agregar un rol en PHP ahora rompe la compilación hasta que se
+       le escriba etiqueta).
+     - **Un espejo ya se había desincronizado sin que nadie lo notara**: `guide-availability.ts`
+       declaraba `status: 'open' | 'closed'` y sobrevivió al cambio del punto 1. Es exactamente
+       el fallo que el generador previene, y de paso quedó corregido.

@@ -1,3 +1,4 @@
+import type { TourDateStatus } from '@/types/enums.generated';
 import type { TourRouteStop } from '@/types/tour-route';
 
 export type TourDetailImage = {
@@ -31,7 +32,7 @@ export type TourDetailDate = {
     capacity_booked: number;
     available_seats: number;
     is_full: boolean;
-    status: 'open' | 'full' | 'cancelled' | 'closed';
+    status: TourDateStatus;
 };
 
 export type TourDetail = {

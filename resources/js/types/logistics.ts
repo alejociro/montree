@@ -1,14 +1,13 @@
+import type {
+    TourDateDisplayStatus,
+    TourDateStatus,
+} from '@/types/enums.generated';
 import type { PaginationLinks, PaginationMeta } from './pagination';
 
-export type TourDateStatus = 'open' | 'full' | 'closed' | 'cancelled';
+// Los dos estados salen de `app/Enums` vía `php artisan enums:typescript`; se
+// reexportan aquí porque medio frontend ya los importa desde este archivo.
 
-export type TourDateDisplayStatus =
-    | 'open'
-    | 'full'
-    | 'closed'
-    | 'cancelled'
-    | 'in_progress'
-    | 'finished';
+export type { TourDateDisplayStatus, TourDateStatus };
 
 export type TourDateScope = 'upcoming' | 'past' | 'all';
 

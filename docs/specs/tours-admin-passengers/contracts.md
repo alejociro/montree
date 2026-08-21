@@ -273,7 +273,8 @@ calendario ocupados en el rango y por qué tour.
 }
 ```
 
-Ocupan las salidas en estado `open` y `closed`. Una `cancelled` **no** ocupa: libera sus días.
+Ocupan las salidas en estado `open`, `full` y `closed`; `status` viaja con cualquiera de los tres.
+Solo una `cancelled` **no** ocupa: libera sus días. Agotada es vendida entera, no suspendida.
 El rango de cada bloque es `[date(starts_at) … date(ends_at)]` — días calendario completos.
 
 ---
@@ -615,3 +616,5 @@ a nivel de **componente**, no de ruta.
 - `2026-08-20` — **El aviso de `duration_hours` solo mira salidas futuras.** El contrato decía «las
   salidas del tour»; la implementación descarta las que ya terminaron. Alargar la duración de un
   tour no puede quedar bloqueada por un solape en salidas que ya ocurrieron.
+- `2026-08-20` — `GET /api/v1/admin/guides/availability`: los bloques ocupados incluyen las
+  salidas en estado `full`, no solo `open` y `closed`. Solo `cancelled` libera los días.

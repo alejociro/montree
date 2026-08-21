@@ -221,7 +221,9 @@ Cómo se resuelve:
   peor que uno vacío, porque la regla de disponibilidad lo creería.
 - La ocupación se calcula por **días calendario**, no por horas: `[date(starts_at) …
   date(ends_at)]`. Un tour de 5 días bloquea los 5, aunque el último termine a las 9 de la mañana.
-- Ocupan las salidas en estado `open` y `closed`; una `cancelled` libera sus días.
+- Ocupan las salidas en estado `open`, `full` y `closed`; **solo una `cancelled` libera sus días**.
+  Agotada quiere decir vendida entera, no suspendida: el guía sale igual. Lo que decide la
+  ocupación es si la salida ocurre, no si le quedan cupos.
 - La validación vive en una regla reusable, `App\Rules\GuideIsAvailable`, que corren los **tres**
   caminos que asignan guía: crear salida, editar salida y
   `PATCH /api/v1/admin/tour-dates/{tourDate}/guide` (`routes/api.php:119`). Sin eso, la regla se
@@ -318,7 +320,7 @@ Sin `down()` destructivo: revierten con `dropColumn`/`dropForeign` y devolviendo
   scope `search(string $q)` sobre `full_name` y `document_number`.
 - `Tour` — relación `defaultGuide(): BelongsTo`.
 - `TourDate` — `occupiedDays(): CarbonPeriod` (`[date(starts_at) … date(ends_at)]`) y scope
-  `occupying()` (estados `open` + `closed`).
+  `occupying()` (estados `open` + `full` + `closed`; solo `cancelled` queda fuera).
 - `Booking` — accessor `dueAmount()` (`total_amount - paid_amount`) y `passengerShare()` para D3.
 
 ### Rules
@@ -476,7 +478,7 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
 | CSV: encabezados, BOM y filas del filtro | `tests/Feature/Passengers/PassengerExportTest.php` |
 | Reserva sin viajeros ⇒ fila de marcador de posición | `PassengerManifestFilterTest` |
 | N+1 de la planilla (50 reservas ⇒ consultas acotadas) | `tests/Feature/Passengers/PassengerManifestQueryCountTest.php` |
-| **D9** solape el mismo día · rango de 3 días · salida `cancelled` que libera · editar la propia salida sin falso positivo · el camino del `PATCH` | `tests/Feature/TourDates/GuideAvailabilityTest.php` |
+| **D9** solape el mismo día · rango de 3 días · salida `cancelled` que libera · salida `full` que sigue ocupando (en la regla y en el endpoint) · editar la propia salida sin falso positivo · el camino del `PATCH` | `tests/Feature/TourDates/GuideAvailabilityTest.php` |
 | **D9** `guide_id` ausente ⇒ 422 en los tres caminos | idem |
 | **D9** `ends_at` enviado por el cliente ⇒ 422; `ends_at` derivado correcto para un tour de 51 h | `tests/Feature/TourDates/EndsAtDerivationTest.php` |
 | **D9** cambiar `duration_hours` lista las salidas que quedarían en solape | `tests/Feature/Tours/DurationChangeImpactTest.php` |
@@ -527,3 +529,9 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
   documentadas en [`tasks.md`](./tasks.md): la regla de publicación vive en
   `ChangeTourStatusAction` (con `error_code`, no como error de validación) y `default_guide_id`
   entra a los Form Requests del tour y a `TourResource` para que esa regla sea satisfacible.
+- `2026-08-20` — **Cerradas las dos preguntas que la Fase 5 dejó abiertas.**
+  (a) `scopeOccupying()` incluye `full`: una salida agotada ocupa al guía igual que una abierta,
+  y solo `cancelled` libera sus días. (b) El espejo de enums PHP → TS deja de escribirse a mano:
+  lo genera `php artisan enums:typescript` en `resources/js/types/enums.generated.ts`, y
+  `tests/Feature/Enums/TypeScriptEnumsAreInSyncTest.php` hace fallar la suite si queda
+  desactualizado. Detalle en [`tasks.md`](./tasks.md).

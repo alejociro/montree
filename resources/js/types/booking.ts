@@ -1,25 +1,17 @@
-/**
- * Espejo de `App\Enums\DocumentType`: mismos valores y mismo orden. El pasajero
- * es una persona, así que no existe `nit`. Cambiar el enum en PHP obliga a
- * cambiar esta lista: los mapas de etiquetas son `Record<DocumentType, string>`
- * y el compilador se queja si falta o sobra un caso.
- */
-export const DOCUMENT_TYPES = ['cc', 'ce', 'ti', 'passport', 'other'] as const;
+import { DOCUMENT_TYPE_VALUES, EPS_VALUES } from '@/types/enums.generated';
+import type { DocumentType, Eps } from '@/types/enums.generated';
 
-export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+export type { DocumentType, Eps };
 
 /**
- * Espejo de `App\Enums\Eps`, con la misma regla de negocio del backend.
+ * Los tipos de documento y las EPS salen de `app/Enums` vía
+ * `php artisan enums:typescript`; aquí solo se les deja el nombre con el que la
+ * UI ya los pide. Los mapas de etiquetas son `Record<DocumentType, string>`, así
+ * que agregar un caso en PHP rompe la compilación hasta que se traduzca.
  */
-export const EPS_OPTIONS = [
-    'sura',
-    'nueva_eps',
-    'sanitas',
-    'salud_total',
-    'other',
-] as const;
+export const DOCUMENT_TYPES = DOCUMENT_TYPE_VALUES;
 
-export type Eps = (typeof EPS_OPTIONS)[number];
+export const EPS_OPTIONS = EPS_VALUES;
 
 /**
  * Único caso que exige el texto libre `eps_other`

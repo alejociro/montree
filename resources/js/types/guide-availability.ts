@@ -1,3 +1,5 @@
+import type { TourDateStatus } from '@/types/enums.generated';
+
 /**
  * Espejo de `contracts.md` — `GET /api/v1/admin/guides/availability`. Los días
  * ocupados van como fechas `Y-m-d`: la ocupación del guía se mide en días
@@ -8,7 +10,7 @@ export interface BusyBlock {
     tour_name: string;
     from: string;
     to: string;
-    status: 'open' | 'closed';
+    status: TourDateStatus;
 }
 
 export interface GuideAvailability {
