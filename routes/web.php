@@ -94,6 +94,10 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
 
 Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->name('guide.')->group(function () {
     Route::get('schedule', [GuidePagesController::class, 'schedule'])->middleware('can:guide.schedule.view')->name('schedule');
+    Route::get('tour-dates/{tourDate}/passengers', [GuidePagesController::class, 'passengers'])->middleware('can:guide.travelers.view')->name('passengers');
+    // WHY: sin `can:` — el detalle del tour se alcanza por pertenencia (tener
+    // al menos una salida asignada), no por permiso de catálogo (D1).
+    Route::get('tours/{tour}', [GuidePagesController::class, 'tour'])->name('tours.show');
 });
 
 // WHY: marketing/legal pages belong to the platform brand, not to a tenant's

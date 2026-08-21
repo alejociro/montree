@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property int $tenant_id
  * @property int|null $category_id
+ * @property int|null $default_guide_id
  * @property string $name
  * @property string $slug
  * @property string|null $short_description
@@ -47,6 +48,7 @@ class Tour extends Model
     protected $fillable = [
         'tenant_id',
         'category_id',
+        'default_guide_id',
         'name',
         'slug',
         'short_description',
@@ -90,6 +92,14 @@ class Tour extends Model
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * Guía propuesto por defecto para cada salida nueva del tour (D7).
+     */
+    public function defaultGuide(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'default_guide_id');
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(TourImage::class)->orderBy('display_order');
@@ -98,6 +108,11 @@ class Tour extends Model
     public function itineraries(): HasMany
     {
         return $this->hasMany(TourItinerary::class)->orderBy('step_number');
+    }
+
+    public function stops(): HasMany
+    {
+        return $this->hasMany(TourStop::class)->orderBy('position');
     }
 
     public function dates(): HasMany

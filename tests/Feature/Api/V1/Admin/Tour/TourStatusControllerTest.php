@@ -33,7 +33,10 @@ class TourStatusControllerTest extends TestCase
     {
         $tenant = $this->makeTenant();
         $tenant->makeCurrent();
-        $tour = Tour::factory()->create(['status' => TourStatus::Draft]);
+        $tour = Tour::factory()->create([
+            'status' => TourStatus::Draft,
+            'default_guide_id' => $this->memberFor($tenant, UserRole::Guide)->id,
+        ]);
         TourImage::factory()->for($tour)->cover()->create();
         TourDate::factory()->for($tour)->create([
             'status' => TourDateStatus::Open,
@@ -71,11 +74,34 @@ class TourStatusControllerTest extends TestCase
         $response->assertJsonPath('error_code', 'TOUR_NEEDS_IMAGE_TO_ACTIVATE');
     }
 
+    public function test_activating_without_default_guide_fails(): void
+    {
+        // D7/D9: toda salida lleva guía, así que publicar un tour sin guía por
+        // defecto deja un tour que no puede programar nada.
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create(['status' => TourStatus::Draft, 'default_guide_id' => null]);
+        TourImage::factory()->for($tour)->cover()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->patchJson(
+            "http://demo.montree.test/api/v1/admin/tours/{$tour->id}/status",
+            ['status' => 'active'],
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('error_code', 'TOUR_NEEDS_GUIDE_TO_ACTIVATE');
+        $this->assertSame(TourStatus::Draft, $tour->fresh()?->status);
+    }
+
     public function test_activating_without_future_date_now_succeeds(): void
     {
         $tenant = $this->makeTenant();
         $tenant->makeCurrent();
-        $tour = Tour::factory()->create(['status' => TourStatus::Draft]);
+        $tour = Tour::factory()->create([
+            'status' => TourStatus::Draft,
+            'default_guide_id' => $this->memberFor($tenant, UserRole::Guide)->id,
+        ]);
         TourImage::factory()->for($tour)->cover()->create();
         $admin = $this->memberFor($tenant, UserRole::Admin);
 

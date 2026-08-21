@@ -43,7 +43,7 @@ const { isCurrentUrl } = useCurrentUrl();
                     <SidebarMenuButton size="lg" as-child>
                         <Link href="/super-admin/dashboard">
                             <div
-                                class="flex aspect-square size-9 items-center justify-center rounded-lg bg-zinc-900 text-zinc-50"
+                                class="flex aspect-square size-9 items-center justify-center rounded-lg bg-brand-ink text-brand-cream"
                             >
                                 <ShieldCheck class="size-5" />
                             </div>
@@ -51,13 +51,14 @@ const { isCurrentUrl } = useCurrentUrl();
                                 class="grid flex-1 text-left text-sm leading-tight"
                             >
                                 <span
-                                    class="truncate font-semibold text-zinc-900 dark:text-zinc-100"
+                                    class="truncate font-semibold text-foreground"
                                 >
                                     {{ $t('MONTREE Platform') }}
                                 </span>
-                                <span class="truncate text-xs text-zinc-500">{{
-                                    $t('Super Admin')
-                                }}</span>
+                                <span
+                                    class="truncate text-xs text-muted-foreground"
+                                    >{{ $t('Super Admin') }}</span
+                                >
                             </div>
                         </Link>
                     </SidebarMenuButton>

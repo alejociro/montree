@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Booking\BookingTravelerResource;
 use App\Http\Resources\Catalog\PublicTourResource;
 use App\Models\Booking;
+use App\Models\BookingTraveler;
 use App\Models\Tenant;
 use App\Models\TourDate;
 use Illuminate\Http\Request;
@@ -82,6 +84,11 @@ final class BookingPagesController extends Controller
                 'currency' => $booking->currency,
                 'expires_at' => $booking->expires_at?->toIso8601String(),
                 'contact_snapshot' => $booking->contact_snapshot,
+                // D10: los dos campos que le dicen al formulario si todavía
+                // puede escribir. Sin ellos la única forma de enterarse es el
+                // `409` después de haber llenado la pantalla.
+                'can_edit_travelers' => ! $booking->isLocked() && ! $booking->isTravelerEditWindowClosed(),
+                'travelers_edit_deadline' => $booking->travelerEditDeadline()?->toIso8601String(),
                 'tour' => [
                     'name' => $booking->tour->name,
                     'slug' => $booking->tour->slug,
@@ -92,16 +99,16 @@ final class BookingPagesController extends Controller
                     'starts_at' => $booking->tourDate->starts_at->toIso8601String(),
                     'ends_at' => $booking->tourDate->ends_at?->toIso8601String(),
                 ],
-                'travelers' => $booking->travelers->map(fn ($traveler) => [
-                    'id' => $traveler->id,
-                    'full_name' => $traveler->full_name,
-                    'is_minor' => $traveler->is_minor,
-                    'email' => $traveler->email,
-                    'phone' => $traveler->phone,
-                    'document_type' => $traveler->document_type,
-                    'document_number' => $traveler->document_number,
-                    'birth_date' => $traveler->birth_date?->toDateString(),
-                ])->values(),
+                // WHY: se serializa con el mismo Resource que la API y no a
+                // mano. El mapeo anterior se quedó en los ocho campos de antes
+                // de la Fase 2 y no traía emergencia, EPS ni observaciones: el
+                // formulario los cargaba vacíos y el siguiente guardado —que
+                // reemplaza al viajero entero— los borraba.
+                'travelers' => BookingTravelerResource::collection(
+                    $booking->travelers->each(
+                        fn (BookingTraveler $traveler) => $traveler->setRelation('booking', $booking)
+                    )
+                )->resolve($request),
             ],
         ]);
     }

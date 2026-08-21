@@ -74,6 +74,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pasajeros (tours-admin-passengers)
+    |--------------------------------------------------------------------------
+    |
+    | Horas antes de `tour_dates.starts_at` en que se cierra la planilla para el
+    | viajero (D10). Pasada esa hora, `PUT /api/v1/bookings/{bookingNumber}/travelers`
+    | deja de aceptar cambios y la correccion de ultima hora se hace por la
+    | agencia: el panel (`PUT /api/v1/admin/passengers/{traveler}`) NO mira esta
+    | clave. La lee App\Models\Booking::travelerEditDeadline().
+    |
+    */
+    'passengers' => [
+        'traveler_edit_cutoff_hours' => (int) env('MONTREE_TRAVELER_EDIT_CUTOFF_HOURS', 24),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Idiomas soportados (multilanguage-es-en)
     |--------------------------------------------------------------------------
     |

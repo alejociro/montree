@@ -1,32 +1,25 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus } from 'lucide-vue-next';
+import { Head, Link, useHttp } from '@inertiajs/vue3';
+import { AlertCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next';
 import { onMounted, ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
-import {
-    create as createPage,
-    edit as editPage,
-    show as showPage,
-} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import { index as toursIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
+import { create as createPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
+import TourController from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import Heading from '@/components/Heading.vue';
+import TourAdminCard from '@/components/organisms/TourAdminCard.vue';
 import TourFilters from '@/components/organisms/TourFilters.vue';
-import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
+import TourKpiGrid from '@/components/organisms/TourKpiGrid.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
-import { intlLocale } from '@/lib/format';
+import { TOUR_SORT_PARAMS } from '@/types/tour';
 import type {
     PaginatedTours,
     TourCategory,
-    TourStatus,
+    TourIndexFilters,
+    TourIndexStats,
     TourSummary,
 } from '@/types/tour';
 
@@ -34,25 +27,27 @@ const { t } = useTranslations();
 
 type Props = {
     categories: TourCategory[];
+    /**
+     * KPIs del encabezado. Opcional: el controlador todavía no los calcula, y
+     * la fila se omite en vez de mostrar ceros que no son la verdad.
+     */
+    stats?: TourIndexStats;
 };
 
 const props = defineProps<Props>();
 
-type FilterValue = {
-    status: TourStatus | 'all';
-    category_id: number | null;
-    search: string;
-};
-
-const filters = ref<FilterValue>({
+const filters = ref<TourIndexFilters>({
     status: 'all',
     category_id: null,
     search: '',
+    sort: 'recent',
 });
 
 const tours = ref<TourSummary[]>([]);
 const meta = ref<PaginatedTours['meta'] | null>(null);
 const loading = ref(false);
+const loaded = ref(false);
+const errorMessage = ref<string | null>(null);
 const page = ref(1);
 const { currency } = useTenant();
 
@@ -60,39 +55,42 @@ let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
 async function fetchTours(): Promise<void> {
     loading.value = true;
+    errorMessage.value = null;
+
+    const { sort, direction } = TOUR_SORT_PARAMS[filters.value.sort];
+
+    const query: Record<string, string> = {
+        page: String(page.value),
+        sort,
+        direction,
+    };
+
+    if (filters.value.status !== 'all') {
+        query.status = filters.value.status;
+    }
+
+    if (filters.value.category_id !== null) {
+        query.category_id = String(filters.value.category_id);
+    }
+
+    if (filters.value.search.trim() !== '') {
+        query.search = filters.value.search.trim();
+    }
 
     try {
-        const params: Record<string, string> = { page: String(page.value) };
+        const response = (await useHttp().submit(
+            TourController.index({ query }),
+        )) as PaginatedTours;
 
-        if (filters.value.status !== 'all') {
-            params.status = filters.value.status;
-        }
-
-        if (filters.value.category_id !== null) {
-            params.category_id = String(filters.value.category_id);
-        }
-
-        if (filters.value.search.trim() !== '') {
-            params.search = filters.value.search.trim();
-        }
-
-        const url = toursIndex(params).url;
-        const response = await fetch(url, {
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const payload = (await response.json()) as PaginatedTours;
-        tours.value = payload.data;
-        meta.value = payload.meta;
+        tours.value = response.data;
+        meta.value = response.meta;
     } catch {
-        toast.error(t('No se pudieron cargar los tours.'));
+        errorMessage.value = t('No se pudieron cargar los tours.');
+        tours.value = [];
+        meta.value = null;
     } finally {
         loading.value = false;
+        loaded.value = true;
     }
 }
 
@@ -127,82 +125,78 @@ watch(
 
 watch(() => filters.value.status, resetAndFetch);
 watch(() => filters.value.category_id, resetAndFetch);
+watch(() => filters.value.sort, resetAndFetch);
 
 onMounted(fetchTours);
-
-function formatPrice(amount: string, code: string): string {
-    const value = Number(amount);
-
-    if (Number.isNaN(value)) {
-        return `${code} ${amount}`;
-    }
-
-    return new Intl.NumberFormat(intlLocale(), {
-        style: 'currency',
-        currency: code,
-        maximumFractionDigits: 0,
-    }).format(value);
-}
 </script>
 
 <template>
-    <Head :title="$t('Tours')" />
-
     <div class="px-4 py-6 md:px-8">
-        <div class="flex items-start justify-between gap-4">
+        <Head :title="$t('Tours')" />
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
             <Heading
                 :title="$t('Tours')"
                 :description="
-                    $t('Gestiona el catálogo de experiencias de tu agencia.')
+                    $t(
+                        'Catálogo de experiencias y estado operativo de cada una.',
+                    )
                 "
             />
-            <Link :href="createPage().url">
-                <Button>
-                    <Plus class="size-4" />
-                    {{ $t('Nuevo tour') }}
-                </Button>
-            </Link>
+            <div class="flex items-center gap-2">
+                <Spinner
+                    v-if="loading && loaded"
+                    class="text-muted-foreground"
+                />
+                <Link :href="createPage().url">
+                    <Button>
+                        <Plus class="size-4" />
+                        {{ $t('Nuevo tour') }}
+                    </Button>
+                </Link>
+            </div>
         </div>
 
-        <div class="mt-6">
+        <TourKpiGrid v-if="props.stats" :stats="props.stats" class="mt-5" />
+
+        <div class="mt-5">
             <TourFilters v-model="filters" :categories="props.categories" />
         </div>
 
-        <div class="mt-6">
+        <Alert v-if="errorMessage" variant="destructive" class="mt-6">
+            <AlertCircle class="size-4" />
+            <AlertTitle>{{ $t('Error') }}</AlertTitle>
+            <AlertDescription class="flex flex-col items-start gap-3">
+                {{ errorMessage }}
+                <Button size="sm" variant="outline" @click="fetchTours()">
+                    {{ $t('Reintentar') }}
+                </Button>
+            </AlertDescription>
+        </Alert>
+
+        <div v-else class="mt-5">
             <div
-                v-if="loading && tours.length === 0"
-                class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                v-if="!loaded"
+                class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
             >
                 <div
-                    v-for="i in 4"
+                    v-for="i in 6"
                     :key="i"
-                    class="h-48 animate-pulse rounded-lg bg-muted"
-                />
+                    class="overflow-hidden rounded-xl border border-border"
+                >
+                    <Skeleton class="aspect-[16/9] w-full rounded-none" />
+                    <div class="space-y-2.5 p-4">
+                        <Skeleton class="h-4 w-3/4" />
+                        <Skeleton class="h-3 w-1/2" />
+                        <Skeleton class="h-2 w-full" />
+                    </div>
+                </div>
             </div>
 
             <div
                 v-else-if="tours.length === 0"
-                class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-input p-12 text-center"
+                class="flex flex-col items-center gap-4 rounded-xl border border-dashed border-input p-12 text-center"
             >
-                <div class="rounded-full bg-muted p-4">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="text-muted-foreground"
-                    >
-                        <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
-                        <path
-                            d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"
-                        />
-                    </svg>
-                </div>
                 <div class="space-y-1">
                     <p class="font-medium">{{ $t('Aún no hay tours') }}</p>
                     <p class="text-sm text-muted-foreground">
@@ -221,88 +215,21 @@ function formatPrice(amount: string, code: string): string {
                 </Link>
             </div>
 
-            <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <Card
+            <div
+                v-else
+                class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            >
+                <TourAdminCard
                     v-for="tour in tours"
                     :key="tour.id"
-                    class="group overflow-hidden p-0 transition hover:border-primary/40 hover:shadow-md"
-                >
-                    <Link
-                        :href="showPage({ tour: tour.id }).url"
-                        class="block focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
-                    >
-                        <div class="aspect-[16/9] overflow-hidden bg-muted">
-                            <img
-                                v-if="tour.cover_image_url"
-                                :src="tour.cover_image_url"
-                                :alt="tour.name"
-                                class="size-full object-cover transition duration-300 group-hover:scale-105"
-                            />
-                            <div
-                                v-else
-                                class="flex size-full items-center justify-center text-xs text-muted-foreground"
-                            >
-                                {{ $t('Sin portada') }}
-                            </div>
-                        </div>
-
-                        <CardHeader class="px-4 pt-4 pb-2">
-                            <div class="flex items-start justify-between gap-3">
-                                <CardTitle class="text-base leading-tight">
-                                    {{ tour.name }}
-                                </CardTitle>
-                                <TourStatusBadge :status="tour.status" />
-                            </div>
-                            <CardDescription class="line-clamp-2">
-                                {{
-                                    tour.short_description || $t('Sin resumen')
-                                }}
-                            </CardDescription>
-                        </CardHeader>
-                    </Link>
-
-                    <CardContent
-                        class="flex items-center justify-between gap-3 px-4 pb-4"
-                    >
-                        <div class="text-sm">
-                            <p class="font-medium">
-                                {{
-                                    formatPrice(
-                                        tour.base_price,
-                                        tour.currency || currency || 'USD',
-                                    )
-                                }}
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    $t(':hours h · :capacity pers.', {
-                                        hours: tour.duration_hours,
-                                        capacity: tour.default_capacity,
-                                    })
-                                }}
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <Link :href="showPage({ tour: tour.id }).url">
-                                <Button size="sm" variant="ghost">
-                                    <Eye class="size-4" />
-                                    {{ $t('Ver') }}
-                                </Button>
-                            </Link>
-                            <Link :href="editPage({ tour: tour.id }).url">
-                                <Button size="sm" variant="outline">
-                                    <Pencil class="size-4" />
-                                    {{ $t('Editar') }}
-                                </Button>
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
+                    :tour="tour"
+                    :fallback-currency="currency ?? 'USD'"
+                />
             </div>
 
             <div
                 v-if="meta && meta.total > 0"
-                class="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row"
+                class="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
                 <p class="text-xs text-muted-foreground">
                     {{

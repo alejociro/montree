@@ -10,6 +10,7 @@ use App\Models\Provider;
 use App\Models\Route;
 use App\Models\Tour;
 use App\Models\TourDate;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,19 +22,37 @@ class TourDateFactory extends Factory
 
     public function definition(): array
     {
-        $startsAt = fake()->dateTimeBetween('+1 day', '+90 days');
-
         return [
             'tour_id' => Tour::factory(),
-            'guide_id' => null,
-            'starts_at' => $startsAt,
-            'ends_at' => (clone $startsAt)->modify('+4 hours'),
+            // WHY (D9): un guía propio por salida es la única forma de que la
+            // factory sea *incapaz* de producir un solape. Quien necesite un guía
+            // concreto lo pasa explícito y se hace cargo de la disponibilidad.
+            'guide_id' => User::factory(),
+            'starts_at' => fake()->dateTimeBetween('+1 day', '+90 days'),
+            // WHY: se deriva de `tours.duration_hours` en `configure()`. Sumar 4 h
+            // fijas hacía que un tour de varios días «terminara» la misma tarde, y
+            // la regla de disponibilidad se lo creería.
+            'ends_at' => null,
             'capacity' => fake()->numberBetween(4, 20),
             'booked_count' => 0,
             'price_override' => null,
             'status' => TourDateStatus::Open,
             'notes' => null,
         ];
+    }
+
+    /**
+     * @return $this
+     */
+    public function configure(): self
+    {
+        return $this->afterMaking(function (TourDate $tourDate): void {
+            if ($tourDate->ends_at !== null) {
+                return;
+            }
+
+            $tourDate->ends_at = $tourDate->starts_at->copy()->addHours($this->durationHoursFor($tourDate));
+        });
     }
 
     public function full(): self
@@ -48,7 +67,7 @@ class TourDateFactory extends Factory
     {
         return $this->state(fn () => [
             'starts_at' => now()->subDays(7),
-            'ends_at' => now()->subDays(7)->addHours(4),
+            'ends_at' => null,
         ]);
     }
 
@@ -73,5 +92,15 @@ class TourDateFactory extends Factory
                 Hotel::factory()->count($count)->create()->pluck('id')->all(),
             );
         });
+    }
+
+    private function durationHoursFor(TourDate $tourDate): int
+    {
+        $tour = Tour::query()
+            ->withoutGlobalScopes()
+            ->whereKey($tourDate->tour_id)
+            ->first(['id', 'duration_hours']);
+
+        return max(1, (int) ($tour?->duration_hours ?? 4));
     }
 }

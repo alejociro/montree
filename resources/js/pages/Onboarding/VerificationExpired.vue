@@ -64,7 +64,7 @@ function resend() {
 
         <Link :href="home().url" class="mb-10 inline-flex items-center gap-2">
             <span
-                class="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white"
+                class="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
             >
                 <Leaf class="size-4" />
             </span>
@@ -75,13 +75,13 @@ function resend() {
 
         <div class="w-full max-w-md text-center">
             <div
-                class="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
+                class="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-accent text-accent-foreground"
             >
                 <MailWarning class="size-8" />
             </div>
 
             <p
-                class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
+                class="text-xs font-semibold tracking-widest text-accent-foreground uppercase"
             >
                 {{ $t('Enlace no válido') }}
             </p>
@@ -99,7 +99,7 @@ function resend() {
             <div
                 v-if="resent"
                 role="status"
-                class="mt-6 flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+                class="mt-6 flex items-center justify-center gap-2 rounded-md border border-secondary bg-secondary px-3 py-2.5 text-sm text-primary"
             >
                 <CheckCircle2 class="size-4 shrink-0" />
                 <span>{{
@@ -141,7 +141,7 @@ function resend() {
                 {{ $t('¿Ya confirmaste?') }}
                 <Link
                     :href="login().url"
-                    class="font-medium text-emerald-600 underline-offset-4 hover:underline dark:text-emerald-400"
+                    class="font-medium text-primary underline-offset-4 hover:underline"
                 >
                     {{ $t('Inicia sesión') }}
                 </Link>

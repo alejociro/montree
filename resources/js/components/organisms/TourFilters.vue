@@ -2,7 +2,6 @@
 import { Search } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed } from 'vue';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -15,38 +14,58 @@ import {
 import { useTranslations } from '@/composables/useTranslations';
 import { categoryLabel } from '@/lib/categories';
 import { cn } from '@/lib/utils';
-import type { TourCategory, TourStatus } from '@/types/tour';
+import { TOUR_STATUSES } from '@/types/tour';
+import type {
+    TourCategory,
+    TourIndexFilters,
+    TourSortValue,
+} from '@/types/tour';
 
 const { t } = useTranslations();
 
-type FilterValue = {
-    status: TourStatus | 'all';
-    category_id: number | null;
-    search: string;
-};
-
 type Props = {
-    modelValue: FilterValue;
+    modelValue: TourIndexFilters;
     categories: TourCategory[];
 };
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: FilterValue): void;
+    (e: 'update:modelValue', value: TourIndexFilters): void;
 }>();
 
+const statusLabels: Record<TourIndexFilters['status'], string> = {
+    all: t('Todos'),
+    draft: t('Borradores'),
+    active: t('Activos'),
+    paused: t('Pausados'),
+    archived: t('Archivados'),
+};
+
 const statusOptions = computed<
-    { value: FilterValue['status']; label: string }[]
->(() => [
-    { value: 'all', label: t('Todos') },
-    { value: 'draft', label: t('Borradores') },
-    { value: 'active', label: t('Activos') },
-    { value: 'paused', label: t('Pausados') },
-    { value: 'archived', label: t('Archivados') },
+    { value: TourIndexFilters['status']; label: string }[]
+>(() =>
+    (['all', ...TOUR_STATUSES] as TourIndexFilters['status'][]).map(
+        (value) => ({ value, label: statusLabels[value] }),
+    ),
+);
+
+/**
+ * WHY: solo los órdenes que `TourController@index` sabe aplicar — las columnas
+ * de `SORTABLE_COLUMNS` más las tres expresiones operativas del handoff
+ * (próxima salida, ocupación e ingresos), que la API ya resuelve en SQL.
+ */
+const sortOptions = computed<{ value: TourSortValue; label: string }[]>(() => [
+    { value: 'recent', label: t('Ordenar: más recientes') },
+    { value: 'next_departure', label: t('Ordenar: próxima salida') },
+    { value: 'occupancy', label: t('Ordenar: ocupación') },
+    { value: 'revenue', label: t('Ordenar: ingresos') },
+    { value: 'name', label: t('Ordenar: alfabético') },
+    { value: 'price_desc', label: t('Ordenar: precio mayor') },
+    { value: 'price_asc', label: t('Ordenar: precio menor') },
 ]);
 
-function setStatus(value: FilterValue['status']): void {
+function setStatus(value: TourIndexFilters['status']): void {
     emit('update:modelValue', { ...props.modelValue, status: value });
 }
 
@@ -59,76 +78,122 @@ function setCategory(value: AcceptableValue): void {
     emit('update:modelValue', { ...props.modelValue, category_id: parsed });
 }
 
+function setSort(value: AcceptableValue): void {
+    if (typeof value !== 'string') {
+        return;
+    }
+
+    const option = sortOptions.value.find((item) => item.value === value);
+
+    if (option === undefined) {
+        return;
+    }
+
+    emit('update:modelValue', { ...props.modelValue, sort: option.value });
+}
+
 function setSearch(value: string | number): void {
     emit('update:modelValue', { ...props.modelValue, search: String(value) });
 }
 </script>
 
 <template>
-    <div
-        class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-    >
-        <div class="flex flex-wrap gap-2">
-            <Button
+    <div class="flex flex-wrap items-center gap-2.5">
+        <!--
+            WHY: las pills filtran el listado, no cambian de panel: no hay
+            `tabpanel` que puedan controlar, así que un `tablist` sería un patrón
+            ARIA incompleto. Son botones de alternancia mutuamente excluyentes
+            dentro de un grupo etiquetado, y el estado va en `aria-pressed`.
+        -->
+        <div
+            class="flex flex-wrap gap-1"
+            role="group"
+            :aria-label="$t('Filtrar por estado')"
+        >
+            <button
                 v-for="option in statusOptions"
                 :key="option.value"
                 type="button"
-                size="sm"
-                :variant="
-                    modelValue.status === option.value ? 'default' : 'outline'
-                "
+                :aria-pressed="modelValue.status === option.value"
                 :class="
                     cn(
-                        'h-8 px-3 text-xs',
-                        modelValue.status === option.value && 'shadow-sm',
+                        'rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
+                        modelValue.status === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-brand-green-50 hover:text-foreground',
                     )
                 "
                 @click="setStatus(option.value)"
             >
                 {{ option.label }}
-            </Button>
+            </button>
         </div>
 
-        <div class="flex flex-col gap-2 md:flex-row md:items-center">
-            <Select
-                :model-value="
-                    modelValue.category_id === null
-                        ? 'all'
-                        : String(modelValue.category_id)
-                "
-                @update:model-value="setCategory"
+        <div class="relative min-w-[220px] flex-1 md:max-w-[340px]">
+            <label class="sr-only" for="tour-search">
+                {{ $t('Buscar tours...') }}
+            </label>
+            <Search
+                class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+                id="tour-search"
+                type="search"
+                :placeholder="$t('Buscar tours...')"
+                class="pl-9"
+                :model-value="modelValue.search"
+                @update:model-value="setSearch"
+            />
+        </div>
+
+        <Select
+            :model-value="
+                modelValue.category_id === null
+                    ? 'all'
+                    : String(modelValue.category_id)
+            "
+            @update:model-value="setCategory"
+        >
+            <SelectTrigger
+                class="w-full sm:w-auto sm:min-w-[180px]"
+                :aria-label="$t('Categoría')"
             >
-                <SelectTrigger class="w-full md:w-48">
-                    <SelectValue :placeholder="$t('Categoría')" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectGroup>
-                        <SelectItem value="all">{{
-                            $t('Todas las categorías')
-                        }}</SelectItem>
-                        <SelectItem
-                            v-for="category in categories"
-                            :key="category.id"
-                            :value="String(category.id)"
-                        >
-                            {{ categoryLabel(category.name) }}
-                        </SelectItem>
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
+                <SelectValue :placeholder="$t('Categoría')" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    <SelectItem value="all">
+                        {{ $t('Todas las categorías') }}
+                    </SelectItem>
+                    <SelectItem
+                        v-for="category in categories"
+                        :key="category.id"
+                        :value="String(category.id)"
+                    >
+                        {{ categoryLabel(category.name) }}
+                    </SelectItem>
+                </SelectGroup>
+            </SelectContent>
+        </Select>
 
-            <div class="relative w-full md:w-64">
-                <Search
-                    class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                    type="search"
-                    :placeholder="$t('Buscar tours...')"
-                    class="pl-9"
-                    :model-value="modelValue.search"
-                    @update:model-value="setSearch"
-                />
-            </div>
-        </div>
+        <Select :model-value="modelValue.sort" @update:model-value="setSort">
+            <SelectTrigger
+                class="w-full sm:w-auto sm:min-w-[190px]"
+                :aria-label="$t('Ordenar')"
+            >
+                <SelectValue :placeholder="$t('Ordenar')" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    <SelectItem
+                        v-for="option in sortOptions"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </SelectItem>
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     </div>
 </template>

@@ -32,57 +32,57 @@ function formatCurrency(value: string | null): string {
 
 <template>
     <div
-        class="overflow-x-auto rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        class="overflow-x-auto rounded-lg border border-border bg-card shadow-sm"
     >
-        <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
-            <thead class="bg-zinc-50 dark:bg-zinc-900/60">
+        <table class="min-w-full divide-y divide-border">
+            <thead class="bg-muted">
                 <tr>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Tenant') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Status') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Plan') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Usuarios') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Tours') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Bookings (30d)') }}
                     </th>
                     <th
-                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400"
+                        class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Revenue (30d)') }}
                     </th>
                     <th class="px-4 py-3" />
                 </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody class="divide-y divide-border">
                 <tr v-if="loading">
                     <td colspan="8" class="px-4 py-12">
                         <div
-                            class="flex items-center justify-center gap-3 text-sm text-zinc-500"
+                            class="flex items-center justify-center gap-3 text-sm text-muted-foreground"
                         >
                             <span
-                                class="size-3 animate-pulse rounded-full bg-zinc-400 dark:bg-zinc-600"
+                                class="size-3 animate-pulse rounded-full bg-border"
                             />
                             {{ $t('Cargando tenants...') }}
                         </div>
@@ -91,7 +91,7 @@ function formatCurrency(value: string | null): string {
                 <tr v-else-if="tenants.length === 0">
                     <td
                         colspan="8"
-                        class="px-4 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
+                        class="px-4 py-12 text-center text-sm text-muted-foreground"
                     >
                         {{ $t('No se encontraron tenants con esos filtros.') }}
                     </td>
@@ -100,16 +100,14 @@ function formatCurrency(value: string | null): string {
                     v-for="tenant in tenants"
                     v-else
                     :key="tenant.id"
-                    class="hover:bg-zinc-50 dark:hover:bg-zinc-900/40"
+                    class="hover:bg-muted"
                 >
                     <td class="px-4 py-3">
                         <div class="flex flex-col">
-                            <span
-                                class="font-medium text-zinc-900 dark:text-zinc-100"
-                            >
+                            <span class="font-medium text-foreground">
                                 {{ tenant.name }}
                             </span>
-                            <span class="text-xs text-zinc-500">{{
+                            <span class="text-xs text-muted-foreground">{{
                                 tenant.domain ?? tenant.slug
                             }}</span>
                         </div>
@@ -120,30 +118,22 @@ function formatCurrency(value: string | null): string {
                     <td class="px-4 py-3">
                         <PlanBadge :plan="tenant.plan" />
                     </td>
-                    <td
-                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
-                    >
+                    <td class="px-4 py-3 text-right text-sm text-foreground">
                         {{ tenant.users_count ?? '—' }}
                     </td>
-                    <td
-                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
-                    >
+                    <td class="px-4 py-3 text-right text-sm text-foreground">
                         {{ tenant.tours_count ?? '—' }}
                     </td>
-                    <td
-                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
-                    >
+                    <td class="px-4 py-3 text-right text-sm text-foreground">
                         {{ tenant.bookings_count_30d ?? '—' }}
                     </td>
-                    <td
-                        class="px-4 py-3 text-right text-sm text-zinc-700 dark:text-zinc-200"
-                    >
+                    <td class="px-4 py-3 text-right text-sm text-foreground">
                         {{ formatCurrency(tenant.revenue_30d) }}
                     </td>
                     <td class="px-4 py-3 text-right">
                         <Link
                             :href="`/super-admin/tenants/${tenant.id}`"
-                            class="inline-flex items-center text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                            class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
                         >
                             {{ $t('Detalle') }}
                             <ChevronRight class="size-4" />

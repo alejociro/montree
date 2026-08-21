@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Resources\Tour;
 
 use App\Models\Tour;
+use App\Queries\PickupChangeAudienceQuery;
+use App\Services\Tour\TourPublishChecklist;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,6 +28,9 @@ class TourResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status->value,
             'category_id' => $this->category_id,
+            // D7: el guía por defecto es obligatorio para publicar, así que el
+            // formulario del tour necesita poder leerlo y proponerlo.
+            'default_guide_id' => $this->default_guide_id,
             'category' => $this->whenLoaded('category', fn () => $this->category !== null
                 ? (new CategoryResource($this->category))->resolve()
                 : null),
@@ -52,6 +57,18 @@ class TourResource extends JsonResource
                 fn () => TourItineraryStepResource::collection($this->itineraries)->resolve(),
                 fn () => [],
             ),
+            'stops' => $this->whenLoaded(
+                'stops',
+                fn () => TourStopResource::collection($this->stops)->resolve(),
+                fn () => [],
+            ),
+            // D7: el checklist «Para publicar» sale del servidor, que es quien
+            // rechaza la activación. La pantalla lo pinta; no lo inventa.
+            'publish_checklist' => app(TourPublishChecklist::class)->for($this->resource),
+            // Regla 6: cuánta gente quedaría notificada si se toca la parada de
+            // recogida. Va en la respuesta para poder advertirlo ANTES de
+            // guardar, con el mismo criterio con el que después se envía.
+            'pickup_change_impact' => app(PickupChangeAudienceQuery::class)->impact($this->resource),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

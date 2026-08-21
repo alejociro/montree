@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Tour\BuildTourIndexStatsAction;
 use App\Actions\Tour\BuildTourShowStatsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Tour\CategoryResource;
 use App\Http\Resources\Tour\TourResource;
+use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Tour;
 use Illuminate\Support\Facades\Gate;
@@ -20,7 +22,7 @@ final class TourPagesController extends Controller
     {
         Gate::authorize('view', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return Inertia::render('Admin/Tour/Show', [
             'tour' => (new TourResource($tour))->resolve(),
@@ -28,12 +30,13 @@ final class TourPagesController extends Controller
         ]);
     }
 
-    public function index(): Response
+    public function index(BuildTourIndexStatsAction $buildStats): Response
     {
         Gate::authorize('viewAny', Tour::class);
 
         return Inertia::render('Admin/Tour/Index', [
             'categories' => $this->categories(),
+            'stats' => $buildStats->handle(Gate::allows('viewAny', Booking::class)),
         ]);
     }
 
@@ -50,7 +53,7 @@ final class TourPagesController extends Controller
     {
         Gate::authorize('update', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return Inertia::render('Admin/Tour/Edit', [
             'tour' => (new TourResource($tour))->resolve(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -58,8 +59,38 @@ final class BookingException extends \Exception implements HttpExceptionInterfac
         return new self('BOOKING_NOT_FOUND', __('No encontramos la reserva indicada.'), 404);
     }
 
+    public static function travelersComplete(int $travelersCount): self
+    {
+        return new self(
+            'BOOKING_TRAVELERS_COMPLETE',
+            __('La reserva ya tiene sus :count pasajeros cargados.', ['count' => $travelersCount]),
+            409,
+        );
+    }
+
+    public static function paymentsLocked(): self
+    {
+        return new self('BOOKING_PAYMENTS_LOCKED', __('No es posible registrar pagos sobre una reserva cancelada, expirada o reembolsada.'), 409);
+    }
+
     public static function travelersLocked(): self
     {
-        return new self('BOOKING_TRAVELERS_LOCKED', __('No es posible editar los viajeros de una reserva cancelada o expirada.'), 409);
+        return new self('BOOKING_TRAVELERS_LOCKED', __('No es posible editar los viajeros de una reserva cancelada, expirada o reembolsada.'), 409);
+    }
+
+    /**
+     * D10: la planilla se congela para el titular a las
+     * `montree.passengers.traveler_edit_cutoff_hours` de la salida. El panel de
+     * la agencia no pasa por aca.
+     */
+    public static function travelerEditWindowClosed(CarbonInterface $deadline): self
+    {
+        return new self(
+            'BOOKING_TRAVELER_EDIT_WINDOW_CLOSED',
+            __('Los datos de los viajeros se podían editar hasta el :deadline. Para un cambio de última hora, contacta a la agencia.', [
+                'deadline' => $deadline->format('d/m/Y H:i'),
+            ]),
+            409,
+        );
     }
 }

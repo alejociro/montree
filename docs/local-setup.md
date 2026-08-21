@@ -192,6 +192,12 @@ php artisan tinker                                   # REPL
 # que pasarlo siempre.
 php artisan wayfinder:generate --with-form
 
+# Enums PHP → TypeScript (resources/js/types/enums.generated.ts)
+# El archivo generado no se edita a mano; --check no escribe, solo falla si
+# quedó desactualizado (es lo que corre la suite).
+php artisan enums:typescript
+php artisan enums:typescript --check
+
 # Logs
 php artisan pail                                     # logs en vivo
 tail -f storage/logs/laravel.log                    # alternativa

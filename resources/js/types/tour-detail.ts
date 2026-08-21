@@ -1,3 +1,6 @@
+import type { TourDateStatus } from '@/types/enums.generated';
+import type { TourRouteStop } from '@/types/tour-route';
+
 export type TourDetailImage = {
     id: number;
     url: string | null;
@@ -13,6 +16,12 @@ export type TourDetailItineraryStep = {
     duration_label: string | null;
 };
 
+/** Dato duro del tour, en la rejilla de cuatro que va bajo la descripción. */
+export type TourFact = {
+    label: string;
+    value: string;
+};
+
 export type TourDetailDate = {
     id: number;
     starts_at: string;
@@ -23,7 +32,7 @@ export type TourDetailDate = {
     capacity_booked: number;
     available_seats: number;
     is_full: boolean;
-    status: 'open' | 'full' | 'cancelled' | 'closed';
+    status: TourDateStatus;
 };
 
 export type TourDetail = {
@@ -46,6 +55,8 @@ export type TourDetail = {
     itinerary: TourDetailItineraryStep[];
     requirements: string[];
     includes: string[];
+    excludes: string[];
+    stops: TourRouteStop[];
     meeting_point: string | null;
     meeting_latitude: string | null;
     meeting_longitude: string | null;

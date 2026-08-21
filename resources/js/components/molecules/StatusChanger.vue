@@ -118,7 +118,7 @@ defineExpose({ closeDialog });
                             $t('Describe brevemente el motivo de la suspensión')
                         "
                     />
-                    <p v-if="reasonError" class="text-sm text-red-600">
+                    <p v-if="reasonError" class="text-sm text-destructive">
                         {{ reasonError }}
                     </p>
                 </div>

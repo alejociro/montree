@@ -77,18 +77,18 @@ final class GuideRouteAccessTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_guide_sees_the_travelers_of_their_own_departure(): void
+    public function test_guide_sees_the_passengers_of_their_own_departure(): void
     {
         $guide = $this->memberFor(UserRole::Guide);
         $tourDate = $this->tourDateFor($guide);
         Tenant::forgetCurrent();
 
         $this->actingAs($guide)
-            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/travelers")
+            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/passengers")
             ->assertOk();
     }
 
-    public function test_operator_cannot_read_the_travelers_of_a_departure(): void
+    public function test_operator_cannot_read_the_passengers_of_a_departure(): void
     {
         $guide = $this->memberFor(UserRole::Guide);
         $operator = $this->memberFor(UserRole::Operator);
@@ -96,7 +96,7 @@ final class GuideRouteAccessTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($operator)
-            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/travelers")
+            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/passengers")
             ->assertForbidden();
     }
 
@@ -118,7 +118,7 @@ final class GuideRouteAccessTest extends TestCase
         $response->assertJsonCount(0, 'data');
     }
 
-    public function test_admin_cannot_read_the_travelers_of_a_departure_that_is_not_theirs(): void
+    public function test_admin_cannot_read_the_passengers_of_a_departure_that_is_not_theirs(): void
     {
         $guide = $this->memberFor(UserRole::Guide);
         $admin = $this->memberFor(UserRole::Admin);
@@ -126,7 +126,7 @@ final class GuideRouteAccessTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)
-            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/travelers")
+            ->getJson(self::HOST."/api/v1/guide/tour-dates/{$tourDate->id}/passengers")
             ->assertForbidden();
     }
 

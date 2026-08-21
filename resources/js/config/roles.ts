@@ -1,4 +1,5 @@
 import { translate } from '@/composables/useTranslations';
+import type { UserRole } from '@/types/enums.generated';
 import type { RoleOption } from '@/types/team';
 
 /**
@@ -8,7 +9,7 @@ import type { RoleOption } from '@/types/team';
  * 3B) traen su etiqueta del backend, y para ellos `roleLabel()` cae en el
  * nombre tecnico tal cual lo escribio quien creo el rol.
  */
-export const BASE_ROLE_LABELS: Record<string, string> = {
+export const BASE_ROLE_LABELS: Record<UserRole, string> = {
     super_admin: 'Super Admin',
     admin: 'Administrador',
     sales: 'Vendedor',
@@ -29,15 +30,20 @@ export const NON_ASSIGNABLE_ROLES: string[] = ['super_admin', 'customer'];
  * permiso `team.role.update`). Mismo juego que `TenantRoleCatalog::STAFF_ROLES`,
  * sin los roles propios de la agencia, que solo se conocen consultando.
  */
-export const FALLBACK_ROLE_OPTIONS: RoleOption[] = [
-    'admin',
-    'sales',
-    'operator',
-    'guide',
-].map((name) => ({ name, label: BASE_ROLE_LABELS[name] ?? name }));
+export const FALLBACK_ROLE_OPTIONS: RoleOption[] = (
+    ['admin', 'sales', 'operator', 'guide'] satisfies UserRole[]
+).map((name) => ({ name, label: BASE_ROLE_LABELS[name] }));
+
+/**
+ * El nombre puede ser el de un rol propio de la agencia, que no esta en el
+ * catalogo: por eso la busqueda se hace contra un indice abierto.
+ */
+function baseRoleLabel(name: string): string | undefined {
+    return (BASE_ROLE_LABELS as Record<string, string | undefined>)[name];
+}
 
 export function roleLabel(name: string): string {
-    const label = BASE_ROLE_LABELS[name];
+    const label = baseRoleLabel(name);
 
     // Un rol propio de la agencia no esta en el catalogo: su nombre lo escribio una
     // persona, no la aplicacion, y por eso sale tal cual en los dos idiomas.

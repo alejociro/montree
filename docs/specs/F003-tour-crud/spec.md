@@ -66,3 +66,16 @@ Tablas: `tours`, `tour_images`, `tour_itineraries`, `categories`
 ## Changelog
 
 - `2026-05-17` — Creación inicial.
+- `2026-08-21` — **Superada por [`tours-admin-passengers`](../tours-admin-passengers/spec.md)** en todo
+  lo que toca el panel de tours. Esta spec queda como registro de lo que se construyó primero; para
+  saber qué hace hoy la pantalla hay que leer la nueva. Lo que cambió respecto de lo escrito aquí:
+  - Las cuatro pantallas (índice, crear, editar, detalle) se rediseñaron con la maqueta del handoff:
+    KPIs, barra de ocupación, pestañas y savebar.
+  - `tour_dates.guide_id` es obligatorio y un guía no puede llevar dos salidas el mismo día; `ends_at`
+    se deriva de la duración y ya no se escribe a mano.
+  - Publicar exige además resumen corto y guía por defecto, no solo imagen; la lista de condiciones la
+    emite el servidor (`publish_checklist`).
+  - El tour estrena pestaña «Pasajeros» con la planilla de la salida, y el guía la ve en su propia zona.
+  - `operator` conserva la escritura sobre tours (`tours.create`, `tours.update`, `tours.publish`), pero
+    no tiene `bookings.view`: la pestaña «Pasajeros» no es suya. Quién ve qué lo fija el RBAC (F018) y
+    la Decisión 7 de la spec nueva, no esta.

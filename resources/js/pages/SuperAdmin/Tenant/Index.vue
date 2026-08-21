@@ -110,11 +110,11 @@ function handleCreated(tenantId: number): void {
         </div>
 
         <div
-            class="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900"
+            class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm md:flex-row md:items-center"
         >
             <div class="relative flex-1">
                 <Search
-                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400"
+                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                     v-model="search"
@@ -165,7 +165,7 @@ function handleCreated(tenantId: number): void {
 
         <div
             v-if="meta && meta.last_page > 1"
-            class="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400"
+            class="flex items-center justify-between text-sm text-muted-foreground"
         >
             <span>
                 {{

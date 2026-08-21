@@ -163,7 +163,7 @@ onMounted(() => {
 
         <div
             v-if="loading && !tenant"
-            class="h-48 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"
+            class="h-48 animate-pulse rounded-lg bg-muted"
         />
 
         <TenantDetailPanel

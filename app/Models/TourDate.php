@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\TourDateDisplayStatus;
 use App\Enums\TourDateStatus;
+use Carbon\CarbonInterface;
+use Carbon\CarbonPeriod;
 use Database\Factories\TourDateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +22,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $tenant_id
  * @property int $tour_id
- * @property int|null $guide_id
+ * @property int $guide_id
  * @property int|null $route_id
  * @property int|null $provider_id
  * @property Carbon $starts_at
@@ -91,6 +93,51 @@ class TourDate extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * El fin de una salida no es un dato del cliente: sale de la duración del
+     * tour (D9). Un `ends_at` que miente es peor que uno vacío, porque la regla
+     * de disponibilidad se lo cree.
+     */
+    public static function deriveEndsAt(CarbonInterface $startsAt, int $durationHours): CarbonInterface
+    {
+        return $startsAt->copy()->addHours($durationHours);
+    }
+
+    /**
+     * Días calendario que la salida le ocupa al guía: `[date(starts_at) …
+     * date(ends_at)]`. Un tour de 5 días bloquea los 5 aunque el último termine
+     * a las 9 de la mañana (D9).
+     */
+    public function occupiedDays(): CarbonPeriod
+    {
+        $end = $this->ends_at ?? $this->starts_at;
+
+        return CarbonPeriod::create(
+            $this->starts_at->copy()->startOfDay(),
+            '1 day',
+            $end->copy()->startOfDay(),
+        );
+    }
+
+    /**
+     * Salidas que ocupan al guía. Solo una `cancelled` libera sus días (D9).
+     *
+     * WHY: `full` ocupa igual que `open`. Agotada quiere decir que se vendió
+     * entera, no que no se vaya a hacer: el guía sale esos días. Lo que decide
+     * la ocupación es si la salida ocurre, no si le quedan cupos.
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeOccupying(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            TourDateStatus::Open,
+            TourDateStatus::Full,
+            TourDateStatus::Closed,
+        ]);
     }
 
     /**

@@ -14,6 +14,9 @@ use App\Http\Resources\Tour\TourResource;
 use App\Http\Resources\Tour\TourSummaryResource;
 use App\Models\Tenant;
 use App\Models\Tour;
+use App\Queries\TourOperationalSummaryQuery;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -27,19 +30,18 @@ final class TourController extends Controller
         private CreateTourAction $createAction,
         private UpdateTourAction $updateAction,
         private DeleteTourAction $deleteAction,
+        private TourOperationalSummaryQuery $operations,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Tour::class);
 
-        $sort = in_array($request->string('sort')->toString(), self::SORTABLE_COLUMNS, true)
-            ? $request->string('sort')->toString()
-            : 'created_at';
+        $sort = $this->sort($request);
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $perPage = min(max((int) $request->integer('per_page', 15), 1), 100);
 
-        $tours = Tour::query()
+        $tours = $this->operations->applyTo(Tour::query())
             ->with(['category', 'coverImage'])
             ->withCount(['images', 'bookings'])
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
@@ -55,11 +57,28 @@ final class TourController extends Controller
         return TourSummaryResource::collection($tours);
     }
 
+    /**
+     * Columna o subconsulta por la que ordenar. Los tres órdenes operativos
+     * —próxima salida, ocupación e ingresos— se resuelven en SQL con la misma
+     * subconsulta correlacionada que alimenta `operations`: ordenar no cuesta
+     * una consulta por tour.
+     */
+    private function sort(Request $request): string|EloquentBuilder|QueryBuilder
+    {
+        $requested = $request->string('sort')->toString();
+
+        if (in_array($requested, self::SORTABLE_COLUMNS, true)) {
+            return $requested;
+        }
+
+        return $this->operations->sortableExpressions()[$requested] ?? 'created_at';
+    }
+
     public function show(Tour $tour): JsonResponse
     {
         Gate::authorize('view', $tour);
 
-        $tour->load(['category', 'images', 'itineraries']);
+        $tour->load(['category', 'images', 'itineraries', 'stops']);
 
         return new JsonResponse(['data' => (new TourResource($tour))->resolve()]);
     }

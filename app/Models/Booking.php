@@ -7,7 +7,9 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentType;
+use Carbon\CarbonInterface;
 use Database\Factories\BookingFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +44,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $cancelled_at
  * @property Carbon|null $completed_at
  * @property string|null $cancellation_reason
+ * @property string $due_amount
  */
 class Booking extends Model
 {
@@ -106,6 +109,90 @@ class Booking extends Model
                 $booking->booking_number = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * Estados en los que la reserva ya no admite escritura: ni pasajeros ni
+     * pagos. Una sola lista para los tres caminos que escriben sobre ella
+     * (sync del viajero, panel y pago manual).
+     */
+    public function isLocked(): bool
+    {
+        return in_array($this->status, [
+            BookingStatus::Cancelled,
+            BookingStatus::Expired,
+            BookingStatus::Refunded,
+        ], true);
+    }
+
+    /**
+     * Hasta cuándo el titular puede editar la planilla de sus acompañantes (D10):
+     * `starts_at` menos la ventana de `config('montree.passengers')`. `null`
+     * cuando la reserva no tiene salida o la salida no tiene hora: sin fecha
+     * contra la que comparar, no se bloquea a nadie.
+     *
+     * Deliberadamente fuera de isLocked(): el panel de la agencia y el pago
+     * manual comparten esa guarda y NO les aplica esta ventana.
+     */
+    public function travelerEditDeadline(): ?CarbonInterface
+    {
+        $startsAt = $this->tourDate?->starts_at;
+
+        if ($startsAt === null) {
+            return null;
+        }
+
+        return $startsAt->copy()->subHours(
+            (int) config('montree.passengers.traveler_edit_cutoff_hours'),
+        );
+    }
+
+    public function isTravelerEditWindowClosed(): bool
+    {
+        $deadline = $this->travelerEditDeadline();
+
+        return $deadline !== null && now()->greaterThanOrEqualTo($deadline);
+    }
+
+    /**
+     * Saldo de la reserva. El dinero vive en `bookings` y `payments`; esto no es
+     * una columna (D5).
+     *
+     * @return Attribute<string, never>
+     */
+    protected function dueAmount(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->money(
+            (float) $this->total_amount - (float) $this->paid_amount,
+        ));
+    }
+
+    /**
+     * Parte proporcional de un pasajero sobre el dinero de la reserva (D5): se
+     * calcula, no se guarda. El estado se decide por el saldo de **la reserva**,
+     * así que dos pasajeros de la misma reserva nunca aparecen uno «Pagado» y
+     * otro «Con saldo»: pagó la reserva, no la persona.
+     *
+     * @return array{share_amount: string, paid_amount: string, due_amount: string, currency: string, status: string}
+     */
+    public function passengerShare(): array
+    {
+        $travelers = max(1, (int) $this->travelers_count);
+        $share = round(((float) $this->total_amount) / $travelers, 2);
+        $paid = round(((float) $this->paid_amount) / $travelers, 2);
+
+        return [
+            'share_amount' => $this->money($share),
+            'paid_amount' => $this->money($paid),
+            'due_amount' => $this->money(max(0, $share - $paid)),
+            'currency' => (string) $this->currency,
+            'status' => ((float) $this->total_amount) - ((float) $this->paid_amount) > 0 ? 'due' : 'paid',
+        ];
+    }
+
+    private function money(float $amount): string
+    {
+        return number_format(round($amount, 2), 2, '.', '');
     }
 
     public function user(): BelongsTo

@@ -5,6 +5,7 @@ import {
     store as storeDate,
     update as updateDate,
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
+import GuideSelect from '@/components/molecules/GuideSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -21,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import type { DepartureRange } from '@/types/guide-availability';
 import type {
     LogisticsRef,
     TourDateAdmin,
@@ -33,13 +35,27 @@ type Props = {
     open: boolean;
     tourId: number;
     editing: TourDateAdmin | null;
+    /**
+     * La duración del tour, que es de donde sale el fin de la salida (D9). Sin
+     * ella se cae a la de la salida que se edita.
+     */
+    durationHours?: number | null;
+    /**
+     * El guía por defecto del tour. Regla 3 del handoff: se **propone** en la
+     * salida nueva, no se impone —se puede cambiar antes de guardar, y el
+     * servidor sigue validando disponibilidad—. Al editar no se toca.
+     */
+    defaultGuideId?: number | null;
     guides: LogisticsRef[];
     routes: LogisticsRef[];
     providers: LogisticsRef[];
     hotels: LogisticsRef[];
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    durationHours: null,
+    defaultGuideId: null,
+});
 
 const emit = defineEmits<{
     'update:open': [value: boolean];
@@ -53,7 +69,6 @@ const errors = ref<ApiErrors>({});
 
 const form = reactive<TourDateFormInput>({
     starts_at: '',
-    ends_at: '',
     capacity: 10,
     price_override: '',
     notes: '',
@@ -64,6 +79,71 @@ const form = reactive<TourDateFormInput>({
 });
 
 const isEditing = computed(() => props.editing !== null);
+
+const MS_PER_HOUR = 3_600_000;
+
+/**
+ * WHY (D9): el fin ya no se escribe, se deriva. Cuando el tour no viaja en las
+ * props —la lista global de salidas solo edita— se recupera de la salida que se
+ * está editando, que trae el fin que derivó el servidor.
+ */
+const durationHours = computed<number | null>(() => {
+    if (props.durationHours !== null) {
+        return props.durationHours;
+    }
+
+    const date = props.editing;
+
+    if (date === null || date.ends_at === null) {
+        return null;
+    }
+
+    const span =
+        new Date(date.ends_at).getTime() - new Date(date.starts_at).getTime();
+
+    return Number.isNaN(span) ? null : Math.round(span / MS_PER_HOUR);
+});
+
+const derivedEnd = computed<Date | null>(() => {
+    if (form.starts_at === '' || durationHours.value === null) {
+        return null;
+    }
+
+    const start = new Date(form.starts_at);
+
+    if (Number.isNaN(start.getTime())) {
+        return null;
+    }
+
+    return new Date(start.getTime() + durationHours.value * MS_PER_HOUR);
+});
+
+function toDateOnly(date: Date): string {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Los días calendario que la salida le ocupará al guía. */
+const guideRange = computed<DepartureRange | null>(() => {
+    if (form.starts_at === '') {
+        return null;
+    }
+
+    const start = new Date(form.starts_at);
+
+    if (Number.isNaN(start.getTime())) {
+        return null;
+    }
+
+    const end = derivedEnd.value ?? start;
+
+    return { from: toDateOnly(start), to: toDateOnly(end) };
+});
+
+const derivedEndLabel = computed(() =>
+    derivedEnd.value === null
+        ? t('Se calcula con la duración del tour.')
+        : derivedEnd.value.toLocaleString(),
+);
 
 function pad(value: number): string {
     return String(value).padStart(2, '0');
@@ -99,11 +179,10 @@ function resetFromEditing(): void {
 
     if (date === null) {
         form.starts_at = '';
-        form.ends_at = '';
         form.capacity = 10;
         form.price_override = '';
         form.notes = '';
-        form.guide_id = null;
+        form.guide_id = props.defaultGuideId;
         form.route_id = null;
         form.provider_id = null;
         form.hotel_ids = [];
@@ -112,7 +191,6 @@ function resetFromEditing(): void {
     }
 
     form.starts_at = toDateTimeLocal(date.starts_at);
-    form.ends_at = toDateTimeLocal(date.ends_at);
     form.capacity = date.capacity;
     form.price_override = date.price_override ?? '';
     form.notes = date.notes ?? '';
@@ -162,13 +240,18 @@ function validateLocally(): boolean {
         errors.value.capacity = t('La capacidad debe ser al menos 1.');
     }
 
+    // D7: no existe «Sin asignar». El servidor lo rechaza igual; pedirlo acá
+    // evita perder el formulario entero por un campo vacío.
+    if (form.guide_id === null) {
+        errors.value.guide_id = t('Elige un guía para la salida.');
+    }
+
     return Object.keys(errors.value).length === 0;
 }
 
 function buildPayload(): Record<string, unknown> {
     return {
         starts_at: toIso(form.starts_at),
-        ends_at: toIso(form.ends_at),
         capacity: form.capacity,
         price_override:
             form.price_override.trim() === ''
@@ -275,12 +358,12 @@ function submit(): void {
                     </div>
 
                     <div class="space-y-1.5">
-                        <Label for="date-ends-at">{{ $t('Fin') }}</Label>
-                        <Input
-                            id="date-ends-at"
-                            v-model="form.ends_at"
-                            type="datetime-local"
-                        />
+                        <Label>{{ $t('Fin') }}</Label>
+                        <p
+                            class="flex h-10 items-center rounded-md border border-dashed border-input px-3 text-sm text-muted-foreground"
+                        >
+                            {{ derivedEndLabel }}
+                        </p>
                         <p
                             v-if="errors.ends_at"
                             class="text-xs text-destructive"
@@ -330,31 +413,14 @@ function submit(): void {
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
-                    <Label for="date-guide">{{ $t('Guía') }}</Label>
-                    <select
-                        id="date-guide"
-                        :value="form.guide_id ?? ''"
-                        class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                        @change="
-                            form.guide_id = parseSelectId(
-                                ($event.target as HTMLSelectElement).value,
-                            )
-                        "
-                    >
-                        <option value="">{{ $t('Sin guía asignado') }}</option>
-                        <option
-                            v-for="guide in props.guides"
-                            :key="guide.id"
-                            :value="guide.id"
-                        >
-                            {{ guide.name }}
-                        </option>
-                    </select>
-                    <p v-if="errors.guide_id" class="text-xs text-destructive">
-                        {{ errors.guide_id }}
-                    </p>
-                </div>
+                <GuideSelect
+                    id="date-guide"
+                    v-model="form.guide_id"
+                    :range="guideRange"
+                    :exclude-tour-date-id="props.editing?.id ?? null"
+                    :fallback-guides="props.guides"
+                    :error="errors.guide_id"
+                />
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="space-y-1.5">

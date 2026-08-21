@@ -40,6 +40,10 @@ type BookingProp = {
     currency: string;
     expires_at: string | null;
     contact_snapshot: ContactSnapshot | null;
+    /** D10: la ventana de edición del titular sigue abierta. */
+    can_edit_travelers: boolean;
+    /** D10: hasta cuándo se podía editar. `null` = la ventana no aplica. */
+    travelers_edit_deadline: string | null;
     tour: {
         name: string;
         slug: string;
@@ -196,7 +200,7 @@ function goBack(): void {
                 class="relative flex h-60 items-center justify-center bg-cover bg-center"
                 :style="{ backgroundImage: `url(${heroImage})` }"
             >
-                <div class="absolute inset-0 bg-[#172e24]/60"></div>
+                <div class="absolute inset-0 bg-brand-ink/60"></div>
                 <div class="relative space-y-2 px-4 text-center text-white">
                     <CheckCircle class="mx-auto size-10" />
                     <h1 class="text-3xl font-bold">
@@ -426,6 +430,8 @@ function goBack(): void {
                         :minors-count="booking.minors_count"
                         :travelers="booking.travelers"
                         :required="require_traveler_details"
+                        :can-edit="booking.can_edit_travelers"
+                        :edit-deadline="booking.travelers_edit_deadline"
                         :contact="booking.contact_snapshot"
                     />
                 </div>
@@ -547,6 +553,8 @@ function goBack(): void {
                         :minors-count="booking.minors_count"
                         :travelers="booking.travelers"
                         :required="require_traveler_details"
+                        :can-edit="booking.can_edit_travelers"
+                        :edit-deadline="booking.travelers_edit_deadline"
                         :contact="booking.contact_snapshot"
                     />
                 </div>

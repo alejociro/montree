@@ -62,14 +62,19 @@ function select(value: TourDifficulty): void {
 <template>
     <div class="grid gap-2">
         <Label>{{ $t('Dificultad') }}</Label>
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div
+            class="grid grid-cols-2 gap-3 md:grid-cols-4"
+            role="group"
+            :aria-label="$t('Dificultad')"
+        >
             <button
                 v-for="option in options"
                 :key="option.value"
                 type="button"
+                :aria-pressed="props.modelValue === option.value"
                 :class="
                     cn(
-                        'flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-colors',
+                        'flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                         props.modelValue === option.value
                             ? 'border-primary bg-primary/5 text-primary'
                             : 'border-input hover:border-primary/40 hover:bg-muted/40',

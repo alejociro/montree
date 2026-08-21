@@ -10,12 +10,12 @@ const props = defineProps<{
 const statusClasses = computed(() => {
     switch (props.status) {
         case 'active':
-            return 'bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-100';
+            return 'bg-secondary text-primary border-secondary';
         case 'suspended':
-            return 'bg-red-100 text-red-900 border-red-200 dark:bg-red-900/30 dark:text-red-100';
+            return 'bg-destructive/10 text-destructive border-destructive/30';
         case 'pending':
         default:
-            return 'bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-100';
+            return 'bg-accent text-accent-foreground border-accent-foreground/25';
     }
 });
 
