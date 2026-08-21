@@ -14,21 +14,23 @@ import {
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
 import changeStatus from '@/actions/App/Http/Controllers/Api/V1/Admin/TourStatusController';
+import { show as publicTour } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import PickupChangeNotice from '@/components/molecules/PickupChangeNotice.vue';
 import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
 import type { TourTabItem } from '@/components/molecules/TourTabs.vue';
-import PassengerManifest from '@/components/organisms/PassengerManifest.vue';
 import TourDateFormDialog from '@/components/organisms/TourDateFormDialog.vue';
 import TourDeparturesTable from '@/components/organisms/TourDeparturesTable.vue';
 import TourForm from '@/components/organisms/TourForm.vue';
 import TourImageUploader from '@/components/organisms/TourImageUploader.vue';
 import TourImpactCard from '@/components/organisms/TourImpactCard.vue';
+import TourPassengerPreview from '@/components/organisms/TourPassengerPreview.vue';
 import TourProgressRail from '@/components/organisms/TourProgressRail.vue';
 import TourPublishChecklist from '@/components/organisms/TourPublishChecklist.vue';
 import TourRouteMapSection from '@/components/organisms/TourRouteMapSection.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
+import TourStatusRailCard from '@/components/organisms/TourStatusRailCard.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -237,6 +239,7 @@ const {
 
 const {
     summary: manifestSummary,
+    preview: manifestPreview,
     loading: manifestLoading,
     load: loadManifestSummary,
 } = useTourManifestSummary(props.tour.id);
@@ -326,9 +329,16 @@ function openPassengersOf(): void {
     activeTab.value = 'passengers';
 }
 
-const manifestSource = computed(
-    () => ({ kind: 'tour', tourId: props.tour.id }) as const,
-);
+/** La ficha pública del tour, para comprobar cómo se ve lo que se acaba de guardar. */
+const publicUrl = computed(() => publicTour({ slug: props.tour.slug }).url);
+
+/**
+ * La lista completa vive en el detalle del tour. Se abre directamente en su
+ * pestaña de pasajeros para que el salto no cueste dos clics.
+ */
+function openFullManifest(): void {
+    router.visit(showPage({ tour: props.tour.id }).url + '?tab=passengers');
+}
 
 onMounted(() => {
     void loadDepartures();
@@ -631,173 +641,227 @@ const lastEdited = computed<string | null>(() =>
             @update:model-value="selectTab"
         />
 
+        <!--
+          La columna de contexto acompaña a TODAS las pestañas. Antes solo
+          existía en «Contenido» y desaparecía al pasar a «Salidas», que es
+          donde más falta hace saber si el tour está publicado antes de abrir
+          una salida a la venta.
+        -->
         <div
-            class="mt-5 grid grid-cols-1 items-start gap-6"
-            :class="
-                activeTab === 'content'
-                    ? 'min-[1180px]:grid-cols-[minmax(0,1fr)_320px]'
-                    : ''
-            "
+            class="mt-5 grid grid-cols-1 items-start gap-6 min-[1180px]:grid-cols-[minmax(0,1fr)_320px]"
         >
-            <form @submit.prevent="submit">
-                <!--
+            <div class="min-w-0">
+                <form @submit.prevent="submit">
+                    <!--
                   `v-show`, no `v-if`: los dos bloques del formulario son una
                   sola instancia de estado repartida en dos pestañas, y
                   desmontarlos perdería el mapa y el foco al cambiar de pestaña.
                   Los `id` de las secciones no se repiten porque `sections`
                   reparte bloques distintos entre las dos instancias.
                 -->
-                <div
-                    v-show="activeTab === 'content'"
-                    :id="tourTabPanelId('content')"
-                    role="tabpanel"
-                    :aria-labelledby="tourTabId('content')"
-                    tabindex="0"
-                >
-                    <TourForm
-                        :model-value="payload"
-                        :errors="formErrors"
-                        :categories="props.categories"
-                        :sections="CONTENT_SECTIONS"
-                        @update:model-value="
-                            (value) => Object.assign(form, value)
-                        "
+                    <div
+                        v-show="activeTab === 'content'"
+                        :id="tourTabPanelId('content')"
+                        role="tabpanel"
+                        :aria-labelledby="tourTabId('content')"
+                        tabindex="0"
                     >
-                        <template #gallery>
-                            <Card>
-                                <CardHeader>
-                                    <div
-                                        class="flex items-start justify-between gap-4"
-                                    >
-                                        <div>
-                                            <CardTitle>{{
-                                                $t('Galería')
-                                            }}</CardTitle>
-                                            <CardDescription>{{
-                                                $t(
-                                                    'JPG, PNG o WebP. La portada es la primera imagen.',
-                                                )
-                                            }}</CardDescription>
-                                        </div>
-                                        <MonoLabel class="shrink-0 pt-1">{{
-                                            $t('Paso :number', { number: 5 })
-                                        }}</MonoLabel>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <TourImageUploader
-                                        :tour-id="props.tour.id"
-                                        :images="props.tour.images"
-                                    />
-                                </CardContent>
-                            </Card>
-                        </template>
-                    </TourForm>
-                </div>
-
-                <div
-                    v-show="activeTab === 'route'"
-                    :id="tourTabPanelId('route')"
-                    role="tabpanel"
-                    :aria-labelledby="tourTabId('route')"
-                    tabindex="0"
-                    class="space-y-4"
-                >
-                    <PickupChangeNotice
-                        :impact="props.tour.pickup_change_impact"
-                        :pending="pickupChanged"
-                    />
-
-                    <TourForm
-                        :model-value="payload"
-                        :errors="formErrors"
-                        :categories="props.categories"
-                        :sections="['route']"
-                        @update:model-value="
-                            (value) => Object.assign(form, value)
-                        "
-                    />
-
-                    <Card v-if="previewStops.length > 0">
-                        <CardHeader>
-                            <CardTitle>{{
-                                $t('Vista previa de la ruta')
-                            }}</CardTitle>
-                            <CardDescription>{{
-                                $t(
-                                    'El mismo mapa que verá el viajero, con las paradas que hay ahora en el formulario.',
-                                )
-                            }}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <TourRouteMapSection
-                                ref="mapSection"
-                                :stops="previewStops"
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <StickySaveBar v-show="activeTab !== 'passengers'">
-                    <template #note>
-                        <span v-if="changedFields > 0">
-                            {{
-                                $tc(
-                                    ':count cambio sin guardar|:count cambios sin guardar',
-                                    changedFields,
-                                    { count: changedFields },
-                                )
-                            }}
-                        </span>
-                        <span v-else-if="blockingCount > 0">
-                            {{
-                                $tc(
-                                    'Falta :count condición para publicar|Faltan :count condiciones para publicar',
-                                    blockingCount,
-                                    { count: blockingCount },
-                                )
-                            }}
-                        </span>
-                        <span v-else>{{ $t('Todo guardado.') }}</span>
-                    </template>
-                    <template #actions>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            :disabled="changedFields === 0 || saving"
-                            @click="discardChanges"
+                        <TourForm
+                            :model-value="payload"
+                            :errors="formErrors"
+                            :categories="props.categories"
+                            :sections="CONTENT_SECTIONS"
+                            @update:model-value="
+                                (value) => Object.assign(form, value)
+                            "
                         >
-                            {{ $t('Descartar') }}
-                        </Button>
-                        <Button type="submit" :disabled="saving">
-                            {{
-                                saving
-                                    ? $t('Guardando…')
-                                    : $t('Guardar cambios')
-                            }}
-                        </Button>
-                    </template>
-                </StickySaveBar>
-            </form>
+                            <template #gallery>
+                                <Card>
+                                    <CardHeader>
+                                        <div
+                                            class="flex items-start justify-between gap-4"
+                                        >
+                                            <div>
+                                                <CardTitle>{{
+                                                    $t('Galería')
+                                                }}</CardTitle>
+                                                <CardDescription>{{
+                                                    $t(
+                                                        'JPG, PNG o WebP. La portada es la primera imagen.',
+                                                    )
+                                                }}</CardDescription>
+                                            </div>
+                                            <MonoLabel class="shrink-0 pt-1">{{
+                                                $t('Paso :number', {
+                                                    number: 5,
+                                                })
+                                            }}</MonoLabel>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <TourImageUploader
+                                            :tour-id="props.tour.id"
+                                            :images="props.tour.images"
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </template>
+                        </TourForm>
+                    </div>
+
+                    <div
+                        v-show="activeTab === 'route'"
+                        :id="tourTabPanelId('route')"
+                        role="tabpanel"
+                        :aria-labelledby="tourTabId('route')"
+                        tabindex="0"
+                        class="space-y-4"
+                    >
+                        <PickupChangeNotice
+                            :impact="props.tour.pickup_change_impact"
+                            :pending="pickupChanged"
+                        />
+
+                        <TourForm
+                            :model-value="payload"
+                            :errors="formErrors"
+                            :categories="props.categories"
+                            :sections="['route']"
+                            @update:model-value="
+                                (value) => Object.assign(form, value)
+                            "
+                        />
+
+                        <Card v-if="previewStops.length > 0">
+                            <CardHeader>
+                                <CardTitle>{{
+                                    $t('Vista previa de la ruta')
+                                }}</CardTitle>
+                                <CardDescription>{{
+                                    $t(
+                                        'El mismo mapa que verá el viajero, con las paradas que hay ahora en el formulario.',
+                                    )
+                                }}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TourRouteMapSection
+                                    ref="mapSection"
+                                    :stops="previewStops"
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <StickySaveBar v-show="activeTab !== 'passengers'">
+                        <template #note>
+                            <span v-if="changedFields > 0">
+                                {{
+                                    $tc(
+                                        ':count cambio sin guardar|:count cambios sin guardar',
+                                        changedFields,
+                                        { count: changedFields },
+                                    )
+                                }}
+                            </span>
+                            <span v-else-if="blockingCount > 0">
+                                {{
+                                    $tc(
+                                        'Falta :count condición para publicar|Faltan :count condiciones para publicar',
+                                        blockingCount,
+                                        { count: blockingCount },
+                                    )
+                                }}
+                            </span>
+                            <span v-else>{{ $t('Todo guardado.') }}</span>
+                        </template>
+                        <template #actions>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                :disabled="changedFields === 0 || saving"
+                                @click="discardChanges"
+                            >
+                                {{ $t('Descartar') }}
+                            </Button>
+                            <Button type="submit" :disabled="saving">
+                                {{
+                                    saving
+                                        ? $t('Guardando…')
+                                        : $t('Guardar cambios')
+                                }}
+                            </Button>
+                        </template>
+                    </StickySaveBar>
+                </form>
+
+                <section
+                    v-show="activeTab === 'departures'"
+                    :id="tourTabPanelId('departures')"
+                    role="tabpanel"
+                    :aria-labelledby="tourTabId('departures')"
+                    tabindex="0"
+                >
+                    <TourDeparturesTable
+                        :departures="departures"
+                        :currency="props.tour.currency"
+                        :duration-hours="props.tour.duration_hours"
+                        :loading="departuresLoading"
+                        :error="departuresError"
+                        :fallback-guides="departureOptions.guides"
+                        :can-view-passengers="canViewPassengers"
+                        @create="openCreateDate"
+                        @edit="openEditDate"
+                        @cancel="openCancelDate"
+                        @remove="removeDate"
+                        @passengers="openPassengersOf"
+                        @assigned="loadDepartures"
+                        @retry="loadDepartures"
+                    />
+                </section>
+
+                <!--
+              La edición muestra un AVANCE de la planilla, no la planilla: la
+              lista completa —con filtros, exportación e impresión— vive en el
+              detalle del tour, que es la pantalla de operación.
+            -->
+                <section
+                    v-show="activeTab === 'passengers'"
+                    :id="tourTabPanelId('passengers')"
+                    role="tabpanel"
+                    :aria-labelledby="tourTabId('passengers')"
+                    tabindex="0"
+                >
+                    <TourPassengerPreview
+                        :passengers="manifestPreview"
+                        :total="manifestSummary?.total_passengers ?? 0"
+                        :loading="manifestLoading"
+                        @open="openFullManifest"
+                    />
+                </section>
+            </div>
 
             <!--
-              WHY: la columna de ayudas acompaña a la pestaña «Contenido» pero
-              vive fuera de su `tabpanel` (la rejilla la pone al lado del
-              formulario). Se queda como landmark complementario con nombre
-              propio en vez de ser un segundo `tabpanel` de la misma pestaña,
-              que no es válido.
+              WHY fuera de los `tabpanel`: la rejilla la pone al lado del panel
+              activo, así que es un landmark complementario con nombre propio y
+              no un segundo `tabpanel` de la misma pestaña, que no sería válido.
             -->
             <aside
-                v-if="activeTab === 'content'"
-                :aria-label="$t('Ayudas de publicación')"
+                :aria-label="$t('Contexto del tour')"
                 class="flex flex-col gap-4 min-[1180px]:sticky min-[1180px]:top-20"
             >
-                <TourProgressRail
-                    :steps="steps"
-                    :active-id="activeStep"
-                    @select="goToStep"
+                <TourStatusRailCard
+                    :status="props.tour.status"
+                    :public-url="publicUrl"
+                    :images="props.tour.images"
                 />
-                <TourPublishChecklist :requirements="requirements" />
+                <template v-if="activeTab === 'content'">
+                    <TourProgressRail
+                        :steps="steps"
+                        :active-id="activeStep"
+                        @select="goToStep"
+                    />
+                    <TourPublishChecklist :requirements="requirements" />
+                </template>
                 <TourImpactCard
                     :summary="manifestSummary"
                     :open-departures="openCount"
@@ -807,50 +871,6 @@ const lastEdited = computed<string | null>(() =>
                 />
             </aside>
         </div>
-
-        <section
-            v-show="activeTab === 'departures'"
-            :id="tourTabPanelId('departures')"
-            role="tabpanel"
-            :aria-labelledby="tourTabId('departures')"
-            tabindex="0"
-            class="mt-5"
-        >
-            <TourDeparturesTable
-                :departures="departures"
-                :currency="props.tour.currency"
-                :duration-hours="props.tour.duration_hours"
-                :loading="departuresLoading"
-                :error="departuresError"
-                :fallback-guides="departureOptions.guides"
-                :can-view-passengers="canViewPassengers"
-                @create="openCreateDate"
-                @edit="openEditDate"
-                @cancel="openCancelDate"
-                @remove="removeDate"
-                @passengers="openPassengersOf"
-                @assigned="loadDepartures"
-                @retry="loadDepartures"
-            />
-        </section>
-
-        <!--
-          `v-if`: la planilla dispara su fetch al montarse. Con `v-show`, cada
-          visita a la edición pediría los pasajeros aunque nadie abra la pestaña.
-        -->
-        <section
-            v-if="activeTab === 'passengers'"
-            :id="tourTabPanelId('passengers')"
-            role="tabpanel"
-            :aria-labelledby="tourTabId('passengers')"
-            tabindex="0"
-            class="mt-5"
-        >
-            <PassengerManifest
-                :source="manifestSource"
-                :title="props.tour.name"
-            />
-        </section>
 
         <TourDateFormDialog
             v-model:open="dateDialogOpen"

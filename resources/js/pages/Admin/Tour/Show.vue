@@ -221,7 +221,29 @@ const kpis = computed<ShowKpi[]>(() => {
 
 type TourShowTab = 'summary' | 'passengers' | 'route';
 
-const activeTab = ref<TourShowTab>('summary');
+const TOUR_SHOW_TABS: TourShowTab[] = ['summary', 'passengers', 'route'];
+
+/**
+ * La edición enlaza aquí con `?tab=passengers` cuando alguien pide la lista
+ * completa desde su avance. Sin esto, el salto caía en «Resumen» y había que
+ * buscar la pestaña a mano.
+ */
+function initialTab(): TourShowTab {
+    if (typeof window === 'undefined') {
+        return 'summary';
+    }
+
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    const match = TOUR_SHOW_TABS.find((tab) => tab === requested);
+
+    if (match === 'passengers' && !canViewPassengers.value) {
+        return 'summary';
+    }
+
+    return match ?? 'summary';
+}
+
+const activeTab = ref<TourShowTab>(initialTab());
 
 const routeStops = computed(() => routeStopsFromTour(props.tour));
 
