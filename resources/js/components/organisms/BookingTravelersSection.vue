@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { CheckCircle2, Users } from 'lucide-vue-next';
+import { CheckCircle2, Lock, Users } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { syncTravelers } from '@/actions/App/Http/Controllers/Api/V1/BookingController';
@@ -18,6 +18,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { formatDateTime } from '@/lib/format';
 import type {
     BookingTraveler,
     DocumentType,
@@ -38,6 +39,16 @@ type Props = {
     minorsCount: number;
     travelers: BookingTraveler[];
     required: boolean;
+    /**
+     * D10. `false` = la ventana de edición del titular ya cerró (o la reserva
+     * está cancelada/expirada/reembolsada). El formulario NO se dibuja: se
+     * pinta la misma información en solo lectura. Dejar escribir para devolver
+     * un `409` después es hacerle llenar la pantalla a alguien que ya no puede
+     * guardar.
+     */
+    canEdit?: boolean;
+    /** Instante hasta el que se podía editar. `null` = la ventana no aplica. */
+    editDeadline?: string | null;
     contact?: {
         name: string;
         email?: string | null;
@@ -47,7 +58,11 @@ type Props = {
     } | null;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    canEdit: true,
+    editDeadline: null,
+    contact: null,
+});
 
 const api = useApi();
 
@@ -432,6 +447,66 @@ function save(): void {
     );
 }
 
+/**
+ * D10 — la ventana cerró. No es un estado de error: es el comportamiento
+ * correcto. El guía imprime la planilla el día anterior; si el dato cambia
+ * después, el papel miente. El cambio de última hora se hace por la agencia.
+ */
+const locked = computed(() => !props.canEdit);
+
+const deadlineLabel = computed(() =>
+    props.editDeadline === null ? null : formatDateTime(props.editDeadline),
+);
+
+/** Solo los slots con nombre: en lectura, un renglón vacío no dice nada. */
+const filledSlots = computed(() =>
+    slots.value.filter((slot) => slot.full_name.trim() !== ''),
+);
+
+function readonlyRows(slot: TravelerSlot): Array<[string, string]> {
+    const rows: Array<[string, string]> = [];
+
+    if (slot.document_number !== '') {
+        rows.push([t('Documento'), slot.document_number]);
+    }
+
+    if (slot.email !== '') {
+        rows.push([t('Correo electrónico'), slot.email]);
+    }
+
+    if (slot.phone !== '') {
+        rows.push([t('Teléfono'), slot.phone]);
+    }
+
+    if (slot.emergency_contact_name !== '') {
+        rows.push([
+            t('Contacto de emergencia'),
+            [
+                slot.emergency_contact_name,
+                slot.emergency_contact_relationship,
+                slot.emergency_contact_phone,
+            ]
+                .filter((part) => part !== '')
+                .join(' · '),
+        ]);
+    }
+
+    if (slot.eps !== '') {
+        rows.push([
+            t('EPS'),
+            slot.eps === EPS_REQUIRING_DETAIL && slot.eps_other !== ''
+                ? slot.eps_other
+                : EPS_LABELS[slot.eps],
+        ]);
+    }
+
+    if (slot.medical_notes !== '') {
+        rows.push([t('Observaciones médicas'), slot.medical_notes]);
+    }
+
+    return rows;
+}
+
 function slotLabel(slot: TravelerSlot, index: number): string {
     const adultsBefore = slots.value
         .slice(0, index + 1)
@@ -452,7 +527,11 @@ function slotLabel(slot: TravelerSlot, index: number): string {
                 <h2 class="text-base font-semibold text-foreground">
                     {{ $t('Viajeros') }}
                 </h2>
-                <Badge v-if="required" variant="destructive">
+                <Badge v-if="locked" variant="outline">
+                    <Lock class="size-3" />
+                    {{ $t('Cerrado') }}
+                </Badge>
+                <Badge v-else-if="required" variant="destructive">
                     {{ $t('Requerido antes del tour') }}
                 </Badge>
                 <Badge v-else variant="outline">{{ $t('Opcional') }}</Badge>
@@ -485,7 +564,7 @@ function slotLabel(slot: TravelerSlot, index: number): string {
         </p>
 
         <p
-            v-if="required && !allCompleted"
+            v-if="!locked && required && !allCompleted"
             class="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
         >
             {{
@@ -495,7 +574,71 @@ function slotLabel(slot: TravelerSlot, index: number): string {
             }}
         </p>
 
-        <form class="space-y-4" @submit.prevent="save">
+        <!--
+          D10 · ventana cerrada. Se muestra lo guardado en solo lectura, con la
+          hora hasta la que se podía editar y a quién acudir. Nada de dejar
+          escribir para enterarse por el 409.
+        -->
+        <template v-if="locked">
+            <div
+                class="space-y-1.5 rounded-lg border border-brand-warn/30 bg-brand-warn-50 px-4 py-3"
+            >
+                <p class="text-sm font-medium text-brand-warn">
+                    {{
+                        $t('Los datos de los viajeros ya no se pueden editar.')
+                    }}
+                </p>
+                <p v-if="deadlineLabel" class="text-xs text-brand-warn">
+                    {{
+                        $t('El plazo para editarlos venció el :deadline.', {
+                            deadline: deadlineLabel,
+                        })
+                    }}
+                </p>
+                <p class="text-xs text-brand-warn">
+                    {{
+                        $t(
+                            '¿Necesitas corregir algo? Escríbele a la agencia y lo actualiza por ti.',
+                        )
+                    }}
+                </p>
+            </div>
+
+            <div
+                v-if="filledSlots.length === 0"
+                class="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+            >
+                {{
+                    $t(
+                        'No alcanzaste a registrar los datos. La agencia los tomará antes de la salida.',
+                    )
+                }}
+            </div>
+
+            <ul v-else class="space-y-3">
+                <li
+                    v-for="(slot, index) in filledSlots"
+                    :key="slot.id ?? index"
+                    class="space-y-2 rounded-lg border border-border bg-background p-4"
+                >
+                    <p class="font-medium text-foreground">
+                        {{ slot.full_name }}
+                    </p>
+                    <dl class="grid gap-1.5 text-sm">
+                        <div
+                            v-for="[label, value] in readonlyRows(slot)"
+                            :key="label"
+                            class="flex flex-wrap justify-between gap-2"
+                        >
+                            <dt class="text-muted-foreground">{{ label }}</dt>
+                            <dd class="text-right">{{ value }}</dd>
+                        </div>
+                    </dl>
+                </li>
+            </ul>
+        </template>
+
+        <form v-else class="space-y-4" @submit.prevent="save">
             <div
                 v-for="(slot, index) in slots"
                 :key="index"

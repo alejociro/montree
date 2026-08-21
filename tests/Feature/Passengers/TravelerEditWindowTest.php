@@ -145,6 +145,59 @@ final class TravelerEditWindowTest extends TestCase
     }
 
     /**
+     * WHY (Fase 4): la pantalla del viajero es Inertia, no la API, y su prop
+     * `booking` se armaba a mano sin los dos campos de D10. Sin ellos el
+     * formulario no tiene forma de saber que la ventana cerró y solo se entera
+     * por el 409 — exactamente lo que la decisión prohíbe.
+     */
+    public function test_the_booking_page_ships_the_edit_window_to_the_form(): void
+    {
+        [$tenant, $booking] = $this->bookingDepartingAt(self::DEPARTURE);
+        $this->travelTo(Carbon::parse(self::DEPARTURE)->subHours(23));
+
+        $this->actingAs($booking->user)
+            ->get($this->host($tenant)."/bookings/{$booking->booking_number}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('booking.can_edit_travelers', false)
+                ->where(
+                    'booking.travelers_edit_deadline',
+                    Carbon::parse(self::DEPARTURE)->subHours(24)->toIso8601String(),
+                ));
+    }
+
+    /**
+     * El formulario reemplaza al viajero entero en cada guardado. Si la pantalla
+     * no puede releer la emergencia y la EPS que ya estaban guardadas, el
+     * siguiente «Guardar» las borra.
+     */
+    public function test_the_booking_page_ships_the_health_block_of_saved_travelers(): void
+    {
+        [$tenant, $booking] = $this->bookingDepartingAt(self::DEPARTURE);
+        $this->travelTo(Carbon::parse(self::DEPARTURE)->subHours(48));
+
+        $booking->travelers()->create([
+            'tenant_id' => $booking->tenant_id,
+            'full_name' => 'Ana Perez',
+            'is_minor' => false,
+            'emergency_contact_name' => 'Julian Perez',
+            'emergency_contact_relationship' => 'Hermano',
+            'emergency_contact_phone' => '+57 311 222 3344',
+            'eps' => 'sura',
+            'medical_notes' => 'Alergia a la penicilina.',
+        ]);
+
+        $this->actingAs($booking->user)
+            ->get($this->host($tenant)."/bookings/{$booking->booking_number}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('booking.travelers.0.emergency_contact_name', 'Julian Perez')
+                ->where('booking.travelers.0.emergency_contact_relationship', 'Hermano')
+                ->where('booking.travelers.0.eps', 'sura')
+                ->where('booking.travelers.0.medical_notes', 'Alergia a la penicilina.'));
+    }
+
+    /**
      * @return array{0: Tenant, 1: Booking}
      */
     private function bookingDepartingAt(string $startsAt): array
