@@ -143,6 +143,54 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Notas durante implementación
 
+### Fase 6 — cierre de frontend (2026-08-20)
+
+Los dos cabos sueltos que quedaban del rediseño. Suite en **702/702** (sin cambio: nada de esto es
+backend); Pint, `types:check`, `lint:check`, `format:check` y `npm run build` en verde.
+
+1. **Los tres órdenes operativos del handoff ya se pueden elegir.** `TOUR_SORT_PARAMS`
+   (`resources/js/types/tour.ts`) y el select de `TourFilters.vue` suman «Ordenar: próxima
+   salida», «Ordenar: ocupación» y «Ordenar: ingresos», que mapean a los `sort`
+   `next_departure`, `occupancy` y `revenue` del commit `ee44baf`. La dirección va fijada por
+   orden y no se expone: la próxima salida se lee de más cercana a más lejana (`asc`), ocupación
+   e ingresos de mayor a menor (`desc`). El comentario que decía «la API todavía no expone estos
+   datos» queda retirado porque ya no es cierto.
+2. **`TourKpiGrid` y el bloque operativo de `TourAdminCard` calzan con lo que el backend emite.**
+   Se comprobaron campo por campo contra `BuildTourIndexStatsAction` y
+   `TourSummaryResource::operations()`: `tours`, `upcoming_departures`, `occupancy` y
+   `pending_balance` opcional en el primero; `next_departure_at`, `passengers_count`,
+   `occupancy.{occupied,capacity}` y `passengers_with_due` en el segundo. **No hubo nada que
+   corregir**: la ausencia de `pending_balance` sin `bookings.view` ya tumbaba el KPI entero en
+   vez de pintar un cero, y la tarjeta ya ocultaba el bloque cuando `operations` no viaja.
+3. **El patrón ARIA de pestañas queda completo.** `TourTabs.vue` añade `aria-controls`, tabulador
+   móvil (`tabindex` 0 en la activa, −1 en el resto) y navegación por ← → con Home/End, con
+   activación automática: los paneles ya están montados, así que moverse no cuesta una carga.
+   Los paneles de «Editar» (`Contenido · Ruta y mapa · Salidas · Pasajeros`) y «Detalle»
+   (`Resumen · Pasajeros · Ruta`) estrenan `role="tabpanel"`, `aria-labelledby` y `tabindex="0"`.
+   Los `id` de pestaña y panel salen de `resources/js/lib/tour-tabs.ts` y no de plantillas
+   repetidas a mano: son la única cuerda que une la barra con su panel.
+   - La columna de ayudas de «Editar» (riel, checklist, impacto) acompaña a la pestaña
+     «Contenido» pero vive **fuera** de su `tabpanel`, porque la rejilla la pone al lado del
+     formulario. Se queda como landmark complementario con `aria-label` propio en vez de ser un
+     segundo `tabpanel` de la misma pestaña, que no sería válido.
+   - «Pasajeros» se monta con `v-if` a propósito (dispara el fetch de la planilla), así que su
+     `aria-controls` apunta a un `id` que solo existe con la pestaña abierta. Se prefiere eso a
+     pedir los pasajeros en cada visita.
+4. **Las pills de estado del Index dejan de ser un `tablist`.** Filtran el listado; no cambian de
+   panel. Un `tablist` sin `tabpanel` que gobernar promete al lector de pantalla una navegación
+   por paneles que no existe, y arrastra expectativas de teclado (flechas, tabulador móvil) que
+   tampoco se cumplían. Pasan a ser **botones de alternancia mutuamente excluyentes dentro de un
+   `role="group"` con nombre** (`aria-label="Filtrar por estado"`), y el estado se anuncia con
+   `aria-pressed` en vez de `aria-selected`. Se descartó `radiogroup`: obligaría a un tabulador
+   móvil y a navegación por flechas dentro del grupo, más ceremonia de la que un filtro de una
+   línea necesita, y perdería el «Tab llega a cada pill» que hoy funciona.
+
+Cinco claves nuevas en `lang/en.json`, ninguna huérfana.
+
+**Pendiente para la Fase 8:** todo lo visual. Sin navegador en el entorno no se verificaron la
+navegación real con teclado en las dos pantallas, el anuncio del lector de pantalla, ni el
+responsive del checklist de la Fase 6 (390/430/768/1024/1280/1440).
+
 ### Fase 6 — Detalle (2026-08-20)
 
 - **Tres pestañas de verdad: `Resumen · Pasajeros (n) · Ruta`,** con el `TourTabs` de «Editar» —

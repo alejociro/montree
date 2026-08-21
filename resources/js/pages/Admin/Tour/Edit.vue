@@ -57,6 +57,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import { formatRelativeDate } from '@/lib/format';
 import { routeStopsFromDrafts } from '@/lib/tour-route';
 import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
+import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
 import type { TourDateAdmin } from '@/types/logistics';
 import type {
     SupportedCurrency,
@@ -619,7 +620,13 @@ const lastEdited = computed<string | null>(() =>
                   Los `id` de las secciones no se repiten porque `sections`
                   reparte bloques distintos entre las dos instancias.
                 -->
-                <div v-show="activeTab === 'content'">
+                <div
+                    v-show="activeTab === 'content'"
+                    :id="tourTabPanelId('content')"
+                    role="tabpanel"
+                    :aria-labelledby="tourTabId('content')"
+                    tabindex="0"
+                >
                     <TourForm
                         :model-value="payload"
                         :errors="formErrors"
@@ -661,7 +668,14 @@ const lastEdited = computed<string | null>(() =>
                     </TourForm>
                 </div>
 
-                <div v-show="activeTab === 'route'" class="space-y-4">
+                <div
+                    v-show="activeTab === 'route'"
+                    :id="tourTabPanelId('route')"
+                    role="tabpanel"
+                    :aria-labelledby="tourTabId('route')"
+                    tabindex="0"
+                    class="space-y-4"
+                >
                     <TourForm
                         :model-value="payload"
                         :errors="formErrors"
@@ -734,8 +748,16 @@ const lastEdited = computed<string | null>(() =>
                 </StickySaveBar>
             </form>
 
+            <!--
+              WHY: la columna de ayudas acompaña a la pestaña «Contenido» pero
+              vive fuera de su `tabpanel` (la rejilla la pone al lado del
+              formulario). Se queda como landmark complementario con nombre
+              propio en vez de ser un segundo `tabpanel` de la misma pestaña,
+              que no es válido.
+            -->
             <aside
                 v-if="activeTab === 'content'"
+                :aria-label="$t('Ayudas de publicación')"
                 class="flex flex-col gap-4 min-[1180px]:sticky min-[1180px]:top-20"
             >
                 <TourProgressRail
@@ -754,7 +776,14 @@ const lastEdited = computed<string | null>(() =>
             </aside>
         </div>
 
-        <section v-show="activeTab === 'departures'" class="mt-5">
+        <section
+            v-show="activeTab === 'departures'"
+            :id="tourTabPanelId('departures')"
+            role="tabpanel"
+            :aria-labelledby="tourTabId('departures')"
+            tabindex="0"
+            class="mt-5"
+        >
             <TourDeparturesTable
                 :departures="departures"
                 :currency="props.tour.currency"
@@ -777,7 +806,14 @@ const lastEdited = computed<string | null>(() =>
           `v-if`: la planilla dispara su fetch al montarse. Con `v-show`, cada
           visita a la edición pediría los pasajeros aunque nadie abra la pestaña.
         -->
-        <section v-if="activeTab === 'passengers'" class="mt-5">
+        <section
+            v-if="activeTab === 'passengers'"
+            :id="tourTabPanelId('passengers')"
+            role="tabpanel"
+            :aria-labelledby="tourTabId('passengers')"
+            tabindex="0"
+            class="mt-5"
+        >
             <PassengerManifest
                 :source="manifestSource"
                 :title="props.tour.name"

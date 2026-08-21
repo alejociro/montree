@@ -51,12 +51,15 @@ const statusOptions = computed<
 );
 
 /**
- * WHY: solo los órdenes que `TourController@index` sabe aplicar
- * (`SORTABLE_COLUMNS`). «Próxima salida», «ocupación» e «ingresos» del handoff
- * necesitan datos agregados que la API todavía no expone.
+ * WHY: solo los órdenes que `TourController@index` sabe aplicar — las columnas
+ * de `SORTABLE_COLUMNS` más las tres expresiones operativas del handoff
+ * (próxima salida, ocupación e ingresos), que la API ya resuelve en SQL.
  */
 const sortOptions = computed<{ value: TourSortValue; label: string }[]>(() => [
     { value: 'recent', label: t('Ordenar: más recientes') },
+    { value: 'next_departure', label: t('Ordenar: próxima salida') },
+    { value: 'occupancy', label: t('Ordenar: ocupación') },
+    { value: 'revenue', label: t('Ordenar: ingresos') },
     { value: 'name', label: t('Ordenar: alfabético') },
     { value: 'price_desc', label: t('Ordenar: precio mayor') },
     { value: 'price_asc', label: t('Ordenar: precio menor') },
@@ -96,13 +99,22 @@ function setSearch(value: string | number): void {
 
 <template>
     <div class="flex flex-wrap items-center gap-2.5">
-        <div class="flex flex-wrap gap-1" role="tablist">
+        <!--
+            WHY: las pills filtran el listado, no cambian de panel: no hay
+            `tabpanel` que puedan controlar, así que un `tablist` sería un patrón
+            ARIA incompleto. Son botones de alternancia mutuamente excluyentes
+            dentro de un grupo etiquetado, y el estado va en `aria-pressed`.
+        -->
+        <div
+            class="flex flex-wrap gap-1"
+            role="group"
+            :aria-label="$t('Filtrar por estado')"
+        >
             <button
                 v-for="option in statusOptions"
                 :key="option.value"
                 type="button"
-                role="tab"
-                :aria-selected="modelValue.status === option.value"
+                :aria-pressed="modelValue.status === option.value"
                 :class="
                     cn(
                         'rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',

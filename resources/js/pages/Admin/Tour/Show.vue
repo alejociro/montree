@@ -37,6 +37,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatNumber, formatTourDate } from '@/lib/format';
 import { routeStopsFromTour } from '@/lib/tour-route';
+import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
 import { show as publicTourShow } from '@/routes/tours';
 import type { Tour, TourDifficulty, TourShowStats } from '@/types/tour';
 
@@ -394,7 +395,13 @@ const manifestSource = computed(
         />
 
         <!-- Resumen -->
-        <div v-show="activeTab === 'summary'">
+        <div
+            v-show="activeTab === 'summary'"
+            :id="tourTabPanelId('summary')"
+            role="tabpanel"
+            :aria-labelledby="tourTabId('summary')"
+            tabindex="0"
+        >
             <section
                 class="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4"
             >
@@ -707,7 +714,14 @@ const manifestSource = computed(
           `v-show` cada visita al detalle pediría los pasajeros aunque nadie
           abra la pestaña.
         -->
-        <section v-if="activeTab === 'passengers'" class="mt-6">
+        <section
+            v-if="activeTab === 'passengers'"
+            :id="tourTabPanelId('passengers')"
+            role="tabpanel"
+            :aria-labelledby="tourTabId('passengers')"
+            tabindex="0"
+            class="mt-6"
+        >
             <PassengerManifest
                 :source="manifestSource"
                 :title="props.tour.name"
@@ -720,6 +734,10 @@ const manifestSource = computed(
         -->
         <section
             v-show="activeTab === 'route'"
+            :id="tourTabPanelId('route')"
+            role="tabpanel"
+            :aria-labelledby="tourTabId('route')"
+            tabindex="0"
             class="mt-6 rounded-2xl border border-border bg-card p-5 md:p-6"
         >
             <div class="flex flex-wrap items-start justify-between gap-3">

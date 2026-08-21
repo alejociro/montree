@@ -243,17 +243,30 @@ export type TourIndexFilters = {
     sort: TourSortValue;
 };
 
-export type TourSortValue = 'recent' | 'name' | 'price_desc' | 'price_asc';
+export type TourSortValue =
+    | 'recent'
+    | 'next_departure'
+    | 'occupancy'
+    | 'revenue'
+    | 'name'
+    | 'price_desc'
+    | 'price_asc';
 
 /**
  * Traducción del orden de la interfaz a los parámetros que acepta
- * `Api\V1\Admin\TourController@index` (`SORTABLE_COLUMNS`).
+ * `Api\V1\Admin\TourController@index`: columnas de `SORTABLE_COLUMNS` o
+ * expresiones de `TourOperationalSummaryQuery::sortableExpressions()`.
  */
 export const TOUR_SORT_PARAMS: Record<
     TourSortValue,
     { sort: string; direction: 'asc' | 'desc' }
 > = {
     recent: { sort: 'created_at', direction: 'desc' },
+    // WHY: la próxima salida se lee de más cercana a más lejana, así que va
+    // `asc`; ocupación e ingresos se leen de mayor a menor.
+    next_departure: { sort: 'next_departure', direction: 'asc' },
+    occupancy: { sort: 'occupancy', direction: 'desc' },
+    revenue: { sort: 'revenue', direction: 'desc' },
     name: { sort: 'name', direction: 'asc' },
     price_desc: { sort: 'base_price', direction: 'desc' },
     price_asc: { sort: 'base_price', direction: 'asc' },
