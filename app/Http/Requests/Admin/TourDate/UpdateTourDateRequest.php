@@ -20,6 +20,12 @@ final class UpdateTourDateRequest extends StoreTourDateRequest
     }
 
     /**
+     * Editar no propone nada: la salida ya tiene guía y cambiarlo es un acto
+     * explícito. La propuesta del guía por defecto es solo para la salida nueva.
+     */
+    protected function prepareForValidation(): void {}
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array

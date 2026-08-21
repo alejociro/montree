@@ -40,6 +40,12 @@ type Props = {
      * ella se cae a la de la salida que se edita.
      */
     durationHours?: number | null;
+    /**
+     * El guía por defecto del tour. Regla 3 del handoff: se **propone** en la
+     * salida nueva, no se impone —se puede cambiar antes de guardar, y el
+     * servidor sigue validando disponibilidad—. Al editar no se toca.
+     */
+    defaultGuideId?: number | null;
     guides: LogisticsRef[];
     routes: LogisticsRef[];
     providers: LogisticsRef[];
@@ -48,6 +54,7 @@ type Props = {
 
 const props = withDefaults(defineProps<Props>(), {
     durationHours: null,
+    defaultGuideId: null,
 });
 
 const emit = defineEmits<{
@@ -175,7 +182,7 @@ function resetFromEditing(): void {
         form.capacity = 10;
         form.price_override = '';
         form.notes = '';
-        form.guide_id = null;
+        form.guide_id = props.defaultGuideId;
         form.route_id = null;
         form.provider_id = null;
         form.hotel_ids = [];

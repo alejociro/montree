@@ -24,6 +24,24 @@ class StoreTourDateRequest extends FormRequest
     }
 
     /**
+     * El guía por defecto del tour es una propuesta, no una imposición
+     * (regla 3 del handoff): rellena la salida nueva cuando el cliente no
+     * manda ninguno, y desde ahí pasa por las mismas validaciones que
+     * cualquier otro —pertenencia al tenant, rol y disponibilidad—. Si el
+     * propuesto ya está ocupado esos días, la salida se rechaza igual: la
+     * preferencia no salta la agenda.
+     */
+    protected function prepareForValidation(): void
+    {
+        $tour = $this->route('tour');
+        $sent = $this->input('guide_id');
+
+        if ($tour instanceof Tour && ($sent === null || $sent === '') && $tour->default_guide_id !== null) {
+            $this->merge(['guide_id' => $tour->default_guide_id]);
+        }
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
