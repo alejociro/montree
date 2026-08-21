@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingControlle
 use App\Http\Controllers\Api\V1\Admin\BookingPaymentController as AdminBookingPaymentController;
 use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\GeocodeController as AdminGeocodeController;
 use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideAvailabilityController;
 use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
@@ -132,6 +133,8 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
     Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
     Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
+    // Buscador de direcciones del editor de ruta: lo usa quien puede editar el tour.
+    Route::get('geocode', AdminGeocodeController::class)->middleware(['can:tours.update', 'throttle:30,1'])->name('geocode');
     Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
 
     Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')

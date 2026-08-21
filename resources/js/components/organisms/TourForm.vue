@@ -6,10 +6,10 @@ import InputError from '@/components/InputError.vue';
 import CapacityInput from '@/components/molecules/CapacityInput.vue';
 import ChipsInput from '@/components/molecules/ChipsInput.vue';
 import DifficultySelector from '@/components/molecules/DifficultySelector.vue';
-import MeetingPointPicker from '@/components/molecules/MeetingPointPicker.vue';
 import PriceInput from '@/components/molecules/PriceInput.vue';
 import TourItineraryBuilder from '@/components/organisms/TourItineraryBuilder.vue';
-import TourRouteStopsBuilder from '@/components/organisms/TourRouteStopsBuilder.vue';
+import type { MeetingDraft } from '@/components/organisms/TourRouteBuilder.vue';
+import TourRouteBuilder from '@/components/organisms/TourRouteBuilder.vue';
 import {
     Card,
     CardContent,
@@ -107,11 +107,7 @@ function handleCategoryChange(raw: AcceptableValue): void {
     );
 }
 
-function handleMeetingPoint(meeting: {
-    meeting_point: string;
-    meeting_latitude: string;
-    meeting_longitude: string;
-}): void {
+function handleMeetingPoint(meeting: MeetingDraft): void {
     emit('update:modelValue', {
         ...value.value,
         meeting_point: meeting.meeting_point,
@@ -132,12 +128,6 @@ const meetingValue = computed(() => ({
     meeting_point: value.value.meeting_point,
     meeting_latitude: value.value.meeting_latitude,
     meeting_longitude: value.value.meeting_longitude,
-}));
-
-const meetingErrors = computed(() => ({
-    meeting_point: props.errors.meeting_point,
-    meeting_latitude: props.errors.meeting_latitude,
-    meeting_longitude: props.errors.meeting_longitude,
 }));
 </script>
 
@@ -436,7 +426,7 @@ const meetingErrors = computed(() => ({
                             }}</CardTitle>
                             <CardDescription>{{
                                 $t(
-                                    'El orden dibuja la ruta pública: recogida, recorrido y regreso.',
+                                    'Primero los lugares en el mapa, después el paso a paso. El orden de las paradas dibuja la ruta pública.',
                                 )
                             }}</CardDescription>
                         </div>
@@ -446,26 +436,27 @@ const meetingErrors = computed(() => ({
                     </div>
                 </CardHeader>
                 <CardContent class="space-y-6">
-                    <MeetingPointPicker
-                        :model-value="meetingValue"
-                        :errors="meetingErrors"
-                        @update:model-value="handleMeetingPoint"
+                    <!--
+                      Orden explícito: primero DÓNDE (mapa y paradas), después
+                      QUÉ pasa (itinerario) enlazando cada paso con una parada
+                      ya ubicada. Antes los dos bloques eran independientes y no
+                      había forma de saber por cuál empezar.
+                    -->
+                    <TourRouteBuilder
+                        :meeting="meetingValue"
+                        :stops="value.stops"
+                        :errors="errors"
+                        @update:meeting="handleMeetingPoint"
+                        @update:stops="handleStops"
                     />
 
                     <div class="border-t border-brand-line-2 pt-6">
                         <TourItineraryBuilder
                             :model-value="value.itinerary"
+                            :stops="value.stops"
                             :errors="errors"
                             @update:model-value="handleItinerary"
-                        />
-                    </div>
-
-                    <div class="border-t border-brand-line-2 pt-6">
-                        <TourRouteStopsBuilder
-                            :model-value="value.stops"
-                            :steps="value.itinerary"
-                            :errors="errors"
-                            @update:model-value="handleStops"
+                            @update:stops="handleStops"
                         />
                     </div>
                 </CardContent>
