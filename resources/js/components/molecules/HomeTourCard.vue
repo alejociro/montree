@@ -57,7 +57,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
 
             <span
                 v-if="!hasRating"
-                class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm"
+                class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground shadow-sm"
             >
                 <Sparkles class="size-3" aria-hidden="true" />
                 {{ $t('Nuevo') }}

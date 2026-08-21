@@ -260,7 +260,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         class="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
                     >
                         <span
-                            class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"
+                            class="flex size-11 items-center justify-center rounded-xl bg-secondary text-secondary-foreground transition group-hover:bg-primary group-hover:text-primary-foreground"
                         >
                             <component
                                 :is="categoryIcon(category.icon)"

@@ -135,7 +135,10 @@ function submit(): void {
         onSuccess: () => {
             toast.success(t('Configuración guardada.'));
             recentlySaved.value = true;
-            router.reload({ only: ['tenant'] });
+            // WHY: la marca del tenant sale de `tenantConfiguration`, no de
+            // `tenant`. Recargar solo `tenant` dejaba los colores viejos en las
+            // variables CSS hasta el siguiente refresco completo.
+            router.reload({ only: ['tenant', 'tenantConfiguration'] });
         },
         onError: (errors) => {
             const cssError = errors.custom_css ?? errors.error_code ?? '';
