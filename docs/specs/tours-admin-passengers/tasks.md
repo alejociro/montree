@@ -73,24 +73,24 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 4 — Planilla + zona del guía (`montree-frontend-dev`) · ~3 días
 
-- [ ] `types/passenger.ts` espejo de `contracts.md §0`, con `can_view_medical`
-- [ ] `composables/usePassengerManifest.ts` con las dos fuentes (`tour` | `departure`)
-- [ ] Atoms `InitialsAvatar.vue`, `MonoLabel.vue`
-- [ ] Molecules `PassengerRow`, `PassengerFilters`, `PaymentStatusChip`, `PassengerDrawer`, `PassengerFormDialog`
-- [ ] Organism `PassengerManifest.vue` (tabla sticky, estado vacío explícito, pie con totales, `:readonly`)
-- [ ] Sin `can_view_medical`: la columna de observaciones **no se dibuja**, el segmento no se ofrece y el conteo del pie no aparece — nada de guiones ni candados
-- [ ] Con el permiso: la observación médica se **resalta** en la fila (terracota + semibold)
-- [ ] Fila de marcador de posición «Datos pendientes» para reservas sin viajeros cargados
-- [ ] Hoja de impresión `@media print` dentro del organism, que imprime **todo el resultado filtrado**
-- [ ] Pestaña «Pasajeros» en `Admin/Tour/Show.vue`, visible solo con `bookings.view`
-- [ ] Página `Guide/Passengers.vue` + ruta + enlace desde `Guide/Schedule.vue`
-- [ ] Página `Guide/TourShow.vue`: contenido, ruta y mapa (`TourRouteMapSection` de PR #15), itinerario, logística, **sus** salidas y la planilla, sin ninguna acción de escritura
-- [ ] Estados loading (skeleton de filas), error y vacío
-- [ ] **(añadido 2026-08-20 · D10)** El formulario del viajero (`BookingTravelersSection.vue` y su
+- [x] `types/passenger.ts` espejo de `contracts.md §0`, con `can_view_medical`
+- [x] `composables/usePassengerManifest.ts` con las dos fuentes (`tour` | `departure`)
+- [x] Atoms `InitialsAvatar.vue`, `MonoLabel.vue`
+- [x] Molecules `PassengerRow`, `PassengerFilters`, `PaymentStatusChip`, `PassengerDrawer`, `PassengerFormDialog`
+- [x] Organism `PassengerManifest.vue` (tabla sticky, estado vacío explícito, pie con totales, `:readonly`)
+- [x] Sin `can_view_medical`: la columna de observaciones **no se dibuja**, el segmento no se ofrece y el conteo del pie no aparece — nada de guiones ni candados
+- [x] Con el permiso: la observación médica se **resalta** en la fila (terracota + semibold)
+- [x] Fila de marcador de posición «Datos pendientes» para reservas sin viajeros cargados
+- [x] Hoja de impresión `@media print` dentro del organism, que imprime **todo el resultado filtrado**
+- [x] Pestaña «Pasajeros» en `Admin/Tour/Show.vue`, visible solo con `bookings.view`
+- [x] Página `Guide/Passengers.vue` + ruta + enlace desde `Guide/Schedule.vue`
+- [x] Página `Guide/TourShow.vue`: contenido, ruta y mapa (`TourRouteMapSection` de PR #15), itinerario, logística, **sus** salidas y la planilla, sin ninguna acción de escritura
+- [x] Estados loading (skeleton de filas), error y vacío
+- [x] **(añadido 2026-08-20 · D10)** El formulario del viajero (`BookingTravelersSection.vue` y su
       página) consume `can_edit_travelers` y `travelers_edit_deadline` de `BookingResource`: con la
       ventana cerrada se pinta en **solo lectura** con el aviso de hasta cuándo se podía editar y el
       camino de contacto con la agencia. Nada de dejar escribir para devolver un `409`
-- [ ] Cadenas nuevas en `lang/en.json`
+- [x] Cadenas nuevas en `lang/en.json`
 
 ## Fase 5 — Guía obligatorio y disponibilidad (`montree-backend-dev` + `montree-frontend-dev`) · ~2 días
 
@@ -106,7 +106,7 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 6 — Rediseño del CRUD (`montree-frontend-dev`, un commit por pantalla) · 3–4 días
 
-- [ ] 5 tokens nuevos en `resources/css/app.css` (D5): `--brand-warn`, `--brand-warn-50`, `--brand-drop-50`, `--brand-green-50`, `--brand-line-2`
+- [x] 5 tokens nuevos en `resources/css/app.css` (D5): `--brand-warn`, `--brand-warn-50`, `--brand-drop-50`, `--brand-green-50`, `--brand-line-2` — **adelantados en la Fase 4**, que ya los necesitaba para el chip de pago y la observación resaltada. Con los nombres exactos de D5: esta fase no tiene nada que rehacer, solo usarlos
 - [ ] **Index**: `TourKpiGrid`, toolbar de pills + buscador + categoría + orden, `TourAdminCard` con próxima salida / pasajeros / `OccupancyBar` / línea de saldos, pie de paginación
 - [ ] **Crear**: bloques en cards, `ChipsInput` para incluye / no incluye / requisitos, `DifficultySelector` con `aria-pressed`, `TourProgressRail`, `TourPublishChecklist`, savebar sticky
 - [ ] **Editar**: head con contexto, pestañas `Contenido · Ruta y mapa · Salidas (n) · Pasajeros (n)`, `TourImpactCard`, `TourDeparturesTable` con el `GuideSelect` **de la Fase 5** en cada fila, savebar con contador de cambios
@@ -261,6 +261,127 @@ Va antes que la planilla: sin esto la planilla nace vacía.
   `Guide/TourDatePassengerExportController` y `Guide/GuideTourController`).
 
 
+### Fase 4 — Planilla + zona del guía (2026-08-20)
+
+#### Dos cosas rotas que la fase se encontró y arregló
+
+- **`develop`+Fase 3 dejó `Guide/Schedule.vue` sin compilar.** La página importaba
+  `travelers` de `GuideController`, el endpoint que la Fase 3 eliminó, así que
+  `npm run types:check` fallaba **antes** de tocar nada en esta fase (1 error, el único).
+  El diálogo de viajeros que vivía ahí se retiró entero: servía una versión recortada
+  (nombre, email, teléfono) y la planilla completa es ahora una pantalla propia. La agenda
+  enlaza a ella y al detalle del tour. **Radar:** una fase de backend que elimina un endpoint
+  tiene que correr `types:check`, no solo `php artisan test`.
+- **`Booking/Show.vue` estaba borrando datos de salud en cada guardado.** La página Inertia
+  **no usa `BookingResource`**: `BookingPagesController@show` armaba el array a mano y su
+  bloque `travelers` se quedó en los ocho campos de antes de la Fase 2 — sin emergencia, sin
+  EPS, sin observaciones. El formulario los cargaba vacíos y, como
+  `UpdatePassengerAction` reemplaza al viajero entero, el siguiente «Guardar» los escribía
+  `null`. Es exactamente lo que la nota de la Fase 2 quería evitar («si el formulario no puede
+  releer esos dos campos, el siguiente guardado los borra»), pero la corrección se hizo en el
+  Resource de la API y la pantalla no pasa por ahí. Ahora `travelers` se serializa con
+  `BookingTravelerResource`, el mismo de la API. **Radar:** hay más superficies armadas a mano
+  que no pasan por un Resource; vale la pena barrerlas antes de la Fase 8.
+
+#### Decisiones tomadas sobre la marcha
+
+- **Los 5 tokens semánticos de D5 se adelantaron a esta fase.** No existían en
+  `resources/css/app.css` y el chip de pago, el aviso ámbar y la observación resaltada los
+  necesitaban ya. Se crearon con los **nombres exactos** que fija D5 y con sus valores, más el
+  mapeo `--color-brand-*` que Tailwind v4 necesita para las utilidades. La Fase 6 no tiene que
+  rehacer nada: su primer ítem queda marcado. Se agregó además un bloque de override en
+  `.dark` para las tres superficies `*-50`: una tarjeta crema sobre fondo ink no se lee. El
+  **hue** de los semánticos no cambia en oscuro, solo la superficie.
+- **`php artisan wayfinder:generate` a secas rompe el type-check.** El plugin de Vite corre
+  `wayfinder:generate --with-form` (`vite.config.ts`, `formVariants: true`); sin ese flag se
+  regeneran los actions **sin** los helpers `.form`, y 16 archivos que los usan (auth,
+  settings, `DeleteUser`, `TwoFactor*`) dejan de compilar. La nota de la Fase 3 decía solo
+  «con PHP 8.4 en el PATH». **El comando correcto es
+  `php artisan wayfinder:generate --with-form`**, y `resources/js/{actions,routes}` está en
+  `.gitignore`, así que el estropicio no se ve en el diff.
+- **La hoja de impresión imprime todo el resultado filtrado con un barrido en segundo plano.**
+  `window.print()` no se puede esperar desde `beforeprint`, así que no sirve «cargar todo al
+  pulsar Imprimir»: el atajo del navegador (Cmd+P) se saltaría la carga. En cuanto la planilla
+  pasa de una página, el composable trae el resto con `per_page=100` y la hoja está siempre
+  lista. Tope de 20 páginas (2.000 filas) como cortafuegos. Con una sola página no hay
+  petición extra.
+- **El `<style>` del organism va sin `scoped`.** Es la única excepción a «Tailwind
+  utility-first», y la pide `plan.md §4` explícitamente. Apaga con `visibility` en vez de
+  `display` para no tener que enumerar barra lateral, topbar y demás chrome: si mañana aparece
+  otro, sigue funcionando.
+- **La fila de marcador de posición no se edita, se completa.** Su acción abre el alta sobre
+  esa reserva (`POST /admin/bookings/{n}/passengers`) en vez de un editar sobre una persona
+  que todavía no existe. El nombre del titular queda precargado.
+- **El formulario del panel no manda `eps`, `eps_other` ni `medical_notes` sin el permiso
+  médico.** El backend los descartaría igual (máscara de escritura, D7), pero además el
+  fieldset entero no se dibuja: prometer un campo que no se va a guardar es peor que no
+  ofrecerlo.
+- **La pestaña «Pasajeros» es `v-if`, no `v-show`.** La planilla dispara su fetch al montarse;
+  con `v-show` cada visita al detalle del tour pediría la planilla aunque nadie abra la
+  pestaña. `Admin/Tour/Show.vue` se tocó lo mínimo (barra de pestañas + envoltorio): el
+  rediseño completo es de la Fase 6.
+- **Las rutas de la zona del guía repiten la guarda de pertenencia en el controlador de
+  páginas.** `GET /guide/tours/{tour}` va **sin `can:`** a propósito: el alcance es tener al
+  menos una salida asignada, no un permiso de catálogo (D1). Sin repetir la guarda, la ruta
+  respondería 200 con una pantalla que la API luego rechaza — al revés de la regla de oro del
+  menú de F018. Cubierto por `tests/Feature/Guide/GuidePagesAccessTest.php` (4 casos).
+- **Los nombres de campo salen de `{{ }}`** en `PassengerFormDialog`: `TranslationCatalogTest`
+  marca cualquier literal dentro de una interpolación como copy sin traducir, y tiene razón.
+  Se resuelven en computeds del script.
+- **68 cadenas nuevas en `lang/en.json` y 3 huérfanas retiradas** (las del diálogo de viajeros
+  que desapareció de `Guide/Schedule.vue`).
+
+#### Verificación
+
+- `npm run types:check` → **0 errores** (la rama venía con **1**, el de `Guide/Schedule.vue`).
+- `npm run lint:check` → **0 errores, 0 warnings**.
+- `npm run format:check` → **todos los archivos con el estilo de Prettier**.
+- `vendor/bin/pint --dirty --test` → **passed**.
+- `php artisan test --compact` → **667/667, 2381 assertions** (venía en 661/661: **+6**,
+  4 de `GuidePagesAccessTest` y 2 de `TravelerEditWindowTest`).
+- `npm run build` → **OK**, 5,57 s. `PassengerManifest` sale como chunk propio de 42,8 kB
+  (11,7 kB gzip).
+- **Sin navegador ni Playwright en este entorno.** En su lugar se montó un arnés SSR temporal
+  (`@vue/server-renderer` + un stub de `usePage`, compilado con el Vite del proyecto para no
+  duplicar la instancia de Vue) y se comprobaron **34 aserciones de comportamiento** sobre HTML
+  real, no sobre el código. El arnés se borró después; lo que verificó:
+  - **Máscara médica (11):** con permiso, la observación sale en terracota + `font-semibold` y
+    la EPS «Otra» muestra el texto libre; sin permiso **no aparece** ni la observación ni la
+    EPS, la fila tiene **una `<td>` menos**, no hay guion ni candado, y el segmento «Con
+    observaciones» **no está** en los filtros. La fila de marcador de posición dice «Datos
+    pendientes» y conserva su saldo.
+  - **Composable (12):** con 137 resultados, la página visible trae 50 y `printRows` trae las
+    **137**; sin ids repetidos; el barrido pide `per_page=100`; cambiar de filtro vuelve a la
+    página 1; con 12 resultados no hay barrido extra; todas las URL salen de Wayfinder; la zona
+    del guía **nunca** manda `tour_date_id`; el `exportUrl` lleva el filtro y no lleva
+    paginación; un `500` deja estado de error sin filas fantasma.
+  - **D10 (11):** con la ventana abierta hay formulario; con la ventana cerrada **no hay
+    `<form>`, ni un solo `<input>`, `<textarea>` o `<select>`, ni botón de guardar**, sí el
+    aviso, sí el deadline formateado, sí el camino con la agencia, y sí lo ya guardado
+    (emergencia, EPS «Otra», observaciones). Sin las props nuevas el componente sigue editable
+    (compatibilidad).
+- **Pendiente para la Fase 8 (verificación visual):** el diálogo de impresión real
+  (`@media print` solo se puede juzgar en el navegador), el mapa de `Guide/TourShow` con
+  Leaflet montado, el foco real del campo «¿Cuál EPS?», el scroll de la cabecera sticky, el
+  responsive (390/430/768/1024/1280/1440) y la comparación **admin vs ventas vs guía** con dos
+  tenants de colores distintos. Es el mismo pendiente que dejó anotado la Fase 2.
+
+#### Lo que se podría mejorar
+
+- **`PassengerFormDialog` y `BookingTravelersSection` repiten el bloque de EPS** (5 radios +
+  campo libre + la regla `eps ≠ other ⇒ eps_other = null`) y los dos mapas de etiquetas de
+  enum. Es candidato claro a una molécula `EpsSelector.vue` y a mover
+  `DOCUMENT_TYPE_LABELS`/`EPS_LABELS` a `lib/`. No se hizo ahora para no tocar el componente
+  del viajero más de lo que D10 exigía.
+- **Todavía no hay generación de enums PHP → TS.** Los espejos de `types/booking.ts` siguen
+  siendo manuales; el compilador avisa si falta un caso del mapa de etiquetas, pero no si el
+  enum de PHP cambió. Sigue siendo la deuda que ya anotó la Fase 2.
+- **`Admin/Tour/Show.vue` quedó con pestañas «a mano»**, no con un componente de pestañas. La
+  Fase 6 lo rehace con `Resumen · Pasajeros · Ruta` y ahí conviene extraer el `TourTabs`.
+- **La paginación de la planilla es Anterior/Siguiente**, sin números de página. Con 50 por
+  página y una salida por planilla alcanza; si la Fase 6 pide el pie de paginación del handoff,
+  hay que ampliarlo.
+
 ### D10 — ventana de edición del viajero (2026-08-20)
 
 Decisión nueva ratificada por producto: el titular edita a sus acompañantes hasta **24 h antes**
@@ -295,8 +416,8 @@ Notas:
   y la tabla de errores de `PUT /api/v1/bookings/{bookingNumber}/travelers` con
   `409 BOOKING_TRAVELER_EDIT_WINDOW_CLOSED`. La decisión quedó además como **fila 8** de la tabla
   de decisiones de `spec.md` y como **D10** en `plan.md §2`.
-- [ ] **Pendiente de frontend (Fase 4).** El formulario del viajero todavía deja escribir con la
-  ventana cerrada y solo se entera por el `409`. Ítem añadido al checklist de la Fase 4.
+- [x] ~~**Pendiente de frontend (Fase 4).**~~ **HECHO (2026-08-20, Fase 4).** El formulario consume
+  los dos campos y se pinta en solo lectura con el aviso. Detalle en las notas de la Fase 4.
 - **Verificación:** `php artisan test --compact` → 661/661 (era 652, +9). `vendor/bin/pint --dirty`
   en verde.
 
@@ -322,3 +443,22 @@ Notas:
   `payment`; (c) el pago manual se queda como está —referencia en `gateway_response`, sin
   notificación— y se revisa cuando entre la pasarela de pagos. Ninguna de las tres genera trabajo
   pendiente. Se conserva el texto original tachado para no perder el rastro.
+- `2026-08-20` — **Fase 4 completa** (planilla, zona del guía y D10 en el formulario del viajero).
+  16 ítems marcados, notas de implementación registradas. Suite en **667/667** (era 661, +6:
+  4 de `GuidePagesAccessTest` y 2 de `TravelerEditWindowTest`); `types:check`, `lint:check`,
+  `format:check`, `pint --dirty --test` y `npm run build` en verde. Cambios que salen del
+  checklist y conviene tener en el radar:
+  1. **Los 5 tokens semánticos de D5 se adelantaron** desde la Fase 6, con los nombres exactos.
+     El primer ítem de la Fase 6 queda marcado; no hay nada que rehacer allí.
+  2. **`Guide/Schedule.vue` no compilaba en esta rama** desde la Fase 3, que eliminó el endpoint
+     que la página importaba. La Fase 4 lo arregló retirando el diálogo de viajeros entero.
+  3. **`Booking/Show.vue` borraba emergencia, EPS y observaciones en cada guardado**: la página
+     Inertia arma su prop `booking` a mano y no pasa por `BookingResource`, así que la corrección
+     de la Fase 2 no la alcanzó. Ahora usa `BookingTravelerResource`. Hay dos tests nuevos.
+  4. **El comando de Wayfinder de este proyecto es `wayfinder:generate --with-form`.** Sin el
+     flag se pierden los helpers `.form` y 16 archivos dejan de compilar; como
+     `resources/js/{actions,routes}` está en `.gitignore`, no se ve en el diff.
+- `2026-08-20` — **La verificación visual de la Fase 4 queda pendiente para la Fase 8**, igual
+  que la de la Fase 2: no hay navegador ni Playwright en el entorno. En su lugar se corrieron 34
+  aserciones de comportamiento sobre HTML renderizado en servidor (máscara médica, composable de
+  la planilla y formulario de D10). Detalle en las notas de la fase.
