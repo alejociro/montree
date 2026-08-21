@@ -601,3 +601,17 @@ a nivel de **componente**, no de ruta.
 - `2026-08-20` — **Pago manual: cerrado como está.** La `reference` sigue dentro de
   `gateway_response` y el registro no notifica. Se revisa cuando entre la pasarela de pagos; deja
   de figurar como pendiente abierto.
+- `2026-08-20` — **Fase 5 implementada. Tres precisiones sobre lo ya escrito.** (a)
+  `PATCH /api/v1/admin/tour-dates/{tourDate}/guide` no solo estrena la regla de disponibilidad:
+  también valida que el `guide_id` sea un miembro **activo con rol `guide` del tenant**. Antes
+  aceptaba cualquier `users.id` existente, incluido el de otro tenant — un agujero que el contrato
+  no mencionaba porque nadie lo había mirado. (b) Publicar sin `default_guide_id` responde
+  `422` con `error_code` `TOUR_NEEDS_GUIDE_TO_ACTIVATE` en la raíz, igual que
+  `TOUR_NEEDS_IMAGE_TO_ACTIVATE`, y **no** como error de validación por campo: el endpoint de
+  estado tiene su propio formato de error. (c) `default_guide_id` pasa a ser campo de entrada de
+  `POST/PUT /api/v1/admin/tours` (nullable, con la misma comprobación de guía del tenant) y sale
+  en `TourResource`. Sin eso la regla de publicación no se podía satisfacer: la columna existía
+  desde la Fase 1 y ninguna entrada la escribía. **Aditivo** para el frontend.
+- `2026-08-20` — **El aviso de `duration_hours` solo mira salidas futuras.** El contrato decía «las
+  salidas del tour»; la implementación descarta las que ya terminaron. Alargar la duración de un
+  tour no puede quedar bloqueada por un solape en salidas que ya ocurrieron.

@@ -518,3 +518,12 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
   `tour_date_id`/`status`, la fila de marcador de posición conserva `payment`, y el pago manual se
   queda con la referencia dentro de `gateway_response` y sin notificación hasta que entre la
   pasarela. Detalle en [`contracts.md`](./contracts.md) `## Changelog`.
+- `2026-08-20` — **D9 implementada (Fase 5).** Piezas reales: `App\Rules\GuideIsAvailable`,
+  `App\Queries\GuideAvailabilityQuery` (bloques por guía + `durationChangeConflicts`),
+  `App\Data\GuideAvailability` / `GuideBusyBlock`, `TourDate::deriveEndsAt()`,
+  `AssignGuideRequest` y el trait `ValidatesTenantGuide`, que unifica la comprobación de «guía del
+  tenant» que ahora comparten la salida y el guía por defecto del tour. En el frontend,
+  `types/guide-availability.ts`, `useGuideAvailability` y `GuideSelect.vue`. Dos desviaciones
+  documentadas en [`tasks.md`](./tasks.md): la regla de publicación vive en
+  `ChangeTourStatusAction` (con `error_code`, no como error de validación) y `default_guide_id`
+  entra a los Form Requests del tour y a `TourResource` para que esa regla sea satisfacible.

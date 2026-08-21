@@ -94,15 +94,16 @@ Va antes que la planilla: sin esto la planilla nace vacía.
 
 ## Fase 5 — Guía obligatorio y disponibilidad (`montree-backend-dev` + `montree-frontend-dev`) · ~2 días
 
-- [ ] `App\Rules\GuideIsAvailable`: solape de `[date(starts_at) … date(ends_at)]` contra las salidas `open`/`closed` del mismo guía, excluyendo la que se edita
-- [ ] Los **tres** caminos: `StoreTourDateRequest`, `UpdateTourDateRequest` y `App\Actions\Team\AssignGuideAction` (hoy no valida nada)
-- [ ] `guide_id` `required` en los dos Form Requests y en la Action; se elimina «Sin asignar» del contrato
-- [ ] `ends_at` **derivado** en `CreateTourDateAction` / `UpdateTourDateAction` y `prohibited` en los Form Requests
-- [ ] `App\Queries\GuideAvailabilityQuery` + `GET /api/v1/admin/guides/availability?from&to&exclude_tour_date_id`
-- [ ] `useGuideAvailability` + `GuideSelect.vue`: ocupados deshabilitados con el motivo («Ocupado 12–14 sep · Valle de Cocora»)
-- [ ] Aviso al cambiar `duration_hours`: se listan las salidas que quedarían en solape antes de guardar
-- [ ] `default_guide_id` obligatorio al publicar el tour
-- [ ] Tests: mismo día, rango de 3 días, salida cancelada que libera, edición de la propia salida sin falso positivo, el camino del `PATCH`, `guide_id` ausente ⇒ 422, `ends_at` del cliente ⇒ 422, derivación correcta para un tour de 51 h, y que factory y seeder no puedan producir un solape
+- [x] `App\Rules\GuideIsAvailable`: solape de `[date(starts_at) … date(ends_at)]` contra las salidas `open`/`closed` del mismo guía, excluyendo la que se edita
+- [x] Los **tres** caminos: `StoreTourDateRequest`, `UpdateTourDateRequest` y `App\Actions\Team\AssignGuideAction` (hoy no valida nada). El `PATCH` estrena `AssignGuideRequest`: además de la disponibilidad, comprueba que el usuario sea guía **del tenant** — antes aceptaba cualquier `users.id` del mundo
+- [x] `guide_id` `required` en los dos Form Requests y en la Action; se elimina «Sin asignar» del contrato
+- [x] `ends_at` **derivado** en `CreateTourDateAction` / `UpdateTourDateAction` y `prohibited` en los Form Requests. `UpdateTourDateAction` lo **rederiva siempre**, no solo cuando cambia el inicio: así la salida vieja con el fin inventado se corrige la primera vez que alguien la toca
+- [x] `App\Queries\GuideAvailabilityQuery` + `GET /api/v1/admin/guides/availability?from&to&exclude_tour_date_id`
+- [x] `useGuideAvailability` + `GuideSelect.vue`: ocupados deshabilitados con el motivo («Ocupado 12–14 sep · Valle de Cocora»)
+- [x] Aviso al cambiar `duration_hours`: se listan las salidas que quedarían en solape antes de guardar (`422` en `duration_hours`, con los nombres). Solo mira salidas **futuras**: alargar un tour no puede romper lo que ya pasó
+- [x] `default_guide_id` obligatorio al publicar el tour — **desviación**: no vive en `ChangeTourStatusRequest` sino en `ChangeTourStatusAction`, junto a la comprobación de imagen, con `error_code` `TOUR_NEEDS_GUIDE_TO_ACTIVATE`. El endpoint de estado tiene su propio contrato de error (`error_code` en la raíz, sin `errors`), y meterlo como error de validación lo habría partido en dos formas distintas de decir lo mismo
+- [x] **(añadido)** `default_guide_id` entra a `StoreTourRequest`, `UpdateTourRequest` y `TourResource`, y el formulario del tour estrena su selector. Sin esto la regla de publicación era insatisfacible: la columna existía desde la Fase 1 pero ninguna entrada la escribía
+- [x] Tests: mismo día, rango de 3 días, salida cancelada que libera, edición de la propia salida sin falso positivo, mover el inicio a un día ocupado sin cambiar de guía, el camino del `PATCH`, `guide_id` ausente ⇒ 422 en los tres, `ends_at` del cliente ⇒ 422, derivación correcta para un tour de 51 h, tope de 180 días del endpoint, y que ni la factory ni el seeder demo puedan producir un solape
 
 ## Fase 6 — Rediseño del CRUD (`montree-frontend-dev`, un commit por pantalla) · 3–4 días
 
