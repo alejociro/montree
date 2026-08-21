@@ -9,14 +9,25 @@ const { t } = useTranslations();
 type Props = {
     status: PassengerPaymentStatus;
     size?: 'sm' | 'md';
+    /** En la planilla la celda dice solo «Pendiente»: la columna ya es «Pago». */
+    short?: boolean;
 };
 
-const props = withDefaults(defineProps<Props>(), { size: 'md' });
+const props = withDefaults(defineProps<Props>(), { size: 'md', short: false });
 
 const labels: Record<PassengerPaymentStatus, string> = {
     paid: t('Pagado'),
     due: t('Saldo pendiente'),
 };
+
+const shortLabels: Record<PassengerPaymentStatus, string> = {
+    paid: t('Pagado'),
+    due: t('Pendiente'),
+};
+
+const label = computed(() =>
+    props.short ? shortLabels[props.status] : labels[props.status],
+);
 
 /**
  * WHY: verde y terracota FIJOS, no `--primary` (D4/D5). «Pagado» y «Saldo
@@ -40,6 +51,6 @@ const classes = computed(() =>
 <template>
     <span :class="classes">
         <span class="size-1.5 rounded-full bg-current" aria-hidden="true" />
-        {{ labels[props.status] }}
+        {{ label }}
     </span>
 </template>

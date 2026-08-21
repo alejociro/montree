@@ -23,6 +23,7 @@ export const DOCUMENT_TYPE_VALUES = [
     'cc',
     'ce',
     'ti',
+    'sisben',
     'passport',
     'other',
 ] as const;

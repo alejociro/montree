@@ -91,6 +91,7 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
     cc: t('Cédula de ciudadanía'),
     ce: t('Cédula de extranjería'),
     ti: t('Tarjeta de identidad'),
+    sisben: t('Sisben'),
     passport: t('Pasaporte'),
     other: t('Otro'),
 };

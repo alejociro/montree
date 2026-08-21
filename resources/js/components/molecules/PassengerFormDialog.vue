@@ -58,6 +58,7 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
     cc: t('Cédula de ciudadanía'),
     ce: t('Cédula de extranjería'),
     ti: t('Tarjeta de identidad'),
+    sisben: t('Sisben'),
     passport: t('Pasaporte'),
     other: t('Otro'),
 };
@@ -93,6 +94,36 @@ const processing = ref(false);
 const errors = ref<ApiErrors>({});
 
 const isEditing = computed(() => props.passenger?.id != null);
+
+/**
+ * Fila de marcador de posición: la reserva existe y el pasajero también, lo
+ * que falta son sus datos. No es un alta —el cupo ya está vendido— así que ni
+ * el título ni el icono pueden decir «Agregar»: quien abre esto está
+ * completando una ficha, no sumando una persona a la salida.
+ */
+const isCompleting = computed(
+    () => props.passenger !== null && props.passenger.id === null,
+);
+
+const title = computed(() => {
+    if (isEditing.value) {
+        return t('Editar pasajero');
+    }
+
+    return isCompleting.value
+        ? t('Completar datos del pasajero')
+        : t('Agregar pasajero');
+});
+
+const description = computed(() =>
+    isCompleting.value
+        ? t(
+              'Faltan los datos de esta persona. Al guardarlos, la reserva deja de aparecer como pendiente.',
+          )
+        : t(
+              'Los datos quedan en la planilla de la salida y en el CSV que se imprime.',
+          ),
+);
 
 function asDocumentType(value: DocumentType | null): DocumentType | '' {
     return DOCUMENT_TYPES.find((type) => type === value) ?? '';
@@ -294,20 +325,8 @@ function submit(): void {
     >
         <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>
-                    {{
-                        isEditing
-                            ? $t('Editar pasajero')
-                            : $t('Agregar pasajero')
-                    }}
-                </DialogTitle>
-                <DialogDescription>
-                    {{
-                        $t(
-                            'Los datos quedan en la planilla de la salida y en el CSV que se imprime.',
-                        )
-                    }}
-                </DialogDescription>
+                <DialogTitle>{{ title }}</DialogTitle>
+                <DialogDescription>{{ description }}</DialogDescription>
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
