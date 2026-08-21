@@ -58,7 +58,7 @@ function choose(place: GeocodedPlace): void {
                 class="pl-9"
                 :disabled="props.disabled"
                 :placeholder="
-                    $t('Busca la dirección o el lugar de :target', {
+                    $t('Buscar dirección o lugar para :target', {
                         target: props.targetLabel,
                     })
                 "

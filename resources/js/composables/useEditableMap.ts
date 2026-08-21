@@ -63,6 +63,7 @@ export function useEditableMap(
     let leaflet: LeafletNamespace | null = null;
     let map: LeafletMap | null = null;
     let markers = new Map<number, LeafletMarker>();
+    let resizeObserver: ResizeObserver | null = null;
     let hasFitted = false;
 
     function placed(): EditablePoint[] {
@@ -131,10 +132,30 @@ export function useEditableMap(
             }
         }
 
-        if (!hasFitted && placed().length > 0) {
-            hasFitted = true;
-            fit();
+        maybeFit();
+    }
+
+    /**
+     * Encuadra una sola vez, y solo cuando el contenedor YA mide.
+     *
+     * WHY: el mapa se monta dentro de una pestaña oculta. Encuadrar con 0×0 de
+     * alto deja un centro y un zoom sin sentido —salían seis teselas de zoom 18
+     * fuera de la caja— y, como el intento contaba como hecho, al mostrarse la
+     * pestaña ya no se reintentaba.
+     */
+    function maybeFit(): void {
+        if (hasFitted || map === null || placed().length === 0) {
+            return;
         }
+
+        const size = map.getSize();
+
+        if (size.x === 0 || size.y === 0) {
+            return;
+        }
+
+        hasFitted = true;
+        fit();
     }
 
     function fit(): void {
@@ -213,6 +234,17 @@ export function useEditableMap(
             });
         });
 
+        /**
+         * El mapa se monta dentro de una pestaña oculta (`v-show`), donde el
+         * contenedor mide 0×0 y Leaflet se queda en gris con los pines fuera
+         * de sitio. Al hacerse visible hay que remedirlo y volver a encuadrar.
+         */
+        resizeObserver = new ResizeObserver(() => {
+            map?.invalidateSize();
+            maybeFit();
+        });
+        resizeObserver.observe(element);
+
         ready.value = true;
         render();
     }
@@ -228,6 +260,8 @@ export function useEditableMap(
     });
 
     onBeforeUnmount(() => {
+        resizeObserver?.disconnect();
+        resizeObserver = null;
         map?.remove();
         map = null;
         leaflet = null;

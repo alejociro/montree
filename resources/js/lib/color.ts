@@ -111,8 +111,22 @@ export function contrastRatio(a: Rgb, b: Rgb): number {
 }
 
 /**
- * Tinta legible ENCIMA de `background`: la que gane el contraste entre la
- * crema y el verde tinta de la paleta.
+ * Luminancia a partir de la cual se escribe en tinta oscura.
+ *
+ * WHY no el máximo contraste a secas: sobre un rojo puro la tinta oscura gana
+ * por 3.63 contra 3.55, un empate técnico, y el resultado en pantalla era verde
+ * tinta sobre rojo — ilegible en un número de 11 px. El umbral de luminancia
+ * manda a los colores saturados (rojo, azul, verde intenso) a tinta clara, que
+ * es como se leen de verdad, y reserva la oscura para los claros: amarillos,
+ * cianes, beiges.
+ */
+const DARK_INK_LUMINANCE = 0.42;
+
+/** Mínimo aceptable para texto grande y elementos de interfaz (WCAG 2.1). */
+const MIN_UI_CONTRAST = 3;
+
+/**
+ * Tinta legible ENCIMA de `background`: la crema o el verde tinta de la paleta.
  */
 export function readableInk(background: string | Rgb): string {
     const rgb = typeof background === 'string' ? toRgb(background) : background;
@@ -123,10 +137,20 @@ export function readableInk(background: string | Rgb): string {
 
     const light = toRgb(INK_LIGHT) ?? [255, 255, 255];
     const dark = toRgb(INK_DARK) ?? [0, 0, 0];
+    const preferDark = relativeLuminance(rgb) >= DARK_INK_LUMINANCE;
 
-    return contrastRatio(rgb, dark) >= contrastRatio(rgb, light)
-        ? INK_DARK
-        : INK_LIGHT;
+    const preferred = preferDark ? dark : light;
+    const other = preferDark ? light : dark;
+
+    // La preferencia cede solo si de verdad no se lee y la otra sí.
+    if (
+        contrastRatio(rgb, preferred) < MIN_UI_CONTRAST &&
+        contrastRatio(rgb, other) >= MIN_UI_CONTRAST
+    ) {
+        return preferDark ? INK_LIGHT : INK_DARK;
+    }
+
+    return preferDark ? INK_DARK : INK_LIGHT;
 }
 
 function parseHslTriplet(triplet: string): [number, number, number] | null {

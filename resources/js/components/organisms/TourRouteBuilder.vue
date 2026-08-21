@@ -505,7 +505,8 @@ function hasCoordinates(id: number): boolean {
                         </div>
                     </div>
 
-                    <div class="flex shrink-0 flex-col gap-0.5">
+                    <!-- 2×2: en columna, cuatro botones estiraban la fila. -->
+                    <div class="grid shrink-0 grid-cols-2 gap-0.5">
                         <Button
                             type="button"
                             size="icon"
