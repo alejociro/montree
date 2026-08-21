@@ -25,6 +25,7 @@ ocultos por CSS.
   "is_minor": false,
   "document_type": "cc",
   "document_type_label": "Cédula de ciudadanía",
+  "document_type_abbreviation": "CC",
   "document_number": "1017234567",
   "email": "maria@example.com",
   "phone": "+57 300 111 2233",
@@ -48,7 +49,8 @@ ocultos por CSS.
 
 | Campo | Notas |
 |---|---|
-| `document_type` | `cc` · `ce` · `ti` · `passport` · `other` (`App\Enums\DocumentType`). **Sin `nit`**: el pasajero es una persona. |
+| `document_type` | `cc` · `ce` · `ti` · `sisben` · `passport` · `other` (`App\Enums\DocumentType`). **Sin `nit`**: el pasajero es una persona. |
+| `document_type_abbreviation` | `CC` · `CE` · `TI` · `SI` · `PA` · «Otro». Lo que pinta la planilla; la etiqueta larga se queda en la ficha. |
 | `eps` | **Sensible.** `sura` · `nueva_eps` · `sanitas` · `salud_total` · `other` · `null` (`App\Enums\Eps`) |
 | `eps_label` | **Sensible.** Etiqueta del enum. |
 | `eps_other` | **Sensible.** Texto libre. Solo no nulo cuando `eps = other`. |
@@ -240,6 +242,52 @@ EPS,Observaciones,Salida,Reserva,Valor,Abonado,Saldo,Estado
 columna vacía invita a preguntar qué falta.
 
 ---
+
+## GET /api/v1/admin/geocode (Fase 9)
+
+Direcciones y lugares para el editor de ruta. Permiso: `tours.update`. Límite: `throttle:30,1`.
+
+### Query params
+
+| Param | Tipo | Regla | Nota |
+|---|---|---|---|
+| `q` | string | `required`, `min:3`, `max:160` | Dirección o nombre del lugar. |
+
+### Response 200
+
+```json
+{
+  "data": [
+    {
+      "name": "Plaza de Bolívar",
+      "label": "Plaza de Bolívar, Salento, Quindío, Colombia",
+      "latitude": 4.6376,
+      "longitude": -75.5706
+    }
+  ]
+}
+```
+
+`name` es el trozo corto con el que se rellena el nombre de la parada; `label`, la línea larga
+que se muestra en la lista de resultados.
+
+### Errores
+
+| Caso | Respuesta |
+|---|---|
+| `q` de menos de 3 caracteres | `422` de validación |
+| Sin `tours.update` | `403` |
+| El proveedor no responde, responde error o devuelve algo que no es una lista | **`200` con `data: []`** |
+
+Ese último es deliberado: el buscador es una comodidad, no la fuente del dato. Si se cae, la
+agencia sigue colocando el punto en el mapa con un clic, y un `502` solo habría roto el
+formulario. Los fallos quedan en el log (`Log::warning`).
+
+**Por qué el proxy y no una llamada directa del navegador:** el proveedor (Nominatim) exige un
+`User-Agent` identificable y limita a una petición por segundo por cliente. Desde el front cada
+tecleo de cada agencia sería una petición anónima y la IP termina bloqueada. Aquí sale una sola
+vez, identificada, y la respuesta se cachea `montree.geocoding.cache_ttl` segundos (un día por
+defecto).
 
 ## GET /api/v1/admin/guides/availability
 

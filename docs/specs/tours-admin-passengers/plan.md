@@ -555,3 +555,11 @@ Todas las cadenas nuevas por `$t()` y registradas en `lang/en.json`. La app ya e
   lo genera `php artisan enums:typescript` en `resources/js/types/enums.generated.ts`, y
   `tests/Feature/Enums/TypeScriptEnumsAreInSyncTest.php` hace fallar la suite si queda
   desactualizado. Detalle en [`tasks.md`](./tasks.md).
+- `2026-08-21` — **Fase 9, correcciones de UI desde el navegador.** El color del tenant pasa a
+  mandar en toda la interfaz derivando en CSS (`color-mix()` sobre `--primary` / `--secondary`) en
+  vez de repartir la decisión entre CSS y `useTenantBranding`; las tintas de texto se calculan por
+  luminancia (`lib/color.ts`). La planilla se recorta a cuatro columnas. El editor de ruta cambia
+  las casillas de latitud y longitud por `GET /api/v1/admin/geocode` + un mapa con pines
+  arrastrables (`useEditableMap`, `TourRouteBuilder`), y fija el orden lugares → itinerario. Dos
+  defectos que solo se ven en vivo quedaron corregidos: la tinta sobre rojo puro y el encuadre del
+  mapa dentro de una pestaña oculta. Detalle en [`tasks.md`](./tasks.md).

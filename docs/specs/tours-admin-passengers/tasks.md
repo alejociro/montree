@@ -869,3 +869,102 @@ Notas:
      - **Un espejo ya se había desincronizado sin que nadie lo notara**: `guide-availability.ts`
        declaraba `status: 'open' | 'closed'` y sobrevivió al cambio del punto 1. Es exactamente
        el fallo que el generador previene, y de paso quedó corregido.
+
+## Fase 9 — Correcciones de UI reportadas desde el navegador (2026-08-21)
+
+Seis commits sobre `develop`. Suite en **732/732** (era 726, +6); Pint, `types:check`,
+`lint:check`, `format:check` y `npm run build` en verde. Verificado en navegador contra
+`demo.montree.test:8123` con el tenant en **rojo puro** (`#ff0000`), que es el caso límite del
+contraste.
+
+### 1. El color del tenant manda en toda la interfaz
+
+- `resources/js/lib/color.ts` (nuevo): luminancia relativa y razón de contraste de WCAG 2.1.
+  `readableInk()` elige la tinta de la paleta que se lee sobre cualquier color CSS;
+  `textSafeHsl()` corrige un color de marca hasta que se lee COMO texto sobre el fondo.
+- `useTenantBranding` pasa de escribir siete variables a escribir siete **distintas**: se van
+  `--sidebar-primary` y `--sidebar-ring`, entran `--primary-readable` y `--secondary-readable`.
+  Todo lo demás lo deriva `app.css` con `color-mix()` contra `--background`, así que el modo
+  oscuro sale gratis y hay una sola definición de «qué tan claro es el tinte».
+- **`--secondary` deja de ser un tinte** (`--brand-green-100`) y pasa a ser un color de marca. El
+  tinte que cubría es `--secondary-soft`. Se repasaron los 24 usos: los que significaban
+  «superficie suave» pasaron a `*-soft`, los que significaban «color» se quedaron.
+- Los 21 `bg-brand-green-50` / `bg-brand-green-100` que eran superficie de marca pasan a
+  `bg-primary-soft` o `bg-secondary-soft`. **No** se tocaron los tres semánticos
+  (`TourDateStatusBadge`, `PaymentStatusChip`, `TourStatusBadge`): D6 los deja fijos.
+- `text-primary` → `text-primary-readable` en 74 sitios de 50 archivos, en una pasada.
+- Tintas calculadas donde estaban clavadas en blanco: pines del mapa (`useTourRouteMap`),
+  lista de paradas y la vista previa de la configuración, que era justo la pantalla donde la
+  agencia elige el color y donde el texto desaparecía.
+
+**Un defecto que solo aparece en vivo:** `readableInk` empezó eligiendo por razón de contraste a
+secas. Sobre rojo puro la tinta oscura gana **3.63 contra 3.55** —un empate técnico— y los
+botones salían verde tinta sobre rojo, con los números de 11 px invisibles. La decisión es ahora
+un umbral de **luminancia** (0.42), con la razón de contraste solo como veto por debajo de 3:1.
+Los colores saturados van a tinta clara; los pálidos, a oscura. Comprobado con `#ff0000` y con un
+amarillo pálido `#f5e663`, que sí voltea a tinta oscura.
+
+### 2. Defectos de maquetación
+
+- **Campos que se movían según la resolución.** Los envoltorios eran `grid gap-2` dentro de
+  rejillas de varias columnas. Un ítem de rejilla se estira a la fila más alta y `align-content`
+  vale `stretch` por defecto, así que la columna más corta repartía sus filas y su etiqueta
+  quedaba más abajo que la vecina —cuánto, dependía del ancho—. `content-start` en los 61
+  envoltorios, en una pasada.
+- **La línea entre pasos no llegaba al paso siguiente.** Era hermana flexible del número dentro
+  de un `<ol class="space-y-*">`, así que terminaba en el borde del ítem. Ahora va absoluta y
+  cruza el relleno. Corregido en el detalle admin, en el del guía y en el constructor.
+- **Incluye / No incluye / Requisitos crecían distinto.** Comparten plantilla de filas
+  (`grid-rows-[auto_1fr_auto]` + `h-full`), la caja de fichas ocupa el hueco sobrante y pasado
+  `max-h-56` hace scroll dentro en vez de estirar la tarjeta.
+
+### 3. La planilla, recortada
+
+- Columnas: pasajero, documento, contacto y pago (más salida en la vista consolidada y las
+  acciones). Fuera emergencia y observaciones.
+- `DocumentType::abbreviation()` es la única fuente de CC / CE / TI / SI / PA y viaja como
+  `document_type_abbreviation`. **`sisben` entra al enum**; el generador de TS obligó a completar
+  los dos mapas de etiquetas que se habían quedado cortos, que es exactamente para lo que está.
+- Correo recortado con `title`, pago sin importe, marca de alerta médica junto al nombre y
+  paginación siempre visible mientras haya pasajeros.
+- El formulario de una reserva sin datos dice «Completar datos del pasajero» y usa el icono de
+  edición: el cupo ya está vendido.
+
+### 4. Ruta y mapa: se acabaron las coordenadas a mano
+
+- Backend: `App\Services\Geocoding\NominatimGeocoder` + `GET /api/v1/admin/geocode`
+  (`tours.update`, `throttle:30,1`), con caché de un día y **lista vacía** ante cualquier fallo.
+  Seis tests en `GeocodeControllerTest`.
+- Frontend: `useEditableMap` (pines arrastrables, clic para colocar), `PlaceSearchField`
+  (buscador con retardo y cancelación) y `TourRouteBuilder`, que reemplaza a `MeetingPointPicker`
+  y `TourRouteStopsBuilder` —ambos borrados—.
+- **Orden explícito**: primero los lugares, después el itinerario. El enlace paso ↔ parada se
+  movió al paso, y renumerar o borrar un paso arrastra la parada enlazada.
+- `lib/tour-route-order.ts`: si el regreso no queda al final, aviso y botón de ordenar. Ese orden
+  **es** el trazo del mapa público.
+
+**Segundo defecto que solo aparece en vivo:** el mapa se monta dentro de una pestaña oculta, donde
+el contenedor mide 0×0. Encuadraba ahí, daba el intento por hecho y no reintentaba, así que la
+pestaña abría con seis teselas sueltas en zoom 18. Ahora encuadra en la primera medida real y un
+`ResizeObserver` revalida el tamaño.
+
+### 5. La edición, como en el handoff
+
+- El riel de contexto acompaña a **todas** las pestañas, con `TourStatusRailCard` (estado, qué
+  significa, enlace al catálogo y miniaturas de la galería) siempre presente, y el riel de
+  progreso más el checklist solo mientras se edita contenido.
+- La pestaña «Pasajeros» pasa de la planilla entera a `TourPassengerPreview` (cuatro personas,
+  «y N más», botón a la lista completa). El detalle acepta `?tab=passengers` para caer en la
+  pestaña correcta.
+
+### Notas para el radar
+
+1. **`--secondary` cambió de significado.** Cualquier `bg-secondary` nuevo que espere un tinte
+   pálido saldrá con el color entero de la agencia. El tinte es `bg-secondary-soft`.
+2. **`app.css` usa `color-mix()`.** Es baseline desde 2023 y Tailwind v4 ya lo exige, pero queda
+   dicho por si aparece un requisito de navegadores viejos.
+3. **La geocodificación sale a internet.** En un entorno sin salida, el buscador devuelve lista
+   vacía y el mapa sigue funcionando; no hay que apagar nada. Para acotar a un país se puede
+   fijar `MONTREE_GEOCODER_COUNTRY_CODES=co`.
+4. **`sisben` es un valor nuevo de `document_type`.** No hace falta migración —la columna es
+   `string`— pero el CSV y el formulario público ya lo ofrecen.
