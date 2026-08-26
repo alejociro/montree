@@ -18,6 +18,17 @@ export const BOOKING_STATUS_VALUES = [
 
 export type BookingStatus = (typeof BOOKING_STATUS_VALUES)[number];
 
+/** `App\Enums\DepartureScope` */
+export const DEPARTURE_SCOPE_VALUES = [
+    'upcoming',
+    'today',
+    'past',
+    'disabled',
+    'all',
+] as const;
+
+export type DepartureScope = (typeof DEPARTURE_SCOPE_VALUES)[number];
+
 /** `App\Enums\DocumentType` */
 export const DOCUMENT_TYPE_VALUES = [
     'cc',

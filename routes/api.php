@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerContr
 use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
+use App\Http\Controllers\Api\V1\Admin\RestoreTourDateController as AdminRestoreTourDateController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
@@ -131,6 +132,7 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
     Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
     Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
+    Route::patch('tour-dates/{tourDate}/restore', AdminRestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
     Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
     Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
     // Buscador de direcciones del editor de ruta: lo usa quien puede editar el tour.

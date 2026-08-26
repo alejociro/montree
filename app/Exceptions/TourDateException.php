@@ -48,6 +48,11 @@ final class TourDateException extends \Exception implements HttpExceptionInterfa
         return new self('TOUR_DATE_ALREADY_CANCELLED', __('La salida ya está cancelada.'), 409);
     }
 
+    public static function notCancelled(): self
+    {
+        return new self('TOUR_DATE_NOT_CANCELLED', __('La salida no está inhabilitada.'), 409);
+    }
+
     public static function cancelled(): self
     {
         return new self('TOUR_DATE_CANCELLED', __('No es posible editar una salida cancelada.'), 409);

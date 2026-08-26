@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
+use App\Enums\DepartureScope;
 use App\Enums\TourDateDisplayStatus;
 use App\Enums\TourDateStatus;
 use Carbon\CarbonInterface;
@@ -214,5 +215,75 @@ class TourDate extends Model
                     ->where('starts_at', '<=', $now)
                     ->where('ends_at', '>=', $now)),
         };
+    }
+
+    /**
+     * Código legible de la salida: `TD<tour>-<mmdd>`. No hay columna que lo
+     * respalde —se deriva del tour y de la fecha— y es lo que el operador dicta
+     * por teléfono, así que el buscador tiene que entenderlo.
+     */
+    public function code(): string
+    {
+        return sprintf('TD%d-%s', $this->tour_id, $this->starts_at->format('md'));
+    }
+
+    /**
+     * Bandeja del tablero de salidas.
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeInScope(Builder $query, DepartureScope $scope): Builder
+    {
+        $now = now();
+
+        return match ($scope) {
+            DepartureScope::All => $query,
+            DepartureScope::Disabled => $query->where('status', TourDateStatus::Cancelled),
+            DepartureScope::Upcoming => $query
+                ->where('status', '!=', TourDateStatus::Cancelled)
+                ->whereRaw('COALESCE(ends_at, starts_at) >= ?', [$now]),
+            DepartureScope::Past => $query
+                ->where('status', '!=', TourDateStatus::Cancelled)
+                ->whereRaw('COALESCE(ends_at, starts_at) < ?', [$now]),
+            DepartureScope::Today => $query
+                ->where('status', '!=', TourDateStatus::Cancelled)
+                ->whereBetween('starts_at', [$now->copy()->startOfDay(), $now->copy()->endOfDay()]),
+        };
+    }
+
+    /**
+     * Buscador del tablero: nombre del tour, nombre del guía y el código
+     * derivado `TD<tour>-<mmdd>`. El código no está en ninguna columna, así que
+     * se traduce a sus dos partes —el tour y el día— antes de consultar.
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeMatchingSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+
+        return $query->where(function (Builder $scoped) use ($like, $term): void {
+            $scoped
+                ->whereHas('tour', fn (Builder $tour) => $tour->where('name', 'like', $like))
+                ->orWhereHas('guide', fn (Builder $guide) => $guide->where('name', 'like', $like));
+
+            // `whereMonth`/`whereDay` en vez de un formateo de fecha: cada
+            // motor tiene el suyo (`DATE_FORMAT` es de MySQL) y la suite corre
+            // sobre SQLite.
+            if (preg_match('/^TD(\d+)-(\d{2})(\d{2})$/i', $term, $matches) === 1) {
+                $scoped->orWhere(fn (Builder $byCode) => $byCode
+                    ->where('tour_id', (int) $matches[1])
+                    ->whereMonth('starts_at', (int) $matches[2])
+                    ->whereDay('starts_at', (int) $matches[3]));
+            }
+        });
     }
 }

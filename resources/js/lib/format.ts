@@ -163,6 +163,85 @@ export function formatTourDate(
     );
 }
 
+/**
+ * Bloque día/mes de la celda de fecha: «25 / AGO».
+ */
+export function formatDayMonth(
+    iso: string,
+    locale?: string,
+): { day: string; month: string } {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return { day: '—', month: '' };
+    }
+
+    const intl = intlLocale(locale);
+
+    return {
+        day: new Intl.DateTimeFormat(intl, { day: '2-digit' }).format(date),
+        month: new Intl.DateTimeFormat(intl, { month: 'short' })
+            .format(date)
+            .replace('.', '')
+            .toUpperCase(),
+    };
+}
+
+/** «mié · 7:15 a. m.» */
+export function formatWeekdayTime(iso: string, locale?: string): string {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+
+    const intl = intlLocale(locale);
+    const weekday = new Intl.DateTimeFormat(intl, { weekday: 'short' })
+        .format(date)
+        .replace('.', '');
+    const time = new Intl.DateTimeFormat(intl, {
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
+
+    return `${weekday} · ${time}`;
+}
+
+/**
+ * Distancia en DÍAS CALENDARIO: «hoy», «en 3 días», «hace 2 días».
+ *
+ * WHY: `formatRelativeDate` mide en horas, así que una salida de mañana a las
+ * 6 a. m. leída esta noche decía «en 8 horas». Para el tablero de salidas la
+ * unidad que importa es el día, y la comparación se hace contra el comienzo de
+ * cada día para que el cambio de «hoy» a «mañana» ocurra a medianoche.
+ */
+export function formatDayDistance(
+    iso: string,
+    now: Date = new Date(),
+    locale?: string,
+): string {
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    const startOfDay = (value: Date): number =>
+        new Date(
+            value.getFullYear(),
+            value.getMonth(),
+            value.getDate(),
+        ).getTime();
+
+    const days = Math.round(
+        (startOfDay(date) - startOfDay(now)) / (24 * 60 * 60 * 1000),
+    );
+
+    return new Intl.RelativeTimeFormat(intlLocale(locale), {
+        numeric: 'auto',
+    }).format(days, 'day');
+}
+
 const bookingStatusLabels: Record<string, string> = {
     pending_payment: 'Pendiente de pago',
     confirmed: 'Confirmada',

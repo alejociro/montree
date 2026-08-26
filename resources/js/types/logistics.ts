@@ -25,6 +25,8 @@ export interface LogisticsRef {
 
 export interface TourDateAdmin {
     id: number;
+    /** `TD<tour>-<mmdd>`, derivado en el backend. No hay columna que lo guarde. */
+    code: string;
     starts_at: string;
     ends_at: string | null;
     capacity: number;
@@ -59,10 +61,36 @@ export interface TourDatesGlobalFilters {
 // es propio de logistica, lo comparten todos los listados del panel.
 export type { PaginationLinks, PaginationMeta };
 
+/** Bandejas del tablero de salidas; espeja `App\Enums\DepartureScope`. */
+export type DepartureScopeId =
+    | 'upcoming'
+    | 'today'
+    | 'past'
+    | 'disabled'
+    | 'all';
+
+/** KPIs de cabecera: describen la operación completa, no el filtro activo. */
+export interface DepartureBoardStats {
+    active: number;
+    seats_left: number;
+    travellers: number;
+    without_guide: number;
+}
+
+/** Totales del pie: sí siguen al corte que el usuario está viendo. */
+export interface DepartureBoardTotals {
+    departures: number;
+    travellers: number;
+    seats_left: number;
+}
+
 export interface TourDatesGlobalResponse {
     data: TourDateGlobalAdmin[];
     links: PaginationLinks;
     meta: PaginationMeta;
+    stats: DepartureBoardStats;
+    counts: Record<DepartureScopeId, number>;
+    totals: DepartureBoardTotals;
 }
 
 export interface TourDateFormInput {
