@@ -866,20 +866,28 @@ onMounted(() => {
                                     colspan="6"
                                     class="px-4 py-3 text-xs text-muted-foreground"
                                 >
+                                    <!--
+                                      Tres frases con su propio plural: una sola
+                                      cadena con tres números daba «1 viajeros».
+                                    -->
                                     {{
-                                        $t(
-                                            ':departures salidas · :travellers viajeros · :seats cupos libres',
-                                            {
-                                                departures: formatNumber(
-                                                    totals.departures,
-                                                ),
-                                                travellers: formatNumber(
-                                                    totals.travellers,
-                                                ),
-                                                seats: formatNumber(
-                                                    totals.seats_left,
-                                                ),
-                                            },
+                                        $tc(
+                                            ':count salida|:count salidas',
+                                            totals.departures,
+                                        )
+                                    }}
+                                    ·
+                                    {{
+                                        $tc(
+                                            ':count viajero|:count viajeros',
+                                            totals.travellers,
+                                        )
+                                    }}
+                                    ·
+                                    {{
+                                        $tc(
+                                            ':count cupo libre|:count cupos libres',
+                                            totals.seats_left,
                                         )
                                     }}
                                 </td>

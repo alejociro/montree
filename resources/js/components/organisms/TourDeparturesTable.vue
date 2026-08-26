@@ -1,12 +1,23 @@
 <script setup lang="ts">
-import { Ban, CalendarPlus, Pencil, Trash2, UsersRound } from 'lucide-vue-next';
+import {
+    Ban,
+    CalendarPlus,
+    ChevronDown,
+    Pencil,
+    Trash2,
+    UsersRound,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import AssignGuideController from '@/actions/App/Http/Controllers/Api/V1/Admin/AssignGuideController';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
+import CountTabs from '@/components/molecules/CountTabs.vue';
+import type { CountTab } from '@/components/molecules/CountTabs.vue';
 import GuideSelect from '@/components/molecules/GuideSelect.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
@@ -97,12 +108,12 @@ const visible = computed<TourDateAdmin[]>(() => {
     return upcoming.value;
 });
 
-const scopes = computed<{ key: Scope; label: string; count: number }[]>(() => [
-    { key: 'upcoming', label: t('Próximas'), count: upcoming.value.length },
-    { key: 'past', label: t('Pasadas'), count: past.value.length },
+const scopes = computed<CountTab[]>(() => [
+    { id: 'upcoming', label: t('Próximas'), count: upcoming.value.length },
+    { id: 'past', label: t('Pasadas'), count: past.value.length },
     {
-        key: 'cancelled',
-        label: t('Canceladas'),
+        id: 'cancelled',
+        label: t('Inhabilitadas'),
         count: cancelled.value.length,
     },
 ]);
@@ -175,7 +186,11 @@ function priceLabel(departure: TourDateAdmin): string {
 </script>
 
 <template>
-    <section class="space-y-4">
+    <!--
+      Una sola tarjeta, como el resto del panel: antes el bloque flotaba sobre
+      el fondo de la página y no se leía como una unidad.
+    -->
+    <section class="rounded-2xl border border-border bg-card p-4 md:p-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="text-base font-semibold">
@@ -195,36 +210,21 @@ function priceLabel(departure: TourDateAdmin): string {
             </Button>
         </div>
 
-        <div
-            class="flex gap-1 rounded-lg bg-muted p-1"
-            role="tablist"
-            :aria-label="$t('Estado de las salidas')"
-        >
-            <button
-                v-for="item in scopes"
-                :key="item.key"
-                type="button"
-                role="tab"
-                :aria-selected="scope === item.key"
-                class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                :class="
-                    scope === item.key
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                "
-                @click="scope = item.key"
-            >
-                {{ item.label }} ({{ item.count }})
-            </button>
-        </div>
+        <CountTabs
+            class="mt-4"
+            :tabs="scopes"
+            :model-value="scope"
+            :label="$t('Estado de las salidas')"
+            @update:model-value="(value) => (scope = value as Scope)"
+        />
 
-        <div v-if="props.loading" class="space-y-2">
+        <div v-if="props.loading" class="mt-4 space-y-2">
             <Skeleton v-for="n in 3" :key="n" class="h-24 w-full rounded-xl" />
         </div>
 
         <div
             v-else-if="props.error"
-            class="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
+            class="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
         >
             <p class="text-sm text-destructive">
                 {{ $t('No se pudieron cargar las salidas.') }}
@@ -241,7 +241,7 @@ function priceLabel(departure: TourDateAdmin): string {
 
         <div
             v-else-if="visible.length === 0"
-            class="rounded-xl border border-dashed border-input p-8 text-center"
+            class="mt-4 rounded-xl border border-dashed border-input p-8 text-center"
         >
             <CalendarPlus class="mx-auto size-8 text-muted-foreground/40" />
             <p class="mt-3 font-medium">
@@ -250,7 +250,7 @@ function priceLabel(departure: TourDateAdmin): string {
                         ? $t('Sin salidas próximas')
                         : scope === 'past'
                           ? $t('Sin salidas pasadas')
-                          : $t('Sin salidas canceladas')
+                          : $t('Sin salidas inhabilitadas')
                 }}
             </p>
             <p
@@ -265,14 +265,14 @@ function priceLabel(departure: TourDateAdmin): string {
             </p>
         </div>
 
-        <ul v-else class="divide-y divide-brand-line-2">
+        <ul v-else class="mt-2 divide-y divide-brand-line-2">
             <li
                 v-for="departure in visible"
                 :key="departure.id"
                 class="flex flex-col gap-3 py-4 min-[1180px]:flex-row min-[1180px]:items-center min-[1180px]:justify-between"
             >
                 <div class="min-w-0 space-y-1.5">
-                    <p class="font-medium capitalize">
+                    <p class="text-[15px] font-semibold capitalize">
                         {{ formatTourDate(departure.starts_at) }}
                     </p>
                     <p class="text-[13px] text-muted-foreground">
@@ -308,10 +308,17 @@ function priceLabel(departure: TourDateAdmin): string {
                                 (value) => assignGuide(departure, value)
                             "
                         />
+                        <!--
+                          WHY (D9): el `GuideSelect` real consulta la agenda del
+                          rango, así que se monta SOLO en la fila que se está
+                          tocando. Este disparador se ve como el select que
+                          reemplaza —borde, altura y flecha— para que no parezca
+                          otro control.
+                        -->
                         <button
                             v-else-if="departure.status !== 'cancelled'"
                             type="button"
-                            class="flex w-full items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-[13px] transition hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            class="flex h-9 w-full items-center gap-1.5 rounded-md border border-input px-3 text-[13px] transition hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             :disabled="savingGuideFor === departure.id"
                             :aria-label="$t('Cambiar el guía de esta salida')"
                             @click="editingGuideFor = departure.id"
@@ -319,9 +326,18 @@ function priceLabel(departure: TourDateAdmin): string {
                             <UsersRound
                                 class="size-3.5 shrink-0 text-muted-foreground"
                             />
-                            <span class="truncate">{{
-                                departure.guide?.name ?? $t('Elige un guía')
-                            }}</span>
+                            <span class="min-w-0 flex-1 truncate text-left">
+                                {{
+                                    $t('Guía: :name', {
+                                        name:
+                                            departure.guide?.name ??
+                                            $t('sin asignar'),
+                                    })
+                                }}
+                            </span>
+                            <ChevronDown
+                                class="size-3.5 shrink-0 text-muted-foreground"
+                            />
                         </button>
                         <span
                             v-else
@@ -341,35 +357,28 @@ function priceLabel(departure: TourDateAdmin): string {
                         {{ $t('Pasajeros') }}
                     </Button>
 
-                    <template v-if="departure.status !== 'cancelled'">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            :title="$t('Editar')"
-                            :aria-label="$t('Editar')"
-                            @click="emit('edit', departure)"
-                        >
+                    <!-- Tres iconos sueltos → un solo menú con etiquetas. -->
+                    <ActionMenu
+                        v-if="departure.status !== 'cancelled'"
+                        variant="ghost"
+                        :label="$t('Acciones de la salida')"
+                    >
+                        <DropdownMenuItem @select="emit('edit', departure)">
                             <Pencil class="size-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            :title="$t('Cancelar salida')"
-                            :aria-label="$t('Cancelar salida')"
-                            @click="emit('cancel', departure)"
+                            {{ $t('Editar salida') }}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem @select="emit('cancel', departure)">
+                            <Ban class="size-4" />
+                            {{ $t('Inhabilitar') }}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            variant="destructive"
+                            @select="emit('remove', departure)"
                         >
-                            <Ban class="size-4 text-brand-warn" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            :title="$t('Eliminar')"
-                            :aria-label="$t('Eliminar')"
-                            @click="emit('remove', departure)"
-                        >
-                            <Trash2 class="size-4 text-destructive" />
-                        </Button>
-                    </template>
+                            <Trash2 class="size-4" />
+                            {{ $t('Eliminar') }}
+                        </DropdownMenuItem>
+                    </ActionMenu>
                 </div>
             </li>
         </ul>
