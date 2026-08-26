@@ -111,6 +111,11 @@ class TourControllerTest extends TestCase
             'meeting_point' => 'Plaza Cocora',
             'meeting_latitude' => 4.6371,
             'meeting_longitude' => -75.5096,
+            'stops' => [
+                ['kind' => 'pickup', 'name' => 'Plaza Cocora', 'latitude' => 4.6371, 'longitude' => -75.5096],
+                ['kind' => 'site', 'name' => 'Mirador', 'latitude' => 4.6428, 'longitude' => -75.4790],
+                ['kind' => 'drop', 'name' => 'Plaza Cocora', 'latitude' => 4.6371, 'longitude' => -75.5096],
+            ],
             'includes' => ['Guía', 'Snacks'],
             'requirements' => ['Calzado adecuado'],
             'itinerary' => [
@@ -142,6 +147,33 @@ class TourControllerTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['name', 'description', 'currency', 'difficulty', 'duration_hours', 'default_capacity', 'base_price']);
+    }
+
+    public function test_store_requires_meeting_point_destination_and_return(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->postJson(
+            'http://demo.montree.test/api/v1/admin/tours',
+            $this->validPayload([
+                'meeting_point' => '',
+                'meeting_latitude' => null,
+                'meeting_longitude' => null,
+                'stops' => [
+                    ['kind' => 'pickup', 'name' => 'Plaza de Bolívar', 'latitude' => 4.5350, 'longitude' => -75.6813],
+                ],
+            ]),
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors([
+            'meeting_point',
+            'meeting_latitude',
+            'meeting_longitude',
+            'stops',
+        ]);
     }
 
     public function test_store_fails_when_plan_limit_reached(): void
@@ -293,6 +325,14 @@ class TourControllerTest extends TestCase
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
+    /**
+     * Payload mínimo que HOY acepta la creación: además de los datos
+     * comerciales, un tour no puede nacer sin punto de encuentro, sin destino
+     * y sin regreso.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
     private function validPayload(array $overrides = []): array
     {
         return array_merge([
@@ -303,6 +343,14 @@ class TourControllerTest extends TestCase
             'duration_hours' => 4,
             'difficulty' => 'easy',
             'default_capacity' => 10,
+            'meeting_point' => 'Plaza de Bolívar, Armenia',
+            'meeting_latitude' => 4.5350,
+            'meeting_longitude' => -75.6813,
+            'stops' => [
+                ['kind' => 'pickup', 'name' => 'Plaza de Bolívar', 'latitude' => 4.5350, 'longitude' => -75.6813],
+                ['kind' => 'site', 'name' => 'Valle de Cocora', 'latitude' => 4.6376, 'longitude' => -75.5706],
+                ['kind' => 'drop', 'name' => 'Terminal de Armenia', 'latitude' => 4.5252, 'longitude' => -75.6812],
+            ],
         ], $overrides);
     }
 }

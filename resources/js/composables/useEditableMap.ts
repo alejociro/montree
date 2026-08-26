@@ -17,6 +17,16 @@ export type EditablePoint = {
     color: string;
     latitude: number | null;
     longitude: number | null;
+    /**
+     * Otros puntos que comparten ESTE mismo lugar.
+     *
+     * WHY: dos paradas del itinerario pueden ocurrir en la misma ubicación
+     * —«Parque principal de Salento» sirve de registro y de regreso—. Se dibuja
+     * un solo pin, rotulado con los números de todas ellas, y al arrastrarlo se
+     * mueven todas: si quedaran dos marcadores encima uno taparía al otro y
+     * corregir la posición dejaría el lugar partido en dos.
+     */
+    linkedIds?: number[];
 };
 
 export type UseEditableMapOptions = {

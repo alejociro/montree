@@ -214,7 +214,7 @@ function submit(): void {
                     :title="$t('Nuevo tour')"
                     :description="
                         $t(
-                            'Crea el borrador. Se publica cuando tenga imagen, precio, cupo y guía por defecto.',
+                            'Para guardar el borrador hacen falta el punto de encuentro, el destino y el regreso. Se publica cuando además tenga imagen y guía por defecto.',
                         )
                     "
                 />

@@ -7,9 +7,8 @@ import CapacityInput from '@/components/molecules/CapacityInput.vue';
 import ChipsInput from '@/components/molecules/ChipsInput.vue';
 import DifficultySelector from '@/components/molecules/DifficultySelector.vue';
 import PriceInput from '@/components/molecules/PriceInput.vue';
-import TourItineraryBuilder from '@/components/organisms/TourItineraryBuilder.vue';
-import type { MeetingDraft } from '@/components/organisms/TourRouteBuilder.vue';
-import TourRouteBuilder from '@/components/organisms/TourRouteBuilder.vue';
+import type { MeetingDraft } from '@/components/organisms/TourItineraryPlanner.vue';
+import TourItineraryPlanner from '@/components/organisms/TourItineraryPlanner.vue';
 import {
     Card,
     CardContent,
@@ -426,7 +425,7 @@ const meetingValue = computed(() => ({
                             }}</CardTitle>
                             <CardDescription>{{
                                 $t(
-                                    'Primero los lugares en el mapa, después el paso a paso. El orden de las paradas dibuja la ruta pública.',
+                                    'El paso a paso del tour y dónde ocurre cada momento. El orden de las paradas dibuja la ruta pública.',
                                 )
                             }}</CardDescription>
                         </div>
@@ -435,30 +434,22 @@ const meetingValue = computed(() => ({
                         }}</MonoLabel>
                     </div>
                 </CardHeader>
-                <CardContent class="space-y-6">
+                <CardContent>
                     <!--
-                      Orden explícito: primero DÓNDE (mapa y paradas), después
-                      QUÉ pasa (itinerario) enlazando cada paso con una parada
-                      ya ubicada. Antes los dos bloques eran independientes y no
-                      había forma de saber por cuál empezar.
+                      Un solo bloque: el itinerario manda y cada paso contiene
+                      sus paradas. Antes eran dos listas independientes —el mapa
+                      con las paradas por un lado, el paso a paso por otro— con
+                      dos mapas y sin un orden en el que trabajarlas.
                     -->
-                    <TourRouteBuilder
+                    <TourItineraryPlanner
                         :meeting="meetingValue"
+                        :steps="value.itinerary"
                         :stops="value.stops"
                         :errors="errors"
                         @update:meeting="handleMeetingPoint"
+                        @update:steps="handleItinerary"
                         @update:stops="handleStops"
                     />
-
-                    <div class="border-t border-brand-line-2 pt-6">
-                        <TourItineraryBuilder
-                            :model-value="value.itinerary"
-                            :stops="value.stops"
-                            :errors="errors"
-                            @update:model-value="handleItinerary"
-                            @update:stops="handleStops"
-                        />
-                    </div>
                 </CardContent>
             </Card>
         </section>

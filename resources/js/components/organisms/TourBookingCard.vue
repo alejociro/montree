@@ -74,9 +74,16 @@ function dateOptionLabel(date: TourDetailDate): string {
                     >
                         {{ $t('Fecha de salida') }}
                     </label>
+                    <!--
+                      `w-auto`: a lo ancho de la tarjeta el select dejaba la
+                      fecha pegada a la izquierda y la flecha a 20 rem de
+                      distancia, con un vacío enorme en medio que se leía como
+                      un campo sin diligenciar. Ajustado al texto, la flecha
+                      queda junto al valor.
+                    -->
                     <select
                         id="tour-date-select"
-                        class="w-full bg-transparent text-sm capitalize outline-none"
+                        class="w-auto max-w-full bg-transparent text-sm capitalize outline-none"
                         :value="selectedDateId"
                         @change="
                             emit(

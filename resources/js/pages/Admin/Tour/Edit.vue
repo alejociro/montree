@@ -10,7 +10,7 @@ import {
     PauseCircle,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     index as indexPage,
@@ -38,7 +38,6 @@ import TourImpactCard from '@/components/organisms/TourImpactCard.vue';
 import TourPassengerPreview from '@/components/organisms/TourPassengerPreview.vue';
 import TourProgressRail from '@/components/organisms/TourProgressRail.vue';
 import TourPublishChecklist from '@/components/organisms/TourPublishChecklist.vue';
-import TourRouteMapSection from '@/components/organisms/TourRouteMapSection.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
 import TourStatusRailCard from '@/components/organisms/TourStatusRailCard.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -73,7 +72,6 @@ import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
 import { useTranslations } from '@/composables/useTranslations';
 import { applyFormValue } from '@/lib/form-errors';
 import { formatRelativeDate } from '@/lib/format';
-import { routeStopsFromDrafts } from '@/lib/tour-route';
 import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
 import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
 import type { TourDateAdmin } from '@/types/logistics';
@@ -199,10 +197,6 @@ function goToStep(step: TourFormStep): void {
 
 // ---------------------------------------------------------------- Mapa
 
-const mapSection = ref<InstanceType<typeof TourRouteMapSection> | null>(null);
-
-const previewStops = computed(() => routeStopsFromDrafts(payload.value.stops));
-
 /**
  * Regla 6: si la recogida del formulario ya no es la guardada, el aviso deja de
  * ser hipotético. Se compara lo que le importa al pasajero —dónde y a qué
@@ -225,18 +219,6 @@ const pickupChanged = computed<boolean>(() => {
         Number(saved.latitude) !== Number(draft.latitude) ||
         Number(saved.longitude) !== Number(draft.longitude)
     );
-});
-
-/**
- * WHY: un mapa de Leaflet montado dentro de una pestaña oculta mide 0×0 y se
- * queda en gris. Al activarse la pestaña hay que re-medir y volver a encuadrar.
- */
-watch(activeTab, (tab) => {
-    if (tab !== 'route') {
-        return;
-    }
-
-    void nextTick(() => mapSection.value?.fit());
 });
 
 // ------------------------------------------------------------- Salidas
@@ -764,24 +746,12 @@ const lastEdited = computed<string | null>(() =>
                             "
                         />
 
-                        <Card v-if="previewStops.length > 0">
-                            <CardHeader>
-                                <CardTitle>{{
-                                    $t('Vista previa de la ruta')
-                                }}</CardTitle>
-                                <CardDescription>{{
-                                    $t(
-                                        'El mismo mapa que verá el viajero, con las paradas que hay ahora en el formulario.',
-                                    )
-                                }}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TourRouteMapSection
-                                    ref="mapSection"
-                                    :stops="previewStops"
-                                />
-                            </CardContent>
-                        </Card>
+                        <!--
+                          WHY: acá había un segundo mapa —«Vista previa de la
+                          ruta»— con los mismos pines que el del editor, uno
+                          debajo del otro. El editor ya es el mapa, y editable;
+                          repetirlo solo alargaba la pestaña.
+                        -->
                     </div>
 
                     <StickySaveBar v-show="activeTab !== 'passengers'">

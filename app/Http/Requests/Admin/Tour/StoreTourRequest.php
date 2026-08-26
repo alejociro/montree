@@ -44,9 +44,13 @@ class StoreTourRequest extends FormRequest
             'default_guide_id' => ['nullable', 'integer', $this->guideRule()],
             'difficulty' => ['required', 'string', Rule::in(array_column(TourDifficulty::cases(), 'value'))],
             'default_capacity' => ['required', 'integer', 'min:1', 'max:500'],
-            'meeting_point' => ['nullable', 'string', 'max:255'],
-            'meeting_latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'meeting_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            // Un tour sin punto de encuentro, sin destino y sin regreso no se
+            // puede operar: nadie sabe dónde recoger ni dónde devolver al
+            // viajero. Es requisito de CREACIÓN, no solo de publicación
+            // —arrancar el borrador ya obliga a decidirlo—.
+            'meeting_point' => ['required', 'string', 'max:255'],
+            'meeting_latitude' => ['required', 'numeric', 'between:-90,90'],
+            'meeting_longitude' => ['required', 'numeric', 'between:-180,180'],
             'includes' => ['nullable', 'array', 'max:30'],
             'includes.*' => ['string', 'max:200'],
             'excludes' => ['nullable', 'array', 'max:30'],
@@ -58,7 +62,7 @@ class StoreTourRequest extends FormRequest
             'itinerary.*.title' => ['required', 'string', 'max:120'],
             'itinerary.*.description' => ['nullable', 'string', 'max:2000'],
             'itinerary.*.duration_label' => ['nullable', 'string', 'max:30'],
-            'stops' => ['nullable', 'array', 'max:40'],
+            'stops' => ['required', 'array', 'min:1', 'max:40'],
             'stops.*.kind' => ['required', 'string', Rule::in(array_column(TourStopKind::cases(), 'value'))],
             'stops.*.name' => ['required', 'string', 'max:120'],
             'stops.*.label' => ['nullable', 'string', 'max:40'],
@@ -67,6 +71,16 @@ class StoreTourRequest extends FormRequest
             'stops.*.latitude' => ['required', 'numeric', 'between:-90,90'],
             'stops.*.longitude' => ['required', 'numeric', 'between:-180,180'],
             'stops.*.itinerary_step' => ['nullable', 'integer', 'min:1'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'stops.required' => __('El tour necesita al menos el punto de recogida, el destino y el regreso.'),
         ];
     }
 
@@ -86,6 +100,20 @@ class StoreTourRequest extends FormRequest
                             __('Solo puede haber una parada de tipo :kind.', ['kind' => $unique->label()]),
                         );
                     }
+                }
+
+                if (! in_array(TourStopKind::Site->value, $kinds, true)) {
+                    $validator->errors()->add(
+                        'stops',
+                        __('El tour necesita al menos una parada del recorrido: es el destino.'),
+                    );
+                }
+
+                if (! in_array(TourStopKind::Drop->value, $kinds, true)) {
+                    $validator->errors()->add(
+                        'stops',
+                        __('El tour necesita una parada de regreso.'),
+                    );
                 }
             },
         ];
