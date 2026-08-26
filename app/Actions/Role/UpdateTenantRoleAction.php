@@ -11,7 +11,7 @@ use Spatie\Permission\Models\Role;
 final class UpdateTenantRoleAction
 {
     /**
-     * @param  array{name?: string, permissions?: array<int, string>}  $data
+     * @param  array{name?: string, description?: string|null, permissions?: array<int, string>}  $data
      */
     public function handle(Role $role, array $data): Role
     {
@@ -21,6 +21,11 @@ final class UpdateTenantRoleAction
 
         if (isset($data['name'])) {
             $role->update(['name' => trim($data['name'])]);
+        }
+
+        // `array_key_exists` y no `isset`: mandar `null` es borrar la descripción.
+        if (array_key_exists('description', $data)) {
+            $role->update(['description' => CreateTenantRoleAction::description($data['description'])]);
         }
 
         if (isset($data['permissions'])) {

@@ -25,6 +25,7 @@ final class StoreRoleRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:60'],
+            'description' => ['nullable', 'string', 'max:200'],
             'permissions' => ['required', 'array', 'min:1'],
             'permissions.*' => ['string', Rule::in(app(PermissionCatalog::class)->slugs())],
         ];
@@ -64,6 +65,7 @@ final class StoreRoleRequest extends FormRequest
         return [
             'name.required' => __('Ponle un nombre al rol.'),
             'name.max' => __('Máximo :max caracteres.'),
+            'description.max' => __('La descripción no puede superar los :max caracteres.'),
             'permissions.required' => __('Elige al menos un permiso.'),
             'permissions.min' => __('Elige al menos un permiso.'),
             'permissions.*.in' => __('Ese permiso no existe.'),
@@ -75,7 +77,7 @@ final class StoreRoleRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['name' => 'nombre', 'permissions' => 'permisos'];
+        return ['name' => 'nombre', 'description' => 'descripción', 'permissions' => 'permisos'];
     }
 
     private function nameTaken(string $name): bool
