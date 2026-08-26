@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, ExternalLink, Loader2, Trash2 } from 'lucide-vue-next';
+import {
+    Archive,
+    ArrowLeft,
+    CircleCheck,
+    ExternalLink,
+    FileText,
+    Loader2,
+    PauseCircle,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import {
@@ -16,6 +25,7 @@ import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Api/V1/Ad
 import changeStatus from '@/actions/App/Http/Controllers/Api/V1/Admin/TourStatusController';
 import { show as publicTour } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import PickupChangeNotice from '@/components/molecules/PickupChangeNotice.vue';
 import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
@@ -48,6 +58,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
@@ -57,6 +71,7 @@ import { useTourCompletion } from '@/composables/useTourCompletion';
 import { useTourDepartures } from '@/composables/useTourDepartures';
 import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
 import { useTranslations } from '@/composables/useTranslations';
+import { applyFormValue } from '@/lib/form-errors';
 import { formatRelativeDate } from '@/lib/format';
 import { routeStopsFromDrafts } from '@/lib/tour-route';
 import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
@@ -433,6 +448,17 @@ function statusLabel(status: TourStatusType): string {
     }
 }
 
+const STATUS_ICONS: Record<string, typeof CircleCheck> = {
+    active: CircleCheck,
+    paused: PauseCircle,
+    archived: Archive,
+    draft: FileText,
+};
+
+function statusIcon(status: TourStatusType) {
+    return STATUS_ICONS[status] ?? CircleCheck;
+}
+
 const STATUS_ERROR_MESSAGES: Record<string, string> = {
     TOUR_NEEDS_IMAGE_TO_ACTIVATE: t(
         'El tour necesita al menos una imagen antes de activarse.',
@@ -586,38 +612,44 @@ const lastEdited = computed<string | null>(() =>
                 </p>
             </div>
 
+            <!--
+              WHY: «Ver detalle», los cambios de estado y «Eliminar» eran hasta
+              cuatro botones en fila que empujaban el título y ponían una acción
+              destructiva al mismo nivel visual que el resto. El sistema de
+              diseño pide un único menú ⋯; cada opción conserva su icono y la
+              destructiva va en `danger`, separada.
+            -->
             <div class="flex flex-wrap items-center gap-2">
-                <Link :href="showPage({ tour: props.tour.id }).url">
-                    <Button type="button" variant="outline" size="sm">
-                        <ExternalLink class="size-4" />
-                        {{ $t('Ver detalle') }}
-                    </Button>
-                </Link>
-                <Button
-                    v-for="next in allowedNextStatuses"
-                    :key="next"
-                    type="button"
-                    size="sm"
-                    :variant="next === 'archived' ? 'outline' : 'default'"
-                    :disabled="changingStatus"
-                    @click="transitionTo(next)"
-                >
-                    <Loader2
-                        v-if="changingStatus"
-                        class="size-4 animate-spin"
-                    />
-                    {{ statusLabel(next) }}
-                </Button>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    :disabled="changingStatus"
-                    @click="deleteTour"
-                >
-                    <Trash2 class="size-4 text-destructive" />
-                    {{ $t('Eliminar') }}
-                </Button>
+                <Loader2
+                    v-if="changingStatus"
+                    class="size-4 animate-spin text-muted-foreground"
+                />
+                <ActionMenu :label="$t('Acciones del tour')">
+                    <DropdownMenuItem as-child>
+                        <Link :href="showPage({ tour: props.tour.id }).url">
+                            <ExternalLink class="size-4" />
+                            {{ $t('Ver detalle') }}
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-for="next in allowedNextStatuses"
+                        :key="next"
+                        :disabled="changingStatus"
+                        @select="transitionTo(next)"
+                    >
+                        <component :is="statusIcon(next)" class="size-4" />
+                        {{ statusLabel(next) }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        variant="destructive"
+                        :disabled="changingStatus"
+                        @select="deleteTour"
+                    >
+                        <Trash2 class="size-4" />
+                        {{ $t('Eliminar') }}
+                    </DropdownMenuItem>
+                </ActionMenu>
             </div>
         </div>
 
@@ -672,7 +704,7 @@ const lastEdited = computed<string | null>(() =>
                             :categories="props.categories"
                             :sections="CONTENT_SECTIONS"
                             @update:model-value="
-                                (value) => Object.assign(form, value)
+                                (value) => applyFormValue(form, value)
                             "
                         >
                             <template #gallery>
@@ -728,7 +760,7 @@ const lastEdited = computed<string | null>(() =>
                             :categories="props.categories"
                             :sections="['route']"
                             @update:model-value="
-                                (value) => Object.assign(form, value)
+                                (value) => applyFormValue(form, value)
                             "
                         />
 

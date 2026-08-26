@@ -6,6 +6,10 @@ import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
  * Pestañas del tour (edición y detalle): subrayado en `--primary`, contador
  * opcional a la derecha del rótulo.
  *
+ * No hay scroll horizontal a propósito: cuando no caben, envuelven. Un carrusel
+ * esconde pestañas detrás de un gesto y deja una barra de scroll colgando bajo
+ * el subrayado aunque quepan todas.
+ *
  * Es presentación pura y sin genéricos: el `id` es un `string` y la página lo
  * vuelve a estrechar a su unión de pestañas al recibirlo.
  *
@@ -87,7 +91,7 @@ function onKeydown(event: KeyboardEvent, currentIndex: number): void {
 
 <template>
     <nav
-        class="flex gap-1 overflow-x-auto border-b border-border"
+        class="flex flex-wrap gap-x-1 border-b border-border"
         role="tablist"
         :aria-label="props.label"
     >
@@ -101,7 +105,7 @@ function onKeydown(event: KeyboardEvent, currentIndex: number): void {
             :aria-selected="props.modelValue === tab.id"
             :aria-controls="tourTabPanelId(tab.id)"
             :tabindex="props.modelValue === tab.id ? 0 : -1"
-            class="-mb-px flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            class="-mb-px flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             :class="
                 props.modelValue === tab.id
                     ? 'border-primary text-foreground'

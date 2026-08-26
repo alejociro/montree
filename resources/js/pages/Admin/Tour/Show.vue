@@ -21,6 +21,7 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
 import KpiCard from '@/components/atoms/KpiCard.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
 import type { TourTabItem } from '@/components/molecules/TourTabs.vue';
@@ -30,6 +31,7 @@ import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
 import TourUpcomingDatesList from '@/components/organisms/TourUpcomingDatesList.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/composables/usePermissions';
 import { useTenant } from '@/composables/useTenant';
 import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
@@ -87,6 +89,14 @@ const coverImage = computed(
 const galleryImages = computed(() =>
     sortedImages.value.filter((image) => image.id !== coverImage.value?.id),
 );
+
+/**
+ * WHY: la portada ocupaba 2×2 siempre. Con una o dos miniaturas el mosaico
+ * dejaba media rejilla vacía —y en móvil, donde solo hay dos columnas, el
+ * `row-span-2` abría una fila entera en blanco—. Solo se destaca cuando hay
+ * miniaturas suficientes para llenar las dos filas de la derecha.
+ */
+const featureCover = computed(() => galleryImages.value.length >= 4);
 
 const ratingValue = computed(() => Number(props.tour.rating_average) || 0);
 
@@ -324,23 +334,35 @@ const manifestSource = computed(
                 class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"
             />
 
+            <!--
+              WHY: las dos acciones de la cabecera viven en un menú ⋯, como
+              pide el sistema de diseño. Sobre la foto del héroe dos botones
+              sólidos compiten con el título; el menú deja una sola diana y
+              conserva icono y etiqueta de cada opción.
+            -->
             <div class="absolute inset-x-0 top-0 flex justify-end gap-2 p-4">
-                <Link
-                    :href="publicTourShow(props.tour.slug).url"
-                    target="_blank"
-                    rel="noopener"
+                <ActionMenu
+                    variant="solid"
+                    :label="$t('Acciones del tour')"
+                    class="shadow-sm"
                 >
-                    <Button variant="secondary" size="sm">
-                        <ExternalLink class="size-4" />
-                        {{ $t('Ver como viajero') }}
-                    </Button>
-                </Link>
-                <Link :href="editPage({ tour: props.tour.id }).url">
-                    <Button size="sm">
-                        <Pencil class="size-4" />
-                        {{ $t('Editar') }}
-                    </Button>
-                </Link>
+                    <DropdownMenuItem as-child>
+                        <a
+                            :href="publicTourShow(props.tour.slug).url"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <ExternalLink class="size-4" />
+                            {{ $t('Ver como viajero') }}
+                        </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem as-child>
+                        <Link :href="editPage({ tour: props.tour.id }).url">
+                            <Pencil class="size-4" />
+                            {{ $t('Editar') }}
+                        </Link>
+                    </DropdownMenuItem>
+                </ActionMenu>
             </div>
 
             <div class="absolute inset-x-0 bottom-0 space-y-3 p-5 md:p-7">
@@ -621,10 +643,15 @@ const manifestSource = computed(
                 <h2 class="mb-4 text-base font-semibold text-foreground">
                     {{ $t('Galería') }}
                 </h2>
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div
+                    class="grid grid-flow-row-dense grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
+                >
                     <div
                         v-if="coverImage"
-                        class="col-span-2 row-span-2 overflow-hidden rounded-xl md:col-span-2"
+                        class="overflow-hidden rounded-xl"
+                        :class="
+                            featureCover ? 'col-span-2 md:row-span-2' : undefined
+                        "
                     >
                         <img
                             :src="coverImage.url"

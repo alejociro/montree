@@ -148,8 +148,8 @@
     --brand-green: #1d4630; /* CTA, títulos sobre claro, zona del tour */
     --brand-green-600: #2f6b45; /* acento, pin de recogida, sendero, barras */
     --brand-green-100: #e3ece5; /* chips, hovers, fondos suaves */
-    --brand-cream: #f6f1e4; /* fondo de página */
-    --brand-card: #fffdf8; /* superficie de tarjetas */
+    --brand-cream: #f9f5ed; /* fondo de página */
+    --brand-card: #ffffff; /* superficie de tarjetas */
     --brand-tan: #f1e4c9; /* destacados: nota del mapa, testimonio */
     --brand-text: #22261f; /* texto principal */
     --brand-muted: #6d7268; /* texto secundario, traslados punteados */
@@ -326,6 +326,41 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/*
+  Cursor de puntero en todo lo que se pulsa.
+
+  WHY: el preflight de Tailwind v4 pone `cursor: default` en `button`, así que
+  botones, pestañas, migas y disparadores de select salían sin puntero y no se
+  leían como interactivos. Se arregla en la base —no elemento por elemento—
+  para que valga también para lo que se escriba después. Los ítems de menú de
+  shadcn traen `cursor-default` como utilidad (gana por capa) y se corrigen en
+  su propio componente.
+*/
+@layer base {
+    button:not(:disabled),
+    summary,
+    label[for],
+    select:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true']),
+    [role='menuitem'],
+    [role='menuitemcheckbox'],
+    [role='menuitemradio'],
+    [role='option'],
+    [role='link'],
+    a[href],
+    [data-slot='select-trigger']:not(:disabled),
+    [data-slot='dropdown-menu-trigger']:not(:disabled) {
+        cursor: pointer;
+    }
+
+    [data-slot='switch']:not(:disabled),
+    [data-slot='checkbox']:not(:disabled),
+    [data-slot='radio-group-item']:not(:disabled) {
+        cursor: pointer;
     }
 }
 
