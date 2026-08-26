@@ -8,7 +8,7 @@ import FilterBar from '@/components/molecules/FilterBar.vue';
 import LogisticsCrudPanel from '@/components/organisms/LogisticsCrudPanel.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
-import type { LogisticsField, LogisticsResourceKind } from '@/types/logistics';
+import type { LogisticsResourceKind } from '@/types/logistics';
 
 const { t } = useTranslations();
 
@@ -66,58 +66,6 @@ const panels = {
 function createInActiveTab(): void {
     panels[activeTab.value].value?.openCreate();
 }
-
-const routeFields: LogisticsField[] = [
-    {
-        key: 'name',
-        label: t('Nombre'),
-        type: 'text',
-        required: true,
-        fullWidth: true,
-    },
-    {
-        key: 'description',
-        label: t('Descripción'),
-        type: 'textarea',
-        placeholder: t('Detalles de la ruta'),
-    },
-    { key: 'distance_km', label: t('Distancia (km)'), type: 'number' },
-    { key: 'duration_hours', label: t('Duración (horas)'), type: 'number' },
-];
-
-const providerFields: LogisticsField[] = [
-    {
-        key: 'name',
-        label: t('Nombre'),
-        type: 'text',
-        required: true,
-        fullWidth: true,
-    },
-    {
-        key: 'service_type',
-        label: t('Tipo de servicio'),
-        type: 'text',
-        placeholder: t('Transporte, alimentación…'),
-    },
-    { key: 'contact_name', label: t('Contacto'), type: 'text' },
-    { key: 'contact_phone', label: t('Teléfono'), type: 'text' },
-    { key: 'contact_email', label: t('Email'), type: 'email' },
-    { key: 'notes', label: t('Notas'), type: 'textarea' },
-];
-
-const hotelFields: LogisticsField[] = [
-    {
-        key: 'name',
-        label: t('Nombre'),
-        type: 'text',
-        required: true,
-        fullWidth: true,
-    },
-    { key: 'address', label: t('Dirección'), type: 'text', fullWidth: true },
-    { key: 'contact_phone', label: t('Teléfono'), type: 'text' },
-    { key: 'contact_email', label: t('Email'), type: 'email' },
-    { key: 'notes', label: t('Notas'), type: 'textarea' },
-];
 </script>
 
 <template>
@@ -129,7 +77,7 @@ const hotelFields: LogisticsField[] = [
                 :title="$t('Logística')"
                 :description="
                     $t(
-                        'Rutas, proveedores y hoteles que reutilizas en tus salidas.',
+                        'Rutas, proveedores y hoteles que reutilizas al armar cada salida.',
                     )
                 "
             />
@@ -143,7 +91,9 @@ const hotelFields: LogisticsField[] = [
             class="mt-5"
             search-id="logistics-search"
             :search="search"
-            :placeholder="$t('Buscar ficha por nombre, contacto o servicio')"
+            :placeholder="
+                $t('Buscar ficha por nombre, municipio, contacto o tarifa')
+            "
             :result-label="resultLabel"
             :tabs="tabs"
             :active-tab="activeTab"
@@ -159,7 +109,6 @@ const hotelFields: LogisticsField[] = [
                 kind="routes"
                 :search="search"
                 :empty-label="$t('Aún no tienes rutas')"
-                :fields="routeFields"
                 @update:count="counts.routes = $event"
             />
             <LogisticsCrudPanel
@@ -168,7 +117,6 @@ const hotelFields: LogisticsField[] = [
                 kind="providers"
                 :search="search"
                 :empty-label="$t('Aún no tienes proveedores')"
-                :fields="providerFields"
                 @update:count="counts.providers = $event"
             />
             <LogisticsCrudPanel
@@ -177,7 +125,6 @@ const hotelFields: LogisticsField[] = [
                 kind="hotels"
                 :search="search"
                 :empty-label="$t('Aún no tienes hoteles')"
-                :fields="hotelFields"
                 @update:count="counts.hotels = $event"
             />
         </div>

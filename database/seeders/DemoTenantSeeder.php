@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\AccommodationType;
 use App\Enums\BookingStatus;
+use App\Enums\CancellationPolicy;
+use App\Enums\MealPlan;
+use App\Enums\PaymentTerms;
+use App\Enums\ProviderDocumentType;
+use App\Enums\ProviderServiceType;
+use App\Enums\RateUnit;
+use App\Enums\RouteKind;
+use App\Enums\RouteSeason;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
+use App\Enums\TourDifficulty;
 use App\Enums\TourStatus;
 use App\Enums\TourStopKind;
 use App\Enums\UserRole;
@@ -118,41 +128,155 @@ class DemoTenantSeeder extends Seeder
         ));
 
         $routes = collect([
-            ['name' => 'Ruta El Mirador', 'distance_km' => 12.50, 'duration_hours' => 5.0],
-            ['name' => 'Ruta Cascadas', 'distance_km' => 8.20, 'duration_hours' => 3.5],
-        ])->map(fn (array $payload) => Route::query()->updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
             [
-                'description' => 'Ruta demo precargada para desarrollo local.',
-                'distance_km' => $payload['distance_km'],
-                'duration_hours' => $payload['duration_hours'],
+                'name' => 'Ruta El Mirador',
+                'distance_km' => 12.50,
+                'duration_hours' => 5.0,
+                'kind' => RouteKind::Hiking,
+                'difficulty' => TourDifficulty::Moderate,
+                'max_altitude_m' => 2860,
+                'elevation_gain_m' => 640,
+                'stops' => [
+                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Pickup, 'time_label' => '6:30 a. m.'],
+                    ['name' => 'Alto de la Cruz', 'kind' => TourStopKind::Site, 'time_label' => '9:00 a. m.'],
+                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Drop, 'time_label' => '4:00 p. m.'],
+                ],
             ],
-        ));
+            [
+                'name' => 'Ruta Cascadas',
+                'distance_km' => 8.20,
+                'duration_hours' => 3.5,
+                'kind' => RouteKind::Mixed,
+                'difficulty' => TourDifficulty::Easy,
+                'max_altitude_m' => 2100,
+                'elevation_gain_m' => 320,
+                'stops' => [
+                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Pickup, 'time_label' => '7:00 a. m.'],
+                    ['name' => 'Cascada La Honda', 'kind' => TourStopKind::Site, 'time_label' => '9:30 a. m.'],
+                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Drop, 'time_label' => '3:00 p. m.'],
+                ],
+            ],
+        ])->map(function (array $payload) use ($tenant) {
+            $route = Route::query()->updateOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+                [
+                    'description' => 'Ruta demo precargada para desarrollo local.',
+                    'distance_km' => $payload['distance_km'],
+                    'duration_hours' => $payload['duration_hours'],
+                    'kind' => $payload['kind'],
+                    'difficulty' => $payload['difficulty'],
+                    'start_point' => 'Salento, Quindío, Colombia',
+                    'city' => 'Salento',
+                    'state' => 'Quindío',
+                    'country' => 'Colombia',
+                    'max_altitude_m' => $payload['max_altitude_m'],
+                    'elevation_gain_m' => $payload['elevation_gain_m'],
+                    'group_capacity' => 20,
+                    'seasons' => [RouteSeason::AllYear->value],
+                    'required_gear' => ['Calzado de trekking', 'Impermeable', 'Hidratación 2 L'],
+                    'emergency_contact' => 'Bomberos Salento · +57 300 000 0000',
+                ],
+            );
+
+            $route->stops()->delete();
+
+            foreach (array_values($payload['stops']) as $index => $stop) {
+                $route->stops()->create([
+                    'position' => $index + 1,
+                    'name' => $stop['name'],
+                    'kind' => $stop['kind'],
+                    'time_label' => $stop['time_label'],
+                ]);
+            }
+
+            return $route;
+        });
 
         $providers = collect([
-            ['name' => 'Transportes Andinos', 'service_type' => 'transporte'],
-            ['name' => 'Cocina del Valle', 'service_type' => 'alimentación'],
-        ])->map(fn (array $payload) => Provider::query()->updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
             [
-                'service_type' => $payload['service_type'],
-                'contact_name' => 'Contacto Demo',
-                'contact_phone' => '+57 300 111 2233',
-                'contact_email' => 'contacto@demo.montree.test',
+                'name' => 'Transportes Andinos',
+                'service_type' => ProviderServiceType::Transport,
+                'rate' => ['concept' => 'Bus 40 puestos', 'amount' => 320, 'unit' => RateUnit::PerService],
             ],
-        ));
+            [
+                'name' => 'Cocina del Valle',
+                'service_type' => ProviderServiceType::Food,
+                'rate' => ['concept' => 'Almuerzo típico', 'amount' => 9, 'unit' => RateUnit::PerPerson],
+            ],
+        ])->map(function (array $payload) use ($tenant) {
+            $provider = Provider::query()->updateOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+                [
+                    'service_type' => $payload['service_type'],
+                    'legal_name' => $payload['name'].' S.A.S.',
+                    'tax_id' => '901.223.114-3',
+                    'payment_terms' => PaymentTerms::Advance50,
+                    'contact_name' => 'Contacto Demo',
+                    'contact_role' => 'Coordinación',
+                    'contact_phone' => '+57 300 111 2233',
+                    'contact_email' => 'contacto@demo.montree.test',
+                    'address' => 'Carrera 19 #35-05, Armenia',
+                    'city' => 'Armenia',
+                    'state' => 'Quindío',
+                    'coverage' => 'Eje cafetero',
+                    'currency' => 'USD',
+                ],
+            );
+
+            $provider->rates()->delete();
+            $provider->rates()->create([
+                'position' => 1,
+                'concept' => $payload['rate']['concept'],
+                'amount' => $payload['rate']['amount'],
+                'unit' => $payload['rate']['unit'],
+            ]);
+
+            $provider->documents()->delete();
+            $provider->documents()->create([
+                'position' => 1,
+                'kind' => ProviderDocumentType::LiabilityPolicy,
+                'number' => 'POL-90211',
+                'expires_at' => Carbon::now()->addMonths(8)->toDateString(),
+            ]);
+
+            return $provider;
+        });
 
         $hotels = collect([
-            ['name' => 'Ecohotel La Montaña'],
-            ['name' => 'Posada del Río'],
-        ])->map(fn (array $payload) => Hotel::query()->updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => $payload['name']],
-            [
-                'address' => 'Vereda Demo, Colombia',
-                'contact_phone' => '+57 300 444 5566',
-                'contact_email' => 'reservas@demo.montree.test',
-            ],
-        ));
+            ['name' => 'Ecohotel La Montaña', 'type' => AccommodationType::Ecolodge, 'stars' => 3],
+            ['name' => 'Posada del Río', 'type' => AccommodationType::RuralInn, 'stars' => null],
+        ])->map(function (array $payload) use ($tenant) {
+            $hotel = Hotel::query()->updateOrCreate(
+                ['tenant_id' => $tenant->id, 'name' => $payload['name']],
+                [
+                    'accommodation_type' => $payload['type'],
+                    'star_rating' => $payload['stars'],
+                    'address' => 'Vereda Demo, Colombia',
+                    'city' => 'Salento',
+                    'state' => 'Quindío',
+                    'country' => 'Colombia',
+                    'total_capacity' => 28,
+                    'currency' => 'USD',
+                    'check_in' => '3:00 p. m.',
+                    'check_out' => '11:00 a. m.',
+                    'amenities' => ['breakfast', 'wifi', 'hot_water', 'parking'],
+                    'meal_plan' => MealPlan::BreakfastOnly,
+                    'cancellation_policy' => CancellationPolicy::Free48Hours,
+                    'payment_terms' => PaymentTerms::Advance30,
+                    'contact_name' => 'Recepción',
+                    'contact_phone' => '+57 300 444 5566',
+                    'contact_email' => 'reservas@demo.montree.test',
+                ],
+            );
+
+            $hotel->rooms()->delete();
+            $hotel->rooms()->createMany([
+                ['position' => 1, 'name' => 'Doble', 'quantity' => 6, 'nightly_rate' => 62],
+                ['position' => 2, 'name' => 'Familiar', 'quantity' => 2, 'nightly_rate' => 95],
+            ]);
+
+            return $hotel;
+        });
 
         foreach (range(1, 5) as $i) {
             if (Tour::query()->where('slug', "tour-demo-$i")->exists()) {

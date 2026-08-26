@@ -135,8 +135,9 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::patch('tour-dates/{tourDate}/restore', AdminRestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
     Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
     Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
-    // Buscador de direcciones del editor de ruta: lo usa quien puede editar el tour.
-    Route::get('geocode', AdminGeocodeController::class)->middleware(['can:tours.update', 'throttle:30,1'])->name('geocode');
+    // Buscador de direcciones: lo comparten el editor de ruta del tour y las
+    // fichas de logística, de ahí el gate en vez de un permiso suelto.
+    Route::get('geocode', AdminGeocodeController::class)->middleware(['can:use-geocoder', 'throttle:30,1'])->name('geocode');
     Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
 
     Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')

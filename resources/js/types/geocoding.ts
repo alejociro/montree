@@ -6,6 +6,9 @@ export type GeocodedPlace = {
     label: string;
     latitude: number;
     longitude: number;
+    /** Municipio y departamento reales, no el segundo trozo de `label`. */
+    city: string | null;
+    state: string | null;
 };
 
 export type GeocodeResponse = {

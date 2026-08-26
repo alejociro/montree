@@ -11,6 +11,10 @@ namespace App\Services\Geocoding;
  * el trozo corto con el que se rellena el nombre de la parada, para que quien
  * programa el tour no tenga que recortar «Plaza de Bolívar, Salento, Quindío,
  * Colombia» a mano cada vez.
+ *
+ * `city` y `state` salen de `addressdetails` del proveedor, no de partir la
+ * línea larga por comas: en «Salento, Fría, Quindío, RAP Eje Cafetero,
+ * Colombia» el segundo trozo es un barrio, no el municipio.
  */
 final readonly class GeocodedPlace
 {
@@ -19,6 +23,8 @@ final readonly class GeocodedPlace
         public string $label,
         public float $latitude,
         public float $longitude,
+        public ?string $city = null,
+        public ?string $state = null,
     ) {}
 
     /**
@@ -38,11 +44,35 @@ final readonly class GeocodedPlace
             ? $raw['name']
             : trim(explode(',', $label)[0]);
 
-        return new self($name, $label, $latitude, $longitude);
+        $address = is_array($raw['address'] ?? null) ? $raw['address'] : [];
+
+        return new self(
+            $name,
+            $label,
+            $latitude,
+            $longitude,
+            self::firstString($address, ['city', 'town', 'village', 'municipality', 'county']),
+            self::firstString($address, ['state', 'region', 'province']),
+        );
     }
 
     /**
-     * @return array{name: string, label: string, latitude: float, longitude: float}
+     * @param  array<string, mixed>  $address
+     * @param  list<string>  $keys
+     */
+    private static function firstString(array $address, array $keys): ?string
+    {
+        foreach ($keys as $key) {
+            if (is_string($address[$key] ?? null) && $address[$key] !== '') {
+                return $address[$key];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{name: string, label: string, latitude: float, longitude: float, city: string|null, state: string|null}
      */
     public function toArray(): array
     {
@@ -51,6 +81,8 @@ final readonly class GeocodedPlace
             'label' => $this->label,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
+            'city' => $this->city,
+            'state' => $this->state,
         ];
     }
 }

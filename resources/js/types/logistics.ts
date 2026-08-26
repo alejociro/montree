@@ -1,6 +1,19 @@
 import type {
+    AccommodationType,
+    CancellationPolicy,
+    HotelAmenity,
+    MealPlan,
+    PaymentTerms,
+    ProviderDocumentType,
+    ProviderServiceType,
+    RateUnit,
+    RouteKind,
+    RouteSeason,
+    TaxRegime,
     TourDateDisplayStatus,
     TourDateStatus,
+    TourDifficulty,
+    TourStopKind,
 } from '@/types/enums.generated';
 import type { PaginationLinks, PaginationMeta } from './pagination';
 
@@ -104,56 +117,159 @@ export interface TourDateFormInput {
     hotel_ids: number[];
 }
 
+export interface RouteStopRecord {
+    id: number;
+    position: number;
+    name: string;
+    kind: TourStopKind;
+    time_label: string | null;
+}
+
 export interface RouteResource {
     id: number;
     name: string;
     description: string | null;
+    kind: RouteKind | null;
+    difficulty: TourDifficulty | null;
+    start_point: string | null;
+    start_latitude: string | null;
+    start_longitude: string | null;
+    end_point: string | null;
+    end_latitude: string | null;
+    end_longitude: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
     distance_km: string | null;
     duration_hours: string | null;
+    max_altitude_m: number | null;
+    elevation_gain_m: number | null;
+    group_capacity: number | null;
+    seasons: RouteSeason[];
+    safety_notes: string | null;
+    required_gear: string[];
+    permits: string | null;
+    emergency_contact: string | null;
+    stops: RouteStopRecord[];
     tour_dates_count: number;
+}
+
+export interface ProviderRateRecord {
+    id: number;
+    position: number;
+    concept: string;
+    amount: string | null;
+    unit: RateUnit;
+}
+
+export interface ProviderDocumentRecord {
+    id: number;
+    position: number;
+    kind: ProviderDocumentType;
+    number: string | null;
+    expires_at: string | null;
 }
 
 export interface ProviderResource {
     id: number;
     name: string;
-    service_type: string | null;
+    service_type: ProviderServiceType | null;
+    description: string | null;
+    legal_name: string | null;
+    tax_id: string | null;
+    tax_regime: TaxRegime | null;
+    billing_email: string | null;
+    bank_account: string | null;
+    payment_terms: PaymentTerms | null;
     contact_name: string | null;
+    contact_role: string | null;
     contact_phone: string | null;
     contact_email: string | null;
+    alternate_contact: string | null;
+    service_hours: string | null;
+    address: string | null;
+    latitude: string | null;
+    longitude: string | null;
+    city: string | null;
+    state: string | null;
+    coverage: string | null;
+    currency: string | null;
+    rates_valid_until: string | null;
     notes: string | null;
+    rates: ProviderRateRecord[];
+    documents: ProviderDocumentRecord[];
     tour_dates_count: number;
+}
+
+export interface HotelRoomRecord {
+    id: number;
+    position: number;
+    name: string;
+    quantity: number | null;
+    nightly_rate: string | null;
 }
 
 export interface HotelResource {
     id: number;
     name: string;
+    accommodation_type: AccommodationType | null;
+    star_rating: number | null;
+    description: string | null;
+    legal_name: string | null;
+    tax_id: string | null;
     address: string | null;
+    latitude: string | null;
+    longitude: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    directions: string | null;
+    total_capacity: number | null;
+    currency: string | null;
+    rates_valid_until: string | null;
+    check_in: string | null;
+    check_out: string | null;
+    amenities: HotelAmenity[];
+    meal_plan: MealPlan | null;
+    diets: string | null;
+    restrictions: string | null;
+    contact_name: string | null;
     contact_phone: string | null;
     contact_email: string | null;
+    emergency_contact: string | null;
+    cancellation_policy: CancellationPolicy | null;
+    payment_terms: PaymentTerms | null;
     notes: string | null;
+    rooms: HotelRoomRecord[];
     tour_dates_count: number;
 }
 
 export type LogisticsResourceKind = 'routes' | 'providers' | 'hotels';
 
-export interface LogisticsField {
-    key: string;
+/** Cualquiera de las tres fichas, tal como vuelve del listado. */
+export type LogisticsRecord = RouteResource | ProviderResource | HotelResource;
+
+/**
+ * Valor de un campo del formulario de ficha. Las listas repetibles guardan sus
+ * filas como objetos planos; el resto es texto, selección múltiple o nada.
+ */
+export type LogisticsFieldValue =
+    | string
+    | string[]
+    | Record<string, string>[]
+    | null;
+
+export type LogisticsFormState = Record<string, LogisticsFieldValue>;
+
+/** Un dato de la lista de la derecha en la ficha de la rejilla. */
+export interface LogisticsFact {
     label: string;
-    type: 'text' | 'number' | 'email' | 'textarea';
-    placeholder?: string;
-    required?: boolean;
-    fullWidth?: boolean;
+    value: string;
 }
 
-export interface LogisticsRow {
-    id: number;
-    name: string;
-    tour_dates_count: number;
-    [key: string]: string | number | null;
-}
-
-export interface LogisticsListResponse<TResource> {
+export interface LogisticsPaginatedResponse<TResource> {
     data: TResource[];
+    meta: PaginationMeta;
 }
 
 export interface TourDateListResponse {

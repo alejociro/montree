@@ -48,6 +48,35 @@ class GeocodeControllerTest extends TestCase
         $response->assertJsonPath('data.0.longitude', -75.5706);
     }
 
+    /**
+     * El municipio sale de `addressdetails`, no de partir la línea larga por
+     * comas: en «Salento, Fría, Quindío, …» el segundo trozo es un barrio.
+     */
+    public function test_it_reads_the_city_and_the_state_from_the_address_details(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                [
+                    'name' => 'Salento',
+                    'display_name' => 'Salento, Fría, Quindío, RAP Eje Cafetero, Colombia',
+                    'lat' => '4.63',
+                    'lon' => '-75.57',
+                    'address' => [
+                        'suburb' => 'Fría',
+                        'town' => 'Salento',
+                        'state' => 'Quindío',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->admin())->getJson($this->url('Salento Quindío'));
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.city', 'Salento');
+        $response->assertJsonPath('data.0.state', 'Quindío');
+    }
+
     public function test_it_falls_back_to_the_first_segment_when_the_place_has_no_name(): void
     {
         Http::fake([

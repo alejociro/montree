@@ -1,39 +1,32 @@
 <script setup lang="ts">
 import {
     Building2,
-    Loader2,
+    ChevronLeft,
+    ChevronRight,
     MapPin,
+    Pencil,
     Plus,
     Trash2,
     Truck,
 } from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import HotelController from '@/actions/App/Http/Controllers/Api/V1/Admin/HotelController';
 import ProviderController from '@/actions/App/Http/Controllers/Api/V1/Admin/ProviderController';
 import RouteController from '@/actions/App/Http/Controllers/Api/V1/Admin/RouteController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
+import LogisticsRecordDialog from '@/components/organisms/LogisticsRecordDialog.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { factsFor, localityOf } from '@/lib/logistics';
 import type {
-    LogisticsField,
+    LogisticsRecord,
     LogisticsResourceKind,
-    LogisticsRow,
+    PaginationMeta,
 } from '@/types/logistics';
 
 const { t } = useTranslations();
@@ -47,7 +40,6 @@ type CrudController = {
 
 type Props = {
     kind: LogisticsResourceKind;
-    fields: LogisticsField[];
     emptyLabel: string;
     /**
      * El buscador vive en la barra de filtros de la página, encima de las
@@ -81,35 +73,22 @@ const icon = computed(() => KIND_ICONS[props.kind]);
  */
 const KIND_COPY: Record<
     LogisticsResourceKind,
-    {
-        new: string;
-        edit: string;
-        search: string;
-        created: string;
-        updated: string;
-        deleted: string;
-    }
+    { new: string; created: string; updated: string; deleted: string }
 > = {
     routes: {
         new: 'Nueva ruta',
-        edit: 'Editar ruta',
-        search: 'Buscar ruta',
         created: 'Ruta creada.',
         updated: 'Ruta actualizada.',
         deleted: 'Ruta eliminada.',
     },
     providers: {
         new: 'Nuevo proveedor',
-        edit: 'Editar proveedor',
-        search: 'Buscar proveedor',
         created: 'Proveedor creado.',
         updated: 'Proveedor actualizado.',
         deleted: 'Proveedor eliminado.',
     },
     hotels: {
         new: 'Nuevo hotel',
-        edit: 'Editar hotel',
-        search: 'Buscar hotel',
         created: 'Hotel creado.',
         updated: 'Hotel actualizado.',
         deleted: 'Hotel eliminado.',
@@ -129,40 +108,41 @@ const controllers: Record<LogisticsResourceKind, CrudController> = {
 
 const controller = controllers[props.kind];
 
-const rows = ref<LogisticsRow[]>([]);
+const records = ref<LogisticsRecord[]>([]);
+const meta = ref<PaginationMeta | null>(null);
 const loading = ref(true);
 const loadError = ref(false);
+const page = ref(1);
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const dialogOpen = ref(false);
-const editingId = ref<number | null>(null);
+const editing = ref<LogisticsRecord | null>(null);
 const processing = ref(false);
 const errors = ref<ApiErrors>({});
-const form = reactive<Record<string, string>>({});
-
-function blankForm(): void {
-    for (const field of props.fields) {
-        form[field.key] = '';
-    }
-}
 
 async function load(): Promise<void> {
     loading.value = true;
     loadError.value = false;
 
     try {
+        const query: Record<string, string> = { page: String(page.value) };
         const term = props.search.trim();
-        const url =
-            term === ''
-                ? controller.index().url
-                : controller.index({ query: { search: term } }).url;
-        const response = await fetch(url, {
+
+        if (term !== '') {
+            query.search = term;
+        }
+
+        const response = await fetch(controller.index({ query }).url, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
         });
-        const json = (await response.json()) as { data: LogisticsRow[] };
-        rows.value = json.data;
-        emit('update:count', json.data.length);
+        const json = (await response.json()) as {
+            data: LogisticsRecord[];
+            meta: PaginationMeta;
+        };
+        records.value = json.data;
+        meta.value = json.meta;
+        emit('update:count', json.meta?.total ?? json.data.length);
     } catch {
         loadError.value = true;
     } finally {
@@ -178,57 +158,48 @@ watch(
         }
 
         searchTimer = setTimeout(() => {
+            // Un término nuevo empieza en la primera página: si no, buscar
+            // desde la página 3 devolvía una rejilla vacía.
+            page.value = 1;
             void load();
         }, 300);
     },
 );
 
+function goToPage(next: number): void {
+    if (meta.value === null || next < 1 || next > meta.value.last_page) {
+        return;
+    }
+
+    page.value = next;
+    void load();
+}
+
 function openCreate(): void {
-    editingId.value = null;
+    editing.value = null;
     errors.value = {};
-    blankForm();
     dialogOpen.value = true;
 }
 
-function openEdit(row: LogisticsRow): void {
-    editingId.value = row.id;
+function openEdit(record: LogisticsRecord): void {
+    editing.value = record;
     errors.value = {};
-
-    for (const field of props.fields) {
-        const value = row[field.key];
-        form[field.key] =
-            value === null || value === undefined ? '' : String(value);
-    }
-
     dialogOpen.value = true;
 }
 
-function buildPayload(): Record<string, string | null> {
-    const payload: Record<string, string | null> = {};
-
-    for (const field of props.fields) {
-        const value = form[field.key]?.trim() ?? '';
-        payload[field.key] = value === '' ? null : value;
-    }
-
-    return payload;
-}
-
-function submit(): void {
+function submit(payload: Record<string, unknown>): void {
     if (processing.value) {
         return;
     }
 
     processing.value = true;
     errors.value = {};
-    const payload = buildPayload();
+    const record = editing.value;
 
     const options = {
         onSuccess: () => {
             toast.success(
-                editingId.value === null
-                    ? t(copy.value.created)
-                    : t(copy.value.updated),
+                record === null ? t(copy.value.created) : t(copy.value.updated),
             );
             dialogOpen.value = false;
             void load();
@@ -242,21 +213,21 @@ function submit(): void {
         },
     };
 
-    if (editingId.value === null) {
+    if (record === null) {
         void api.post(controller.store().url, payload, options);
 
         return;
     }
 
-    void api.put(controller.update(editingId.value).url, payload, options);
+    void api.put(controller.update(record.id).url, payload, options);
 }
 
-function remove(row: LogisticsRow): void {
-    if (!confirm(t('¿Eliminar ":name"?', { name: row.name }))) {
+function remove(record: LogisticsRecord): void {
+    if (!confirm(t('¿Eliminar ":name"?', { name: record.name }))) {
         return;
     }
 
-    void api.delete(controller.destroy(row.id).url, {
+    void api.delete(controller.destroy(record.id).url, {
         onSuccess: () => {
             toast.success(t(copy.value.deleted));
             void load();
@@ -267,53 +238,11 @@ function remove(row: LogisticsRow): void {
     });
 }
 
-/**
- * Datos clave de la ficha, según el tipo. Solo se listan los campos que HOY
- * existen en la base: el handoff pedía además municipio, NIT, tarifas,
- * capacidad y vencimientos de póliza, y ninguno tiene columna todavía.
- * TODO(logística): ampliar el esquema de rutas, proveedores y hoteles.
- */
-function factsOf(row: LogisticsRow): { label: string; value: string }[] {
-    const facts: { label: string; value: string }[] = [];
+function descriptionOf(record: LogisticsRecord): string | null {
+    const source = record as unknown as Record<string, unknown>;
+    const value = source.description ?? source.notes;
 
-    const push = (label: string, value: unknown): void => {
-        if (value !== null && value !== undefined && String(value) !== '') {
-            facts.push({ label, value: String(value) });
-        }
-    };
-
-    if (props.kind === 'routes') {
-        push(t('Distancia'), row.distance_km ? `${row.distance_km} km` : null);
-        push(
-            t('Duración'),
-            row.duration_hours ? `${row.duration_hours} h` : null,
-        );
-    }
-
-    if (props.kind === 'providers') {
-        push(t('Servicio'), row.service_type);
-        push(t('Contacto'), row.contact_name);
-        push(t('Teléfono'), row.contact_phone);
-    }
-
-    if (props.kind === 'hotels') {
-        push(t('Teléfono'), row.contact_phone);
-        push(t('Correo'), row.contact_email);
-    }
-
-    return facts;
-}
-
-function subtitleOf(row: LogisticsRow): string | null {
-    const value = row.address ?? row.service_type ?? null;
-
-    return value === null || value === '' ? null : String(value);
-}
-
-function descriptionOf(row: LogisticsRow): string | null {
-    const value = row.description ?? row.notes ?? null;
-
-    return value === null || value === '' ? null : String(value);
+    return typeof value === 'string' && value !== '' ? value : null;
 }
 
 defineExpose({ openCreate });
@@ -327,7 +256,7 @@ onMounted(load);
             <div
                 v-for="n in 3"
                 :key="n"
-                class="h-40 animate-pulse rounded-2xl bg-muted"
+                class="h-52 animate-pulse rounded-2xl bg-muted"
             />
         </div>
 
@@ -345,12 +274,12 @@ onMounted(load);
 
         <!--
           Fichas en rejilla, no filas: cada una tiene que decir algo operativo
-          —distancia, servicio, contacto— y no solo el nombre.
+          —distancia, NIT, tarifa, vencimiento— y no solo el nombre.
         -->
         <div v-else class="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             <article
-                v-for="row in rows"
-                :key="row.id"
+                v-for="record in records"
+                :key="record.id"
                 class="flex flex-col rounded-2xl border border-border bg-card p-4"
             >
                 <div class="flex items-start gap-3">
@@ -361,22 +290,26 @@ onMounted(load);
                     </span>
                     <div class="min-w-0 flex-1">
                         <h3 class="truncate text-[15px] font-semibold">
-                            {{ row.name }}
+                            {{ record.name }}
                         </h3>
                         <p
-                            v-if="subtitleOf(row)"
+                            v-if="localityOf(record)"
                             class="truncate text-xs text-muted-foreground"
                         >
-                            {{ subtitleOf(row) }}
+                            {{ localityOf(record) }}
                         </p>
                     </div>
                     <ActionMenu
                         variant="ghost"
-                        :label="$t('Acciones de :name', { name: row.name })"
+                        :label="$t('Acciones de :name', { name: record.name })"
                     >
+                        <DropdownMenuItem @select="openEdit(record)">
+                            <Pencil class="size-4" />
+                            {{ $t('Editar ficha') }}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             variant="destructive"
-                            @select="remove(row)"
+                            @select="remove(record)"
                         >
                             <Trash2 class="size-4" />
                             {{ $t('Eliminar') }}
@@ -385,18 +318,18 @@ onMounted(load);
                 </div>
 
                 <p
-                    v-if="descriptionOf(row)"
+                    v-if="descriptionOf(record)"
                     class="mt-3 line-clamp-2 text-[13px] text-muted-foreground"
                 >
-                    {{ descriptionOf(row) }}
+                    {{ descriptionOf(record) }}
                 </p>
 
                 <dl
-                    v-if="factsOf(row).length > 0"
-                    class="mt-3 space-y-1.5 text-[13px]"
+                    v-if="factsFor(props.kind, record).length > 0"
+                    class="mt-3 mb-4 space-y-1.5 text-[13px]"
                 >
                     <div
-                        v-for="fact in factsOf(row)"
+                        v-for="fact in factsFor(props.kind, record)"
                         :key="fact.label"
                         class="flex items-baseline justify-between gap-3"
                     >
@@ -408,17 +341,22 @@ onMounted(load);
                 </dl>
 
                 <div
-                    class="mt-4 flex items-center justify-between gap-2 border-t border-brand-line-2 pt-3"
+                    class="mt-auto flex items-center justify-between gap-2 border-t border-brand-line-2 pt-3.5"
                 >
                     <MonoLabel>
                         {{
                             $tc(
                                 'Usada en :count salida|Usada en :count salidas',
-                                row.tour_dates_count,
+                                record.tour_dates_count,
                             )
                         }}
                     </MonoLabel>
-                    <Button size="sm" variant="outline" @click="openEdit(row)">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        @click="openEdit(record)"
+                    >
+                        <Pencil class="size-4" />
                         {{ $t('Editar') }}
                     </Button>
                 </div>
@@ -432,96 +370,68 @@ onMounted(load);
             >
                 <Plus class="size-5 text-muted-foreground" />
                 <span class="text-sm font-medium">{{ newLabel }}</span>
-                <span
-                    v-if="rows.length === 0"
-                    class="max-w-[32ch] text-xs text-muted-foreground"
-                >
-                    {{ emptyLabel }}.
+                <span class="max-w-[34ch] text-xs text-muted-foreground">
+                    <template v-if="records.length === 0">
+                        {{ emptyLabel }}.
+                    </template>
                     {{
-                        $t('Crea el primero para reutilizarlo en tus salidas.')
+                        $t(
+                            'Guarda la ficha completa una vez y reutilízala en cada salida.',
+                        )
                     }}
                 </span>
             </button>
         </div>
 
-        <Dialog v-model:open="dialogOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{ editingId === null ? newLabel : $t(copy.edit) }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {{ $t('Los campos marcados con * son obligatorios.') }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form
-                    class="grid gap-4 sm:grid-cols-2"
-                    @submit.prevent="submit"
+        <!--
+          Paginación: los catálogos crecen sin techo y la rejilla solo trae 12
+          fichas por página. Sin esto, la ficha 13 no existía para el usuario.
+        -->
+        <div
+            v-if="meta && meta.last_page > 1"
+            class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-[13px]"
+        >
+            <span class="text-muted-foreground">
+                {{
+                    $t('Mostrando :from–:to de :total fichas', {
+                        from: meta.from ?? 0,
+                        to: meta.to ?? 0,
+                        total: meta.total,
+                    })
+                }}
+            </span>
+            <div class="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="meta.current_page <= 1"
+                    @click="goToPage(meta.current_page - 1)"
                 >
-                    <p
-                        v-if="errors._global"
-                        class="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive sm:col-span-2"
-                    >
-                        {{ errors._global }}
-                    </p>
+                    <ChevronLeft class="size-4" />
+                    {{ $t('Anterior') }}
+                </Button>
+                <span class="tabular-nums">
+                    {{ meta.current_page }} / {{ meta.last_page }}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="meta.current_page >= meta.last_page"
+                    @click="goToPage(meta.current_page + 1)"
+                >
+                    {{ $t('Siguiente') }}
+                    <ChevronRight class="size-4" />
+                </Button>
+            </div>
+        </div>
 
-                    <div
-                        v-for="field in fields"
-                        :key="field.key"
-                        class="space-y-1.5"
-                        :class="
-                            field.type === 'textarea' || field.fullWidth
-                                ? 'sm:col-span-2'
-                                : ''
-                        "
-                    >
-                        <Label :for="`field-${kind}-${field.key}`">
-                            {{ field.label }}{{ field.required ? ' *' : '' }}
-                        </Label>
-                        <Textarea
-                            v-if="field.type === 'textarea'"
-                            :id="`field-${kind}-${field.key}`"
-                            v-model="form[field.key]"
-                            rows="3"
-                            :placeholder="field.placeholder"
-                        />
-                        <Input
-                            v-else
-                            :id="`field-${kind}-${field.key}`"
-                            v-model="form[field.key]"
-                            :type="field.type"
-                            :placeholder="field.placeholder"
-                        />
-                        <p
-                            v-if="errors[field.key]"
-                            class="text-xs text-destructive"
-                        >
-                            {{ errors[field.key] }}
-                        </p>
-                    </div>
-
-                    <DialogFooter class="sm:col-span-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            :disabled="processing"
-                            @click="dialogOpen = false"
-                        >
-                            {{ $t('Cancelar') }}
-                        </Button>
-                        <Button type="submit" :disabled="processing">
-                            <Loader2
-                                v-if="processing"
-                                class="size-4 animate-spin"
-                            />
-                            {{
-                                editingId === null ? $t('Crear') : $t('Guardar')
-                            }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+        <LogisticsRecordDialog
+            v-model:open="dialogOpen"
+            :kind="props.kind"
+            :record="editing"
+            :processing="processing"
+            :errors="errors"
+            @submit="submit"
+        />
     </div>
 </template>

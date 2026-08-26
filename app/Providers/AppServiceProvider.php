@@ -124,5 +124,11 @@ class AppServiceProvider extends ServiceProvider
 
             return $isSuperAdmin ? true : null;
         });
+
+        // El buscador de direcciones lo usan dos formularios distintos —el
+        // editor de ruta del tour y las fichas de logística— y el middleware
+        // `can:` solo acepta una habilidad. Sin esto, quien administra
+        // logística pero no toca tours recibía un 403 al escribir la dirección.
+        Gate::define('use-geocoder', static fn (User $user): bool => $user->can('tours.update') || $user->can('logistics.manage'));
     }
 }

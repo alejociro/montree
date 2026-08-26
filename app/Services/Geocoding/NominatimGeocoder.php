@@ -42,7 +42,7 @@ final class NominatimGeocoder
 
         /** @var Collection<int, GeocodedPlace> */
         return Cache::remember(
-            'geocode:'.md5(mb_strtolower($term).'|'.app()->getLocale()),
+            'geocode:v2:'.md5(mb_strtolower($term).'|'.app()->getLocale()),
             $ttl,
             fn (): Collection => $this->fetch($term),
         );
@@ -56,7 +56,7 @@ final class NominatimGeocoder
         $parameters = [
             'q' => $term,
             'format' => 'jsonv2',
-            'addressdetails' => 0,
+            'addressdetails' => 1,
             'limit' => self::MAX_RESULTS,
             'accept-language' => app()->getLocale(),
         ];
