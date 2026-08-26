@@ -650,7 +650,9 @@ const manifestSource = computed(
                         v-if="coverImage"
                         class="overflow-hidden rounded-xl"
                         :class="
-                            featureCover ? 'col-span-2 md:row-span-2' : undefined
+                            featureCover
+                                ? 'col-span-2 md:row-span-2'
+                                : undefined
                         "
                     >
                         <img

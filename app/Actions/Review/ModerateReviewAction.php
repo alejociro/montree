@@ -40,6 +40,28 @@ final class ModerateReviewAction
         });
     }
 
+    /**
+     * Devuelve una reseña ya moderada a la bandeja de pendientes.
+     *
+     * WHY: aprobar y rechazar eran caminos de una sola vía, así que un clic
+     * equivocado dejaba una reseña publicada —o escondida— para siempre. Al
+     * volver a revisión se limpia el motivo de rechazo y se recalcula la nota
+     * del tour: mientras esté pendiente no cuenta para el promedio público.
+     */
+    public function reopen(Review $review): Review
+    {
+        return DB::transaction(function () use ($review) {
+            $review->update([
+                'status' => ReviewStatus::Pending,
+                'approved_at' => null,
+                'rejection_reason' => null,
+            ]);
+            $this->recalculateTourRating($review->tour_id);
+
+            return $review->fresh();
+        });
+    }
+
     private function recalculateTourRating(int $tourId): void
     {
         $stats = DB::table('reviews')

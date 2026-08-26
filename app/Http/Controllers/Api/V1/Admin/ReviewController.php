@@ -37,8 +37,11 @@ final class ReviewController extends Controller
 
     public function updateStatus(ModerateReviewRequest $request, Review $review): ReviewResource
     {
-        $action = $request->validated('status') === 'approved' ? 'approve' : 'reject';
-        $updated = $this->moderate->{$action}($review, $request->user(), $request->validated('rejection_reason'));
+        $updated = match ($request->validated('status')) {
+            'approved' => $this->moderate->approve($review, $request->user()),
+            'pending' => $this->moderate->reopen($review),
+            default => $this->moderate->reject($review, $request->user(), $request->validated('rejection_reason')),
+        };
 
         return new ReviewResource($updated);
     }

@@ -170,6 +170,8 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
 
     Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware('can:newsletter.view')->name('newsletter.subscribers');
     Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('can:newsletter.send')->name('newsletter.send');
+    Route::post('newsletter/send-test', [AdminNewsletterController::class, 'sendTest'])->middleware('can:newsletter.send')->name('newsletter.send-test');
+    Route::patch('newsletter/subscribers/{subscriber}/unsubscribe', [AdminNewsletterController::class, 'unsubscribeSubscriber'])->middleware('can:newsletter.send')->name('newsletter.subscribers.unsubscribe');
 
     Route::get('users', [AdminTeamController::class, 'index'])->middleware('can:team.view')->name('users.index');
     Route::post('users', [AdminTeamController::class, 'store'])->middleware('can:team.invite')->name('users.store');

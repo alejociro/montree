@@ -22,6 +22,7 @@ import {
     reactivate,
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -72,7 +73,8 @@ const canInvite = computed(() => can('team.invite'));
 const canUpdateRoles = computed(() => can('team.role.update'));
 const canSuspend = computed(() => can('team.suspend'));
 
-const PER_PAGE = 15;
+// 10 filas por página: el pedido es paginar a partir del undécimo miembro.
+const PER_PAGE = 10;
 const ALL = 'all';
 
 const members = ref<TeamMember[]>([]);
@@ -286,8 +288,23 @@ const inviteName = ref('');
 const inviteRole = ref<string>('guide');
 const sending = ref(false);
 
+/**
+ * WHY: los errores del formulario de invitación salían como toast en la
+ * esquina —desaparecían solos y no decían a qué campo pertenecían—. Ahora
+ * viven debajo del campo, como en el resto de los formularios, y se limpian en
+ * cuanto se corrige lo que fallaba.
+ */
+const inviteErrors = ref<Record<string, string | undefined>>({});
+
+function clearInviteError(field: string): void {
+    if (inviteErrors.value[field] !== undefined) {
+        inviteErrors.value = { ...inviteErrors.value, [field]: undefined };
+    }
+}
+
 function invite(): void {
     sending.value = true;
+    inviteErrors.value = {};
     void api.post(
         storeUser().url,
         {
@@ -300,10 +317,18 @@ function invite(): void {
                 toast.success(t('Invitación enviada'));
                 inviteEmail.value = '';
                 inviteName.value = '';
+                inviteErrors.value = {};
                 void load();
             },
-            onError: (errors) =>
-                toast.error(Object.values(errors)[0] ?? 'Error'),
+            onError: (errors) => {
+                inviteErrors.value = errors;
+
+                // `_global` no cuelga de ningún campo (plan agotado, permiso):
+                // ese sí necesita el toast para verse.
+                if (errors._global !== undefined) {
+                    toast.error(errors._global);
+                }
+            },
             onFinish: () => {
                 sending.value = false;
             },
@@ -534,7 +559,12 @@ onMounted(() => {
                             v-model="inviteEmail"
                             type="email"
                             autocomplete="email"
+                            :aria-invalid="
+                                inviteErrors.email !== undefined || undefined
+                            "
+                            @update:model-value="clearInviteError('email')"
                         />
+                        <InputError :message="inviteErrors.email" />
                     </div>
                     <div class="space-y-1.5">
                         <Label for="invite-name">{{ $t('Nombre') }}</Label>
@@ -542,7 +572,12 @@ onMounted(() => {
                             id="invite-name"
                             v-model="inviteName"
                             autocomplete="name"
+                            :aria-invalid="
+                                inviteErrors.name !== undefined || undefined
+                            "
+                            @update:model-value="clearInviteError('name')"
                         />
+                        <InputError :message="inviteErrors.name" />
                     </div>
                     <div class="space-y-1.5">
                         <Label for="invite-role">{{ $t('Rol') }}</Label>
@@ -563,6 +598,7 @@ onMounted(() => {
                                 {{ option.label }}
                             </option>
                         </select>
+                        <InputError :message="inviteErrors.role" />
                     </div>
                 </div>
                 <Button :disabled="sending || !inviteEmail" @click="invite">

@@ -58,7 +58,7 @@ const nextDeparture = computed<string>(() => {
 
 <template>
     <article
-        class="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card transition hover:border-primary/40 hover:shadow-[0_12px_34px_-26px_rgba(20,48,31,0.55)] focus-within:ring-2 focus-within:ring-ring/60"
+        class="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card transition focus-within:ring-2 focus-within:ring-ring/60 hover:border-primary/40 hover:shadow-[0_12px_34px_-26px_rgba(20,48,31,0.55)]"
     >
         <div class="relative block">
             <div class="aspect-[16/9] overflow-hidden bg-muted">
@@ -91,7 +91,7 @@ const nextDeparture = computed<string>(() => {
                     -->
                     <Link
                         :href="showUrl"
-                        class="after:absolute after:inset-0 after:content-[''] group-hover:underline focus-visible:outline-none"
+                        class="group-hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
                     >
                         {{ props.tour.name }}
                     </Link>
