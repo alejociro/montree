@@ -74,7 +74,7 @@ onUnmounted(() => clearTwoFactorAuthData());
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="current_password">{{
                     $t('Contraseña actual')
                 }}</Label>
@@ -88,7 +88,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                 <InputError :message="errors.current_password" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password">{{ $t('Contraseña nueva') }}</Label>
                 <PasswordInput
                     id="password"
@@ -101,7 +101,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                 <InputError :message="errors.password" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password_confirmation">{{
                     $t('Confirmar contraseña')
                 }}</Label>

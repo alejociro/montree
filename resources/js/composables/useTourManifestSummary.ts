@@ -2,12 +2,15 @@ import type { Ref } from 'vue';
 import { ref } from 'vue';
 import { index as adminManifest } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourPassengerController';
 import type {
+    Passenger,
     PassengerManifestResponse,
     PassengerManifestSummary,
 } from '@/types/passenger';
 
 export type UseTourManifestSummaryReturn = {
     summary: Ref<PassengerManifestSummary | null>;
+    /** Primeras filas de la planilla: alimentan el avance de la pestaña. */
+    preview: Ref<Passenger[]>;
     loading: Ref<boolean>;
     load: () => Promise<void>;
 };
@@ -26,6 +29,7 @@ export function useTourManifestSummary(
     tourId: number,
 ): UseTourManifestSummaryReturn {
     const summary = ref<PassengerManifestSummary | null>(null);
+    const preview = ref<Passenger[]>([]);
     const loading = ref(false);
 
     async function load(): Promise<void> {
@@ -50,14 +54,16 @@ export function useTourManifestSummary(
             const payload =
                 (await response.json()) as PassengerManifestResponse;
             summary.value = payload.meta.summary;
+            preview.value = payload.data;
         } catch {
             // Sin resumen no se dibuja el bloque: un cero inventado se leería
             // como «este tour no tiene pasajeros».
             summary.value = null;
+            preview.value = [];
         } finally {
             loading.value = false;
         }
     }
 
-    return { summary, loading, load };
+    return { summary, preview, loading, load };
 }

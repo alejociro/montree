@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingControlle
 use App\Http\Controllers\Api\V1\Admin\BookingPaymentController as AdminBookingPaymentController;
 use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\GeocodeController as AdminGeocodeController;
 use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideAvailabilityController;
 use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerContr
 use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
+use App\Http\Controllers\Api\V1\Admin\RestoreTourDateController as AdminRestoreTourDateController;
 use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
@@ -130,8 +132,12 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
     Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
     Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
+    Route::patch('tour-dates/{tourDate}/restore', AdminRestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
     Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
     Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
+    // Buscador de direcciones: lo comparten el editor de ruta del tour y las
+    // fichas de logística, de ahí el gate en vez de un permiso suelto.
+    Route::get('geocode', AdminGeocodeController::class)->middleware(['can:use-geocoder', 'throttle:30,1'])->name('geocode');
     Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
 
     Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')
@@ -165,6 +171,8 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
 
     Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware('can:newsletter.view')->name('newsletter.subscribers');
     Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('can:newsletter.send')->name('newsletter.send');
+    Route::post('newsletter/send-test', [AdminNewsletterController::class, 'sendTest'])->middleware('can:newsletter.send')->name('newsletter.send-test');
+    Route::patch('newsletter/subscribers/{subscriber}/unsubscribe', [AdminNewsletterController::class, 'unsubscribeSubscriber'])->middleware('can:newsletter.send')->name('newsletter.subscribers.unsubscribe');
 
     Route::get('users', [AdminTeamController::class, 'index'])->middleware('can:team.view')->name('users.index');
     Route::post('users', [AdminTeamController::class, 'store'])->middleware('can:team.invite')->name('users.store');

@@ -2,15 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import {
     Ban,
-    Building2,
     CalendarClock,
+    CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Eye,
     Loader2,
-    MapPin,
     Pencil,
-    Truck,
-    UserRound,
 } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
@@ -19,13 +17,20 @@ import { show as tourShowPage } from '@/actions/App/Http/Controllers/Admin/TourP
 import CancelTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/CancelTourDateController';
 import { index as hotelsIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/HotelController';
 import { index as providersIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/ProviderController';
+import RestoreTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/RestoreTourDateController';
 import { index as routesIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/RouteController';
 import { index as teamIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
 import { index as adminToursIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import TourDateIndexController from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateIndexController';
+import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
+import KpiCard from '@/components/atoms/KpiCard.vue';
+import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import Heading from '@/components/Heading.vue';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
+import type { CountTab } from '@/components/molecules/CountTabs.vue';
+import FilterBar from '@/components/molecules/FilterBar.vue';
+import DepartureDetailSheet from '@/components/organisms/DepartureDetailSheet.vue';
 import TourDateFormDialog from '@/components/organisms/TourDateFormDialog.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -35,7 +40,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -48,11 +53,19 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatCurrency, formatTourDate } from '@/lib/format';
+import {
+    formatCurrency,
+    formatDayDistance,
+    formatDayMonth,
+    formatNumber,
+    formatWeekdayTime,
+} from '@/lib/format';
 import type {
+    DepartureBoardStats,
+    DepartureBoardTotals,
+    DepartureScopeId,
     LogisticsRef,
     PaginationMeta,
-    TourDateDisplayStatus,
     TourDateGlobalAdmin,
     TourDatesGlobalResponse,
 } from '@/types/logistics';
@@ -62,21 +75,24 @@ const { t } = useTranslations();
 
 const api = useApi();
 
-const PER_PAGE = 15;
-const ALL = 'all';
+// 10 filas por página: el pedido es paginar a partir del undécimo registro.
+const PER_PAGE = 10;
+const ALL_TOURS = 'all';
 
 const dates = ref<TourDateGlobalAdmin[]>([]);
 const meta = ref<PaginationMeta | null>(null);
+const stats = ref<DepartureBoardStats | null>(null);
+const counts = ref<Partial<Record<DepartureScopeId, number>>>({});
+const totals = ref<DepartureBoardTotals | null>(null);
 const currentPage = ref(1);
 const loading = ref(true);
 const loadError = ref(false);
 
 const filters = reactive({
-    status: ALL as TourDateDisplayStatus | typeof ALL,
-    tourId: ALL as string,
-    from: '',
-    to: '',
-    direction: 'desc' as 'asc' | 'desc',
+    scope: 'upcoming' as DepartureScopeId,
+    search: '',
+    tourId: ALL_TOURS as string,
+    direction: 'asc' as 'asc' | 'desc',
 });
 
 type TourOption = { id: number; name: string };
@@ -91,10 +107,14 @@ const hotels = ref<LogisticsRef[]>([]);
 const dialogOpen = ref(false);
 const editing = ref<TourDateGlobalAdmin | null>(null);
 
+const detailOpen = ref(false);
+const detail = ref<TourDateGlobalAdmin | null>(null);
+
 const cancelOpen = ref(false);
 const cancelTarget = ref<TourDateGlobalAdmin | null>(null);
 const cancelReason = ref('');
 const cancelling = ref(false);
+const restoringId = ref<number | null>(null);
 
 async function fetchJson<T>(url: string): Promise<T> {
     const response = await fetch(url, {
@@ -113,10 +133,9 @@ type ListQuery = {
     page: number;
     per_page: number;
     direction: 'asc' | 'desc';
-    status?: TourDateDisplayStatus;
+    scope: DepartureScopeId;
+    search?: string;
     tour_id?: number;
-    from?: string;
-    to?: string;
 };
 
 function buildQuery(): ListQuery {
@@ -124,22 +143,15 @@ function buildQuery(): ListQuery {
         page: currentPage.value,
         per_page: PER_PAGE,
         direction: filters.direction,
+        scope: filters.scope,
     };
 
-    if (filters.status !== ALL) {
-        query.status = filters.status;
+    if (filters.search.trim() !== '') {
+        query.search = filters.search.trim();
     }
 
-    if (filters.tourId !== ALL) {
+    if (filters.tourId !== ALL_TOURS) {
         query.tour_id = Number(filters.tourId);
-    }
-
-    if (filters.from !== '') {
-        query.from = filters.from;
-    }
-
-    if (filters.to !== '') {
-        query.to = filters.to;
     }
 
     return query;
@@ -155,6 +167,9 @@ async function loadDates(): Promise<void> {
         );
         dates.value = response.data;
         meta.value = response.meta;
+        stats.value = response.stats;
+        counts.value = response.counts;
+        totals.value = response.totals;
     } catch {
         loadError.value = true;
     } finally {
@@ -214,44 +229,63 @@ async function loadOptions(): Promise<void> {
     }
 }
 
-const statusOptions: { value: TourDateDisplayStatus; label: string }[] = [
-    { value: 'open', label: t('Abierta') },
-    { value: 'full', label: t('Llena') },
-    { value: 'closed', label: t('Cerrada') },
-    { value: 'in_progress', label: t('En curso') },
-    { value: 'finished', label: t('Finalizada') },
-    { value: 'cancelled', label: t('Cancelada') },
+const SCOPES: { id: DepartureScopeId; label: string }[] = [
+    { id: 'upcoming', label: t('Próximas') },
+    { id: 'today', label: t('Hoy') },
+    { id: 'past', label: t('Realizadas') },
+    { id: 'disabled', label: t('Inhabilitadas') },
+    { id: 'all', label: t('Todas') },
 ];
 
-const statusMeta: Record<
-    TourDateDisplayStatus,
-    { label: string; classes: string }
-> = {
-    open: {
-        label: t('Abierta'),
-        classes: 'border-transparent bg-secondary text-primary',
-    },
-    full: {
-        label: t('Llena'),
-        classes: 'border-transparent bg-accent text-accent-foreground',
-    },
-    closed: {
-        label: t('Cerrada'),
-        classes: 'border-transparent bg-muted text-foreground',
-    },
-    in_progress: {
-        label: t('En curso'),
-        classes: 'border-transparent bg-primary text-primary-foreground',
-    },
-    finished: {
-        label: t('Finalizada'),
-        classes: 'border-transparent bg-muted text-muted-foreground',
-    },
-    cancelled: {
-        label: t('Cancelada'),
-        classes: 'border-transparent bg-destructive/10 text-destructive',
-    },
-};
+const scopeTabs = computed<CountTab[]>(() =>
+    SCOPES.map((scope) => ({
+        id: scope.id,
+        label: scope.label,
+        count: counts.value[scope.id] ?? null,
+    })),
+);
+
+const resultLabel = computed<string | null>(() => {
+    if (meta.value === null) {
+        return null;
+    }
+
+    const total = counts.value.all ?? meta.value.total;
+
+    return t(':shown de :total', {
+        shown: formatNumber(meta.value.total),
+        total: formatNumber(total),
+    });
+});
+
+function durationLabel(date: TourDateGlobalAdmin): string {
+    if (date.ends_at === null) {
+        return '';
+    }
+
+    const start = new Date(date.starts_at);
+    const end = new Date(date.ends_at);
+    const days =
+        Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) +
+        1;
+
+    return days > 1 ? t(':count días', { count: days }) : t('1 día');
+}
+
+function subtitleFor(date: TourDateGlobalAdmin): string {
+    const parts = [date.code];
+    const duration = durationLabel(date);
+
+    if (duration !== '') {
+        parts.push(duration);
+    }
+
+    if (isDisabled(date)) {
+        parts.push(t('inhabilitada'));
+    }
+
+    return parts.join(' · ');
+}
 
 function priceLabel(date: TourDateGlobalAdmin): string {
     return formatCurrency(date.effective_price, date.tour.currency);
@@ -265,56 +299,44 @@ function occupancyPercent(date: TourDateGlobalAdmin): number {
     return Math.min(100, Math.round((date.booked_count / date.capacity) * 100));
 }
 
+/**
+ * La barra sigue al sistema de diseño: tinta cuando ya no queda cupo, línea
+ * cuando no se ha vendido nada, y el color de la agencia en el medio.
+ */
 function occupancyBarClass(date: TourDateGlobalAdmin): string {
     const percent = occupancyPercent(date);
 
     if (percent >= 100) {
-        return 'bg-destructive';
+        return 'bg-brand-ink';
     }
 
-    if (percent >= 80) {
-        return 'bg-accent';
-    }
-
-    return 'bg-primary';
+    return percent === 0 ? 'bg-border' : 'bg-primary';
 }
 
+function isDisabled(date: TourDateGlobalAdmin): boolean {
+    return date.display_status === 'cancelled';
+}
+
+/** Una salida ya realizada no se edita ni se inhabilita: solo se consulta. */
 function canManage(date: TourDateGlobalAdmin): boolean {
-    return (
-        date.display_status !== 'cancelled' &&
-        date.display_status !== 'finished'
-    );
-}
-
-function conditionsFor(date: TourDateGlobalAdmin): string[] {
-    const items: string[] = [];
-
-    if (date.route) {
-        items.push(date.route.name);
-    }
-
-    if (date.provider) {
-        items.push(date.provider.name);
-    }
-
-    if (date.hotels.length > 0) {
-        items.push(...date.hotels.map((hotel) => hotel.name));
-    }
-
-    return items;
+    return date.display_status !== 'finished';
 }
 
 const hasActiveFilters = computed(
     () =>
-        filters.status !== ALL ||
-        filters.tourId !== ALL ||
-        filters.from !== '' ||
-        filters.to !== '',
+        filters.search.trim() !== '' ||
+        filters.tourId !== ALL_TOURS ||
+        filters.scope !== 'upcoming',
 );
 
 function openEdit(date: TourDateGlobalAdmin): void {
     editing.value = date;
     dialogOpen.value = true;
+}
+
+function openDetail(date: TourDateGlobalAdmin): void {
+    detail.value = date;
+    detailOpen.value = true;
 }
 
 function onSaved(): void {
@@ -339,17 +361,44 @@ function confirmCancel(): void {
         { reason: cancelReason.value.trim() || null },
         {
             onSuccess: () => {
-                toast.success(t('Salida cancelada.'));
+                toast.success(t('Salida inhabilitada.'));
                 cancelOpen.value = false;
                 void loadDates();
             },
             onError: (errors) => {
                 toast.error(
-                    errors._global ?? t('No se pudo cancelar la salida.'),
+                    errors._global ?? t('No se pudo inhabilitar la salida.'),
                 );
             },
             onFinish: () => {
                 cancelling.value = false;
+            },
+        },
+    );
+}
+
+function restore(date: TourDateGlobalAdmin): void {
+    if (restoringId.value !== null) {
+        return;
+    }
+
+    restoringId.value = date.id;
+
+    void api.patch(
+        RestoreTourDateController(date.id).url,
+        {},
+        {
+            onSuccess: () => {
+                toast.success(t('Salida habilitada.'));
+                void loadDates();
+            },
+            onError: (errors) => {
+                toast.error(
+                    errors._global ?? t('No se pudo habilitar la salida.'),
+                );
+            },
+            onFinish: () => {
+                restoringId.value = null;
             },
         },
     );
@@ -365,39 +414,44 @@ function goToPage(page: number): void {
 }
 
 function resetFilters(): void {
-    filters.status = ALL;
-    filters.tourId = ALL;
-    filters.from = '';
-    filters.to = '';
-    filters.direction = 'desc';
-}
-
-function handleStatusChange(value: AcceptableValue): void {
-    if (typeof value !== 'string') {
-        return;
-    }
-
-    filters.status = value as TourDateDisplayStatus | typeof ALL;
+    filters.scope = 'upcoming';
+    filters.search = '';
+    filters.tourId = ALL_TOURS;
+    filters.direction = 'asc';
 }
 
 function handleTourChange(value: AcceptableValue): void {
-    if (typeof value !== 'string') {
-        return;
+    if (typeof value === 'string') {
+        filters.tourId = value;
     }
-
-    filters.tourId = value;
 }
 
 function handleDirectionChange(value: AcceptableValue): void {
-    if (typeof value !== 'string') {
-        return;
+    if (typeof value === 'string') {
+        filters.direction = value === 'desc' ? 'desc' : 'asc';
     }
-
-    filters.direction = value === 'asc' ? 'asc' : 'desc';
 }
 
+// El buscador espera a que la persona deje de escribir; el resto de filtros
+// dispara de inmediato.
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+
 watch(
-    () => ({ ...filters }),
+    () => filters.search,
+    () => {
+        if (searchDebounce) {
+            clearTimeout(searchDebounce);
+        }
+
+        searchDebounce = setTimeout(() => {
+            currentPage.value = 1;
+            void loadDates();
+        }, 300);
+    },
+);
+
+watch(
+    () => [filters.scope, filters.tourId, filters.direction],
     () => {
         currentPage.value = 1;
         void loadDates();
@@ -420,55 +474,73 @@ onMounted(() => {
                 :title="$t('Salidas')"
                 :description="
                     $t(
-                        'Todas las salidas programadas de tus tours, con su ocupación y estado.',
+                        'Cada salida es una fecha real con su cupo, su precio y su guía.',
                     )
                 "
             />
 
-            <div class="mt-6 rounded-2xl border border-border bg-card">
-                <!-- Filters -->
-                <div
-                    class="flex flex-wrap items-end gap-3 border-b border-border p-4"
-                >
-                    <div class="space-y-1.5">
-                        <Label for="filter-status">{{ $t('Estado') }}</Label>
-                        <Select
-                            :model-value="filters.status"
-                            @update:model-value="handleStatusChange"
-                        >
-                            <SelectTrigger id="filter-status" class="w-[160px]">
-                                <SelectValue :placeholder="$t('Todos')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem :value="ALL">
-                                        {{ $t('Todos los estados') }}
-                                    </SelectItem>
-                                    <SelectItem
-                                        v-for="option in statusOptions"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
+            <div class="mt-5 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+                <KpiCard
+                    :label="$t('Salidas activas')"
+                    :value="formatNumber(stats?.active ?? 0)"
+                    :detail="$t('próximas y habilitadas')"
+                    :loading="stats === null"
+                />
+                <KpiCard
+                    :label="$t('Cupos por vender')"
+                    :value="formatNumber(stats?.seats_left ?? 0)"
+                    :detail="$t('en salidas futuras')"
+                    :loading="stats === null"
+                />
+                <KpiCard
+                    :label="$t('Viajeros confirmados')"
+                    :value="formatNumber(stats?.travellers ?? 0)"
+                    :detail="$t('con reserva activa')"
+                    :loading="stats === null"
+                />
+                <KpiCard
+                    :label="$t('Sin guía asignado')"
+                    :value="formatNumber(stats?.without_guide ?? 0)"
+                    :detail="$t('requieren asignación')"
+                    :alert="(stats?.without_guide ?? 0) > 0"
+                    :loading="stats === null"
+                />
+            </div>
 
-                    <div class="space-y-1.5">
-                        <Label for="filter-tour">{{ $t('Tour') }}</Label>
+            <FilterBar
+                class="mt-5"
+                search-id="departures-search"
+                :search="filters.search"
+                :placeholder="$t('Buscar salida por tour, código o guía')"
+                :result-label="resultLabel"
+                :tabs="scopeTabs"
+                :active-tab="filters.scope"
+                :tabs-label="$t('Bandejas de salidas')"
+                @update:search="filters.search = $event"
+                @update:active-tab="filters.scope = $event as DepartureScopeId"
+            >
+                <template #selects>
+                    <div class="flex items-center gap-2">
+                        <Label
+                            for="filter-tour"
+                            class="text-[10.5px] font-semibold tracking-[0.09em] text-muted-foreground uppercase"
+                        >
+                            {{ $t('Tour') }}
+                        </Label>
                         <Select
                             :model-value="filters.tourId"
                             @update:model-value="handleTourChange"
                         >
-                            <SelectTrigger id="filter-tour" class="w-[200px]">
+                            <SelectTrigger
+                                id="filter-tour"
+                                class="w-[190px] rounded-full"
+                            >
                                 <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem :value="ALL">
-                                        {{ $t('Todos los tours') }}
+                                    <SelectItem :value="ALL_TOURS">
+                                        {{ $t('Todos') }}
                                     </SelectItem>
                                     <SelectItem
                                         v-for="tour in tourOptions"
@@ -482,63 +554,39 @@ onMounted(() => {
                         </Select>
                     </div>
 
-                    <div class="space-y-1.5">
-                        <Label for="filter-from">{{ $t('Desde') }}</Label>
-                        <Input
-                            id="filter-from"
-                            v-model="filters.from"
-                            type="date"
-                            class="w-[160px]"
-                        />
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="filter-to">{{ $t('Hasta') }}</Label>
-                        <Input
-                            id="filter-to"
-                            v-model="filters.to"
-                            type="date"
-                            class="w-[160px]"
-                        />
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="filter-direction">{{ $t('Orden') }}</Label>
+                    <div class="flex items-center gap-2">
+                        <Label
+                            for="filter-direction"
+                            class="text-[10.5px] font-semibold tracking-[0.09em] text-muted-foreground uppercase"
+                        >
+                            {{ $t('Orden') }}
+                        </Label>
                         <Select
                             :model-value="filters.direction"
                             @update:model-value="handleDirectionChange"
                         >
                             <SelectTrigger
                                 id="filter-direction"
-                                class="w-[160px]"
+                                class="w-[160px] rounded-full"
                             >
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    <SelectItem value="desc">
-                                        {{ $t('Más recientes') }}
-                                    </SelectItem>
                                     <SelectItem value="asc">
-                                        {{ $t('Más antiguas') }}
+                                        {{ $t('Más próxima') }}
+                                    </SelectItem>
+                                    <SelectItem value="desc">
+                                        {{ $t('Más lejana') }}
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
+                </template>
+            </FilterBar>
 
-                    <Button
-                        v-if="hasActiveFilters"
-                        variant="ghost"
-                        size="sm"
-                        class="ml-auto"
-                        @click="resetFilters"
-                    >
-                        {{ $t('Limpiar filtros') }}
-                    </Button>
-                </div>
-
-                <!-- Loading -->
+            <div class="mt-4 rounded-2xl border border-border bg-card">
                 <div v-if="loading" class="space-y-2 p-4">
                     <div
                         v-for="n in 6"
@@ -547,7 +595,6 @@ onMounted(() => {
                     />
                 </div>
 
-                <!-- Error -->
                 <div v-else-if="loadError" class="p-10 text-center">
                     <p class="text-sm text-destructive">
                         {{ $t('No se pudieron cargar las salidas.') }}
@@ -562,17 +609,16 @@ onMounted(() => {
                     </Button>
                 </div>
 
-                <!-- Empty -->
                 <div
                     v-else-if="dates.length === 0"
-                    class="flex flex-col items-center gap-3 p-12 text-center"
+                    class="m-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-input p-12 text-center"
                 >
                     <CalendarClock class="size-8 text-muted-foreground/40" />
                     <div class="space-y-1">
-                        <p class="font-medium text-foreground">
+                        <p class="text-base font-medium text-foreground">
                             {{
                                 hasActiveFilters
-                                    ? $t('Sin salidas para estos filtros')
+                                    ? $t('Sin salidas para este filtro')
                                     : $t('Todavía no hay salidas')
                             }}
                         </p>
@@ -580,10 +626,10 @@ onMounted(() => {
                             {{
                                 hasActiveFilters
                                     ? $t(
-                                          'Prueba ajustar o limpiar los filtros.',
+                                          'Prueba con otra bandeja o limpia el buscador.',
                                       )
                                     : $t(
-                                          'Programa salidas desde el detalle de cada tour.',
+                                          'Programa salidas desde la pestaña Salidas del tour.',
                                       )
                             }}
                         </p>
@@ -598,77 +644,162 @@ onMounted(() => {
                     </Button>
                 </div>
 
-                <!-- Table -->
                 <div v-else class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] text-sm">
+                    <table class="w-full min-w-[880px] text-sm">
                         <thead>
-                            <tr
-                                class="border-b border-border text-left text-xs font-medium text-muted-foreground"
-                            >
-                                <th class="px-4 py-3">{{ $t('Tour') }}</th>
-                                <th class="px-4 py-3">{{ $t('Fecha') }}</th>
-                                <th class="px-4 py-3">{{ $t('Ocupación') }}</th>
-                                <th class="px-4 py-3">{{ $t('Precio') }}</th>
-                                <th class="px-4 py-3">{{ $t('Guía') }}</th>
-                                <th class="px-4 py-3">
-                                    {{ $t('Condiciones') }}
-                                </th>
-                                <th class="px-4 py-3">{{ $t('Estado') }}</th>
-                                <th class="px-4 py-3 text-right">
+                            <tr class="border-b border-border text-left">
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Tour')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Fecha')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Precio')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Guía')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Ocupación')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3 text-right">
                                     {{ $t('Acciones') }}
-                                </th>
+                                </MonoLabel>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
                                 v-for="date in dates"
                                 :key="date.id"
-                                class="border-b border-border align-top last:border-0"
+                                class="border-b border-brand-line-2 align-middle transition last:border-0 hover:bg-primary-soft/50"
+                                :class="isDisabled(date) ? 'opacity-[.62]' : ''"
                             >
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3.5">
                                     <Link
                                         :href="tourShowPage(date.tour.id).url"
-                                        class="font-medium text-foreground underline-offset-4 hover:underline"
+                                        class="text-[14.5px] font-semibold text-foreground underline-offset-4 hover:underline"
                                     >
                                         {{ date.tour.name }}
                                     </Link>
+                                    <MonoLabel class="mt-1">{{
+                                        subtitleFor(date)
+                                    }}</MonoLabel>
                                 </td>
-                                <td
-                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground"
-                                >
-                                    <span class="text-foreground capitalize">
-                                        {{
-                                            formatTourDate(date.starts_at, {
-                                                withWeekday: false,
-                                            })
-                                        }}
+
+                                <td class="px-4 py-3.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <span
+                                            class="grid w-[46px] shrink-0 place-items-center rounded-lg border border-border bg-background py-1"
+                                        >
+                                            <span
+                                                class="text-base leading-none font-semibold tabular-nums"
+                                            >
+                                                {{
+                                                    formatDayMonth(
+                                                        date.starts_at,
+                                                    ).day
+                                                }}
+                                            </span>
+                                            <span
+                                                class="mt-0.5 text-[10px] font-semibold tracking-[0.09em] text-muted-foreground"
+                                            >
+                                                {{
+                                                    formatDayMonth(
+                                                        date.starts_at,
+                                                    ).month
+                                                }}
+                                            </span>
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span
+                                                class="block text-[13px] font-medium text-foreground"
+                                            >
+                                                {{
+                                                    formatWeekdayTime(
+                                                        date.starts_at,
+                                                    )
+                                                }}
+                                            </span>
+                                            <span
+                                                class="block text-xs text-muted-foreground"
+                                            >
+                                                {{
+                                                    formatDayDistance(
+                                                        date.starts_at,
+                                                    )
+                                                }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td class="px-4 py-3.5 whitespace-nowrap">
+                                    <span
+                                        class="block text-[15px] font-bold tabular-nums"
+                                    >
+                                        {{ priceLabel(date) }}
                                     </span>
                                     <span
-                                        v-if="date.ends_at"
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        {{ $t('hasta') }}
-                                        {{
-                                            formatTourDate(date.ends_at, {
-                                                withWeekday: false,
-                                            })
-                                        }}
+                                        {{ $t('por persona') }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3">
+
+                                <td class="px-4 py-3.5">
                                     <div
-                                        class="flex items-center gap-2 whitespace-nowrap"
+                                        v-if="date.guide"
+                                        class="flex items-center gap-2"
+                                    >
+                                        <InitialsAvatar
+                                            :name="date.guide.name"
+                                            size="sm"
+                                        />
+                                        <span class="min-w-0">
+                                            <span
+                                                class="block text-[13px] font-medium text-foreground"
+                                            >
+                                                {{ date.guide.name }}
+                                            </span>
+                                            <span
+                                                class="block text-xs text-muted-foreground"
+                                            >
+                                                {{ $t('asignado') }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center rounded-full bg-brand-drop-50 px-2.5 py-1 text-[11.5px] font-semibold text-brand-drop"
+                                    >
+                                        {{ $t('Sin guía') }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-3.5">
+                                    <div
+                                        class="flex w-[140px] items-baseline justify-between gap-2"
                                     >
                                         <span
-                                            class="text-foreground tabular-nums"
+                                            class="text-[13px] font-semibold tabular-nums"
                                         >
                                             {{ date.booked_count }}/{{
                                                 date.capacity
                                             }}
                                         </span>
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                $t(':count libres', {
+                                                    count: date.available_seats,
+                                                })
+                                            }}
+                                        </span>
                                     </div>
                                     <div
-                                        class="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-muted"
+                                        class="mt-1.5 h-1.5 w-[140px] overflow-hidden rounded-full bg-brand-line-2"
                                     >
                                         <div
                                             class="h-full rounded-full transition-all"
@@ -679,107 +810,92 @@ onMounted(() => {
                                         />
                                     </div>
                                 </td>
-                                <td
-                                    class="px-4 py-3 font-medium whitespace-nowrap text-foreground"
-                                >
-                                    {{ priceLabel(date) }}
-                                </td>
-                                <td class="px-4 py-3 text-muted-foreground">
-                                    <span
-                                        v-if="date.guide"
-                                        class="flex items-center gap-1.5 whitespace-nowrap"
-                                    >
-                                        <UserRound class="size-3.5" />
-                                        {{ date.guide.name }}
-                                    </span>
-                                    <span v-else>—</span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div
-                                        v-if="conditionsFor(date).length > 0"
-                                        class="flex flex-wrap gap-1"
-                                    >
-                                        <Badge
-                                            v-if="date.route"
-                                            variant="secondary"
-                                            class="gap-1 font-normal"
-                                        >
-                                            <MapPin class="size-3" />
-                                            {{ date.route.name }}
-                                        </Badge>
-                                        <Badge
-                                            v-if="date.provider"
-                                            variant="secondary"
-                                            class="gap-1 font-normal"
-                                        >
-                                            <Truck class="size-3" />
-                                            {{ date.provider.name }}
-                                        </Badge>
-                                        <Badge
-                                            v-for="hotel in date.hotels"
-                                            :key="hotel.id"
-                                            variant="secondary"
-                                            class="gap-1 font-normal"
-                                        >
-                                            <Building2 class="size-3" />
-                                            {{ hotel.name }}
-                                        </Badge>
-                                    </div>
-                                    <span v-else class="text-muted-foreground">
-                                        —
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
-                                        :class="
-                                            statusMeta[date.display_status]
-                                                .classes
-                                        "
-                                    >
-                                        {{
-                                            statusMeta[date.display_status]
-                                                .label
-                                        }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div
-                                        v-if="canManage(date)"
-                                        class="flex items-center justify-end gap-1"
-                                    >
-                                        <Button
+
+                                <td class="px-4 py-3.5">
+                                    <div class="flex justify-end">
+                                        <ActionMenu
                                             variant="ghost"
-                                            size="icon"
-                                            :title="$t('Editar')"
-                                            @click="openEdit(date)"
+                                            :label="
+                                                $t('Acciones de :name', {
+                                                    name: date.tour.name,
+                                                })
+                                            "
                                         >
-                                            <Pencil class="size-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            :title="$t('Cancelar salida')"
-                                            @click="openCancel(date)"
-                                        >
-                                            <Ban
-                                                class="size-4 text-accent-foreground"
-                                            />
-                                        </Button>
+                                            <DropdownMenuItem
+                                                @select="openDetail(date)"
+                                            >
+                                                <Eye class="size-4" />
+                                                {{ $t('Ver detalle') }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-if="
+                                                    canManage(date) &&
+                                                    !isDisabled(date)
+                                                "
+                                                @select="openEdit(date)"
+                                            >
+                                                <Pencil class="size-4" />
+                                                {{ $t('Editar salida') }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-if="isDisabled(date)"
+                                                :disabled="
+                                                    restoringId === date.id
+                                                "
+                                                @select="restore(date)"
+                                            >
+                                                <CheckCircle2 class="size-4" />
+                                                {{ $t('Habilitar') }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-else-if="canManage(date)"
+                                                variant="destructive"
+                                                @select="openCancel(date)"
+                                            >
+                                                <Ban class="size-4" />
+                                                {{ $t('Inhabilitar') }}
+                                            </DropdownMenuItem>
+                                        </ActionMenu>
                                     </div>
-                                    <span
-                                        v-else
-                                        class="block text-right text-muted-foreground"
-                                    >
-                                        —
-                                    </span>
                                 </td>
                             </tr>
                         </tbody>
+                        <tfoot v-if="totals">
+                            <tr class="border-t border-border bg-background/60">
+                                <td
+                                    colspan="6"
+                                    class="px-4 py-3 text-xs text-muted-foreground"
+                                >
+                                    <!--
+                                      Tres frases con su propio plural: una sola
+                                      cadena con tres números daba «1 viajeros».
+                                    -->
+                                    {{
+                                        $tc(
+                                            ':count salida|:count salidas',
+                                            totals.departures,
+                                        )
+                                    }}
+                                    ·
+                                    {{
+                                        $tc(
+                                            ':count viajero|:count viajeros',
+                                            totals.travellers,
+                                        )
+                                    }}
+                                    ·
+                                    {{
+                                        $tc(
+                                            ':count cupo libre|:count cupos libres',
+                                            totals.seats_left,
+                                        )
+                                    }}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 <div
                     v-if="!loading && !loadError && meta && meta.total > 0"
                     class="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm text-muted-foreground"
@@ -793,7 +909,10 @@ onMounted(() => {
                             })
                         }}
                     </span>
-                    <div class="flex items-center gap-2">
+                    <div
+                        v-if="meta.last_page > 1"
+                        class="flex items-center gap-2"
+                    >
                         <Button
                             variant="outline"
                             size="sm"
@@ -820,6 +939,17 @@ onMounted(() => {
             </div>
         </div>
 
+        <DepartureDetailSheet
+            v-model:open="detailOpen"
+            :departure="detail"
+            @edit="
+                (value) => {
+                    detailOpen = false;
+                    openEdit(value);
+                }
+            "
+        />
+
         <TourDateFormDialog
             v-model:open="dialogOpen"
             :tour-id="editing?.tour.id ?? 0"
@@ -834,11 +964,11 @@ onMounted(() => {
         <Dialog v-model:open="cancelOpen">
             <DialogContent class="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{{ $t('Cancelar salida') }}</DialogTitle>
+                    <DialogTitle>{{ $t('Inhabilitar salida') }}</DialogTitle>
                     <DialogDescription>
                         {{
                             $t(
-                                'La salida dejará de mostrarse en el catálogo público. Las reservas existentes no se modifican.',
+                                'La salida dejará de mostrarse en el catálogo público. Las reservas existentes no se modifican y podrás volver a habilitarla.',
                             )
                         }}
                     </DialogDescription>
@@ -873,7 +1003,7 @@ onMounted(() => {
                             v-if="cancelling"
                             class="size-4 animate-spin"
                         />
-                        {{ $t('Cancelar salida') }}
+                        {{ $t('Inhabilitar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

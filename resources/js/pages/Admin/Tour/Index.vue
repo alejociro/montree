@@ -25,6 +25,8 @@ import type {
 
 const { t } = useTranslations();
 
+const PER_PAGE = 9;
+
 type Props = {
     categories: TourCategory[];
     /**
@@ -61,6 +63,9 @@ async function fetchTours(): Promise<void> {
 
     const query: Record<string, string> = {
         page: String(page.value),
+        // WHY: la rejilla es de 3 columnas; 9 por página la deja siempre
+        // completa y hace que la paginación aparezca a partir del décimo tour.
+        per_page: String(PER_PAGE),
         sort,
         direction,
     };

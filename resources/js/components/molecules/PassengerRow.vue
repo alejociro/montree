@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Pencil, UserPlus } from 'lucide-vue-next';
+import { Pencil, TriangleAlert } from 'lucide-vue-next';
 import { computed } from 'vue';
 import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
 import PaymentStatusChip from '@/components/molecules/PaymentStatusChip.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatCurrency, formatTourDate } from '@/lib/format';
+import { formatTourDate } from '@/lib/format';
 import type { Passenger } from '@/types/passenger';
 
 const { t } = useTranslations();
@@ -35,47 +35,50 @@ const emit = defineEmits<{
  */
 const isPending = computed(() => props.passenger.id === null);
 
+/**
+ * Tipo ABREVIADO y número en la misma celda. El tipo escrito completo
+ * —«Cédula de ciudadanía»— ocupaba tres líneas y empujaba al número, que es
+ * con lo que el guía identifica a la persona en la puerta del vehículo.
+ */
 const documentLabel = computed(() => {
-    const { document_type_label: type, document_number: number } =
-        props.passenger;
+    const {
+        document_type_abbreviation: abbreviation,
+        document_number: number,
+    } = props.passenger;
 
     if (number === null || number === '') {
         return null;
     }
 
-    return type === null ? number : `${type} · ${number}`;
+    return abbreviation === null ? number : `${abbreviation} · ${number}`;
 });
 
-const medicalNote = computed(() => {
+/** Etiqueta larga para el `title`: la abreviatura sola no se explica. */
+const documentTitle = computed(() => {
+    const { document_type_label: label, document_number: number } =
+        props.passenger;
+
+    return label === null || number === null ? null : `${label} · ${number}`;
+});
+
+/**
+ * La observación médica ya no tiene columna propia —saturaba la vista—, pero
+ * tampoco puede desaparecer de la pantalla: quien la puede ver necesita saber
+ * de un vistazo que esa persona la tiene. Queda como marca junto al nombre y
+ * el texto completo vive en la ficha.
+ */
+const hasMedicalNote = computed(() => {
     const note = props.passenger.medical_notes;
 
-    return note === null || note === undefined || note.trim() === ''
-        ? null
-        : note;
-});
-
-const epsLabel = computed(() => {
-    const { eps, eps_label: label, eps_other: other } = props.passenger;
-
-    if (!eps) {
-        return null;
-    }
-
-    return eps === 'other' && other ? other : (label ?? null);
+    return (
+        props.canViewMedical &&
+        note !== null &&
+        note !== undefined &&
+        note.trim() !== ''
+    );
 });
 
 const payment = computed(() => props.passenger.payment);
-
-const emergency = computed(() => {
-    const { emergency_contact_name: name, emergency_contact_phone: phone } =
-        props.passenger;
-
-    if (!name && !phone) {
-        return null;
-    }
-
-    return [name, phone].filter((part) => Boolean(part)).join(' · ');
-});
 
 const rowLabel = computed(() =>
     t('Ver ficha de :name', { name: props.passenger.full_name }),
@@ -84,7 +87,7 @@ const rowLabel = computed(() =>
 
 <template>
     <tr
-        class="cursor-pointer border-b border-brand-line-2 align-top transition last:border-0 hover:bg-brand-green-50 focus-visible:bg-brand-green-50 focus-visible:outline-none"
+        class="cursor-pointer border-b border-brand-line-2 align-middle transition last:border-0 hover:bg-primary-soft focus-visible:bg-primary-soft focus-visible:outline-none"
         tabindex="0"
         :aria-label="rowLabel"
         @click="emit('select', props.passenger)"
@@ -92,15 +95,22 @@ const rowLabel = computed(() =>
         @keydown.space.prevent="emit('select', props.passenger)"
     >
         <td class="px-3 py-3">
-            <div class="flex items-start gap-3">
+            <div class="flex items-center gap-3">
                 <InitialsAvatar
                     :name="props.passenger.full_name"
                     :pending="isPending"
                     size="sm"
                 />
                 <div class="min-w-0">
-                    <p class="truncate font-medium text-foreground">
+                    <p
+                        class="flex items-center gap-1.5 truncate font-medium text-foreground"
+                    >
                         {{ props.passenger.full_name }}
+                        <TriangleAlert
+                            v-if="hasMedicalNote"
+                            class="size-3.5 shrink-0 text-brand-drop"
+                            :aria-label="$t('Tiene observaciones médicas')"
+                        />
                     </p>
                     <p
                         v-if="isPending"
@@ -114,58 +124,35 @@ const rowLabel = computed(() =>
                     >
                         {{ $t('Menor de edad') }}
                     </p>
-                    <p
-                        v-if="props.passenger.booking_number"
-                        class="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
-                    >
-                        {{ props.passenger.booking_number }}
-                    </p>
                 </div>
             </div>
         </td>
 
-        <td class="px-3 py-3 text-sm text-muted-foreground">
-            <span v-if="documentLabel">{{ documentLabel }}</span>
-            <span v-else class="text-muted-foreground/60">—</span>
-        </td>
-
-        <td class="px-3 py-3 text-sm text-muted-foreground">
-            <p v-if="props.passenger.email" class="truncate">
-                {{ props.passenger.email }}
-            </p>
-            <p v-if="props.passenger.phone" class="truncate">
-                {{ props.passenger.phone }}
-            </p>
-            <span
-                v-if="!props.passenger.email && !props.passenger.phone"
-                class="text-muted-foreground/60"
-            >
-                —
+        <td class="px-3 py-3 text-sm whitespace-nowrap text-muted-foreground">
+            <span v-if="documentLabel" :title="documentTitle ?? undefined">
+                {{ documentLabel }}
             </span>
-        </td>
-
-        <td class="px-3 py-3 text-sm text-muted-foreground">
-            <span v-if="emergency" class="line-clamp-2">{{ emergency }}</span>
             <span v-else class="text-muted-foreground/60">—</span>
         </td>
 
         <!--
-          Columna de observaciones: solo existe con el permiso médico. Sin él no
-          se dibuja el `<td>` — nada de guiones ni candados, que solo señalan lo
-          que hay detrás (D7).
+          El correo se recorta con puntos suspensivos y lleva el valor entero en
+          el `title`: uno largo estiraba la columna y empujaba el resto de la
+          tabla fuera de la pantalla.
         -->
-        <td v-if="props.canViewMedical" class="px-3 py-3 text-sm">
+        <td class="px-3 py-3 text-sm text-muted-foreground">
             <p
-                v-if="medicalNote"
-                class="line-clamp-2 font-semibold text-brand-drop"
+                v-if="props.passenger.email"
+                class="max-w-[22ch] truncate"
+                :title="props.passenger.email"
             >
-                {{ medicalNote }}
+                {{ props.passenger.email }}
             </p>
-            <p v-if="epsLabel" class="text-xs text-muted-foreground">
-                {{ epsLabel }}
+            <p v-if="props.passenger.phone" class="whitespace-nowrap">
+                {{ props.passenger.phone }}
             </p>
             <span
-                v-if="!medicalNote && !epsLabel"
+                v-if="!props.passenger.email && !props.passenger.phone"
                 class="text-muted-foreground/60"
             >
                 —
@@ -187,20 +174,15 @@ const rowLabel = computed(() =>
             <span v-else class="text-muted-foreground/60">—</span>
         </td>
 
+        <!--
+          Estado, sin importe. Cuánto debe cada persona es una cifra que se
+          consulta, no que se barre con la vista: vive en la ficha y en el
+          total del pie.
+        -->
         <td class="px-3 py-3 text-right">
-            <PaymentStatusChip v-if="payment" :status="payment.status" />
-            <p
-                v-if="payment && payment.status === 'due'"
-                class="mt-1 text-xs font-medium text-brand-drop tabular-nums"
-            >
-                {{ formatCurrency(payment.due_amount, payment.currency) }}
-            </p>
+            <PaymentStatusChip v-if="payment" :status="payment.status" short />
         </td>
 
-        <!--
-          Una fila de marcador de posición no se edita: se COMPLETA. El botón
-          abre el alta sobre esa reserva, que es lo que le falta.
-        -->
         <td v-if="!props.readonly" class="px-3 py-3 text-right">
             <Button
                 v-if="props.canEdit"
@@ -217,8 +199,7 @@ const rowLabel = computed(() =>
                 "
                 @click.stop="emit('edit', props.passenger)"
             >
-                <UserPlus v-if="isPending" class="size-4" />
-                <Pencil v-else class="size-4" />
+                <Pencil class="size-4" />
             </Button>
         </td>
     </tr>

@@ -6,6 +6,18 @@
  * y la suite falla si queda desactualizado.
  */
 
+/** `App\Enums\AccommodationType` */
+export const ACCOMMODATION_TYPE_VALUES = [
+    'ecolodge',
+    'hotel',
+    'rural_inn',
+    'hostel',
+    'glamping',
+    'farm',
+] as const;
+
+export type AccommodationType = (typeof ACCOMMODATION_TYPE_VALUES)[number];
+
 /** `App\Enums\BookingStatus` */
 export const BOOKING_STATUS_VALUES = [
     'pending_payment',
@@ -18,11 +30,33 @@ export const BOOKING_STATUS_VALUES = [
 
 export type BookingStatus = (typeof BOOKING_STATUS_VALUES)[number];
 
+/** `App\Enums\CancellationPolicy` */
+export const CANCELLATION_POLICY_VALUES = [
+    'free_48_hours',
+    'free_7_days',
+    'non_refundable',
+    'per_contract',
+] as const;
+
+export type CancellationPolicy = (typeof CANCELLATION_POLICY_VALUES)[number];
+
+/** `App\Enums\DepartureScope` */
+export const DEPARTURE_SCOPE_VALUES = [
+    'upcoming',
+    'today',
+    'past',
+    'disabled',
+    'all',
+] as const;
+
+export type DepartureScope = (typeof DEPARTURE_SCOPE_VALUES)[number];
+
 /** `App\Enums\DocumentType` */
 export const DOCUMENT_TYPE_VALUES = [
     'cc',
     'ce',
     'ti',
+    'sisben',
     'passport',
     'other',
 ] as const;
@@ -39,6 +73,32 @@ export const EPS_VALUES = [
 ] as const;
 
 export type Eps = (typeof EPS_VALUES)[number];
+
+/** `App\Enums\HotelAmenity` */
+export const HOTEL_AMENITY_VALUES = [
+    'breakfast',
+    'lunch',
+    'dinner',
+    'wifi',
+    'hot_water',
+    'parking',
+    'pool',
+    'bonfire',
+    'laundry',
+    'wheelchair_access',
+] as const;
+
+export type HotelAmenity = (typeof HOTEL_AMENITY_VALUES)[number];
+
+/** `App\Enums\MealPlan` */
+export const MEAL_PLAN_VALUES = [
+    'breakfast_only',
+    'half_board',
+    'full_board',
+    'none',
+] as const;
+
+export type MealPlan = (typeof MEAL_PLAN_VALUES)[number];
 
 /** `App\Enums\NewsletterSubscriberStatus` */
 export const NEWSLETTER_SUBSCRIBER_STATUS_VALUES = [
@@ -69,6 +129,17 @@ export const PAYMENT_STATUS_VALUES = [
 
 export type PaymentStatus = (typeof PAYMENT_STATUS_VALUES)[number];
 
+/** `App\Enums\PaymentTerms` */
+export const PAYMENT_TERMS_VALUES = [
+    'advance_30',
+    'advance_50',
+    'prepaid',
+    'credit_15',
+    'credit_30',
+] as const;
+
+export type PaymentTerms = (typeof PAYMENT_TERMS_VALUES)[number];
+
 /** `App\Enums\PaymentType` */
 export const PAYMENT_TYPE_VALUES = [
     'full',
@@ -86,6 +157,40 @@ export const PROMOTION_TYPE_VALUES = [
 
 export type PromotionType = (typeof PROMOTION_TYPE_VALUES)[number];
 
+/** `App\Enums\ProviderDocumentType` */
+export const PROVIDER_DOCUMENT_TYPE_VALUES = [
+    'liability_policy',
+    'tax_registry',
+    'chamber_of_commerce',
+    'health_registry',
+    'operation_card',
+    'other',
+] as const;
+
+export type ProviderDocumentType = (typeof PROVIDER_DOCUMENT_TYPE_VALUES)[number];
+
+/** `App\Enums\ProviderServiceType` */
+export const PROVIDER_SERVICE_TYPE_VALUES = [
+    'transport',
+    'food',
+    'guiding',
+    'activities',
+    'equipment',
+    'other',
+] as const;
+
+export type ProviderServiceType = (typeof PROVIDER_SERVICE_TYPE_VALUES)[number];
+
+/** `App\Enums\RateUnit` */
+export const RATE_UNIT_VALUES = [
+    'per_day',
+    'per_person',
+    'per_service',
+    'per_hour',
+] as const;
+
+export type RateUnit = (typeof RATE_UNIT_VALUES)[number];
+
 /** `App\Enums\ReviewStatus` */
 export const REVIEW_STATUS_VALUES = [
     'pending',
@@ -95,6 +200,27 @@ export const REVIEW_STATUS_VALUES = [
 
 export type ReviewStatus = (typeof REVIEW_STATUS_VALUES)[number];
 
+/** `App\Enums\RouteKind` */
+export const ROUTE_KIND_VALUES = [
+    'hiking',
+    'land',
+    'mixed',
+    'water',
+    'cycling',
+] as const;
+
+export type RouteKind = (typeof ROUTE_KIND_VALUES)[number];
+
+/** `App\Enums\RouteSeason` */
+export const ROUTE_SEASON_VALUES = [
+    'all_year',
+    'december_february',
+    'june_august',
+    'avoid_rain',
+] as const;
+
+export type RouteSeason = (typeof ROUTE_SEASON_VALUES)[number];
+
 /** `App\Enums\SubdomainAvailabilityReason` */
 export const SUBDOMAIN_AVAILABILITY_REASON_VALUES = [
     'taken',
@@ -103,6 +229,15 @@ export const SUBDOMAIN_AVAILABILITY_REASON_VALUES = [
 ] as const;
 
 export type SubdomainAvailabilityReason = (typeof SUBDOMAIN_AVAILABILITY_REASON_VALUES)[number];
+
+/** `App\Enums\TaxRegime` */
+export const TAX_REGIME_VALUES = [
+    'vat_responsible',
+    'vat_exempt',
+    'simple_regime',
+] as const;
+
+export type TaxRegime = (typeof TAX_REGIME_VALUES)[number];
 
 /** `App\Enums\TenantMembershipStatus` */
 export const TENANT_MEMBERSHIP_STATUS_VALUES = [

@@ -69,7 +69,7 @@ const passwordInput = useTemplateRef('passwordInput');
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="password" class="sr-only">{{
                                 $t('Contraseña')
                             }}</Label>

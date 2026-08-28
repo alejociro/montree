@@ -26,11 +26,11 @@ defineProps<{
 
     <Alert
         v-if="status === 'verification-link-sent'"
-        class="mb-4 border-primary/40 bg-primary/10 text-primary"
+        class="mb-4 border-primary/40 bg-primary/10 text-primary-readable"
     >
         <MailCheck class="size-4" />
         <AlertTitle>{{ $t('Revisa tu bandeja de entrada') }}</AlertTitle>
-        <AlertDescription class="text-primary/90">
+        <AlertDescription class="text-primary-readable/90">
             {{
                 $t(
                     'Te enviamos un nuevo enlace de verificación al correo que indicaste en tu registro.',

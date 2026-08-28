@@ -56,7 +56,7 @@ function handleChange(value: AcceptableValue): void {
 </script>
 
 <template>
-    <div class="grid gap-2">
+    <div class="grid content-start gap-2">
         <Label :for="id">{{ label }}</Label>
         <Select
             :model-value="props.modelValue ?? undefined"

@@ -35,7 +35,7 @@ function submit() {
 
 <template>
     <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="agency_name">{{ $t('Nombre de la agencia') }}</Label>
             <Input
                 id="agency_name"
@@ -59,7 +59,7 @@ function submit() {
             :tabindex="2"
         />
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="founder_name">{{ $t('Tu nombre') }}</Label>
             <Input
                 id="founder_name"
@@ -74,7 +74,7 @@ function submit() {
             <InputError :message="form.errors.founder_name" />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="email">{{ $t('Correo electrónico') }}</Label>
             <Input
                 id="email"
@@ -89,7 +89,7 @@ function submit() {
             <InputError :message="form.errors.email" />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="password">{{ $t('Contraseña') }}</Label>
             <PasswordInput
                 id="password"
@@ -103,7 +103,7 @@ function submit() {
             <InputError :message="form.errors.password" />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="password_confirmation">{{
                 $t('Confirmar contraseña')
             }}</Label>

@@ -51,7 +51,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-primary"
+        class="mb-4 text-center text-sm font-medium text-primary-readable"
     >
         {{ status }}
     </div>
@@ -84,7 +84,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
         </Alert>
 
         <div class="grid gap-6">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
@@ -102,7 +102,7 @@ const contactEmail = computed(() => tenant.value?.contact_email ?? null);
                 />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <div class="flex items-center justify-between">
                     <Label for="password">{{ $t('Contraseña') }}</Label>
                     <TextLink

@@ -91,7 +91,7 @@ const statusMessage = computed(() => {
 
 const statusTone = computed(() => {
     if (props.status === 'available') {
-        return 'text-primary';
+        return 'text-primary-readable';
     }
 
     if (props.status === 'unavailable' || props.error) {
@@ -107,7 +107,7 @@ const isInvalid = computed(
 </script>
 
 <template>
-    <div class="grid gap-2">
+    <div class="grid content-start gap-2">
         <Label :for="id">{{ $t(label) }}</Label>
 
         <div
@@ -150,7 +150,7 @@ const isInvalid = computed(
                 <Spinner v-if="status === 'checking'" class="size-4" />
                 <Check
                     v-else-if="status === 'available'"
-                    class="size-4 text-primary"
+                    class="size-4 text-primary-readable"
                 />
                 <X
                     v-else-if="status === 'unavailable'"

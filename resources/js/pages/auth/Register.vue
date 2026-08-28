@@ -30,7 +30,7 @@ const { isResolved, displayName } = useTenant();
 
     <p v-if="isResolved" class="mb-4 text-center text-sm text-muted-foreground">
         {{ $t('Crea tu cuenta en') }}
-        <span class="font-medium text-primary">{{ displayName }}</span>
+        <span class="font-medium text-primary-readable">{{ displayName }}</span>
         {{ $t('para reservar tours y guardar tus favoritos.') }}
     </p>
 
@@ -41,7 +41,7 @@ const { isResolved, displayName } = useTenant();
         class="flex flex-col gap-6"
     >
         <div class="grid gap-6">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="name">{{ $t('Nombre completo') }}</Label>
                 <Input
                     id="name"
@@ -57,7 +57,7 @@ const { isResolved, displayName } = useTenant();
                 <InputError :message="errors.name" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"
@@ -72,7 +72,7 @@ const { isResolved, displayName } = useTenant();
                 <InputError :message="errors.email" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password">{{ $t('Contraseña') }}</Label>
                 <PasswordInput
                     id="password"
@@ -87,7 +87,7 @@ const { isResolved, displayName } = useTenant();
                 <InputError :message="errors.password" />
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="password_confirmation">{{
                     $t('Confirmar contraseña')
                 }}</Label>

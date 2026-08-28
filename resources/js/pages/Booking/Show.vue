@@ -250,7 +250,7 @@ function goBack(): void {
                     <div
                         class="space-y-1 rounded-lg border border-border bg-card p-4"
                     >
-                        <Calendar class="size-5 text-primary" />
+                        <Calendar class="size-5 text-primary-readable" />
                         <p class="text-xs text-muted-foreground">
                             {{ $t('Fecha del viaje') }}
                         </p>
@@ -261,7 +261,7 @@ function goBack(): void {
                     <div
                         class="space-y-1 rounded-lg border border-border bg-card p-4"
                     >
-                        <Calendar class="size-5 text-primary" />
+                        <Calendar class="size-5 text-primary-readable" />
                         <p class="text-xs text-muted-foreground">
                             {{ $t('Fecha de regreso') }}
                         </p>
@@ -272,7 +272,7 @@ function goBack(): void {
                     <div
                         class="space-y-1 rounded-lg border border-border bg-card p-4"
                     >
-                        <MapPin class="size-5 text-primary" />
+                        <MapPin class="size-5 text-primary-readable" />
                         <p class="text-xs text-muted-foreground">
                             {{ $t('Punto de encuentro') }}
                         </p>
@@ -316,7 +316,7 @@ function goBack(): void {
                         </dl>
                         <button
                             type="button"
-                            class="text-sm text-primary underline underline-offset-2"
+                            class="text-sm text-primary-readable underline underline-offset-2"
                         >
                             {{ $t('Agregar al calendario') }}
                         </button>
@@ -540,7 +540,9 @@ function goBack(): void {
                                 <dt class="text-muted-foreground">
                                     {{ $t('Precio total') }}
                                 </dt>
-                                <dd class="text-lg font-bold text-primary">
+                                <dd
+                                    class="text-lg font-bold text-primary-readable"
+                                >
                                     {{ formatCurrency(totalNumeric) }}
                                 </dd>
                             </div>

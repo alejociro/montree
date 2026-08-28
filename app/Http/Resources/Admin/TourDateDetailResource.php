@@ -20,6 +20,10 @@ final class TourDateDetailResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            // Código legible que el operador dicta por teléfono. Derivado, no
+            // almacenado: viaja en el recurso para que la tabla y el buscador
+            // usen exactamente el mismo texto.
+            'code' => $this->resource->code(),
             'starts_at' => $this->starts_at->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
             'capacity' => $this->capacity,

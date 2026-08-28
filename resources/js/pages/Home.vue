@@ -260,7 +260,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         class="group flex flex-col items-start gap-3 rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
                     >
                         <span
-                            class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"
+                            class="flex size-11 items-center justify-center rounded-xl bg-secondary text-secondary-foreground transition group-hover:bg-primary group-hover:text-primary-foreground"
                         >
                             <component
                                 :is="categoryIcon(category.icon)"
@@ -303,7 +303,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 </div>
                 <Link
                     :href="catalogIndex().url"
-                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
+                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary-readable transition hover:underline"
                 >
                     {{ $t('Ver todos') }}
                     <ArrowRight class="size-4" />
@@ -469,7 +469,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                             <h3 class="text-lg font-bold text-foreground">
                                 <Link
                                     :href="tourShow.url(departure.tour.slug)"
-                                    class="transition hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                                    class="transition hover:text-primary-readable hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
                                 >
                                     {{ departure.tour.name }}
                                 </Link>
@@ -479,7 +479,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                 class="flex items-start gap-2 text-sm text-muted-foreground"
                             >
                                 <CalendarDays
-                                    class="mt-0.5 size-4 shrink-0 text-primary"
+                                    class="mt-0.5 size-4 shrink-0 text-primary-readable"
                                     aria-hidden="true"
                                 />
                                 <span>{{ departureDateLabel(departure) }}</span>
@@ -652,7 +652,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                 </h2>
                 <Link
                     :href="catalogIndex().url"
-                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition hover:underline"
+                    class="flex shrink-0 items-center gap-1 text-sm font-medium text-primary-readable transition hover:underline"
                 >
                     {{ $t('Ver todos') }}
                     <ArrowRight class="size-4" />
@@ -746,7 +746,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                             class="relative flex flex-col rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/50"
                         >
                             <Quote
-                                class="absolute top-5 right-5 size-8 text-primary/15"
+                                class="absolute top-5 right-5 size-8 text-primary-readable/15"
                                 aria-hidden="true"
                             />
                             <div
@@ -759,7 +759,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                     class="size-4"
                                     :class="
                                         star <= testimonial.rating
-                                            ? 'fill-primary text-primary'
+                                            ? 'fill-primary text-primary-readable'
                                             : 'text-muted-foreground/30'
                                     "
                                     aria-hidden="true"
@@ -797,7 +797,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                                                     testimonial.tour.slug,
                                                 )
                                             "
-                                            class="text-primary transition hover:underline"
+                                            class="text-primary-readable transition hover:underline"
                                         >
                                             {{ testimonial.tour.name }}
                                         </Link>

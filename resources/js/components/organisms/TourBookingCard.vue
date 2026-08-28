@@ -74,9 +74,16 @@ function dateOptionLabel(date: TourDetailDate): string {
                     >
                         {{ $t('Fecha de salida') }}
                     </label>
+                    <!--
+                      `w-auto`: a lo ancho de la tarjeta el select dejaba la
+                      fecha pegada a la izquierda y la flecha a 20 rem de
+                      distancia, con un vacío enorme en medio que se leía como
+                      un campo sin diligenciar. Ajustado al texto, la flecha
+                      queda junto al valor.
+                    -->
                     <select
                         id="tour-date-select"
-                        class="w-full bg-transparent text-sm capitalize outline-none"
+                        class="w-auto max-w-full bg-transparent text-sm capitalize outline-none"
                         :value="selectedDateId"
                         @change="
                             emit(
@@ -104,7 +111,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                     v-if="selectedDate"
                     class="mt-2.5 flex items-center gap-1.5 text-[13px] text-muted-foreground"
                 >
-                    <Users class="size-4 text-primary" />
+                    <Users class="size-4 text-primary-readable" />
                     {{
                         $tc(
                             ':count cupo disponible|:count cupos disponibles',
@@ -116,7 +123,7 @@ function dateOptionLabel(date: TourDetailDate): string {
                 <Link
                     v-if="bookingUrl"
                     :href="bookingUrl"
-                    class="mt-3.5 block rounded-full bg-primary px-4 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition hover:bg-brand-ink"
+                    class="mt-3.5 block rounded-full bg-primary px-4 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition hover:bg-primary-hover"
                 >
                     {{ $t('Reservar ahora') }}
                 </Link>
@@ -154,7 +161,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             <button
                 v-if="pickupStopIndex !== null"
                 type="button"
-                class="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold text-primary transition hover:bg-brand-green-100"
+                class="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold text-primary-readable transition hover:bg-primary-soft"
                 @click="emit('show-pickup')"
             >
                 <MapPinned class="size-4" />

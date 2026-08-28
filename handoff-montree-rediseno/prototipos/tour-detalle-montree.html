@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viaje de Aventuras Extremas · Montree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --ink:#14301f; --green:#1d4630; --green-600:#2f6b45; --green-100:#e3ece5;
+    --cream:#f6f1e4; --card:#fffdf8; --tan:#f1e4c9;
+    --text:#22261f; --muted:#6d7268; --line:#e2ddcd;
+    --pickup:#2f6b45; --drop:#b4562a; --site:#1d4630; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--cream);color:var(--text);
+    font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-wrap:pretty}
+  h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+  .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.02em}
+  a{color:var(--green-600);text-decoration:none}
+  a:hover{color:var(--ink);text-decoration:underline}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+
+  /* nav */
+  header.top{position:sticky;top:0;z-index:900;background:var(--ink);color:#f4efe2}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:24px;height:56px}
+  .brand{font-family:"Instrument Serif",serif;font-size:19px;letter-spacing:.04em}
+  .nav nav{display:flex;gap:26px;align-items:center}
+  .nav nav a{color:#cfdbcf;font-size:13.5px;display:flex;gap:7px;align-items:center}
+  .nav nav a:hover{color:#fff;text-decoration:none}
+  .dot{width:6px;height:6px;border-radius:50%;background:#8fbfa0}
+
+  /* breadcrumb + title */
+  .crumbs{display:flex;gap:8px;align-items:center;color:var(--muted);padding:22px 0 14px}
+  .title-row{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
+  h1{font-size:44px;line-height:1.02;max-width:16ch}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:12px;color:var(--muted);font-size:13.5px}
+  .meta b{color:var(--text);font-weight:600}
+  .chip{display:inline-flex;gap:7px;align-items:center;background:var(--green-100);color:var(--green);
+    border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:500}
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:150px 150px;gap:10px;margin:20px 0 8px}
+  .ph{position:relative;border-radius:var(--radius);overflow:hidden;background:
+      repeating-linear-gradient(135deg,#e8e1cd 0 10px,#efe9d8 10px 20px);border:1px solid var(--line);
+      display:flex;align-items:flex-end;padding:12px}
+  .gallery .ph:first-child{grid-row:span 2}
+  .ph span{color:#8d8a76}
+  .fav{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#fffdf8cc;
+    border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(4px)}
+
+  /* layout */
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 366px;gap:40px;align-items:start;padding:34px 0 60px}
+  section.block{padding:26px 0;border-top:1px solid var(--line)}
+  section.block:first-child{border-top:0;padding-top:6px}
+  h2.sec{font-size:26px;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .lede{font-size:16.5px;color:#3b4038;max-width:62ch}
+
+  .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
+  .fact{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .fact .mono{color:var(--muted)}
+  .fact b{display:block;font-size:15px;margin-top:3px}
+
+  /* itinerary */
+  .itin{display:flex;flex-direction:column;gap:2px}
+  .day{display:grid;grid-template-columns:64px 1fr auto;gap:16px;align-items:start;padding:16px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+  .day .mono{color:var(--green-600)}
+  .day h3{font-size:15.5px}
+  .day p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+  .lnk{align-self:center;font-size:13px;white-space:nowrap;background:none;border:1px solid var(--line);
+    border-radius:999px;padding:7px 13px;cursor:pointer;color:var(--green);font-family:inherit}
+  .lnk:hover{background:var(--green-100);border-color:var(--green-100)}
+
+  /* MAP */
+  #ruta{scroll-margin-top:70px}
+  .maptabs{display:flex;gap:6px;background:var(--green-100);padding:4px;border-radius:999px;width:max-content;margin-bottom:14px}
+  .maptabs button{border:0;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--green);
+    padding:8px 16px;border-radius:999px;cursor:pointer}
+  .maptabs button[aria-selected="true"]{background:var(--ink);color:#f4efe2}
+  .mapwrap{display:grid;grid-template-columns:290px minmax(0,1fr);border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;background:var(--card)}
+  .stops{max-height:470px;overflow:auto;border-right:1px solid var(--line)}
+  .stop{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:14px 16px;cursor:pointer;
+    border-bottom:1px solid var(--line);background:none;border-left:3px solid transparent;width:100%;text-align:left;font-family:inherit}
+  .stop:hover{background:#f7f3e6}
+  .stop[aria-current="true"]{background:var(--green-100);border-left-color:var(--green-600)}
+  .pin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+  .stop h3{font-size:14px}
+  .stop p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+  .stop .mono{color:var(--muted);font-size:10.5px}
+  #map{height:470px;width:100%;z-index:1}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);
+    grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
+  .legend .dash{width:22px;height:0;border-top:2px dashed var(--muted);border-radius:0}
+  .legend .solid{width:22px;height:0;border-top:3px solid var(--green-600);border-radius:0}
+  .mapnote{display:flex;gap:12px;align-items:flex-start;background:var(--tan);border-radius:12px;
+    padding:14px 16px;margin-top:14px;font-size:13.5px}
+  .leaflet-container{font-family:inherit}
+  .leaflet-tooltip.lbl{background:#fffdf8;border:1px solid var(--line);color:var(--text);
+    font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .leaflet-tooltip.lbl:before{display:none}
+  .lbl2{background:#fffdf8;border:1px solid var(--line);color:var(--text);white-space:nowrap;flex:none;
+    font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .mk{display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;font-size:12px;flex:none;
+    box-shadow:0 0 0 3px #fffdf8,0 3px 10px rgba(0,0,0,.25)}
+
+  /* lists */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px 34px}
+  .li{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .tick{flex:none;width:18px;height:18px;border-radius:50%;background:var(--green-100);color:var(--green);
+    display:grid;place-items:center;font-size:11px;font-weight:700;margin-top:2px}
+  .tick.no{background:#f4e2da;color:var(--drop)}
+
+  /* booking card */
+  aside{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+  .book{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;
+    box-shadow:0 14px 40px -28px rgba(20,48,31,.5)}
+  .price{display:flex;align-items:baseline;gap:8px}
+  .price b{font-size:30px;font-family:"Instrument Serif",serif;font-weight:400}
+  .price span{color:var(--muted);font-size:13px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 10px}
+  .field{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+  .field label{display:block;color:var(--muted);font-size:11px;font-weight:500}
+  .field input,.field select{border:0;outline:0;font-family:inherit;font-size:14px;width:100%;background:none;color:var(--text);padding:0}
+  .full{grid-column:1/-1}
+  .cta{width:100%;background:var(--green);color:#f4efe2;border:0;border-radius:999px;padding:15px;
+    font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px}
+  .cta:hover{background:var(--ink)}
+  .ghost{width:100%;background:none;color:var(--green);border:1px solid var(--line);border-radius:999px;
+    padding:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+  .ghost:hover{background:var(--green-100)}
+  .fine{color:var(--muted);font-size:12px;text-align:center;margin-top:12px}
+  .pickcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .pickcard .row{display:flex;gap:11px;padding:9px 0;font-size:13.5px}
+  .pickcard .row+.row{border-top:1px solid var(--line)}
+  .pickcard b{display:block;font-size:13.5px}
+  .pickcard small{color:var(--muted)}
+
+  /* reviews */
+  .rev{display:grid;grid-template-columns:260px minmax(0,1fr);gap:34px;align-items:start}
+  .score{font-family:"Instrument Serif",serif;font-size:56px;line-height:1}
+  .bar{display:grid;grid-template-columns:12px 1fr 34px;gap:9px;align-items:center;font-size:12px;color:var(--muted)}
+  .track{height:6px;background:var(--green-100);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--green-600)}
+  .quote{background:var(--tan);border-radius:var(--radius);padding:20px}
+  .quote p{margin:10px 0 0;font-size:14.5px}
+  .who{display:flex;gap:10px;align-items:center}
+  .av{width:34px;height:34px;border-radius:50%;background:var(--green-100);display:grid;place-items:center;color:var(--green);font-weight:700;font-size:13px}
+
+  /* related */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card .ph{border:0;border-radius:0;height:120px;align-items:flex-end}
+  .card .body{padding:13px 15px 16px}
+  .card h3{font-size:14.5px}
+  .card .mono{color:var(--muted);margin-top:3px;display:block}
+  .card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:14px;font-weight:600}
+  .card .foot span{color:var(--muted);font-size:12.5px;font-weight:500}
+
+  footer{background:var(--ink);color:#cfdbcf;margin-top:20px;padding:52px 0 26px;font-size:13.5px}
+  footer h3{color:#f4efe2;font-size:14px;margin-bottom:14px}
+  .fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px}
+  footer a{color:#cfdbcf;display:block;padding:4px 0}
+  footer a:hover{color:#fff}
+  .copy{border-top:1px solid #2b4a36;margin-top:34px;padding-top:16px;text-align:center;color:#8fa693;font-size:12px}
+
+  @media (max-width:1000px){
+    .cols{grid-template-columns:1fr}
+    aside{position:static}
+    .mapwrap{grid-template-columns:1fr}
+    .stops{max-height:none;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow-x:auto}
+    .stop{min-width:230px;border-bottom:0;border-right:1px solid var(--line)}
+    .facts,.cards{grid-template-columns:1fr 1fr}
+    .rev,.two{grid-template-columns:1fr}
+    h1{font-size:34px}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap nav">
+    <div class="brand">LOGO MONTREE</div>
+    <nav>
+      <a href="#">Inicio</a>
+      <a href="#">Reservas</a>
+      <a href="#">Notificaciones</a>
+      <a href="#"><span class="dot"></span>Mi cuenta</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="crumbs mono">Colombia · Quindío <span>›</span> Senderismo <span>›</span> Aventuras Extremas</div>
+
+  <div class="title-row">
+    <div>
+      <h1 class="serif">Viaje de Aventuras Extremas</h1>
+      <div class="meta">
+        <span><b>5.0</b> ★★★★★ · 50 reseñas</span>
+        <span>·</span>
+        <span>Valle de Cocora, Salento</span>
+        <span>·</span>
+        <span>3 días / 2 noches</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="chip">Recogida incluida</span>
+      <span class="chip">Grupo máx. 12</span>
+      <span class="chip">Dificultad media</span>
+    </div>
+  </div>
+
+  <div class="gallery">
+    <div class="ph"><span class="mono">foto principal · valle de cocora 1600×1000</span><button class="fav" aria-label="Guardar">♡</button></div>
+    <div class="ph"><span class="mono">sendero de palmas</span></div>
+    <div class="ph"><span class="mono">campamento · +6 fotos</span></div>
+  </div>
+
+  <div class="cols">
+    <main>
+      <section class="block">
+        <p class="lede">Embárcate en un viaje inolvidable a través de los más respetados y poco explorados senderos ocultos y vistas impresionantes del Quindío. Temperatura promedio 18 °C, tres senderos principales y dos lugares de parada con guía local certificado.</p>
+        <div class="facts">
+          <div class="fact"><div class="mono">Duración</div><b>3 días</b></div>
+          <div class="fact"><div class="mono">Distancia a pie</div><b>21 km</b></div>
+          <div class="fact"><div class="mono">Altitud máx.</div><b>2 860 m</b></div>
+          <div class="fact"><div class="mono">Idiomas</div><b>ES / EN</b></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="sec serif">Itinerario</h2>
+        <p class="sub">Cada día está anclado a un punto del mapa: toca “Ver en el mapa” para ubicarlo.</p>
+        <div class="itin">
+          <div class="day">
+            <div class="mono">Día 01</div>
+            <div><h3>Llegada y traslado</h3><p>Recogida en Armenia, traslado a Salento y caminata de aclimatación.</p></div>
+            <button class="lnk" data-goto="0">Ver en el mapa</button>
+          </div>
+          <div class="day">
+            <div class="mono">Día 02</div>
+            <div><h3>Ascenso a la cima</h3><p>Bosque de palmas de cera, mirador y ascenso hasta Acaime.</p></div>
+            <button class="lnk" data-goto="3">Ver en el mapa</button>
+          </div>
+          <div class="day">
+            <div class="mono">Día 03</div>
+            <div><h3>Descenso y salida</h3><p>Descenso, almuerzo típico y regreso al punto de entrega.</p></div>
+            <button class="lnk" data-goto="5">Ver en el mapa</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MAPA ================= -->
+      <section class="block" id="ruta">
+        <h2 class="sec serif">Ruta y puntos de encuentro</h2>
+        <p class="sub">Recogida, zona del tour, ruta completa y punto de regreso. Toca cualquier parada para centrarla.</p>
+
+        <div class="maptabs" role="tablist">
+          <button role="tab" aria-selected="true" data-view="all">Ruta completa</button>
+          <button role="tab" aria-selected="false" data-view="pickup">Recogida</button>
+          <button role="tab" aria-selected="false" data-view="site">Zona del tour</button>
+          <button role="tab" aria-selected="false" data-view="drop">Regreso</button>
+        </div>
+
+        <div class="mapwrap">
+          <div class="stops" id="stops"></div>
+          <div id="map"></div>
+          <div class="legend">
+            <span><i style="background:var(--pickup)"></i>Recogida</span>
+            <span><i style="background:#4b7f5f"></i>Paradas del tour</span>
+            <span><i style="background:var(--drop)"></i>Regreso</span>
+            <span><i class="dash"></i>Traslado en vehículo</span>
+            <span><i class="solid"></i>Recorrido a pie</span>
+            <span style="margin-left:auto"><a href="#" id="dirs">Abrir indicaciones ↗</a></span>
+          </div>
+        </div>
+
+        <div class="mapnote">
+          <span>ℹ️</span>
+          <div><b>Punto de encuentro:</b> Plaza de Bolívar de Armenia, costado occidental, <b>8:00 a. m.</b> El conductor espera 15 minutos con un cartel Montree. El regreso deja al grupo en la Terminal de Transportes de Armenia hacia las 5:30 p. m.</div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="sec serif">Qué incluye</h2>
+        <div class="two" style="margin-top:14px">
+          <div>
+            <div class="li"><span class="tick">✓</span>Alojamiento 2 noches en Salento</div>
+            <div class="li"><span class="tick">✓</span>Comidas durante la caminata</div>
+            <div class="li"><span class="tick">✓</span>Guía experto certificado</div>
+            <div class="li"><span class="tick">✓</span>Equipo necesario y seguro</div>
+          </div>
+          <div>
+            <div class="li"><span class="tick no">×</span>Vuelos hacia Armenia</div>
+            <div class="li"><span class="tick no">×</span>Bebidas alcohólicas</div>
+            <div class="li"><span class="tick no">×</span>Actividades no mencionadas</div>
+            <div class="li"><span class="tick no">×</span>Propinas</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="sec serif">Recomendaciones</h2>
+        <p class="sub" style="max-width:62ch;margin:8px 0 0">Usa ropa de senderismo adecuada y calzado resistente. Mantente hidratado durante todo el recorrido y lleva impermeable: la lluvia en el valle es frecuente después del mediodía.</p>
+      </section>
+
+      <section class="block">
+        <h2 class="sec serif">Calificaciones y reseñas</h2>
+        <div class="rev" style="margin-top:18px">
+          <div>
+            <div class="score">5.0</div>
+            <div style="color:var(--green-600);letter-spacing:2px">★★★★★</div>
+            <div class="mono" style="color:var(--muted);margin:6px 0 14px">50 reseñas verificadas</div>
+            <div class="bar"><span>5</span><span class="track"><i style="width:100%"></i></span><span>100%</span></div>
+            <div class="bar"><span>4</span><span class="track"><i style="width:0"></i></span><span>0%</span></div>
+            <div class="bar"><span>3</span><span class="track"><i style="width:0"></i></span><span>0%</span></div>
+            <div class="bar"><span>2</span><span class="track"><i style="width:0"></i></span><span>0%</span></div>
+            <div class="bar"><span>1</span><span class="track"><i style="width:0"></i></span><span>0%</span></div>
+          </div>
+          <div class="quote">
+            <div class="who"><span class="av">RM</span><div><b>Rosa J. Meza</b><div class="mono" style="color:#8a7f60">Hace 2 meses · Día 02</div></div></div>
+            <p>Una experiencia increíble de principio a fin. Los puntos de recogida estaban clarísimos en el mapa y el guía nos escribió la noche anterior. Las vistas del valle son simplemente impresionantes.</p>
+            <div style="display:flex;gap:14px;margin-top:14px;color:#8a7f60;font-size:13px"><span>👍 12</span><span>👎</span></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:22px"><a href="#">Ver más reseñas</a></div>
+      </section>
+    </main>
+
+    <!-- ============== SIDEBAR ============== -->
+    <aside>
+      <div class="book">
+        <div class="price"><b>$250.000</b><span>/ persona</span></div>
+        <div class="mono" style="color:var(--muted);margin-top:4px">Impuestos incluidos</div>
+        <div class="fields">
+          <div class="field"><label for="in">Fecha de llegada</label><input id="in" type="date" value="2026-09-12"></div>
+          <div class="field"><label for="out">Fecha de salida</label><input id="out" type="date" value="2026-09-14"></div>
+          <div class="field full"><label for="pax">Viajeros</label><select id="pax"><option>2 adultos</option><option>1 adulto</option><option>3 adultos</option><option>4 adultos</option></select></div>
+          <div class="field full"><label for="pk">Punto de recogida</label><select id="pk"><option>Plaza de Bolívar, Armenia — 8:00 a. m.</option><option>Aeropuerto El Edén — 7:20 a. m.</option><option>Plaza de Salento — 9:10 a. m.</option></select></div>
+        </div>
+        <button class="cta">Reservar ahora por $250.000</button>
+        <button class="ghost" data-goto="0">Ver punto de recogida en el mapa</button>
+        <div class="fine">Reserva sin costo · Cancelación gratuita hasta 48 h antes</div>
+      </div>
+
+      <div class="pickcard">
+        <div class="mono" style="color:var(--muted)">Logística del día</div>
+        <div class="row"><span style="color:var(--pickup)">●</span><div><b>8:00 a. m. — Recogida</b><small>Plaza de Bolívar, Armenia</small></div></div>
+        <div class="row"><span style="color:#4b7f5f">●</span><div><b>9:10 a. m. — Salento</b><small>Registro y desayuno</small></div></div>
+        <div class="row"><span style="color:#4b7f5f">●</span><div><b>10:30 a. m. — Valle de Cocora</b><small>Inicio del sendero</small></div></div>
+        <div class="row"><span style="color:var(--drop)">●</span><div><b>5:30 p. m. — Regreso</b><small>Terminal de Transportes, Armenia</small></div></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="block" style="border-top:1px solid var(--line);padding:34px 0 0">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px">
+      <h2 class="sec serif">Otras actividades que te podrían gustar</h2>
+      <a href="#">Ver todas ↗</a>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="ph"><span class="mono">dunas guajira</span></div><div class="body"><h3>Dunas Guajira</h3><span class="mono">Turismo y relajación</span><div class="foot">$250.000 <span>★ 4.9 (13)</span></div></div></div>
+      <div class="card"><div class="ph"><span class="mono">lagos y avistamientos</span></div><div class="body"><h3>Lagos y Avistamientos</h3><span class="mono">Relajación y paisajes</span><div class="foot">$250.000 <span>★ 4.9 (11)</span></div></div></div>
+      <div class="card"><div class="ph"><span class="mono">el acuario</span></div><div class="body"><h3>El Acuario</h3><span class="mono">Deportes de invierno</span><div class="foot">$250.000 <span>★ 4.9 (18)</span></div></div></div>
+      <div class="card"><div class="ph"><span class="mono">cartagena histórica</span></div><div class="body"><h3>Cartagena</h3><span class="mono">Historia y cultura</span><div class="foot">$250.000 <span>★ 4.9 (23)</span></div></div></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap fgrid">
+    <div>
+      <h3>Información de contacto</h3>
+      <a href="#">Calle 123, Siempre Viva</a>
+      <a href="#">+57 300 999 0091</a>
+      <a href="#">contacto@eduardo.can</a>
+    </div>
+    <div><h3>Enlaces rápidos</h3><a href="#">Sobre nosotros</a><a href="#">Términos y condiciones</a><a href="#ruta">Puntos de recogida</a></div>
+    <div><h3>Síguenos</h3><a href="#">Facebook</a><a href="#">Instagram</a></div>
+  </div>
+  <div class="copy">Copy 2025 Eduardo Ustupe</div>
+</footer>
+
+<script>
+const STOPS = [
+  {k:'pickup', n:'A', tag:'Recogida', name:'Recogida · Plaza de Bolívar', city:'Armenia, Quindío', t:'8:00 a. m.', ll:[4.5350,-75.6813], color:'#2f6b45'},
+  {k:'site',   n:'1', name:'Salento — registro',        city:'Plaza de Bolívar de Salento', t:'9:10 a. m.', ll:[4.6376,-75.5706], color:'#4b7f5f'},
+  {k:'site',   n:'2', name:'Entrada Valle de Cocora',   city:'Inicio del sendero',          t:'10:30 a. m.',ll:[4.6378,-75.4869], color:'#4b7f5f'},
+  {k:'site',   n:'3', name:'Bosque de palmas de cera',  city:'Mirador principal',           t:'12:15 p. m.',ll:[4.6428,-75.4790], color:'#4b7f5f'},
+  {k:'site',   n:'4', name:'Reserva Acaime',            city:'Punto más alto · 2 860 m',    t:'2:00 p. m.', ll:[4.6497,-75.4620], color:'#4b7f5f'},
+  {k:'drop',   n:'B', tag:'Regreso', name:'Regreso · Terminal',        city:'Terminal de Transportes, Armenia', t:'5:30 p. m.', ll:[4.5252,-75.6812], color:'#b4562a'}
+];
+
+const map = L.map('map',{scrollWheelZoom:false,zoomControl:true});
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
+
+const transfer = L.polyline([STOPS[0].ll, STOPS[1].ll],{color:'#6d7268',weight:3,dashArray:'6 8'}).addTo(map);
+const trail    = L.polyline([STOPS[1].ll,STOPS[2].ll,STOPS[3].ll,STOPS[4].ll],{color:'#2f6b45',weight:4}).addTo(map);
+const back     = L.polyline([STOPS[4].ll, STOPS[5].ll],{color:'#b4562a',weight:3,dashArray:'6 8'}).addTo(map);
+const zone     = L.circle(STOPS[3].ll,{radius:2600,color:'#1d4630',weight:1,fillColor:'#1d4630',fillOpacity:.07}).addTo(map);
+
+// A/B: etiqueta dentro del propio icono (imposible que se solape con el pin)
+function sideIcon(s, dx, dy, side){
+  const cx = side==='left' ? 135 : 15;
+  const inner = side==='left'
+    ? `<span class="lbl2">${s.tag}</span><div class="mk" style="width:30px;height:30px;background:${s.color}">${s.n}</div>`
+    : `<div class="mk" style="width:30px;height:30px;background:${s.color}">${s.n}</div><span class="lbl2">${s.tag}</span>`;
+  return L.divIcon({className:'',iconSize:[150,30],iconAnchor:[cx+dx,15+dy],
+    html:`<div style="display:flex;align-items:center;gap:7px;width:150px;height:30px;justify-content:${side==='left'?'flex-end':'flex-start'}">${inner}</div>`});
+}
+function dotIcon(s,size,dx,dy){
+  return L.divIcon({className:'',iconSize:[size,size],iconAnchor:[size/2+dx,size/2+dy],
+    html:`<div class="mk" style="width:${size}px;height:${size}px;background:${s.color}">${s.n}</div>`});
+}
+
+const markers = STOPS.map((s,i)=>{
+  let icon;
+  if(i===0) icon = sideIcon(s, 18, -8, 'left');
+  else if(i===5) icon = sideIcon(s, -18, 12, 'right');
+  else icon = dotIcon(s, s.n==='1'?30:26, 0, 0);
+  return L.marker(s.ll,{icon,zIndexOffset:i*10})
+    .bindPopup(`<b>${s.name}</b><br>${s.city}<br><span style="color:#6d7268">${s.t}</span>`)
+    .on('click',()=>select(i,false));
+});
+markers[0].addTo(map); markers[5].addTo(map);
+
+// Zoom bajo: las 4 paradas del sendero caben en ~10 px → se agrupan en un solo pin
+const trailIdx = [1,2,3,4];
+const mid = [ (STOPS[1].ll[0]+STOPS[4].ll[0])/2, (STOPS[1].ll[1]+STOPS[4].ll[1])/2 ];
+const cluster = L.marker(mid,{zIndexOffset:60,icon:L.divIcon({className:'',iconSize:[260,30],iconAnchor:[15,15],
+  html:`<div style="display:flex;align-items:center;gap:7px;height:30px"><div class="mk" style="width:30px;height:30px;background:#4b7f5f">•</div><span class="lbl2">Sendero de Cocora · 4 paradas</span></div>`})})
+  .on('click',()=>views.site());
+
+let grouped = null;
+function setGrouped(group){
+  if(group === grouped) return;
+  grouped = group;
+  if(group){ trailIdx.forEach(i=>map.removeLayer(markers[i])); cluster.addTo(map); }
+  else { map.removeLayer(cluster); trailIdx.forEach(i=>markers[i].addTo(map)); }
+}
+
+const stopsEl = document.getElementById('stops');
+stopsEl.innerHTML = STOPS.map((s,i)=>`
+  <button class="stop" data-i="${i}" aria-current="${i===0}">
+    <span class="pin" style="background:${s.color}">${s.n}</span>
+    <span><span class="mono">${s.t}</span><h3>${s.name}</h3><p>${s.city}</p></span>
+  </button>`).join('');
+
+function select(i, fly=true){
+  stopsEl.querySelectorAll('.stop').forEach(b=>b.setAttribute('aria-current', b.dataset.i==String(i)));
+  setGrouped(false);
+  if(fly) map.flyTo(STOPS[i].ll, 14.5,{duration:.7});
+  setTimeout(()=>markers[i].openPopup(), fly?750:0);
+  const el = stopsEl.querySelector(`[data-i="${i}"]`);
+  if(el) stopsEl.scrollTop = el.offsetTop - 120;
+}
+stopsEl.addEventListener('click',e=>{const b=e.target.closest('.stop'); if(b) select(+b.dataset.i);});
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{
+  const y = document.getElementById('ruta').getBoundingClientRect().top + window.scrollY - 70;
+  window.scrollTo({top:y, behavior:'smooth'});
+  setTimeout(()=>select(+b.dataset.goto),350);
+}));
+
+const views = {
+  all:  ()=>{ setGrouped(true);  map.fitBounds(L.latLngBounds(STOPS.map(s=>s.ll)).pad(.3)); },
+  pickup:()=>{ setGrouped(true); map.flyTo(STOPS[0].ll,15,{duration:.7}); },
+  site: ()=>{ setGrouped(false); map.fitBounds(L.latLngBounds(STOPS.slice(1,5).map(s=>s.ll)).pad(.35)); },
+  drop: ()=>{ setGrouped(true);  map.flyTo(STOPS[5].ll,15,{duration:.7}); }
+};
+document.querySelectorAll('.maptabs button').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.maptabs button').forEach(x=>x.setAttribute('aria-selected',x===t));
+  views[t.dataset.view]();
+}));
+views.all();
+map.on('click',()=>map.scrollWheelZoom.enable());
+map.on('mouseout',()=>map.scrollWheelZoom.disable());
+
+const [a,b] = [STOPS[0].ll, STOPS[5].ll];
+document.getElementById('dirs').href =
+  `https://www.google.com/maps/dir/${a[0]},${a[1]}/${STOPS[2].ll[0]},${STOPS[2].ll[1]}/${b[0]},${b[1]}`;
+document.getElementById('dirs').target = '_blank';
+</script>
+</body>
+</html>

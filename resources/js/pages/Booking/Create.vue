@@ -454,7 +454,7 @@ async function submit(): Promise<void> {
                                 href="/terms"
                                 target="_blank"
                                 rel="noopener"
-                                class="text-primary underline underline-offset-2"
+                                class="text-primary-readable underline underline-offset-2"
                             >
                                 {{ $t('términos y condiciones') }}
                             </a>

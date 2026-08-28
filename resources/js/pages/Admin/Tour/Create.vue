@@ -27,6 +27,7 @@ import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import { useTourCompletion } from '@/composables/useTourCompletion';
 import { useTranslations } from '@/composables/useTranslations';
+import { applyFormValue } from '@/lib/form-errors';
 import { tourStopsPayload } from '@/lib/tour-stops';
 import type {
     Tour,
@@ -213,7 +214,7 @@ function submit(): void {
                     :title="$t('Nuevo tour')"
                     :description="
                         $t(
-                            'Crea el borrador. Se publica cuando tenga imagen, precio, cupo y guía por defecto.',
+                            'Para guardar el borrador hacen falta el punto de encuentro, el destino y el regreso. Se publica cuando además tenga imagen y guía por defecto.',
                         )
                     "
                 />
@@ -243,7 +244,7 @@ function submit(): void {
                     :model-value="payload"
                     :errors="formErrors"
                     :categories="props.categories"
-                    @update:model-value="(value) => Object.assign(form, value)"
+                    @update:model-value="(value) => applyFormValue(form, value)"
                 >
                     <template #gallery>
                         <Card>

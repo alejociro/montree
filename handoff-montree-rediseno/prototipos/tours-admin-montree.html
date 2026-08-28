@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Montree · Administración de tours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<style>
+:root{
+  --ink:#14301f; --green:#12A150; --green-d:#0E7C3E; --green-100:#E3F0E7; --green-50:#EFF6F0;
+  --cream:#F6F0E6; --card:#FFFDF9; --tan:#F1E4C9; --line:#E4DDCD; --line-2:#EFE9DC;
+  --text:#1B1D18; --muted:#767B70; --danger:#B4562A; --danger-50:#F7E6DC; --warn:#B98A17;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--text);font-family:"Plus Jakarta Sans",system-ui,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.015em}
+a{color:var(--green-d);text-decoration:none}
+a:hover{color:var(--ink);text-decoration:underline}
+button{font-family:inherit}
+.mono{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase}
+.serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.02em}
+
+/* shell */
+.app{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.side{background:var(--ink);color:#cfdbcf;padding:18px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.logo{font-family:"Instrument Serif",serif;font-size:19px;color:#f4efe2;letter-spacing:.04em;padding:4px 10px}
+.side .mono{color:#7d9686;padding:0 10px}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side nav a{display:flex;align-items:center;gap:10px;color:#cfdbcf;padding:9px 10px;border-radius:9px;font-size:13.5px}
+.side nav a:hover{background:#1f4630;color:#fff;text-decoration:none}
+.side nav a[aria-current="page"]{background:#22503a;color:#fff;font-weight:600}
+.side .who{margin-top:auto;display:flex;gap:10px;align-items:center;border-top:1px solid #2b4a36;padding-top:14px;font-size:12.5px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#2f6b45;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:700;background:#f6f0e6e6;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 30px}
+.crumbs{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px}
+.viewsw{display:flex;gap:4px;background:var(--green-100);padding:3px;border-radius:999px}
+.viewsw button{border:0;background:none;font-size:12.5px;font-weight:600;color:#1d4630;padding:6px 13px;border-radius:999px;cursor:pointer}
+.viewsw button[aria-selected="true"]{background:var(--ink);color:#f4efe2}
+.page{padding:26px 30px 70px;max-width:1420px;width:100%}
+.hidden{display:none !important}
+
+/* generic bits */
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+.head h1{font-size:30px}
+.head p{margin:5px 0 0;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid transparent}
+.btn.p{background:var(--green);color:#fff}
+.btn.p:hover{background:var(--green-d)}
+.btn.g{background:var(--card);color:var(--text);border-color:var(--line)}
+.btn.g:hover{background:var(--green-50);border-color:var(--green-100)}
+.btn.d{background:none;color:var(--danger);border-color:var(--danger-50)}
+.btn.d:hover{background:var(--danger-50)}
+.btn.sm{padding:7px 13px;font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.pad{padding:20px 22px}
+.tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600}
+.t-ok{background:var(--green-100);color:#14301f}
+.t-warn{background:#FBEFD3;color:#7A5A05}
+.t-off{background:#EDEAE0;color:#5F625A}
+.t-due{background:var(--danger-50);color:var(--danger)}
+.bar{height:6px;background:var(--line-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.sec-title{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:14px}
+.sec-title h2{font-size:19px}
+.sec-title p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.field label,.lbl{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+input,select,textarea{width:100%;font-family:inherit;font-size:14px;color:var(--text);background:var(--card);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:0}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-100)}
+input::placeholder,textarea::placeholder{color:#A3A69C}
+.hint{color:var(--muted);font-size:12px;margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+
+/* ---------- INDEX ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.kpi .mono{color:var(--muted)}
+.kpi b{display:block;font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.kpi small{color:var(--muted);font-size:12px}
+.kpi.alert{background:var(--danger-50);border-color:#EBD3C4}
+.kpi.alert b{color:var(--danger)}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.filters{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);padding:4px;border-radius:999px}
+.filters button{border:0;background:none;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
+.filters button[aria-selected="true"]{background:var(--ink);color:#f4efe2}
+.search{flex:1;min-width:220px;max-width:340px;position:relative}
+.search input{padding-left:34px}
+.search span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.tours{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tour{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.tour:hover{border-color:#CFC7B4;box-shadow:0 12px 34px -26px rgba(20,48,31,.55)}
+.shot{height:132px;position:relative;background:repeating-linear-gradient(135deg,#E8E1CD 0 10px,#EFE9D8 10px 20px);
+  display:flex;align-items:flex-end;justify-content:space-between;padding:10px;border-bottom:1px solid var(--line)}
+.shot .mono{color:#8D8A76}
+.shot .tag{position:absolute;top:10px;left:10px}
+.tour .body{padding:14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.tour h3{font-size:15.5px}
+.tour .sub{color:var(--muted);font-size:12.5px}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12.5px;color:var(--muted);padding-top:2px}
+.mini b{color:var(--text);font-weight:600}
+.occ{margin-top:auto}
+.occ .row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.tour .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line-2);padding:11px 16px;background:#FDFBF5}
+.price{font-size:15px;font-weight:700}
+.price small{display:block;color:var(--muted);font-size:11.5px;font-weight:500}
+.acts{display:flex;gap:7px}
+.pend{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--danger)}
+
+/* ---------- FORM (crear / editar) ---------- */
+.form-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:26px;align-items:start}
+aside.rail{position:sticky;top:74px;display:flex;flex-direction:column;gap:14px}
+.steps{display:flex;flex-direction:column;gap:2px}
+.step{display:grid;grid-template-columns:24px 1fr;gap:11px;align-items:start;padding:9px 10px;border-radius:10px;cursor:pointer;
+  background:none;border:0;text-align:left;width:100%;color:var(--text)}
+.step:hover{background:var(--green-50)}
+.step[aria-current="true"]{background:var(--green-100)}
+.step .n{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted)}
+.step[data-done="1"] .n{background:var(--green);border-color:var(--green);color:#fff}
+.step b{font-size:13px;display:block}
+.step small{color:var(--muted);font-size:11.5px}
+.block{margin-bottom:18px}
+.block .pad{padding:22px}
+.blockhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}
+.blockhead h2{font-size:17px}
+.blockhead p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+.diff{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.diff button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;cursor:pointer}
+.diff button b{display:block;font-size:13.5px}
+.diff button small{color:var(--muted);font-size:11.5px}
+.diff button[aria-pressed="true"]{border-color:var(--green);background:var(--green-50);box-shadow:0 0 0 2px var(--green-100)}
+.chips-in{display:flex;flex-wrap:wrap;gap:7px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);min-height:44px}
+.chips-in .chip{display:inline-flex;gap:7px;align-items:center;background:var(--green-50);border:1px solid var(--green-100);
+  border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px}
+.chips-in .chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:2px}
+.chips-in input{border:0;flex:1;min-width:130px;padding:4px 6px;background:none}
+.chips-in input:focus{box-shadow:none}
+.stoplist{display:flex;flex-direction:column;gap:10px}
+.stoprow{display:grid;grid-template-columns:26px 118px minmax(0,1fr) 92px 116px auto;gap:10px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stoprow .pin{width:24px;height:24px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
+.stoprow .icon{border:0;background:none;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px}
+.stoprow .icon:hover{background:var(--line-2);color:var(--text)}
+.editmap{height:320px;border-radius:12px;overflow:hidden;border:1px solid var(--line);z-index:1}
+.dropzone{border:1.5px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--muted);background:#FDFBF5}
+.thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.thumb{width:110px;height:78px;border-radius:10px;border:1px solid var(--line);position:relative;overflow:hidden;
+  background:repeating-linear-gradient(135deg,#E8E1CD 0 10px,#EFE9D8 10px 20px)}
+.thumb .tag{position:absolute;left:6px;bottom:6px;font-size:10.5px;padding:2px 8px}
+.savebar{position:sticky;bottom:0;background:#f6f0e6e6;backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;margin-top:10px}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:6px 0}
+.check i{width:16px;height:16px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10px;font-style:normal;margin-top:2px}
+.check.ok i{background:var(--green-100);color:var(--green-d)}
+.check.no i{background:var(--line-2);color:var(--muted)}
+
+/* ---------- DETALLE ---------- */
+.hero{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);min-height:250px;
+  background:linear-gradient(180deg,rgba(20,48,31,.15),rgba(20,48,31,.82)),repeating-linear-gradient(135deg,#DCD5C1 0 12px,#E5DECB 12px 24px);
+  display:flex;align-items:flex-end;padding:24px;color:#fff}
+.hero .top{position:absolute;top:18px;right:18px;display:flex;gap:9px}
+.hero h1{font-size:36px}
+.hero .row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:13.5px;color:#E7EFE8}
+.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin:22px 0 20px}
+.tabs button{border:0;background:none;padding:11px 2px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--green)}
+.tabs button .count{font-size:11.5px;background:var(--line-2);border-radius:99px;padding:1px 7px;margin-left:6px;color:var(--muted)}
+.tabs button[aria-selected="true"] .count{background:var(--green-100);color:var(--green-d)}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.list-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line-2)}
+.list-row:last-child{border-bottom:0}
+.timeline{display:flex;flex-direction:column}
+.tl{display:grid;grid-template-columns:26px 1fr;gap:12px;padding-bottom:16px;position:relative}
+.tl:not(:last-child):before{content:"";position:absolute;left:12.5px;top:26px;bottom:0;width:1px;background:var(--line)}
+.tl .n{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.tl b{font-size:13.5px}
+.tl small{color:var(--muted)}
+.tl p{margin:3px 0 0;color:var(--muted);font-size:13px}
+
+/* ---------- PASAJEROS ---------- */
+.pax-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);padding:3px;border-radius:999px}
+.seg button{border:0;background:none;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:999px;cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--ink);color:#f4efe2}
+.tablewrap{border:1px solid var(--line);border-radius:var(--r);overflow:auto;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:1080px}
+thead th{position:sticky;top:0;background:#FBF7EE;text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:2}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#FBF7EE}
+.person{display:flex;gap:10px;align-items:center;min-width:190px}
+.person .av{width:32px;height:32px;border-radius:50%;background:var(--green-100);color:#14301f;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.person b{display:block;font-size:13.5px}
+.person small{color:var(--muted);font-size:11.5px}
+.cell-sub{color:var(--muted);font-size:12px;display:block}
+.obs{max-width:230px;color:var(--muted);font-size:12.5px}
+.obs .flagme{color:var(--danger);font-weight:600}
+.dot-eps{display:inline-flex;align-items:center;gap:7px}
+.dot-eps i{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+.money{text-align:right;white-space:nowrap}
+.money b{display:block}
+.tfoot{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 16px;border-top:1px solid var(--line);
+  background:#FBF7EE;font-size:12.5px;color:var(--muted)}
+
+/* ---------- constructor de ruta ---------- */
+.maprow{display:grid;grid-template-columns:minmax(0,1fr) 208px;gap:12px}
+.maplegend{background:#FDFBF5;border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:10px}
+.maplegend .lg{display:flex;gap:8px;align-items:center;font-weight:600;font-size:12.5px}
+.maplegend .sw{width:13px;height:13px;border-radius:50%;flex:none}
+.maplegend .tip{color:var(--muted);font-size:11.5px;border-top:1px solid var(--line-2);padding-top:9px;margin-top:auto}
+.mk.hl{box-shadow:0 0 0 5px rgba(18,161,80,.35)}
+.steplist{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.stepcard{border:1px solid var(--line);border-radius:14px;background:#FDFBF5;padding:14px 15px}
+.stephead{display:grid;grid-template-columns:28px minmax(0,1fr) 136px auto;gap:10px;align-items:end}
+.stepno{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#f4efe2;display:grid;place-items:center;font-size:12px;font-weight:700;margin-bottom:8px}
+.rowacts{display:flex;gap:2px;margin-bottom:4px}
+.rowacts button{border:0;background:none;color:var(--muted);cursor:pointer;padding:5px 6px;border-radius:8px;font-size:13px;font-family:inherit}
+.rowacts button:hover{background:var(--line-2);color:var(--text)}
+.rowacts button.del:hover{background:var(--danger-50);color:var(--danger)}
+.stopsbox{margin-top:13px;border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.stopsboxhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stopcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:11px}
+.stoptop{display:grid;grid-template-columns:26px minmax(170px,1fr) auto;gap:10px 12px;align-items:end}
+.stopmeta{grid-column:2;display:grid;grid-template-columns:minmax(150px,212px) minmax(104px,132px);gap:10px}
+.grid3.fit{grid-template-columns:repeat(auto-fit,minmax(176px,1fr))}
+@media (max-width:940px){
+  .maprow{grid-template-columns:minmax(0,1fr)}
+  .stephead{grid-template-columns:26px minmax(0,1fr) auto}
+  .stephead .dur{grid-column:2;max-width:180px}
+}
+.stopcard .pin{width:24px;height:24px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;margin-bottom:8px}
+.placechip{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:11px;align-items:center;
+  background:var(--green-50);border:1px solid var(--green-100);border-radius:11px;padding:9px 11px}
+.placechip.empty{background:#FDFBF5;border:1.5px dashed var(--line)}
+.placechip .glyph{width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:12px}
+.placechip b{font-size:13px;display:block}
+.placechip small{color:var(--muted);font-size:12px;display:block}
+.placechip .chipacts{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.linkbtn{border:0;background:none;color:var(--green-d);font-weight:600;font-size:12.5px;cursor:pointer;padding:5px 7px;border-radius:8px;font-family:inherit}
+.linkbtn:hover{background:var(--green-100)}
+.sugs{display:flex;flex-direction:column;gap:6px;margin-top:11px;max-height:236px;overflow:auto}
+.sug{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:11px;align-items:center;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;font-family:inherit;color:var(--text)}
+.sug:hover{border-color:var(--green);background:var(--green-50)}
+.sug[aria-selected="true"]{border-color:var(--green);background:var(--green-50);box-shadow:0 0 0 2px var(--green-100)}
+.sug b{font-size:13px;display:block}
+.sug small{color:var(--muted);font-size:12px;display:block}
+.picked{display:grid;grid-template-columns:26px minmax(0,1fr);gap:11px;align-items:center;background:var(--green-50);
+  border:1px solid var(--green-100);border-radius:12px;padding:11px 13px}
+.picked.none{background:#FDFBF5;border:1.5px dashed var(--line)}
+.picked b{font-size:13px;display:block}
+.picked small{display:block;color:var(--muted);font-size:12px}
+.picked .glyph{width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:12px}
+.emptybox{border:1.5px dashed var(--line);border-radius:11px;padding:15px;text-align:center;color:var(--muted);font-size:12.5px;background:var(--card)}
+
+/* drawer + modal */
+.scrim{position:fixed;inset:0;background:rgba(20,32,24,.42);backdrop-filter:blur(2px);z-index:1000;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:420px;max-width:94vw;background:var(--cream);border-left:1px solid var(--line);
+  z-index:1001;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:20px 22px;border-bottom:1px solid var(--line)}
+.drawer .body{overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+.drawer footer{margin-top:auto;border-top:1px solid var(--line);padding:14px 22px;display:flex;gap:10px}
+.kv{display:grid;grid-template-columns:132px 1fr;gap:8px 14px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:500}
+.x{border:0;background:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1;padding:4px}
+.modal{position:fixed;z-index:1001;top:50%;left:50%;transform:translate(-50%,-48%);width:660px;max-width:94vw;max-height:88vh;overflow:auto;
+  background:var(--cream);border:1px solid var(--line);border-radius:18px;display:none;box-shadow:0 40px 90px -50px rgba(20,48,31,.7)}
+.modal.on{display:block}
+.modal header{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--line)}
+.modal .body{padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+.modal footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--line)}
+fieldset{border:0;padding:0;margin:0}
+legend{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px;
+  font-family:"IBM Plex Mono",monospace}
+.radios{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.radios label{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  font-size:13px;cursor:pointer;background:var(--card)}
+.radios label:has(input:checked){border-color:var(--green);background:var(--green-50)}
+.radios input{width:auto;margin:0}
+.leaflet-container{font-family:inherit}
+.mk{display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;font-size:11px;flex:none;
+  box-shadow:0 0 0 3px #FFFDF9,0 3px 10px rgba(0,0,0,.25)}
+@media (max-width:1180px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .form-wrap,.cols2{grid-template-columns:1fr}.rail{position:static}
+  .tours{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="side">
+    <div class="logo">MONTREE</div>
+    <div>
+      <div class="mono" style="margin-bottom:8px">Operación</div>
+      <nav>
+        <a href="#" data-view-go="index">Dashboard</a>
+        <a href="#" data-view-go="index" aria-current="page">Tours</a>
+        <a href="#">Salidas</a>
+        <a href="#">Reservas</a>
+        <a href="#">Pasajeros</a>
+        <a href="#">Pagos</a>
+      </nav>
+    </div>
+    <div>
+      <div class="mono" style="margin-bottom:8px">Agencia</div>
+      <nav>
+        <a href="#">Guías</a>
+        <a href="#">Configuración</a>
+      </nav>
+    </div>
+    <div class="who"><span class="avatar">EU</span><div><b>Eduardo U.</b><div style="color:#8fa693">Administrador</div></div></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="crumbs"><a href="#" data-view-go="index">Dashboard</a> <span>›</span> <a href="#" data-view-go="index">Tours</a> <span>›</span> <b id="crumb">Listado</b></div>
+      <span class="mono" style="color:var(--muted)">Agencia Montree</span>
+    </div>
+
+    <!-- ============ INDEX ============ -->
+    <div class="page" id="v-index">
+      <div class="head">
+        <div>
+          <h1>Tours</h1>
+          <p>Catálogo de experiencias y estado operativo de cada una.</p>
+        </div>
+        <div style="display:flex;gap:9px">
+          <button class="btn g">Exportar catálogo</button>
+          <button class="btn p" data-view-go="crear">+ Nuevo tour</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="mono">Tours activos</div><b>6</b><small>1 en borrador · 0 archivados</small></div>
+        <div class="kpi"><div class="mono">Salidas próximas 30 días</div><b>11</b><small>Próxima: 28 de octubre</small></div>
+        <div class="kpi"><div class="mono">Ocupación media</div><b>62 %</b><small>178 de 288 cupos</small></div>
+        <div class="kpi alert"><div class="mono">Pasajeros con saldo</div><b>7</b><small>$3.150.000 por cobrar</small></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="filters" role="tablist">
+          <button aria-selected="true">Todos</button><button aria-selected="false">Borradores</button>
+          <button aria-selected="false">Activos</button><button aria-selected="false">Pausados</button>
+          <button aria-selected="false">Archivados</button>
+        </div>
+        <div class="search"><span>⌕</span><input placeholder="Buscar por nombre, categoría o guía..."></div>
+        <select style="width:auto;min-width:180px"><option>Todas las categorías</option><option>Senderismo</option><option>Cultural</option><option>Playa</option></select>
+        <select style="width:auto;min-width:180px"><option>Ordenar: próxima salida</option><option>Ocupación</option><option>Ingresos</option><option>Alfabético</option></select>
+      </div>
+
+      <div class="tours" id="tours"></div>
+      <div style="margin-top:18px;color:var(--muted);font-size:12.5px">Mostrando 1 – 6 de 6 tours</div>
+    </div>
+
+    <!-- ============ CREAR ============ -->
+    <div class="page hidden" id="v-crear">
+      <div class="head">
+        <div>
+          <a href="#" data-view-go="index" style="font-size:13px">← Volver a tours</a>
+          <h1 style="margin-top:6px">Nuevo tour</h1>
+          <p>Crea el borrador. Se publica cuando tenga portada, precio y al menos una parada de ruta.</p>
+        </div>
+        <div style="display:flex;gap:9px">
+          <button class="btn g" data-view-go="index">Cancelar</button>
+          <button class="btn p">Guardar borrador</button>
+        </div>
+      </div>
+
+      <div class="form-wrap">
+        <div>
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Información general</h2><p>Cómo se presenta el tour en el catálogo.</p></div><span class="mono" style="color:var(--muted)">Paso 1</span></div>
+            <div class="field" style="margin-bottom:14px"><label for="c-nom">Nombre</label><input id="c-nom" placeholder="Sendero del Quindío"></div>
+            <div class="field" style="margin-bottom:14px"><label for="c-res">Resumen corto</label><input id="c-res" placeholder="Caminata de 6 horas por el Valle de Cocora"><div class="hint">Aparece en listados. Máx. 280 caracteres.</div></div>
+            <div class="grid2">
+              <div class="field"><label for="c-cat">Categoría</label><select id="c-cat"><option>Sin categoría</option><option>Senderismo</option><option>Cultural</option><option>Playa</option></select></div>
+              <div class="field"><label for="c-guia">Guía por defecto</label><select id="c-guia"><option>Sin asignar</option><option>Camilo Restrepo</option><option>Lina Vélez</option><option>Mariana Salaz</option></select><div class="hint">Se propone automáticamente al crear cada salida; se puede cambiar fecha por fecha.</div></div>
+            </div>
+            <div class="field" style="margin-top:14px"><label for="c-desc">Descripción completa</label><textarea id="c-desc" rows="4" placeholder="Detalle de la experiencia"></textarea></div>
+          </div></div>
+
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Precio, cupo y exigencia</h2><p>La economía y el perfil físico del tour.</p></div><span class="mono" style="color:var(--muted)">Paso 2</span></div>
+            <div class="grid3" style="margin-bottom:16px">
+              <div class="field"><label for="c-pre">Precio por persona</label>
+                <div style="display:flex;gap:8px"><input id="c-pre" placeholder="250.000"><select style="width:96px"><option>COP</option><option>USD</option></select></div></div>
+              <div class="field"><label for="c-cup">Cupo por salida</label><input id="c-cup" value="12"><div class="hint">Máximo de viajeros por fecha.</div></div>
+              <div class="field"><label for="c-dur">Duración (horas)</label><input id="c-dur" value="10"></div>
+            </div>
+            <div class="lbl">Dificultad</div>
+            <div class="diff" id="diff">
+              <button aria-pressed="true"><b>Fácil</b><small>Apto para todos</small></button>
+              <button aria-pressed="false"><b>Moderado</b><small>Condición media</small></button>
+              <button aria-pressed="false"><b>Exigente</b><small>Experiencia previa</small></button>
+              <button aria-pressed="false"><b>Extremo</b><small>Solo expertos</small></button>
+            </div>
+          </div></div>
+
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Detalle de la experiencia</h2><p>Escribe y presiona Enter: cada línea se vuelve un ítem del listado público.</p></div><span class="mono" style="color:var(--muted)">Paso 3</span></div>
+            <div class="grid3">
+              <div><div class="lbl">Incluye</div><div class="chips-in" data-chips><span class="chip">Guía certificado <button aria-label="Quitar">×</button></span><input placeholder="Agregar…"></div></div>
+              <div><div class="lbl">No incluye</div><div class="chips-in" data-chips><span class="chip">Propinas <button aria-label="Quitar">×</button></span><input placeholder="Agregar…"></div></div>
+              <div><div class="lbl">Requisitos</div><div class="chips-in" data-chips><span class="chip">Calzado resistente <button aria-label="Quitar">×</button></span><input placeholder="Agregar…"></div></div>
+            </div>
+          </div></div>
+
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Punto de encuentro</h2><p>Dónde reciben a los viajeros. Se busca por dirección o se señala en el mapa: nunca se piden coordenadas.</p></div>
+              <span class="mono" style="color:var(--muted)">Paso 4</span></div>
+            <div id="c-meet"></div>
+          </div></div>
+
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Itinerario y paradas</h2><p>Cada parada pertenece a un paso del itinerario. Dos pasos pueden compartir la misma ubicación: se reutiliza el lugar ya guardado.</p></div>
+              <button class="btn g sm" data-addstep="1">+ Agregar paso</button></div>
+            <div class="maprow">
+              <div class="editmap" id="cmap"></div>
+              <div class="maplegend">
+                <div class="mono" style="color:var(--muted)">Mapa de la ruta</div>
+                <div class="lg"><span class="sw" style="background:#12A150"></span>Recogida</div>
+                <div class="lg"><span class="sw" style="background:#4b7f5f"></span>Parada del recorrido</div>
+                <div class="lg"><span class="sw" style="background:#B4562A"></span>Regreso</div>
+                <div class="tip">Un pin con dos números es una ubicación compartida por varias paradas. Arrastra cualquier pin para ajustarlo.</div>
+              </div>
+            </div>
+            <div class="steplist" id="c-steps"></div>
+          </div></div>
+
+          <div class="card block"><div class="pad">
+            <div class="blockhead"><div><h2>Galería</h2><p>JPG, PNG o WebP. Máx. 5 MB por imagen. La portada es la primera.</p></div></div>
+            <div class="dropzone">Arrastra imágenes aquí o <a href="#">selecciona archivos</a></div>
+            <div class="thumbs"><div class="thumb"><span class="tag t-ok">Portada</span></div><div class="thumb"></div></div>
+          </div></div>
+
+          <div class="savebar">
+            <span style="color:var(--muted);font-size:12.5px">Borrador sin guardar · los cambios se conservan 24 h</span>
+            <div style="display:flex;gap:9px"><button class="btn g">Vista previa</button><button class="btn p">Guardar borrador</button></div>
+          </div>
+        </div>
+
+        <aside class="rail">
+          <div class="card pad">
+            <div class="mono" style="color:var(--muted);margin-bottom:10px">Progreso</div>
+            <div class="steps">
+              <button class="step" data-done="1" aria-current="true"><span class="n">✓</span><span><b>Información general</b><small>Nombre y resumen</small></span></button>
+              <button class="step" data-done="1"><span class="n">✓</span><span><b>Precio y cupo</b><small>$250.000 · 12 pers.</small></span></button>
+              <button class="step" data-done="0"><span class="n">3</span><span><b>Detalle</b><small>Incluye / requisitos</small></span></button>
+              <button class="step" data-done="0"><span class="n">4</span><span><b>Ruta y mapa</b><small>3 pasos · 5 paradas</small></span></button>
+              <button class="step" data-done="0"><span class="n">5</span><span><b>Galería</b><small>Falta portada</small></span></button>
+            </div>
+          </div>
+          <div class="card pad">
+            <div class="mono" style="color:var(--muted);margin-bottom:8px">Para publicar</div>
+            <div class="check ok"><i>✓</i><span>Nombre y resumen</span></div>
+            <div class="check ok"><i>✓</i><span>Precio y cupo definidos</span></div>
+            <div class="check no"><i>○</i><span>Portada cargada</span></div>
+            <div class="check no"><i>○</i><span>Parada de recogida y de regreso</span></div>
+            <div class="hint" style="margin-top:8px">Mientras falte algo el tour queda como borrador y no aparece en el catálogo.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ============ EDITAR ============ -->
+    <div class="page hidden" id="v-editar">
+      <div class="head">
+        <div>
+          <a href="#" data-view-go="index" style="font-size:13px">← Volver a tours</a>
+          <div style="display:flex;gap:10px;align-items:center;margin:8px 0 6px">
+            <span class="tag t-ok">● Activo</span><span class="mono" style="color:var(--muted)">/valle-de-cocora</span>
+          </div>
+          <h1>Valle de Cocora</h1>
+          <p>Última edición hace 2 h por Eduardo U. · 3 reservas dependen de este tour.</p>
+        </div>
+        <div style="display:flex;gap:9px">
+          <button class="btn g" data-view-go="detalle">Ver detalle</button>
+          <button class="btn g">Pausar</button>
+          <button class="btn d">Archivar</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="etabs">
+        <button aria-selected="true" data-etab="cont">Contenido</button>
+        <button aria-selected="false" data-etab="ruta">Ruta y mapa</button>
+        <button aria-selected="false" data-etab="sal">Salidas <span class="count">2</span></button>
+        <button aria-selected="false" data-etab="pax">Pasajeros <span class="count">9</span></button>
+      </div>
+
+      <div class="form-wrap">
+        <div>
+          <div id="e-cont">
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Información general</h2><p>Cambios visibles de inmediato en el catálogo público.</p></div></div>
+              <div class="field" style="margin-bottom:14px"><label for="e-nom">Nombre</label><input id="e-nom" value="Valle de Cocora"></div>
+              <div class="field" style="margin-bottom:14px"><label for="e-res">Resumen corto</label><input id="e-res" value="Caminata de un día entre las palmas de cera más altas del mundo."></div>
+              <div class="grid3">
+                <div class="field"><label for="e-pre">Precio por persona</label><input id="e-pre" value="250.000"></div>
+                <div class="field"><label for="e-cup">Cupo por salida</label><input id="e-cup" value="16"></div>
+                <div class="field"><label for="e-dur">Duración (horas)</label><input id="e-dur" value="10"></div>
+              </div>
+            </div></div>
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Detalle de la experiencia</h2><p>Se muestra como listas en la página pública.</p></div></div>
+              <div class="grid3">
+                <div><div class="lbl">Incluye</div><div class="chips-in" data-chips>
+                  <span class="chip">Alojamiento 2 noches <button>×</button></span><span class="chip">Comidas <button>×</button></span>
+                  <span class="chip">Guía certificado <button>×</button></span><input placeholder="Agregar…"></div></div>
+                <div><div class="lbl">No incluye</div><div class="chips-in" data-chips>
+                  <span class="chip">Vuelos <button>×</button></span><span class="chip">Propinas <button>×</button></span><input placeholder="Agregar…"></div></div>
+                <div><div class="lbl">Requisitos</div><div class="chips-in" data-chips>
+                  <span class="chip">Calzado resistente <button>×</button></span><span class="chip">Impermeable <button>×</button></span><input placeholder="Agregar…"></div></div>
+              </div>
+            </div></div>
+          </div>
+
+          <div id="e-ruta" class="hidden">
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Punto de encuentro</h2><p>Dónde reciben a los viajeros. Búscalo por dirección o señálalo en el mapa.</p></div></div>
+              <div id="e-meet"></div>
+              <div class="hint" style="margin-top:12px">Cambiar el punto de encuentro o una parada de recogida notifica por correo a los 9 pasajeros con reserva activa.</div>
+            </div></div>
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Itinerario y paradas</h2><p>Las paradas cuelgan del paso al que pertenecen. Varias paradas pueden apuntar al mismo lugar.</p></div>
+                <button class="btn g sm" data-addstep="1">+ Agregar paso</button></div>
+              <div class="maprow">
+                <div class="editmap" id="emap"></div>
+                <div class="maplegend">
+                  <div class="mono" style="color:var(--muted)">Mapa de la ruta</div>
+                  <div class="lg"><span class="sw" style="background:#12A150"></span>Recogida</div>
+                  <div class="lg"><span class="sw" style="background:#4b7f5f"></span>Parada del recorrido</div>
+                  <div class="lg"><span class="sw" style="background:#B4562A"></span>Regreso</div>
+                  <div class="tip">Un pin con dos números es una ubicación compartida por varias paradas. Arrastra cualquier pin para ajustarlo.</div>
+                </div>
+              </div>
+              <div class="steplist" id="e-steps"></div>
+            </div></div>
+          </div>
+
+          <div id="e-sal" class="hidden">
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Salidas programadas</h2><p>El guía se asigna aquí, en cada fecha: una salida sin guía no puede abrirse a la venta.</p></div>
+                <button class="btn p sm">+ Nueva salida</button></div>
+              <div class="list-row">
+                <div><b>Miércoles 28 de octubre de 2026 · 6:00 a. m.</b>
+                  <div class="cell-sub">9/16 reservados</div>
+                  <div class="bar" style="width:220px;margin-top:7px"><i style="width:56%"></i></div></div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <select style="width:auto;min-width:170px"><option>Guía: Camilo Restrepo</option><option>Guía: Lina Vélez</option><option>Guía: Mariana Salaz</option><option>Sin asignar</option></select>
+                  <span class="tag t-ok">Abierta</span>
+                  <button class="btn g sm" data-view-go="detalle">Pasajeros</button></div>
+              </div>
+              <div class="list-row">
+                <div><b>Martes 10 de noviembre de 2026 · 6:00 a. m.</b>
+                  <div class="cell-sub">2/16 reservados</div>
+                  <div class="bar" style="width:220px;margin-top:7px"><i style="width:12%"></i></div></div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <select style="width:auto;min-width:170px"><option>Guía: Lina Vélez</option><option>Guía: Camilo Restrepo</option><option>Guía: Mariana Salaz</option><option>Sin asignar</option></select>
+                  <span class="tag t-ok">Abierta</span>
+                  <button class="btn g sm" data-view-go="detalle">Pasajeros</button></div>
+              </div>
+              <div class="list-row">
+                <div><b>Sábado 5 de diciembre de 2026 · 6:00 a. m.</b>
+                  <div class="cell-sub">0/16 reservados</div>
+                  <div class="bar" style="width:220px;margin-top:7px"><i style="width:0"></i></div></div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <select style="width:auto;min-width:170px;border-color:#E0C98A;background:#FDF6E3"><option>Sin asignar</option><option>Camilo Restrepo</option><option>Lina Vélez</option><option>Mariana Salaz</option></select>
+                  <span class="tag t-warn">Falta guía</span>
+                  <button class="btn g sm">Editar</button></div>
+              </div>
+            </div></div>
+          </div>
+
+          <div id="e-pax" class="hidden">
+            <div class="card block"><div class="pad">
+              <div class="blockhead"><div><h2>Pasajeros del tour</h2><p>Consolidado de todas las salidas. Para gestionar una salida puntual usa el detalle.</p></div>
+                <button class="btn g sm" data-view-go="detalle">Abrir lista completa →</button></div>
+              <div id="pax-mini"></div>
+            </div></div>
+          </div>
+
+          <div class="savebar">
+            <span style="color:var(--muted);font-size:12.5px">3 cambios sin guardar</span>
+            <div style="display:flex;gap:9px"><button class="btn g">Descartar</button><button class="btn p">Guardar cambios</button></div>
+          </div>
+        </div>
+
+        <aside class="rail">
+          <div class="card pad">
+            <div class="mono" style="color:var(--muted);margin-bottom:10px">Estado</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Controla la visibilidad del tour en el catálogo público.</div>
+            <button class="btn g" style="width:100%;justify-content:center;margin-bottom:8px">Pausar ventas</button>
+            <button class="btn g" style="width:100%;justify-content:center">Duplicar tour</button>
+          </div>
+          <div class="card pad">
+            <div class="mono" style="color:var(--muted);margin-bottom:10px">Impacto de los cambios</div>
+            <div class="check ok"><i>✓</i><span>9 pasajeros con reserva activa</span></div>
+            <div class="check ok"><i>✓</i><span>2 salidas abiertas a la venta</span></div>
+            <div class="check no"><i>!</i><span>3 pasajeros con saldo pendiente</span></div>
+            <button class="btn g sm" style="width:100%;justify-content:center;margin-top:12px" data-view-go="detalle">Ver pasajeros</button>
+          </div>
+          <div class="card pad">
+            <div class="mono" style="color:var(--muted);margin-bottom:10px">Galería</div>
+            <div class="thumbs" style="margin:0"><div class="thumb"><span class="tag t-ok">Portada</span></div><div class="thumb"></div><div class="thumb"></div></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ============ DETALLE ============ -->
+    <div class="page hidden" id="v-detalle">
+      <div class="hero">
+        <div class="top">
+          <button class="btn g sm" data-view-go="index">← Tours</button>
+          <button class="btn g sm">Ver como viajero ↗</button>
+          <button class="btn p sm" data-view-go="editar">Editar</button>
+        </div>
+        <div>
+          <div style="display:flex;gap:8px;margin-bottom:10px"><span class="tag t-ok">● Activo</span><span class="tag t-off">Senderismo</span></div>
+          <h1 class="serif" style="color:#fff">Valle de Cocora</h1>
+          <div class="row"><span>10 h</span><span>·</span><span>Extremo</span><span>·</span><span>16 cupos por salida</span><span>·</span><span>$250.000 por persona</span><span>·</span><span>★ 4.7 (3 reseñas)</span></div>
+        </div>
+      </div>
+
+      <div class="tabs" id="dtabs">
+        <button aria-selected="true" data-dtab="res">Resumen</button>
+        <button aria-selected="false" data-dtab="pax">Pasajeros <span class="count">9</span></button>
+        <button aria-selected="false" data-dtab="map">Ruta</button>
+      </div>
+
+      <!-- resumen -->
+      <div id="d-res">
+        <div class="kpis">
+          <div class="kpi"><div class="mono">Reservas</div><b>7</b><small>4 confirmadas · 3 pendientes</small></div>
+          <div class="kpi"><div class="mono">Pasajeros</div><b>9</b><small>En reservas activas</small></div>
+          <div class="kpi"><div class="mono">Ingresos cobrados</div><b>$1.850.000</b><small>de $3.250.000 facturados</small></div>
+          <div class="kpi alert"><div class="mono">Saldo pendiente</div><b>$1.400.000</b><small>3 pasajeros · vence el 25 oct</small></div>
+        </div>
+        <div class="cols2">
+          <div class="card pad">
+            <div class="sec-title"><div><h2>Ocupación de las próximas salidas</h2><p>0 de 32 cupos vendidos en las próximas dos fechas.</p></div><span class="tag t-warn">34 %</span></div>
+            <div class="list-row">
+              <div style="flex:1"><b>Miércoles 28 de octubre · 6:00 a. m.</b>
+                <div class="cell-sub">Guía Camilo Restrepo · 9 de 16 cupos</div>
+                <div class="bar" style="margin-top:8px"><i style="width:56%"></i></div></div>
+              <button class="btn g sm" data-dtab-go="pax">Ver pasajeros</button>
+            </div>
+            <div class="list-row">
+              <div style="flex:1"><b>Martes 10 de noviembre · 6:00 a. m.</b>
+                <div class="cell-sub">Guía Lina Vélez · 2 de 16 cupos</div>
+                <div class="bar" style="margin-top:8px"><i style="width:12%"></i></div></div>
+              <button class="btn g sm" data-dtab-go="pax">Ver pasajeros</button>
+            </div>
+            <div class="list-row">
+              <div style="flex:1"><b>Sábado 5 de diciembre · 6:00 a. m.</b>
+                <div class="cell-sub" style="color:var(--warn)">Sin guía asignado · 0 de 16 cupos</div>
+                <div class="bar" style="margin-top:8px"><i style="width:0"></i></div></div>
+              <button class="btn g sm" data-view-go="editar">Asignar guía</button>
+            </div>
+          </div>
+          <div class="card pad">
+            <div class="sec-title"><div><h2>Itinerario</h2></div></div>
+            <div class="timeline">
+              <div class="tl"><span class="n">1</span><div><b>Salida desde Armenia</b> <small>· 1 h 10 min</small><p>Recogida en la Plaza de Bolívar y traslado hasta Salento.</p></div></div>
+              <div class="tl"><span class="n">2</span><div><b>Sendero de las palmas</b> <small>· 5 h</small><p>Caminata por el bosque de palmas de cera hasta la reserva Acaime.</p></div></div>
+              <div class="tl"><span class="n">3</span><div><b>Regreso</b> <small>· 1 h 30 min</small><p>Traslado de vuelta a Armenia y fin del tour en la terminal.</p></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- pasajeros -->
+      <div id="d-pax" class="hidden">
+        <div class="sec-title">
+          <div><h2>Lista de pasajeros</h2><p>Datos que el guía necesita en campo: identificación, contacto de emergencia, EPS, observaciones médicas y estado de pago.</p></div>
+          <div style="display:flex;gap:9px"><button class="btn g sm" id="print">Imprimir planilla</button><button class="btn g sm">Exportar CSV</button><button class="btn p sm" id="addpax">+ Agregar pasajero</button></div>
+        </div>
+
+        <div class="pax-head">
+          <select id="f-salida" style="width:auto;min-width:270px">
+            <option>Salida: miércoles 28 de octubre · 6:00 a. m.</option>
+            <option>Salida: martes 10 de noviembre · 6:00 a. m.</option>
+            <option>Todas las salidas</option>
+          </select>
+          <div class="seg" id="f-estado">
+            <button aria-selected="true" data-f="all">Todos <span style="opacity:.6">9</span></button>
+            <button aria-selected="false" data-f="due">Con saldo <span style="opacity:.6">3</span></button>
+            <button aria-selected="false" data-f="paid">Al día <span style="opacity:.6">6</span></button>
+            <button aria-selected="false" data-f="obs">Con observaciones <span style="opacity:.6">4</span></button>
+          </div>
+          <div class="search"><span>⌕</span><input id="f-q" placeholder="Buscar por nombre o documento…"></div>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead><tr>
+              <th>Pasajero</th><th>Documento</th><th>Contacto</th><th>Contacto de emergencia</th>
+              <th>EPS</th><th>Observaciones</th><th style="text-align:right">Estado de pago</th>
+            </tr></thead>
+            <tbody id="paxbody"></tbody>
+          </table>
+          <div class="tfoot">
+            <span id="paxcount">9 pasajeros · 3 con saldo pendiente</span>
+            <span>Total por cobrar <b style="color:var(--danger)">$1.400.000</b></span>
+          </div>
+        </div>
+        <div class="hint">Toca cualquier fila para ver la ficha completa del pasajero y registrar un pago.</div>
+      </div>
+
+      <!-- ruta -->
+      <div id="d-map" class="hidden">
+        <div class="card pad">
+          <div class="sec-title"><div><h2>Ruta publicada</h2><p>Así ve el viajero la recogida, el recorrido y el punto de regreso.</p></div>
+            <button class="btn g sm" data-view-go="editar">Editar paradas</button></div>
+          <div class="editmap" id="dmap" style="height:400px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- drawer pasajero -->
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer">
+  <header>
+    <div><div class="mono" style="color:var(--muted)">Ficha del pasajero</div><h2 id="dw-name" style="font-size:20px;margin-top:4px">—</h2>
+      <div id="dw-tags" style="display:flex;gap:7px;margin-top:8px"></div></div>
+    <button class="x" data-close>✕</button>
+  </header>
+  <div class="body">
+    <div class="card pad"><dl class="kv" id="dw-kv"></dl></div>
+    <div class="card pad">
+      <div class="mono" style="color:var(--muted);margin-bottom:10px">Pago</div>
+      <div id="dw-pay"></div>
+    </div>
+    <div class="card pad">
+      <div class="mono" style="color:var(--muted);margin-bottom:8px">Observaciones</div>
+      <div id="dw-obs" style="font-size:13.5px"></div>
+    </div>
+  </div>
+  <footer><button class="btn p" style="flex:1;justify-content:center">Registrar pago</button><button class="btn g" data-edit-pax>Editar datos</button></footer>
+</div>
+
+<!-- selector de ubicación (sin coordenadas) -->
+<div class="modal" id="pick" style="width:740px">
+  <header>
+    <div><h2 style="font-size:19px" id="pk-title">Ubicación de la parada</h2>
+      <p class="hint" style="margin-top:4px" id="pk-sub">Parada 1 · Paso 1</p></div>
+    <button class="x" data-close aria-label="Cerrar">×</button>
+  </header>
+  <div class="body">
+    <div class="seg" id="pk-tabs" style="align-self:flex-start">
+      <button aria-selected="true" data-pt="buscar">Buscar dirección</button>
+      <button aria-selected="false" data-pt="guardados">Lugares de este tour</button>
+      <button aria-selected="false" data-pt="mapa">Señalar en el mapa</button>
+    </div>
+    <div id="pk-buscar">
+      <div class="search" style="max-width:none"><span>⌕</span><input id="pk-q" placeholder="Ej. Plaza de Bolívar, Armenia"></div>
+      <div class="sugs" id="pk-sugs"></div>
+    </div>
+    <div id="pk-guardados" class="hidden">
+      <div class="hint" style="margin:0 0 10px">Reutiliza un lugar que ya usaste: si dos pasos ocurren en el mismo sitio, comparten el pin del mapa.</div>
+      <div class="sugs" id="pk-saved" style="max-height:280px"></div>
+    </div>
+    <div id="pk-mapa" class="hidden">
+      <div class="editmap" id="pmap" style="height:290px"></div>
+      <div class="hint">Toca el mapa para poner el pin o arrástralo para afinarlo. La dirección se calcula sola.</div>
+    </div>
+    <div class="picked none" id="pk-sel"><span class="glyph">◇</span><div><b>Ninguna ubicación seleccionada</b><small>Busca, reutiliza o señala en el mapa.</small></div></div>
+  </div>
+  <footer>
+    <button class="btn g" data-close>Cancelar</button>
+    <button class="btn p" id="pk-ok">Usar esta ubicación</button>
+  </footer>
+</div>
+
+<!-- modal alta / edición de pasajero -->
+<div class="modal" id="modal">
+  <header>
+    <div><h2 id="m-title" style="font-size:19px">Agregar pasajero</h2>
+      <p style="margin:4px 0 0;color:var(--muted);font-size:13px">Salida del miércoles 28 de octubre · 6:00 a. m.</p></div>
+    <button class="x" data-close>✕</button>
+  </header>
+  <div class="body">
+    <fieldset>
+      <legend>Identificación</legend>
+      <div class="field" style="margin-bottom:12px"><label for="p-nom">Nombre completo</label><input id="p-nom" placeholder="Nombres y apellidos"></div>
+      <div class="grid2">
+        <div class="field"><label for="p-td">Tipo de documento</label>
+          <select id="p-td"><option>Cédula de ciudadanía</option><option>Cédula de extranjería</option><option>Tarjeta de identidad</option><option>Pasaporte</option><option>NIT</option></select></div>
+        <div class="field"><label for="p-doc">Número de documento</label><input id="p-doc" placeholder="1 010 234 567"></div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Contacto</legend>
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="field"><label for="p-mail">Email</label><input id="p-mail" type="email" placeholder="nombre@correo.com"></div>
+        <div class="field"><label for="p-tel">Teléfono</label><input id="p-tel" placeholder="+57 300 000 0000"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="p-emn">Contacto de emergencia</label><input id="p-emn" placeholder="Nombre y parentesco"></div>
+        <div class="field"><label for="p-emt">Teléfono de emergencia</label><input id="p-emt" placeholder="+57 300 000 0000"></div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Salud</legend>
+      <div class="lbl">Tipo de EPS</div>
+      <div class="radios" id="epsopts">
+        <label><input type="radio" name="eps" value="Sura" checked> Sura</label>
+        <label><input type="radio" name="eps" value="Nueva EPS"> Nueva EPS</label>
+        <label><input type="radio" name="eps" value="Sanitas"> Sanitas</label>
+        <label><input type="radio" name="eps" value="Salud Total"> Salud Total</label>
+        <label><input type="radio" name="eps" value="Otra"> Otra</label>
+      </div>
+      <div class="field hidden" id="eps-otra" style="margin-top:12px"><label for="p-epso">¿Cuál EPS?</label><input id="p-epso" placeholder="Escribe el nombre de la EPS"></div>
+      <div class="field" style="margin-top:12px"><label for="p-obs">Observaciones</label>
+        <textarea id="p-obs" rows="3" placeholder="Alergias, condición médica o discapacidad física relevante para el guía"></textarea>
+        <div class="hint">Visible solo para la agencia y el guía asignado.</div></div>
+    </fieldset>
+    <fieldset>
+      <legend>Pago</legend>
+      <div class="grid2">
+        <div class="field"><label for="p-tot">Valor de la reserva</label><input id="p-tot" value="250.000"></div>
+        <div class="field"><label for="p-abo">Abonado</label><input id="p-abo" value="0"></div>
+      </div>
+      <div class="hint">Si el abono es menor al valor total, el pasajero queda marcado con <b>saldo pendiente</b>.</div>
+    </fieldset>
+  </div>
+  <footer><button class="btn g" data-close>Cancelar</button><button class="btn p" data-close>Guardar pasajero</button></footer>
+</div>
+
+<script>
+/* ---------------- datos ---------------- */
+const TOURS = [
+  {n:'Valle de Cocora', cat:'Senderismo', st:'Activo', price:'$250.000', dur:'10 h', cap:16, occ:56, next:'28 oct', pax:9, due:3, ph:'valle de cocora'},
+  {n:'Dunas de la Guajira', cat:'Desierto', st:'Activo', price:'$430.000', dur:'2 días', cap:12, occ:83, next:'2 nov', pax:10, due:0, ph:'dunas guajira'},
+  {n:'Avistamiento en Otún', cat:'Naturaleza', st:'Activo', price:'$185.000', dur:'6 h', cap:14, occ:29, next:'30 oct', pax:4, due:1, ph:'lagos y aves'},
+  {n:'Cartagena histórica', cat:'Cultural', st:'Pausado', price:'$210.000', dur:'4 h', cap:20, occ:0, next:'—', pax:0, due:0, ph:'ciudad amurallada'},
+  {n:'Buceo en El Acuario', cat:'Playa', st:'Activo', price:'$320.000', dur:'8 h', cap:10, occ:70, next:'5 nov', pax:7, due:2, ph:'arrecife'},
+  {n:'Nevado del Ruiz', cat:'Alta montaña', st:'Borrador', price:'—', dur:'3 días', cap:8, occ:0, next:'Sin salidas', pax:0, due:0, ph:'páramo'}
+];
+const PAX = [
+  {n:'María Fernanda Ríos', td:'CC', doc:'1.010.234.567', mail:'mf.rios@correo.com', tel:'+57 310 442 1180',
+   em:'Jorge Ríos (padre)', emt:'+57 311 220 9033', eps:'Sura', obs:'Alergia a la penicilina.', tot:250000, ab:250000, sal:'28 oct'},
+  {n:'Andrés Camilo Peña', td:'CC', doc:'1.098.774.201', mail:'acpena@correo.com', tel:'+57 320 771 5512',
+   em:'Laura Peña (hermana)', emt:'+57 320 771 5599', eps:'Nueva EPS', obs:'—', tot:250000, ab:100000, sal:'28 oct'},
+  {n:'Valentina Ochoa Mejía', td:'CC', doc:'1.152.909.330', mail:'v.ochoa@correo.com', tel:'+57 305 118 7744',
+   em:'Diana Mejía (madre)', emt:'+57 300 550 1120', eps:'Sanitas', obs:'Asma leve; lleva inhalador.', tot:250000, ab:250000, sal:'28 oct'},
+  {n:'Julián Esteban Cardona', td:'CE', doc:'E-884 512', mail:'j.cardona@correo.com', tel:'+57 316 004 2288',
+   em:'Sofía Ariza (esposa)', emt:'+57 316 004 2299', eps:'Otra — Compensar', obs:'—', tot:250000, ab:0, sal:'28 oct'},
+  {n:'Laura Sofía Betancur', td:'TI', doc:'1.030.887.114', mail:'laura.b@correo.com', tel:'+57 312 665 9012',
+   em:'Marta Betancur (madre)', emt:'+57 312 665 9000', eps:'Salud Total', obs:'Menor de edad: viaja con acudiente.', tot:250000, ab:250000, sal:'28 oct'},
+  {n:'Ricardo Alonso Vega', td:'CC', doc:'79.442.118', mail:'r.vega@correo.com', tel:'+57 301 774 6650',
+   em:'Paula Vega (hija)', emt:'+57 301 774 6688', eps:'Sura', obs:'Hipertensión controlada.', tot:250000, ab:250000, sal:'28 oct'},
+  {n:'Daniela Restrepo Gil', td:'CC', doc:'1.017.552.904', mail:'d.restrepo@correo.com', tel:'+57 314 880 2231',
+   em:'Camilo Gil (hermano)', emt:'+57 314 880 2200', eps:'Sanitas', obs:'—', tot:250000, ab:250000, sal:'28 oct'},
+  {n:'Samuel Duque Arango', td:'PA', doc:'AV-2249781', mail:'s.duque@correo.com', tel:'+1 305 220 4471',
+   em:'Ana Arango (madre)', emt:'+57 318 442 0091', eps:'Otra — Seguro internacional', obs:'Movilidad reducida: requiere apoyo en el tramo final.', tot:250000, ab:150000, sal:'10 nov'},
+  {n:'Isabella Guerrero Lara', td:'CC', doc:'1.144.209.336', mail:'i.guerrero@correo.com', tel:'+57 322 118 4407',
+   em:'Tomás Guerrero (padre)', emt:'+57 322 118 4400', eps:'Nueva EPS', obs:'—', tot:250000, ab:250000, sal:'10 nov'}
+];
+/* ---------------- modelo de ruta ---------------- */
+const KIND = {Recogida:{c:'#12A150',lab:true},Parada:{c:'#4b7f5f',lab:false},Regreso:{c:'#B4562A',lab:true}};
+const KINDNAME = {Recogida:'Recogida',Parada:'Parada del recorrido',Regreso:'Regreso'};
+const PLACES = [
+  {id:'p1',name:'Plaza de Bolívar',addr:'Cra 14 con Cl 21',city:'Armenia, Quindío',ll:[4.5350,-75.6813]},
+  {id:'p2',name:'Parque principal de Salento',addr:'Cl 6 #4-20',city:'Salento, Quindío',ll:[4.6376,-75.5706]},
+  {id:'p3',name:'Entrada Valle de Cocora',addr:'Vía Cocora, km 11',city:'Salento, Quindío',ll:[4.6378,-75.4869]},
+  {id:'p4',name:'Reserva Acaime',addr:'Sendero Acaime',city:'Salento, Quindío',ll:[4.6497,-75.4620]},
+  {id:'p5',name:'Terminal de Transportes',addr:'Cra 19 #35-05',city:'Armenia, Quindío',ll:[4.5252,-75.6812]}
+];
+const ROUTE = {
+  meet:{place:'p1',ref:'Frente a la catedral, junto al reloj de la plaza.'},
+  steps:[
+    {t:'Salida desde Armenia',d:'1 h 10 min',x:'Recogida en la Plaza de Bolívar y traslado hasta Salento.',stops:[
+      {k:'Recogida',n:'Recogida · Plaza de Bolívar',h:'8:00 a. m.',p:'p1',lugar:'Armenia, Quindío',lab:'Recogida'}]},
+    {t:'Sendero de las palmas',d:'5 h',x:'Caminata por el bosque de palmas de cera hasta la reserva Acaime.',stops:[
+      {k:'Parada',n:'Salento — registro',h:'9:10 a. m.',p:'p2',lugar:'Salento, Quindío',lab:''},
+      {k:'Parada',n:'Entrada Valle de Cocora',h:'10:30 a. m.',p:'p3',lugar:'Inicio del sendero',lab:''},
+      {k:'Parada',n:'Reserva Acaime',h:'2:00 p. m.',p:'p4',lugar:'Punto más alto · 2 860 m',lab:''}]},
+    {t:'Regreso',d:'1 h 30 min',x:'Traslado de vuelta a Armenia y fin del tour en la terminal.',stops:[
+      {k:'Regreso',n:'Terminal de Transportes',h:'5:30 p. m.',p:'p5',lugar:'Armenia, Quindío',lab:'Regreso'}]}
+  ]
+};
+const pl = id => PLACES.find(p=>p.id===id);
+function flatStops(){ const o=[]; ROUTE.steps.forEach((st,si)=>st.stops.forEach((s,i)=>o.push({s,si,i}))); return o; }
+function badgeList(){ let n=0; return flatStops().map(({s})=> s.k==='Recogida'?'A': s.k==='Regreso'?'B': String(++n)); }
+function stepsUsing(pid){ const o=[]; ROUTE.steps.forEach((st,si)=>{ if(st.stops.some(s=>s.p===pid)) o.push(si+1); }); return o; }
+function usedPlaces(){ const s=new Set(flatStops().map(x=>x.s.p)); if(ROUTE.meet.place) s.add(ROUTE.meet.place); return [...s].filter(Boolean); }
+const STOPS = flatStops().map(({s},i)=>({k:s.k,n:badgeList()[i],name:s.n,place:s.lugar,t:s.h,ll:pl(s.p).ll,c:KIND[s.k].c}));
+const money = v => '$' + v.toLocaleString('es-CO');
+const initials = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+/* ---------------- index ---------------- */
+document.getElementById('tours').innerHTML = TOURS.map(t=>{
+  const stCls = t.st==='Activo'?'t-ok':t.st==='Pausado'?'t-warn':'t-off';
+  return `<article class="tour">
+    <div class="shot"><span class="tag ${stCls}">${t.st}</span><span class="mono">${t.ph}</span></div>
+    <div class="body">
+      <div><h3>${t.n}</h3><div class="sub">${t.cat} · ${t.dur} · ${t.cap} cupos</div></div>
+      <div class="mini">
+        <span>Próxima salida<br><b>${t.next}</b></span>
+        <span>Pasajeros<br><b>${t.pax}</b></span>
+      </div>
+      <div class="occ">
+        <div class="row"><span>Ocupación próxima salida</span><b style="color:var(--text)">${t.occ}%</b></div>
+        <div class="bar"><i style="width:${t.occ}%"></i></div>
+      </div>
+      ${t.due?`<div class="pend">● ${t.due} pasajero${t.due>1?'s':''} con saldo pendiente</div>`:''}
+    </div>
+    <div class="foot">
+      <span class="price">${t.price}<small>por persona</small></span>
+      <span class="acts"><button class="btn g sm" data-view-go="detalle">Ver</button><button class="btn g sm" data-view-go="editar">Editar</button></span>
+    </div>
+  </article>`;
+}).join('');
+
+/* ---------------- navegación ---------------- */
+const VIEWS = {index:'Listado', crear:'Nuevo tour', editar:'Editar · Valle de Cocora', detalle:'Valle de Cocora'};
+function goView(v){
+  Object.keys(VIEWS).forEach(k=>document.getElementById('v-'+k).classList.toggle('hidden', k!==v));
+  document.getElementById('crumb').textContent = VIEWS[v];
+  window.scrollTo({top:0});
+  const m = maps[v==='crear'?'c':v==='editar'?'e':v==='detalle'?'d':''];
+  if(m) setTimeout(m.fit,80);
+}
+document.addEventListener('click',e=>{
+  const g = e.target.closest('[data-view-go]'); if(g){ e.preventDefault(); goView(g.dataset.viewGo); }
+  const d = e.target.closest('[data-dtab-go]'); if(d) setDTab(d.dataset.dtabGo);
+});
+
+/* tabs editar */
+document.querySelectorAll('#etabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#etabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['cont','ruta','sal','pax'].forEach(k=>document.getElementById('e-'+k).classList.toggle('hidden', k!==b.dataset.etab));
+  if(b.dataset.etab==='ruta') setTimeout(maps.e.fit,80);
+}));
+/* tabs detalle */
+function setDTab(t){
+  document.querySelectorAll('#dtabs button').forEach(x=>x.setAttribute('aria-selected',x.dataset.dtab===t));
+  ['res','pax','map'].forEach(k=>document.getElementById('d-'+k).classList.toggle('hidden', k!==t));
+  if(t==='map') setTimeout(maps.d.fit,80);
+}
+document.querySelectorAll('#dtabs button').forEach(b=>b.addEventListener('click',()=>setDTab(b.dataset.dtab)));
+
+/* dificultad + chips */
+document.querySelectorAll('#diff button').forEach(b=>b.addEventListener('click',()=>
+  document.querySelectorAll('#diff button').forEach(x=>x.setAttribute('aria-pressed',x===b))));
+document.querySelectorAll('[data-chips]').forEach(box=>{
+  const input = box.querySelector('input');
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter' && input.value.trim()){
+      e.preventDefault();
+      const chip = document.createElement('span');
+      chip.className='chip'; chip.innerHTML = input.value.trim()+' <button aria-label="Quitar">×</button>';
+      box.insertBefore(chip,input); input.value='';
+    }
+  });
+  box.addEventListener('click',e=>{ if(e.target.tagName==='BUTTON') e.target.closest('.chip').remove(); });
+});
+
+/* ---------------- constructor de ruta (crear / editar) ---------------- */
+const esc = v => String(v==null?'':v).replace(/"/g,'&quot;');
+
+function placeChipHTML(pid, target, big){
+  const p = pl(pid);
+  if(!p) return `<div class="placechip empty"><span class="glyph">◇</span>
+    <div><b>Sin ubicación</b><small>Búscala por dirección, reutiliza un lugar o señálala en el mapa.</small></div>
+    <div class="chipacts"><button class="btn ${big?'p':'g'} sm" data-pick="${target}">Elegir ubicación</button></div></div>`;
+  const u = stepsUsing(pid);
+  const shared = u.length>1 ? `<span class="tag t-off" style="margin-top:5px">Misma ubicación en los pasos ${u.join(' y ')}</span>` : '';
+  return `<div class="placechip"><span class="glyph">◉</span>
+    <div><b>${p.name}</b><small>${p.addr} · ${p.city}</small>${shared}</div>
+    <div class="chipacts">
+      <button class="linkbtn" data-see="${p.id}">Ver en el mapa</button>
+      <button class="btn g sm" data-pick="${target}">Cambiar</button></div></div>`;
+}
+
+function meetHTML(){
+  return placeChipHTML(ROUTE.meet.place,'meet',true) +
+    `<div class="field" style="margin-top:12px"><label>Indicaciones para el viajero</label>
+      <input data-meetref value="${esc(ROUTE.meet.ref)}" placeholder="Ej. frente a la catedral, junto al reloj">
+      <div class="hint">Texto libre que acompaña al mapa en la página pública.</div></div>`;
+}
+
+function stopHTML(s, si, i, badge){
+  const at = si+':'+i, canLabel = KIND[s.k].lab;
+  const kinds = Object.keys(KIND).map(k=>`<option value="${k}"${s.k===k?' selected':''}>${KINDNAME[k]}</option>`).join('');
+  const steps = ROUTE.steps.map((st,x)=>`<option value="${x}"${x===si?' selected':''}>${x+1}. ${st.t||'Paso sin título'}</option>`).join('');
+  return `<div class="stopcard">
+    <div class="stoptop">
+      <span class="pin" style="background:${KIND[s.k].c}">${badge}</span>
+      <div class="field"><label>Nombre de la parada</label><input data-fld="n" data-at="${at}" value="${esc(s.n)}" placeholder="Ej. Entrada al sendero"></div>
+      <span class="rowacts">
+        <button title="Subir" data-mv="${at}:-1">↑</button>
+        <button title="Bajar" data-mv="${at}:1">↓</button>
+        <button class="del" title="Eliminar parada" data-delstop="${at}">✕</button></span>
+      <div class="stopmeta">
+        <div class="field"><label>Tipo de parada</label><select data-fld="k" data-at="${at}">${kinds}</select></div>
+        <div class="field"><label>Hora</label><input data-fld="h" data-at="${at}" value="${esc(s.h)}" placeholder="8:00 a. m."></div>
+      </div>
+    </div>
+    ${placeChipHTML(s.p,'stop:'+at)}
+    <div class="grid3 fit">
+      <div class="field"><label>Lugar (referencia visible)</label><input data-fld="lugar" data-at="${at}" value="${esc(s.lugar)}" placeholder="Ej. Punto más alto · 2 860 m"></div>
+      <div class="field"><label>Etiqueta en el mapa</label><input data-fld="lab" data-at="${at}" value="${esc(s.lab)}" ${canLabel?'placeholder="Ej. Recogida"':'disabled placeholder="Solo para recogida y regreso"'}></div>
+      <div class="field"><label>Paso del itinerario</label><select data-tostep="${at}">${steps}</select></div>
+    </div>
+  </div>`;
+}
+
+function stepsHTML(){
+  const bl = badgeList(); let k = 0;
+  if(!ROUTE.steps.length) return `<div class="emptybox">Aún no hay pasos. Agrega el primero para empezar a armar el itinerario.</div>`;
+  return ROUTE.steps.map((st,si)=>{
+    const stops = st.stops.map((s,i)=>stopHTML(s,si,i,bl[k++])).join('');
+    return `<div class="stepcard">
+      <div class="stephead">
+        <span class="stepno">${si+1}</span>
+        <div class="field"><label>Título del paso</label><input data-sfld="t" data-si="${si}" value="${esc(st.t)}" placeholder="Ej. Sendero de las palmas"></div>
+        <div class="field dur"><label>Duración</label><input data-sfld="d" data-si="${si}" value="${esc(st.d)}" placeholder="5 h"></div>
+        <span class="rowacts">
+          <button title="Subir paso" data-mvstep="${si}:-1">↑</button>
+          <button title="Bajar paso" data-mvstep="${si}:1">↓</button>
+          <button class="del" title="Eliminar paso" data-delstep="${si}">✕</button></span>
+      </div>
+      <div class="field" style="margin-top:11px"><label>Descripción</label>
+        <textarea rows="2" data-sfld="x" data-si="${si}" placeholder="Qué pasa en este tramo">${st.x||''}</textarea></div>
+      <div class="stopsbox">
+        <div class="stopsboxhead">
+          <span class="mono" style="color:var(--muted)">Paradas de este paso · ${st.stops.length}</span>
+          <button class="btn g sm" data-addstop="${si}">+ Agregar parada aquí</button></div>
+        ${stops || `<div class="emptybox">Este paso no tiene paradas en el mapa. Agrega una si los viajeros suben, bajan o se reúnen aquí.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRoute(){
+  ['c','e'].forEach(pfx=>{
+    const m = document.getElementById(pfx+'-meet'); if(m) m.innerHTML = meetHTML();
+    const s = document.getElementById(pfx+'-steps'); if(s) s.innerHTML = stepsHTML();
+  });
+  if(maps.c) maps.c.render(); if(maps.e) maps.e.render();
+}
+
+function buildRouteMap(id){
+  const map = L.map(id,{scrollWheelZoom:false});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
+  const layer = L.layerGroup().addTo(map);
+  let hl = null;
+  function render(){
+    layer.clearLayers();
+    const list = flatStops(), bl = badgeList();
+    const pts = list.map(({s})=>pl(s.p)).filter(Boolean).map(p=>p.ll);
+    if(pts.length>1) L.polyline(pts,{color:'#12A150',weight:3.5,opacity:.9}).addTo(layer);
+    const groups = {};
+    list.forEach(({s,si},i)=>{ if(!s.p) return; (groups[s.p]=groups[s.p]||[]).push({s,si,b:bl[i]}); });
+    Object.keys(groups).forEach(pid=>{
+      const g = groups[pid], p = pl(pid), on = hl===pid, k = g[0].s.k;
+      const nums = g.map(x=>x.b).join('·');
+      const dot = `<div class="mk${on?' hl':''}" style="width:28px;height:28px;background:${KIND[k].c}">${nums}</div>`;
+      let icon;
+      if(k==='Recogida' || k==='Regreso'){
+        // recogida y regreso suelen estar en la misma ciudad: se separan a lados opuestos con su chip
+        const left = k==='Recogida';
+        const chip = `<span style="background:#FFFDF9;border:1px solid #E4DDCD;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none">${KINDNAME[k]}</span>`;
+        icon = L.divIcon({className:'',iconSize:[160,28],
+          iconAnchor:[left?160:0, left?24:4],
+          html:`<div style="display:flex;align-items:center;gap:6px;width:160px;height:28px;justify-content:${left?'flex-end':'flex-start'}">${left?chip+dot:dot+chip}</div>`});
+      } else {
+        icon = L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],html:dot});
+      }
+      L.marker(p.ll,{icon,draggable:true}).addTo(layer)
+        .bindPopup(`<b>${p.name}</b><br>${p.addr} · ${p.city}<br>`+
+          g.map(x=>`<span style="color:#767B70">${KINDNAME[x.s.k]} · ${x.s.h} · Paso ${x.si+1}</span>`).join('<br>'))
+        .on('dragend',ev=>{ const c = ev.target.getLatLng(); p.ll=[c.lat,c.lng];
+          p.addr='Ubicación ajustada en el mapa'; renderRoute(); });
+    });
+    if(ROUTE.meet.place && !groups[ROUTE.meet.place]){
+      const p = pl(ROUTE.meet.place);
+      L.marker(p.ll,{icon:L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],
+        html:`<div class="mk" style="width:28px;height:28px;background:#14301f">⚑</div>`})}).addTo(layer)
+        .bindPopup(`<b>Punto de encuentro</b><br>${p.name}`);
+    }
+  }
+  function fit(){
+    map.invalidateSize();
+    const pts = usedPlaces().map(id=>pl(id).ll);
+    if(pts.length>1) map.fitBounds(L.latLngBounds(pts).pad(.3));
+    else if(pts.length) map.setView(pts[0],14);
+    else map.setView([4.53,-75.68],11);
+  }
+  function center(pid){ hl = pid; render(); const p = pl(pid); if(p){ map.invalidateSize(); map.flyTo(p.ll,14,{duration:.6}); } }
+  render(); fit();
+  map.on('click',()=>map.scrollWheelZoom.enable());
+  map.on('mouseout',()=>map.scrollWheelZoom.disable());
+  return {map,render,fit,center};
+}
+
+/* acciones de la ruta */
+document.addEventListener('click',e=>{
+  const q = sel => e.target.closest(sel);
+  const pick = q('[data-pick]'); if(pick){ openPick(pick.dataset.pick); return; }
+  const see = q('[data-see]'); if(see){ const m = see.closest('#v-crear') ? maps.c : maps.e; if(m) m.center(see.dataset.see); return; }
+  const as = q('[data-addstop]'); if(as){
+    ROUTE.steps[+as.dataset.addstop].stops.push({k:'Parada',n:'',h:'',p:null,lugar:'',lab:''});
+    renderRoute(); openPick('stop:'+as.dataset.addstop+':'+(ROUTE.steps[+as.dataset.addstop].stops.length-1)); return; }
+  const ast = q('[data-addstep]'); if(ast){ ROUTE.steps.push({t:'',d:'',x:'',stops:[]}); renderRoute(); return; }
+  const ds = q('[data-delstop]'); if(ds){ const [a,b] = ds.dataset.delstop.split(':').map(Number); ROUTE.steps[a].stops.splice(b,1); renderRoute(); return; }
+  const dst = q('[data-delstep]'); if(dst){ ROUTE.steps.splice(+dst.dataset.delstep,1); renderRoute(); return; }
+  const mv = q('[data-mv]'); if(mv){
+    const [a,b,d] = mv.dataset.mv.split(':').map(Number), from = ROUTE.steps[a].stops, to = b+d;
+    if(to>=0 && to<from.length){ const [x] = from.splice(b,1); from.splice(to,0,x); }
+    else { const ns = a+d; if(ns>=0 && ns<ROUTE.steps.length){ const [x] = from.splice(b,1);
+      d<0 ? ROUTE.steps[ns].stops.push(x) : ROUTE.steps[ns].stops.unshift(x); } }
+    renderRoute(); return; }
+  const mvs = q('[data-mvstep]'); if(mvs){ const [a,d] = mvs.dataset.mvstep.split(':').map(Number), to = a+d;
+    if(to>=0 && to<ROUTE.steps.length){ const [x] = ROUTE.steps.splice(a,1); ROUTE.steps.splice(to,0,x); renderRoute(); } return; }
+});
+document.addEventListener('input',e=>{
+  const f = e.target.closest('[data-fld]');
+  if(f){ const [a,b] = f.dataset.at.split(':').map(Number); ROUTE.steps[a].stops[b][f.dataset.fld] = f.value; return; }
+  const s = e.target.closest('[data-sfld]');
+  if(s){ ROUTE.steps[+s.dataset.si][s.dataset.sfld] = s.value; return; }
+  const m = e.target.closest('[data-meetref]'); if(m) ROUTE.meet.ref = m.value;
+});
+document.addEventListener('change',e=>{
+  if(e.target.matches('[data-fld="k"]')){
+    const [a,b] = e.target.dataset.at.split(':').map(Number);
+    ROUTE.steps[a].stops[b].k = e.target.value;
+    if(!KIND[e.target.value].lab) ROUTE.steps[a].stops[b].lab = '';
+    renderRoute(); return;
+  }
+  const mv = e.target.closest('[data-tostep]');
+  if(mv){ const [a,b] = mv.dataset.tostep.split(':').map(Number), to = +mv.value;
+    if(to!==a){ const [x] = ROUTE.steps[a].stops.splice(b,1); ROUTE.steps[to].stops.push(x); }
+    renderRoute(); }
+});
+
+/* ---------------- selector de ubicación ---------------- */
+const GEO = [
+  {name:'Plaza de Bolívar',addr:'Cra 14 con Cl 21',city:'Armenia, Quindío',ll:[4.5350,-75.6813]},
+  {name:'Terminal de Transportes de Armenia',addr:'Cra 19 #35-05',city:'Armenia, Quindío',ll:[4.5252,-75.6812]},
+  {name:'Aeropuerto El Edén',addr:'Vía La Tebaida km 12',city:'La Tebaida, Quindío',ll:[4.4527,-75.7664]},
+  {name:'Parque principal de Salento',addr:'Cl 6 #4-20',city:'Salento, Quindío',ll:[4.6376,-75.5706]},
+  {name:'Mirador de Salento',addr:'Cl 5 con Cra 4',city:'Salento, Quindío',ll:[4.6395,-75.5686]},
+  {name:'Entrada Valle de Cocora',addr:'Vía Cocora, km 11',city:'Salento, Quindío',ll:[4.6378,-75.4869]},
+  {name:'Reserva Acaime',addr:'Sendero Acaime',city:'Salento, Quindío',ll:[4.6497,-75.4620]},
+  {name:'Puente de Boquía',addr:'Vereda Boquía',city:'Salento, Quindío',ll:[4.6215,-75.5836]},
+  {name:'Mirador de Filandia',addr:'Alto de la Cruz',city:'Filandia, Quindío',ll:[4.6798,-75.6584]}
+];
+let pkTarget = null, pkSel = null, pkMap = null, pkMarker = null, pkSeq = PLACES.length;
+const pickEl = document.getElementById('pick');
+
+function nearest(ll){
+  let best = GEO[0], d0 = Infinity;
+  GEO.forEach(g=>{ const d = Math.hypot(g.ll[0]-ll[0], g.ll[1]-ll[1]); if(d<d0){ d0=d; best=g; } });
+  return best;
+}
+function pkSelHTML(){
+  const el = document.getElementById('pk-sel');
+  if(!pkSel){ el.className='picked none'; el.innerHTML = `<span class="glyph">◇</span><div><b>Ninguna ubicación seleccionada</b><small>Busca, reutiliza o señala en el mapa.</small></div>`; return; }
+  el.className='picked';
+  el.innerHTML = `<span class="glyph">◉</span><div><b>${pkSel.name}</b>
+    <small>${pkSel.addr} · ${pkSel.city}${pkSel.id?' · lugar ya guardado del tour':''}</small></div>`;
+}
+function renderSugs(){
+  const qv = document.getElementById('pk-q').value.trim().toLowerCase();
+  const hits = (qv ? GEO.filter(g=>(g.name+' '+g.addr+' '+g.city).toLowerCase().includes(qv)) : GEO).slice(0,7);
+  document.getElementById('pk-sugs').innerHTML = hits.length ? hits.map((g,i)=>
+    `<button class="sug" data-geo="${i}" aria-selected="${pkSel && !pkSel.id && pkSel.name===g.name}">
+      <span>◎</span><span><b>${g.name}</b><small>${g.addr} · ${g.city}</small></span>
+      <span class="mono" style="color:var(--muted)">Usar</span></button>`).join('')
+    : `<div class="emptybox">Sin resultados para “${qv}”. Prueba con menos palabras o señálalo en el mapa.</div>`;
+  document.getElementById('pk-sugs').dataset.hits = JSON.stringify(hits);
+}
+function renderSaved(){
+  document.getElementById('pk-saved').innerHTML = PLACES.map(p=>{
+    const u = stepsUsing(p.id);
+    return `<button class="sug" data-place="${p.id}" aria-selected="${pkSel && pkSel.id===p.id}">
+      <span>◎</span><span><b>${p.name}</b><small>${p.addr} · ${p.city}</small></span>
+      <span class="mono" style="color:var(--muted)">${u.length?'Paso '+u.join(', '):'Sin uso'}</span></button>`;
+  }).join('');
+}
+function pkTab(t){
+  document.querySelectorAll('#pk-tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.pt===t));
+  ['buscar','guardados','mapa'].forEach(k=>document.getElementById('pk-'+k).classList.toggle('hidden', k!==t));
+  if(t==='guardados') renderSaved();
+  if(t==='mapa'){
+    if(!pkMap){
+      pkMap = L.map('pmap').setView(pkSel?pkSel.ll:[4.58,-75.60], 11);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(pkMap);
+      pkMap.on('click',ev=>setPin([ev.latlng.lat,ev.latlng.lng]));
+    }
+    setTimeout(()=>{ pkMap.invalidateSize(); if(pkSel) pkMap.setView(pkSel.ll,14); },60);
+    if(pkSel) setPin(pkSel.ll,true);
+  }
+}
+function setPin(ll, keep){
+  const ref = nearest(ll);
+  if(!keep || !pkSel) pkSel = {name:'Punto señalado en el mapa', addr:'Cerca de '+ref.name, city:ref.city, ll};
+  else pkSel = Object.assign({}, pkSel, {ll});
+  if(pkMarker) pkMap.removeLayer(pkMarker);
+  pkMarker = L.marker(ll,{draggable:true,icon:L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],
+    html:`<div class="mk" style="width:28px;height:28px;background:#12A150">◉</div>`})}).addTo(pkMap);
+  pkMarker.on('dragend',ev=>{ const c = ev.target.getLatLng(); setPin([c.lat,c.lng]); });
+  pkSelHTML();
+}
+function openPick(target){
+  pkTarget = target;
+  let cur = null, sub = '';
+  if(target==='meet'){ cur = ROUTE.meet.place; sub = 'Punto de encuentro del tour'; }
+  else { const [,a,b] = target.split(':').map((v,i)=>i?Number(v):v);
+    const st = ROUTE.steps[a]; cur = st.stops[b].p;
+    sub = `Parada ${b+1} · Paso ${a+1}${st.t?' · '+st.t:''}`; }
+  document.getElementById('pk-title').textContent = target==='meet' ? 'Ubicación del punto de encuentro' : 'Ubicación de la parada';
+  document.getElementById('pk-sub').textContent = sub + ' · nunca pedimos coordenadas';
+  pkSel = cur ? Object.assign({}, pl(cur)) : null;
+  pkMarker = null;
+  document.getElementById('pk-q').value = '';
+  renderSugs(); pkSelHTML(); pkTab('buscar');
+  document.getElementById('scrim').classList.add('on'); pickEl.classList.add('on');
+}
+document.querySelectorAll('#pk-tabs button').forEach(b=>b.addEventListener('click',()=>pkTab(b.dataset.pt)));
+document.getElementById('pk-q').addEventListener('input',renderSugs);
+document.getElementById('pk-sugs').addEventListener('click',e=>{
+  const b = e.target.closest('[data-geo]'); if(!b) return;
+  const hits = JSON.parse(document.getElementById('pk-sugs').dataset.hits||'[]');
+  pkSel = Object.assign({}, hits[+b.dataset.geo]); pkSelHTML(); renderSugs();
+});
+document.getElementById('pk-saved').addEventListener('click',e=>{
+  const b = e.target.closest('[data-place]'); if(!b) return;
+  pkSel = Object.assign({}, pl(b.dataset.place)); pkSelHTML(); renderSaved();
+});
+document.getElementById('pk-ok').addEventListener('click',()=>{
+  if(!pkSel) return;
+  let id = pkSel.id;
+  if(!id){ id = 'p'+(++pkSeq); PLACES.push({id,name:pkSel.name,addr:pkSel.addr,city:pkSel.city,ll:pkSel.ll}); }
+  else { const p = pl(id); p.ll = pkSel.ll; }
+  if(pkTarget==='meet') ROUTE.meet.place = id;
+  else { const parts = pkTarget.split(':'), a = +parts[1], b = +parts[2], s = ROUTE.steps[a].stops[b];
+    s.p = id; if(!s.n) s.n = pkSel.name; if(!s.lugar) s.lugar = pkSel.city; }
+  closeAll(); renderRoute();
+});
+
+const maps = {};
+function buildMap(id, editable){
+  const map = L.map(id,{scrollWheelZoom:false});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
+  L.polyline([STOPS[0].ll,STOPS[1].ll],{color:'#767B70',weight:3,dashArray:'6 8'}).addTo(map);
+  L.polyline([STOPS[1].ll,STOPS[2].ll,STOPS[3].ll],{color:'#12A150',weight:4}).addTo(map);
+  L.polyline([STOPS[3].ll,STOPS[4].ll],{color:'#B4562A',weight:3,dashArray:'6 8'}).addTo(map);
+  // A/B: etiqueta dentro del icono para que nunca choque con el otro pin
+  function sideIcon(s,dx,dy,side){
+    const cx = side==='left'?134:16;
+    const circle = `<div class="mk" style="width:28px;height:28px;background:${s.c}">${s.n}</div>`;
+    const chip = `<span style="background:#FFFDF9;border:1px solid #E4DDCD;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex:none">${s.k}</span>`;
+    return L.divIcon({className:'',iconSize:[150,28],iconAnchor:[cx+dx,14+dy],
+      html:`<div style="display:flex;align-items:center;gap:6px;width:150px;height:28px;justify-content:${side==='left'?'flex-end':'flex-start'}">${side==='left'?chip+circle:circle+chip}</div>`});
+  }
+  const ms = STOPS.map((s,i)=>{
+    const icon = i===0 ? sideIcon(s,16,-8,'left')
+      : i===4 ? sideIcon(s,-16,10,'right')
+      : L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],
+          html:`<div class="mk" style="width:26px;height:26px;background:${s.c}">${s.n}</div>`});
+    return L.marker(s.ll,{icon,draggable:!!editable})
+      .bindPopup(`<b>${s.name}</b><br>${s.place}<br><span style="color:#767B70">${s.k} · ${s.t}</span>`);
+  });
+  ms[0].addTo(map); ms[4].addTo(map);
+  const trail = [1,2,3];
+  const mid = [(STOPS[1].ll[0]+STOPS[3].ll[0])/2,(STOPS[1].ll[1]+STOPS[3].ll[1])/2];
+  const cluster = L.marker(mid,{icon:L.divIcon({className:'',iconSize:[240,28],iconAnchor:[14,14],
+    html:`<div style="display:flex;align-items:center;gap:6px;height:28px"><div class="mk" style="width:28px;height:28px;background:#4b7f5f">•</div><span style="background:#FFFDF9;border:1px solid #E4DDCD;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap">Recorrido · 3 paradas</span></div>`})});
+  let grouped = null;
+  function setGrouped(g){
+    if(g===grouped) return; grouped = g;
+    if(g){ trail.forEach(i=>map.removeLayer(ms[i])); cluster.addTo(map); }
+    else { map.removeLayer(cluster); trail.forEach(i=>ms[i].addTo(map)); }
+  }
+  cluster.on('click',()=>{ setGrouped(false); map.fitBounds(L.latLngBounds(trail.map(i=>STOPS[i].ll)).pad(.4)); });
+  function fit(){
+    map.invalidateSize();
+    setGrouped(true);
+    map.fitBounds(L.latLngBounds(STOPS.map(s=>s.ll)).pad(.3));
+  }
+  function center(i){
+    map.invalidateSize(); setGrouped(false);
+    map.flyTo(STOPS[i].ll,14,{duration:.6});
+    setTimeout(()=>ms[i].openPopup(),650);
+  }
+  fit();
+  map.on('click',()=>map.scrollWheelZoom.enable());
+  map.on('mouseout',()=>map.scrollWheelZoom.disable());
+  return {map,ms,fit,center};
+}
+const cMap = buildRouteMap('cmap'); maps.c = cMap;
+const eMap = buildRouteMap('emap'); maps.e = eMap;
+const dMap = buildMap('dmap',false); maps.d = dMap;
+renderRoute();
+
+/* ---------------- tabla de pasajeros ---------------- */
+let filter='all', q='';
+function statusOf(p){ return p.ab>=p.tot ? 'paid' : 'due'; }
+function renderPax(){
+  const rows = PAX.filter(p=>{
+    const s = statusOf(p);
+    if(filter==='due' && s!=='due') return false;
+    if(filter==='paid' && s!=='paid') return false;
+    if(filter==='obs' && p.obs==='—') return false;
+    if(q && !(p.n.toLowerCase().includes(q) || p.doc.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('paxbody').innerHTML = rows.map(p=>{
+    const due = p.tot - p.ab, s = statusOf(p);
+    const flag = p.obs!=='—';
+    return `<tr data-doc="${p.doc}">
+      <td><div class="person"><span class="av">${initials(p.n)}</span><span><b>${p.n}</b><small>Salida ${p.sal}</small></span></div></td>
+      <td><b>${p.doc}</b><span class="cell-sub">${p.td}</span></td>
+      <td>${p.mail}<span class="cell-sub">${p.tel}</span></td>
+      <td>${p.em}<span class="cell-sub">${p.emt}</span></td>
+      <td><span class="dot-eps"><i></i>${p.eps}</span></td>
+      <td><span class="obs ${flag?'flagme':''}">${p.obs}</span></td>
+      <td class="money">${ s==='paid'
+        ? `<span class="tag t-ok">Pagado</span><span class="cell-sub">${money(p.tot)}</span>`
+        : `<span class="tag t-due">Saldo ${money(due)}</span><span class="cell-sub">Abonó ${money(p.ab)}</span>`}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="padding:34px;text-align:center;color:var(--muted)">Ningún pasajero coincide con el filtro.</td></tr>`;
+  const dues = rows.filter(p=>statusOf(p)==='due').length;
+  document.getElementById('paxcount').textContent = `${rows.length} pasajero${rows.length===1?'':'s'} · ${dues} con saldo pendiente`;
+}
+renderPax();
+document.getElementById('f-q').addEventListener('input',e=>{q=e.target.value.toLowerCase().trim();renderPax();});
+document.querySelectorAll('#f-estado button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#f-estado button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  filter=b.dataset.f; renderPax();
+}));
+
+/* mini tabla dentro de editar */
+document.getElementById('pax-mini').innerHTML = PAX.slice(0,4).map(p=>{
+  const due = p.tot-p.ab;
+  return `<div class="list-row">
+    <div class="person"><span class="av">${initials(p.n)}</span><span><b>${p.n}</b><small>${p.td} ${p.doc} · ${p.eps}</small></span></div>
+    <div>${due>0?`<span class="tag t-due">Saldo ${money(due)}</span>`:`<span class="tag t-ok">Pagado</span>`}</div>
+  </div>`;
+}).join('') + `<div style="padding-top:12px;color:var(--muted);font-size:12.5px">y 5 pasajeros más…</div>`;
+
+/* ---------------- drawer ---------------- */
+const scrim = document.getElementById('scrim'), drawer = document.getElementById('drawer'), modal = document.getElementById('modal');
+function closeAll(){ scrim.classList.remove('on'); drawer.classList.remove('on'); modal.classList.remove('on'); pickEl.classList.remove('on'); }
+scrim.addEventListener('click',closeAll);
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeAll));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+
+document.getElementById('paxbody').addEventListener('click',e=>{
+  const tr = e.target.closest('tr[data-doc]'); if(!tr) return;
+  const p = PAX.find(x=>x.doc===tr.dataset.doc); if(!p) return;
+  const due = p.tot-p.ab;
+  document.getElementById('dw-name').textContent = p.n;
+  document.getElementById('dw-tags').innerHTML =
+    (due>0?`<span class="tag t-due">Saldo ${money(due)}</span>`:`<span class="tag t-ok">Pago completo</span>`)+
+    `<span class="tag t-off">Salida ${p.sal}</span>`;
+  document.getElementById('dw-kv').innerHTML = `
+    <dt>Documento</dt><dd>${p.td} ${p.doc}</dd>
+    <dt>Email</dt><dd>${p.mail}</dd>
+    <dt>Teléfono</dt><dd>${p.tel}</dd>
+    <dt>Emergencia</dt><dd>${p.em}<br><span style="color:var(--muted)">${p.emt}</span></dd>
+    <dt>EPS</dt><dd>${p.eps}</dd>`;
+  document.getElementById('dw-pay').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Valor reserva</span><b>${money(p.tot)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin:6px 0"><span style="color:var(--muted)">Abonado</span><b>${money(p.ab)}</b></div>
+    <div class="bar" style="margin:10px 0"><i style="width:${Math.round(p.ab/p.tot*100)}%"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Pendiente</span>
+      <b style="color:${due>0?'var(--danger)':'var(--green-d)'}">${money(due)}</b></div>`;
+  document.getElementById('dw-obs').innerHTML = p.obs==='—'
+    ? '<span style="color:var(--muted)">Sin observaciones registradas.</span>'
+    : p.obs;
+  scrim.classList.add('on'); drawer.classList.add('on');
+});
+
+/* ---------------- modal pasajero ---------------- */
+function openModal(title){ document.getElementById('m-title').textContent = title; scrim.classList.add('on'); modal.classList.add('on'); }
+document.getElementById('addpax').addEventListener('click',()=>openModal('Agregar pasajero'));
+document.querySelector('[data-edit-pax]').addEventListener('click',()=>{ drawer.classList.remove('on'); openModal('Editar pasajero'); });
+document.querySelectorAll('#epsopts input').forEach(r=>r.addEventListener('change',()=>{
+  const otra = document.querySelector('#epsopts input:checked').value==='Otra';
+  document.getElementById('eps-otra').classList.toggle('hidden',!otra);
+  if(otra) document.getElementById('p-epso').focus();
+}));
+document.getElementById('print').addEventListener('click',()=>window.print());
+</script>
+</body>
+</html>

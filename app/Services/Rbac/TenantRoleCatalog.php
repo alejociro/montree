@@ -96,4 +96,20 @@ final class TenantRoleCatalog
 
         return UserRole::tryFrom($role->name)?->label() ?? $role->name;
     }
+
+    /**
+     * La línea que explica el rol. La de un rol base es fija (vive en el enum,
+     * es igual para todas las agencias); la de un rol propio la escribe la
+     * agencia y puede faltar.
+     */
+    public static function descriptionFor(Role $role): ?string
+    {
+        if (! self::isBase($role)) {
+            $description = $role->getAttribute('description');
+
+            return is_string($description) && trim($description) !== '' ? $description : null;
+        }
+
+        return UserRole::tryFrom($role->name)?->description();
+    }
 }

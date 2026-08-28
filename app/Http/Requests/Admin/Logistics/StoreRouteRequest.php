@@ -11,11 +11,6 @@ final class StoreRouteRequest extends LogisticsFormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'distance_km' => ['nullable', 'numeric', 'min:0'],
-            'duration_hours' => ['nullable', 'numeric', 'min:0'],
-        ];
+        return LogisticsRules::route();
     }
 }

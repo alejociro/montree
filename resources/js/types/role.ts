@@ -49,6 +49,12 @@ export interface RoleListItem {
     /** Etiqueta para mostrar. */
     label: string;
     is_base: boolean;
+    /**
+     * Para que sirve el rol, en una linea. La de un rol base es fija
+     * (`UserRole::description()`); la de un rol propio la escribe la agencia y
+     * puede faltar.
+     */
+    description: string | null;
     permissions_count: number;
     users_count: number;
 }
@@ -59,12 +65,14 @@ export interface RoleDetail {
     name: string;
     label: string;
     is_base: boolean;
+    description: string | null;
     permissions: PermissionSummary[];
 }
 
 /** Cuerpo de `POST /admin/roles` y `PATCH /admin/roles/{role}`. */
 export interface RoleFormInput {
     name: string;
+    description: string | null;
     permissions: string[];
 }
 

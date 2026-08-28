@@ -41,7 +41,7 @@ const { configuration, displayName } = useTenant();
                         <CardTitle class="text-xl">{{ title }}</CardTitle>
                         <p
                             v-if="configuration?.tagline"
-                            class="mt-1 text-sm font-medium text-primary"
+                            class="mt-1 text-sm font-medium text-primary-readable"
                         >
                             {{ configuration.tagline }}
                         </p>

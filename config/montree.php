@@ -105,4 +105,28 @@ return [
         'en' => ['name' => 'Inglés', 'native' => 'English'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Geocodificacion de direcciones
+    |--------------------------------------------------------------------------
+    |
+    | El formulario de ruta pedia latitud y longitud a mano. Nadie que programa
+    | un tour conoce las coordenadas de la plaza donde recoge a la gente, asi
+    | que ahora se busca por direccion y el servicio devuelve el punto.
+    |
+    | Se consulta desde el BACKEND, no desde el navegador: Nominatim exige un
+    | User-Agent identificable y limita a una peticion por segundo, dos cosas
+    | que no se pueden garantizar desde el cliente. La respuesta se cachea
+    | `cache_ttl` segundos, asi que la misma direccion no vuelve a salir a la
+    | red. Leido por App\Services\Geocoding\NominatimGeocoder.
+    |
+    */
+    'geocoding' => [
+        'endpoint' => env('MONTREE_GEOCODER_ENDPOINT', 'https://nominatim.openstreetmap.org/search'),
+        'user_agent' => env('MONTREE_GEOCODER_USER_AGENT', 'Montree/1.0 (+https://montree.app)'),
+        'timeout' => (int) env('MONTREE_GEOCODER_TIMEOUT', 6),
+        'cache_ttl' => (int) env('MONTREE_GEOCODER_CACHE_TTL', 86400),
+        'country_codes' => env('MONTREE_GEOCODER_COUNTRY_CODES', ''),
+    ],
+
 ];

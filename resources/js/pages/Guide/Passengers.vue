@@ -61,7 +61,7 @@ const title = computed(() =>
             </p>
             <Link
                 :href="guideTourRoute(props.departure.tour.id).url"
-                class="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+                class="inline-block text-sm font-medium text-primary-readable underline-offset-4 hover:underline"
             >
                 {{ $t('Ver el detalle del tour') }}
             </Link>

@@ -2,10 +2,12 @@
 import { Head, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import {
+    Ban,
     ChevronLeft,
     ChevronRight,
     MailPlus,
-    Search,
+    RotateCcw,
+    Send,
     UserCog,
     Users,
 } from 'lucide-vue-next';
@@ -21,10 +23,16 @@ import {
     suspend,
     reactivate,
 } from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
+import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
+import KpiCard from '@/components/atoms/KpiCard.vue';
+import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import Heading from '@/components/Heading.vue';
-import { Badge } from '@/components/ui/badge';
+import InputError from '@/components/InputError.vue';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
+import type { CountTab } from '@/components/molecules/CountTabs.vue';
+import FilterBar from '@/components/molecules/FilterBar.vue';
+import MemberRoleSheet from '@/components/organisms/MemberRoleSheet.vue';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -33,6 +41,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -51,15 +60,20 @@ import {
     NON_ASSIGNABLE_ROLES,
     roleLabels,
 } from '@/config/roles';
-import { formatRelativeDate } from '@/lib/format';
+import { formatNumber, formatRelativeDate } from '@/lib/format';
 import type { PaginationMeta } from '@/types/pagination';
-import type { RoleListResponse } from '@/types/role';
+import type {
+    PermissionSummary,
+    RoleListItem,
+    RoleListResponse,
+} from '@/types/role';
 import type {
     RoleOption,
     TeamListResponse,
     TeamMember,
     TeamMemberPayload,
     TeamMemberStatus,
+    TeamStats,
 } from '@/types/team';
 
 const { t } = useTranslations();
@@ -72,11 +86,13 @@ const canInvite = computed(() => can('team.invite'));
 const canUpdateRoles = computed(() => can('team.role.update'));
 const canSuspend = computed(() => can('team.suspend'));
 
-const PER_PAGE = 15;
+// 10 filas por página: el pedido es paginar a partir del undécimo miembro.
+const PER_PAGE = 10;
 const ALL = 'all';
 
 const members = ref<TeamMember[]>([]);
 const meta = ref<PaginationMeta | null>(null);
+const stats = ref<TeamStats | null>(null);
 const currentPage = ref(1);
 const loading = ref(true);
 const loadError = ref(false);
@@ -94,20 +110,58 @@ const hasActiveFilters = computed(
         filters.search !== '' || filters.status !== ALL || filters.role !== ALL,
 );
 
-const statusOptions: { value: TeamMemberStatus; label: string }[] = [
-    { value: 'active', label: t('Activo') },
-    { value: 'invited', label: t('Invitado') },
-    { value: 'suspended', label: t('Suspendido') },
-];
+const statusMeta: Record<TeamMemberStatus, { label: string; classes: string }> =
+    {
+        active: {
+            label: t('Activo'),
+            classes: 'bg-primary-soft text-primary-readable',
+        },
+        invited: {
+            label: t('Invitado'),
+            classes: 'bg-brand-warn-50 text-brand-warn',
+        },
+        suspended: {
+            label: t('Suspendido'),
+            classes: 'bg-muted text-muted-foreground',
+        },
+    };
 
-const statusMeta: Record<
-    TeamMemberStatus,
-    { label: string; variant: 'default' | 'secondary' | 'destructive' }
-> = {
-    active: { label: t('Activo'), variant: 'secondary' },
-    invited: { label: t('Invitado'), variant: 'default' },
-    suspended: { label: t('Suspendido'), variant: 'destructive' },
-};
+/**
+ * Bandejas del listado. El conteo por bandeja sale de `meta.stats`, que mira el
+ * equipo completo; `invited` no tiene cifra propia ahí y por eso se deduce.
+ */
+const tabs = computed<CountTab[]>(() => {
+    const totals = stats.value;
+
+    return [
+        { id: ALL, label: t('Todos'), count: totals?.total ?? null },
+        { id: 'active', label: t('Activos'), count: totals?.active ?? null },
+        {
+            id: 'invited',
+            label: t('Invitados'),
+            count:
+                totals === null
+                    ? null
+                    : totals.total - totals.active - totals.suspended,
+        },
+        {
+            id: 'suspended',
+            label: t('Suspendidos'),
+            count: totals?.suspended ?? null,
+        },
+    ];
+});
+
+const resultLabel = computed(() => {
+    if (meta.value === null || stats.value === null) {
+        return null;
+    }
+
+    return t(':shown de :total', {
+        shown: formatNumber(meta.value.total),
+        total: formatNumber(stats.value.total),
+    });
+});
 
 /**
  * Roles asignables. Se leen del modulo de roles (incluye los propios de la
@@ -115,6 +169,9 @@ const statusMeta: Record<
  * usuario o el backend todavia no la expone.
  */
 const roleOptions = ref<RoleOption[]>(FALLBACK_ROLE_OPTIONS);
+/** El listado completo, con conteos: lo consume el panel de rol. */
+const roleCatalog = ref<RoleListItem[]>([]);
+const permissionCatalog = ref<PermissionSummary[]>([]);
 
 function toStatus(value: string): TeamMemberStatus {
     return value === 'invited' || value === 'suspended' ? value : 'active';
@@ -194,6 +251,7 @@ async function load(): Promise<void> {
 
         members.value = (json.data ?? []).map(toMember);
         meta.value = json.meta ?? null;
+        stats.value = json.meta?.stats ?? null;
     } catch {
         loadError.value = true;
     } finally {
@@ -217,15 +275,21 @@ async function loadRoleOptions(): Promise<void> {
         }
 
         const json = (await response.json()) as RoleListResponse;
-        const list = json.data ?? [];
+        const list = (json.data ?? []).filter(
+            (role) => !NON_ASSIGNABLE_ROLES.includes(role.name),
+        );
+
+        permissionCatalog.value = json.meta?.available_permissions ?? [];
 
         if (list.length === 0) {
             return;
         }
 
-        roleOptions.value = list
-            .filter((role) => !NON_ASSIGNABLE_ROLES.includes(role.name))
-            .map((role) => ({ name: role.name, label: role.label }));
+        roleCatalog.value = list;
+        roleOptions.value = list.map((role) => ({
+            name: role.name,
+            label: role.label,
+        }));
     } catch {
         // Sin el modulo de roles el selector sigue sirviendo con los roles base.
     }
@@ -263,11 +327,7 @@ watch(
     },
 );
 
-function handleStatusChange(value: AcceptableValue): void {
-    if (typeof value !== 'string') {
-        return;
-    }
-
+function handleTabChange(value: string): void {
     filters.status = value === ALL ? ALL : toStatus(value);
 }
 
@@ -286,8 +346,23 @@ const inviteName = ref('');
 const inviteRole = ref<string>('guide');
 const sending = ref(false);
 
+/**
+ * WHY: los errores del formulario de invitación salían como toast en la
+ * esquina —desaparecían solos y no decían a qué campo pertenecían—. Ahora
+ * viven debajo del campo, como en el resto de los formularios, y se limpian en
+ * cuanto se corrige lo que fallaba.
+ */
+const inviteErrors = ref<Record<string, string | undefined>>({});
+
+function clearInviteError(field: string): void {
+    if (inviteErrors.value[field] !== undefined) {
+        inviteErrors.value = { ...inviteErrors.value, [field]: undefined };
+    }
+}
+
 function invite(): void {
     sending.value = true;
+    inviteErrors.value = {};
     void api.post(
         storeUser().url,
         {
@@ -300,10 +375,18 @@ function invite(): void {
                 toast.success(t('Invitación enviada'));
                 inviteEmail.value = '';
                 inviteName.value = '';
+                inviteErrors.value = {};
                 void load();
             },
-            onError: (errors) =>
-                toast.error(Object.values(errors)[0] ?? 'Error'),
+            onError: (errors) => {
+                inviteErrors.value = errors;
+
+                // `_global` no cuelga de ningún campo (plan agotado, permiso):
+                // ese sí necesita el toast para verse.
+                if (errors._global !== undefined) {
+                    toast.error(errors._global);
+                }
+            },
             onFinish: () => {
                 sending.value = false;
             },
@@ -313,37 +396,18 @@ function invite(): void {
 
 /* ------------------------------------------------------------- Roles (edición) */
 
-const roleDialogMember = ref<TeamMember | null>(null);
-const roleDraft = ref<string[]>([]);
+const roleSheetMember = ref<TeamMember | null>(null);
+const roleSheetOpen = ref(false);
 const savingRoles = ref(false);
 
 const confirmMember = ref<TeamMember | null>(null);
 const confirmRoles = ref<string[]>([]);
 const confirmMessage = ref('');
 
-function openRoleDialog(member: TeamMember): void {
-    roleDialogMember.value = member;
-    roleDraft.value = [...member.roles];
+function openRoleSheet(member: TeamMember): void {
+    roleSheetMember.value = member;
+    roleSheetOpen.value = true;
 }
-
-function toggleDraftRole(name: string): void {
-    roleDraft.value = roleDraft.value.includes(name)
-        ? roleDraft.value.filter((role) => role !== name)
-        : [...roleDraft.value, name];
-}
-
-const draftChanged = computed(() => {
-    const member = roleDialogMember.value;
-
-    if (!member) {
-        return false;
-    }
-
-    const before = [...member.roles].sort().join(',');
-    const after = [...roleDraft.value].sort().join(',');
-
-    return before !== after;
-});
 
 /**
  * Cambio sensible: el que agrega o quita acceso de fondo. Es la misma regla que
@@ -357,35 +421,35 @@ function sensitiveMessage(member: TeamMember, roles: string[]): string {
     const has = roles.includes('admin');
 
     if (!had && has) {
-        return `¿Promover a ${member.name} a administrador? Tendrá acceso completo al panel.`;
+        return t(
+            '¿Promover a :name a administrador? Tendrá acceso completo al panel.',
+            { name: member.name },
+        );
     }
 
     if (had && !has) {
-        return `¿Quitarle el rol de administrador a ${member.name}? Perderá el control total del panel.`;
+        return t(
+            '¿Quitarle el rol de administrador a :name? Perderá el control total del panel.',
+            { name: member.name },
+        );
     }
 
     return '';
 }
 
-function submitRoles(): void {
-    const member = roleDialogMember.value;
-
-    if (!member || roleDraft.value.length === 0 || !draftChanged.value) {
-        return;
-    }
-
-    const message = sensitiveMessage(member, roleDraft.value);
+function submitRoles(member: TeamMember, roles: string[]): void {
+    const message = sensitiveMessage(member, roles);
 
     if (message !== '') {
         confirmMember.value = member;
-        confirmRoles.value = [...roleDraft.value];
+        confirmRoles.value = [...roles];
         confirmMessage.value = message;
-        roleDialogMember.value = null;
+        roleSheetOpen.value = false;
 
         return;
     }
 
-    applyRoles(member, roleDraft.value);
+    applyRoles(member, roles);
 }
 
 function cancelConfirm(): void {
@@ -394,9 +458,9 @@ function cancelConfirm(): void {
     confirmMember.value = null;
 
     if (member) {
-        // Vuelve al selector con la selección intacta, no la descarta.
-        roleDialogMember.value = member;
-        roleDraft.value = [...confirmRoles.value];
+        // Vuelve al panel con la selección intacta, no la descarta.
+        roleSheetMember.value = { ...member, roles: [...confirmRoles.value] };
+        roleSheetOpen.value = true;
     }
 }
 
@@ -419,7 +483,8 @@ function applyRoles(member: TeamMember, roles: string[]): void {
         {
             onSuccess: () => {
                 toast.success(t('Roles actualizados'));
-                roleDialogMember.value = null;
+                roleSheetOpen.value = false;
+                roleSheetMember.value = null;
                 void load();
             },
             onError: (errors) => {
@@ -495,8 +560,13 @@ function resendInvitation(member: TeamMember): void {
 
 function lastLoginLabel(member: TeamMember): string {
     return member.last_login_at === null
-        ? 'Nunca'
+        ? t('Nunca')
         : formatRelativeDate(member.last_login_at);
+}
+
+/** Nadie se suspende a sí mismo: el backend lo rechaza con un 422. */
+function isSelf(member: TeamMember): boolean {
+    return member.id === currentUserId;
 }
 
 onMounted(() => {
@@ -514,37 +584,93 @@ onMounted(() => {
                 :title="$t('Equipo')"
                 :description="
                     $t(
-                        'Quién trabaja en tu agencia, con qué roles y desde cuándo.',
+                        'Quién trabaja en tu agencia, con qué rol y desde cuándo.',
                     )
                 "
             />
 
+            <div class="mt-5 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+                <KpiCard
+                    :label="$t('Miembros')"
+                    :value="formatNumber(stats?.total ?? 0)"
+                    :detail="$t('con cuenta creada')"
+                    :loading="loading && stats === null"
+                />
+                <KpiCard
+                    :label="$t('Activos')"
+                    :value="formatNumber(stats?.active ?? 0)"
+                    :detail="$t('pueden entrar al panel')"
+                    :loading="loading && stats === null"
+                />
+                <KpiCard
+                    :label="$t('Guías')"
+                    :value="formatNumber(stats?.guides ?? 0)"
+                    :detail="$t('disponibles para salidas')"
+                    :loading="loading && stats === null"
+                />
+                <KpiCard
+                    :label="$t('Suspendidos')"
+                    :value="formatNumber(stats?.suspended ?? 0)"
+                    :detail="$t('sin acceso al panel')"
+                    :alert="(stats?.suspended ?? 0) > 0"
+                    :loading="loading && stats === null"
+                />
+            </div>
+
+            <!-- Invitar: una sola fila, no media pantalla -->
             <section
                 v-if="canInvite"
-                class="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4 md:p-6"
+                class="mt-5 rounded-2xl border border-border bg-card p-[18px]"
             >
-                <h2 class="text-lg font-semibold">
-                    {{ $t('Invitar miembro') }}
-                </h2>
-                <div class="grid gap-3 md:grid-cols-3">
-                    <div class="space-y-1.5">
-                        <Label for="invite-email">{{ $t('Email') }}</Label>
+                <div class="space-y-0.5">
+                    <h2 class="text-base font-semibold">
+                        {{ $t('Invitar miembro') }}
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        {{
+                            $t(
+                                'Recibe un correo con el enlace para crear su contraseña.',
+                            )
+                        }}
+                    </p>
+                </div>
+
+                <div
+                    class="mt-3.5 grid content-start gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-start"
+                >
+                    <div class="grid content-start gap-1.5">
+                        <Label for="invite-email">
+                            {{ $t('Correo') }}
+                            <span class="text-brand-drop">*</span>
+                        </Label>
                         <Input
                             id="invite-email"
                             v-model="inviteEmail"
                             type="email"
                             autocomplete="email"
+                            placeholder="persona@correo.com"
+                            :aria-invalid="
+                                inviteErrors.email !== undefined || undefined
+                            "
+                            @update:model-value="clearInviteError('email')"
                         />
+                        <InputError :message="inviteErrors.email" />
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="grid content-start gap-1.5">
                         <Label for="invite-name">{{ $t('Nombre') }}</Label>
                         <Input
                             id="invite-name"
                             v-model="inviteName"
                             autocomplete="name"
+                            :placeholder="$t('Nombre y apellido')"
+                            :aria-invalid="
+                                inviteErrors.name !== undefined || undefined
+                            "
+                            @update:model-value="clearInviteError('name')"
                         />
+                        <InputError :message="inviteErrors.name" />
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="grid content-start gap-1.5">
                         <Label for="invite-role">{{ $t('Rol') }}</Label>
                         <!-- Un solo rol al invitar, igual que antes de Fase 3A:
                              `InviteMemberRequest` sigue pidiendo `role`. Lo que
@@ -553,7 +679,7 @@ onMounted(() => {
                         <select
                             id="invite-role"
                             v-model="inviteRole"
-                            class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                            class="flex h-10 w-full rounded-[10px] border border-input bg-background px-3 text-sm"
                         >
                             <option
                                 v-for="option in roleOptions"
@@ -563,67 +689,45 @@ onMounted(() => {
                                 {{ option.label }}
                             </option>
                         </select>
+                        <InputError :message="inviteErrors.role" />
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                        <span class="hidden md:block md:h-[14px]" />
+                        <Button
+                            class="h-10"
+                            :disabled="sending || !inviteEmail"
+                            @click="invite"
+                        >
+                            <Send class="size-4" />
+                            {{ sending ? $t('Enviando...') : $t('Invitar') }}
+                        </Button>
                     </div>
                 </div>
-                <Button :disabled="sending || !inviteEmail" @click="invite">
-                    {{ sending ? $t('Enviando...') : $t('Invitar') }}
-                </Button>
             </section>
 
-            <div class="mt-6 rounded-2xl border border-border bg-card">
-                <!-- Filtros -->
-                <div
-                    class="flex flex-wrap items-end gap-3 border-b border-border p-4"
-                >
-                    <div class="space-y-1.5">
-                        <Label for="filter-search">{{ $t('Buscar') }}</Label>
-                        <div class="relative">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                            />
-                            <Input
-                                id="filter-search"
-                                v-model="searchInput"
-                                type="search"
-                                :placeholder="$t('Nombre o email')"
-                                class="w-[240px] pl-9"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="filter-status">{{ $t('Estado') }}</Label>
-                        <Select
-                            :model-value="filters.status"
-                            @update:model-value="handleStatusChange"
-                        >
-                            <SelectTrigger id="filter-status" class="w-[170px]">
-                                <SelectValue :placeholder="$t('Todos')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem :value="ALL">
-                                        {{ $t('Todos los estados') }}
-                                    </SelectItem>
-                                    <SelectItem
-                                        v-for="option in statusOptions"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="filter-role">{{ $t('Rol') }}</Label>
+            <FilterBar
+                class="mt-5"
+                :search="searchInput"
+                :placeholder="$t('Buscar miembro por nombre, correo o rol')"
+                :result-label="resultLabel"
+                :tabs="tabs"
+                :active-tab="filters.status"
+                :tabs-label="$t('Estado del miembro')"
+                search-id="team-search"
+                @update:search="searchInput = $event"
+                @update:active-tab="handleTabChange"
+            >
+                <template #selects>
+                    <div class="flex items-center gap-2">
+                        <MonoLabel as="span">{{ $t('Rol') }}</MonoLabel>
                         <Select
                             :model-value="filters.role"
                             @update:model-value="handleRoleChange"
                         >
-                            <SelectTrigger id="filter-role" class="w-[190px]">
+                            <SelectTrigger
+                                id="filter-role"
+                                class="h-9 w-[190px] rounded-full"
+                            >
                                 <SelectValue :placeholder="$t('Todos')" />
                             </SelectTrigger>
                             <SelectContent>
@@ -642,18 +746,10 @@ onMounted(() => {
                             </SelectContent>
                         </Select>
                     </div>
+                </template>
+            </FilterBar>
 
-                    <Button
-                        v-if="hasActiveFilters"
-                        variant="ghost"
-                        size="sm"
-                        class="ml-auto"
-                        @click="resetFilters"
-                    >
-                        {{ $t('Limpiar filtros') }}
-                    </Button>
-                </div>
-
+            <div class="mt-4 rounded-2xl border border-border bg-card">
                 <!-- Loading -->
                 <div v-if="loading" class="space-y-2 p-4">
                     <div
@@ -681,14 +777,14 @@ onMounted(() => {
                 <!-- Empty -->
                 <div
                     v-else-if="members.length === 0"
-                    class="flex flex-col items-center gap-3 p-12 text-center"
+                    class="m-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-input p-12 text-center"
                 >
                     <Users class="size-8 text-muted-foreground/40" />
                     <div class="space-y-1">
-                        <p class="font-medium">
+                        <p class="text-base font-medium">
                             {{
                                 hasActiveFilters
-                                    ? $t('Sin miembros para estos filtros')
+                                    ? $t('Sin miembros para este filtro')
                                     : $t('Todavía no hay nadie en el equipo')
                             }}
                         </p>
@@ -696,7 +792,7 @@ onMounted(() => {
                             {{
                                 hasActiveFilters
                                     ? $t(
-                                          'Prueba ajustar o limpiar los filtros.',
+                                          'Prueba con otra bandeja o limpia el buscador.',
                                       )
                                     : $t(
                                           'Invita a tu primer miembro con el formulario de arriba.',
@@ -718,123 +814,146 @@ onMounted(() => {
                 <div v-else class="overflow-x-auto">
                     <table class="w-full min-w-[760px] text-sm">
                         <thead>
-                            <tr
-                                class="border-b border-border text-left text-xs font-medium text-muted-foreground"
-                            >
-                                <th class="px-4 py-3">{{ $t('Miembro') }}</th>
-                                <th class="px-4 py-3">{{ $t('Roles') }}</th>
-                                <th class="px-4 py-3">{{ $t('Estado') }}</th>
-                                <th class="px-4 py-3">
-                                    {{ $t('Último acceso') }}
-                                </th>
-                                <th class="px-4 py-3 text-right">
+                            <tr class="border-b border-border text-left">
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Miembro')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Rol')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Estado')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3">{{
+                                    $t('Último acceso')
+                                }}</MonoLabel>
+                                <MonoLabel as="th" class="px-4 py-3 text-right">
                                     {{ $t('Acciones') }}
-                                </th>
+                                </MonoLabel>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
                                 v-for="member in members"
                                 :key="member.id"
-                                class="border-b border-border align-middle last:border-0"
+                                class="border-b border-brand-line-2 align-middle transition last:border-0 hover:bg-primary-soft/50"
+                                :class="
+                                    member.status === 'suspended'
+                                        ? 'opacity-[.62]'
+                                        : ''
+                                "
                             >
-                                <td class="px-4 py-3">
-                                    <span class="block font-medium">
-                                        {{ member.name }}
-                                    </span>
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        {{ member.email }}
-                                    </span>
+                                <td class="px-4 py-3.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <InitialsAvatar :name="member.name" />
+                                        <div class="min-w-0">
+                                            <span
+                                                class="block text-[14.5px] font-semibold text-foreground"
+                                            >
+                                                {{ member.name }}
+                                            </span>
+                                            <span
+                                                class="block truncate text-xs text-muted-foreground"
+                                            >
+                                                {{ member.email }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3.5">
                                     <div
                                         v-if="member.roleLabels.length > 0"
                                         class="flex flex-wrap gap-1"
                                     >
-                                        <Badge
+                                        <span
                                             v-for="role in member.roleLabels"
                                             :key="role.name"
-                                            variant="secondary"
-                                            class="font-normal"
+                                            class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground"
                                         >
                                             {{ role.label }}
-                                        </Badge>
+                                        </span>
                                     </div>
                                     <span v-else class="text-muted-foreground">
                                         {{ $t('Sin rol') }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <Badge
-                                        :variant="
-                                            statusMeta[member.status].variant
+                                <td class="px-4 py-3.5">
+                                    <span
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+                                        :class="
+                                            statusMeta[member.status].classes
                                         "
                                     >
                                         {{ statusMeta[member.status].label }}
-                                    </Badge>
+                                    </span>
                                 </td>
                                 <td
-                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                                    class="px-4 py-3.5 whitespace-nowrap text-muted-foreground"
                                 >
                                     {{ lastLoginLabel(member) }}
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div
-                                        class="flex flex-wrap items-center justify-end gap-2"
-                                    >
-                                        <Button
-                                            v-if="
-                                                canInvite &&
-                                                member.status === 'invited'
+                                <td class="px-4 py-3.5">
+                                    <div class="flex justify-end">
+                                        <ActionMenu
+                                            :label="
+                                                t('Acciones de :name', {
+                                                    name: member.name,
+                                                })
                                             "
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="
-                                                resendingFor === member.id
-                                            "
-                                            @click="resendInvitation(member)"
                                         >
-                                            <MailPlus class="size-4" />
-                                            {{
-                                                resendingFor === member.id
-                                                    ? $t('Reenviando...')
-                                                    : $t('Reenviar invitación')
-                                            }}
-                                        </Button>
-                                        <Button
-                                            v-if="canUpdateRoles"
-                                            variant="outline"
-                                            size="sm"
-                                            @click="openRoleDialog(member)"
-                                        >
-                                            <UserCog class="size-4" />
-                                            {{ $t('Roles') }}
-                                        </Button>
-                                        <Button
-                                            v-if="
-                                                canSuspend &&
-                                                member.status !== 'suspended' &&
-                                                member.id !== currentUserId
-                                            "
-                                            variant="outline"
-                                            size="sm"
-                                            @click="doSuspend(member.id)"
-                                        >
-                                            {{ $t('Suspender') }}
-                                        </Button>
-                                        <Button
-                                            v-else-if="
-                                                canSuspend &&
-                                                member.status === 'suspended'
-                                            "
-                                            variant="outline"
-                                            size="sm"
-                                            @click="doReactivate(member.id)"
-                                        >
-                                            {{ $t('Reactivar') }}
-                                        </Button>
+                                            <DropdownMenuItem
+                                                v-if="canUpdateRoles"
+                                                @select="openRoleSheet(member)"
+                                            >
+                                                <UserCog class="size-4" />
+                                                {{ $t('Editar rol') }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-if="
+                                                    canInvite &&
+                                                    member.status === 'invited'
+                                                "
+                                                :disabled="
+                                                    resendingFor === member.id
+                                                "
+                                                @select="
+                                                    resendInvitation(member)
+                                                "
+                                            >
+                                                <MailPlus class="size-4" />
+                                                {{
+                                                    resendingFor === member.id
+                                                        ? $t('Reenviando...')
+                                                        : $t(
+                                                              'Reenviar invitación',
+                                                          )
+                                                }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-if="
+                                                    canSuspend &&
+                                                    member.status ===
+                                                        'suspended'
+                                                "
+                                                @select="
+                                                    doReactivate(member.id)
+                                                "
+                                            >
+                                                <RotateCcw class="size-4" />
+                                                {{ $t('Reactivar acceso') }}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                v-else-if="
+                                                    canSuspend &&
+                                                    !isSelf(member)
+                                                "
+                                                class="text-brand-drop focus:text-brand-drop"
+                                                @select="doSuspend(member.id)"
+                                            >
+                                                <Ban class="size-4" />
+                                                {{ $t('Suspender acceso') }}
+                                            </DropdownMenuItem>
+                                        </ActionMenu>
                                     </div>
                                 </td>
                             </tr>
@@ -883,76 +1002,14 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- Selector de roles -->
-        <Dialog
-            :open="roleDialogMember !== null"
-            @update:open="
-                (value: boolean) => !value && (roleDialogMember = null)
-            "
-        >
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>
-                        {{
-                            $t('Roles de :name', {
-                                name: roleDialogMember?.name ?? '',
-                            })
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {{
-                            $t(
-                                'Un miembro puede tener varios roles: sus permisos son la suma de todos.',
-                            )
-                        }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <fieldset class="space-y-0.5">
-                    <legend class="sr-only">{{ $t('Roles asignados') }}</legend>
-                    <button
-                        v-for="option in roleOptions"
-                        :key="option.name"
-                        type="button"
-                        role="checkbox"
-                        :aria-checked="roleDraft.includes(option.name)"
-                        class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        @click="toggleDraftRole(option.name)"
-                    >
-                        <Checkbox
-                            class="pointer-events-none"
-                            tabindex="-1"
-                            aria-hidden="true"
-                            :model-value="roleDraft.includes(option.name)"
-                        />
-                        <span class="text-sm">{{ option.label }}</span>
-                    </button>
-                </fieldset>
-
-                <p
-                    v-if="roleDraft.length === 0"
-                    class="text-xs text-destructive"
-                >
-                    {{ $t('Elige al menos un rol.') }}
-                </p>
-
-                <DialogFooter>
-                    <Button variant="outline" @click="roleDialogMember = null">
-                        {{ $t('Cancelar') }}
-                    </Button>
-                    <Button
-                        :disabled="
-                            savingRoles ||
-                            roleDraft.length === 0 ||
-                            !draftChanged
-                        "
-                        @click="submitRoles"
-                    >
-                        {{ savingRoles ? $t('Guardando...') : $t('Guardar') }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <MemberRoleSheet
+            v-model:open="roleSheetOpen"
+            :member="roleSheetMember"
+            :roles="roleCatalog"
+            :catalog="permissionCatalog"
+            :saving="savingRoles"
+            @save="submitRoles"
+        />
 
         <!-- Confirmación de cambios sensibles -->
         <Dialog

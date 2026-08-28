@@ -260,9 +260,15 @@ const selectedDateId = ref<number | null>(null);
                         <b class="font-semibold text-foreground">{{
                             tour.rating_average
                         }}</b>
-                        <span class="ml-1 text-primary" aria-hidden="true">{{
-                            '★'.repeat(Math.round(Number(tour.rating_average)))
-                        }}</span>
+                        <span
+                            class="ml-1 text-primary-readable"
+                            aria-hidden="true"
+                            >{{
+                                '★'.repeat(
+                                    Math.round(Number(tour.rating_average)),
+                                )
+                            }}</span
+                        >
                         ·
                         {{
                             $tc(
@@ -459,7 +465,7 @@ const selectedDateId = ref<number | null>(null);
                                 >
                                     <button
                                         type="button"
-                                        class="text-sm font-medium text-primary transition hover:text-brand-ink hover:underline"
+                                        class="text-sm font-medium text-primary-readable transition hover:text-brand-ink hover:underline"
                                         :disabled="loadingMoreReviews"
                                         @click="loadReviews(reviewsPage + 1)"
                                     >
@@ -541,7 +547,7 @@ const selectedDateId = ref<number | null>(null);
                     </h2>
                     <Link
                         :href="catalogIndex().url"
-                        class="text-sm font-medium text-primary transition hover:text-brand-ink hover:underline"
+                        class="text-sm font-medium text-primary-readable transition hover:text-brand-ink hover:underline"
                     >
                         {{ $t('Ver todas ↗') }}
                     </Link>

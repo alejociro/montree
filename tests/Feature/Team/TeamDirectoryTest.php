@@ -185,6 +185,28 @@ final class TeamDirectoryTest extends TestCase
         $response->assertJsonPath('data.0.name', 'Ana Admin');
     }
 
+    public function test_ships_the_team_wide_stats_next_to_the_pagination(): void
+    {
+        $tenant = $this->makeTenant();
+        $admin = $this->memberFor($tenant, UserRole::Admin, ['name' => 'Ana Admin']);
+        $this->memberFor($tenant, UserRole::Guide, ['name' => 'Gil Guía']);
+        $this->memberFor($tenant, UserRole::Guide, ['name' => 'Gina Guía'], TenantMembershipStatus::Suspended);
+        $this->memberFor($tenant, UserRole::Sales, ['name' => 'Vera Vendedora'], TenantMembershipStatus::Invited);
+
+        // El filtro deja una sola fila: las cifras siguen siendo las del equipo entero.
+        $response = $this->actingAs($admin)->getJson($this->url('?status=invited'));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('meta.stats.total', 4);
+        $response->assertJsonPath('meta.stats.active', 2);
+        $response->assertJsonPath('meta.stats.guides', 2);
+        $response->assertJsonPath('meta.stats.suspended', 1);
+        // El `additional(['meta' => ...])` no puede pisar la paginación.
+        $response->assertJsonPath('meta.total', 1);
+        $response->assertJsonPath('meta.current_page', 1);
+    }
+
     private function url(string $query = ''): string
     {
         return 'http://demo.montree.test/api/v1/admin/users'.$query;

@@ -99,22 +99,29 @@ function onKeydown(event: KeyboardEvent): void {
 </script>
 
 <template>
-    <div class="grid gap-2">
+    <!--
+      `grid-rows-[auto_1fr_auto]` + `h-full`: las tres listas viven en la misma
+      rejilla y antes cada una crecía lo que le pedía su contenido, así que las
+      etiquetas y las ayudas quedaban a alturas distintas. Ahora la caja de
+      fichas ocupa el hueco sobrante hasta el tope y, pasado ese tope, hace
+      scroll dentro en vez de estirar la tarjeta.
+    -->
+    <div class="grid h-full grid-rows-[auto_1fr_auto] gap-2">
         <Label :for="props.id">{{ props.label }}</Label>
 
         <div
-            class="flex min-h-11 flex-wrap items-center gap-1.5 rounded-lg border border-input bg-card p-2 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40"
+            class="flex max-h-56 min-h-11 flex-wrap content-start items-start gap-1.5 overflow-y-auto rounded-lg border border-input bg-card p-2 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40"
         >
             <ul v-if="props.modelValue.length > 0" class="contents">
                 <li
                     v-for="(item, index) in props.modelValue"
                     :key="`${item}-${index}`"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-secondary bg-brand-green-50 py-1 pr-1.5 pl-3 text-xs"
+                    class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-secondary/45 bg-secondary-soft py-1 pr-1.5 pl-3 text-xs text-secondary-soft-foreground"
                 >
                     <span>{{ item }}</span>
                     <button
                         type="button"
-                        class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         :aria-label="$t('Quitar :item', { item })"
                         @click="removeAt(index)"
                     >
@@ -137,16 +144,18 @@ function onKeydown(event: KeyboardEvent): void {
             />
         </div>
 
-        <p :id="`${props.id}-hint`" class="text-xs text-muted-foreground">
-            {{
-                props.hint ??
-                $t('Escribe y presiona Enter. :count de :max', {
-                    count: props.modelValue.length,
-                    max: props.max,
-                })
-            }}
-        </p>
+        <div>
+            <p :id="`${props.id}-hint`" class="text-xs text-muted-foreground">
+                {{
+                    props.hint ??
+                    $t('Escribe y presiona Enter. :count de :max', {
+                        count: props.modelValue.length,
+                        max: props.max,
+                    })
+                }}
+            </p>
 
-        <InputError :message="props.error" />
+            <InputError :message="props.error" />
+        </div>
     </div>
 </template>

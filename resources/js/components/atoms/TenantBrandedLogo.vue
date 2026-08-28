@@ -78,7 +78,10 @@ const showNameFallback = computed(
         <span
             v-else-if="showNameFallback"
             :class="
-                cn('font-semibold tracking-tight text-primary', nameSizeClass)
+                cn(
+                    'font-semibold tracking-tight text-primary-readable',
+                    nameSizeClass,
+                )
             "
         >
             {{ displayName }}

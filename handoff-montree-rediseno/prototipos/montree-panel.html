@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Montree · Panel de administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14301f; --green:#12A150; --green-d:#0E7C3E; --green-100:#E3F0E7; --green-50:#EFF6F0;
+  --cream:#F6F0E6; --card:#FFFDF9; --line:#E4DDCD; --line-2:#EFE9DC;
+  --text:#1B1D18; --muted:#767B70; --danger:#B4562A; --danger-50:#F7E6DC; --warn:#B98A17;
+  --r:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font-family:"Plus Jakarta Sans",system-ui,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.015em}
+a{color:var(--green-d);text-decoration:none}
+a:hover{color:var(--ink)}
+button{font-family:inherit;color:inherit}
+svg{display:block}
+.mono{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase}
+.serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+.hidden{display:none !important}
+
+/* shell */
+.app{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.side{background:var(--ink);color:#cfdbcf;padding:18px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.logo{font-family:"Instrument Serif",serif;font-size:19px;color:#f4efe2;letter-spacing:.03em;padding:4px 10px}
+.side .mono{color:#7d9686;padding:0 10px}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side nav a{display:flex;align-items:center;gap:11px;color:#cfdbcf;padding:9px 10px;border-radius:9px;font-size:13.5px}
+.side nav a svg{stroke:#9fb4a4;width:16px;height:16px;flex:none}
+.side nav a:hover{background:#1f4630;color:#fff}
+.side nav a:hover svg{stroke:#fff}
+.side nav a[aria-current="page"]{background:#22503a;color:#fff;font-weight:600}
+.side nav a[aria-current="page"] svg{stroke:#7FD8A2}
+.side .who{margin-top:auto;display:flex;gap:10px;align-items:center;border-top:1px solid #2b4a36;padding-top:14px;font-size:12.5px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#2f6b45;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:80;background:#f6f0e6e6;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 30px}
+.crumbs{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px}
+.page{padding:26px 30px 76px;max-width:1460px;width:100%}
+
+/* generic */
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+.head h1{font-size:30px}
+.head p{margin:5px 0 0;color:var(--muted);max-width:64ch}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:600;
+  cursor:pointer;border:1px solid transparent}
+.btn.p{background:var(--green);color:#fff}
+.btn.p:hover{background:var(--green-d)}
+.btn.p svg{stroke:#fff}
+.btn.g{background:var(--card);color:var(--text);border-color:var(--line)}
+.btn.g:hover{background:var(--green-50);border-color:var(--green-100)}
+.btn.d{background:var(--card);color:var(--danger);border-color:var(--danger-50)}
+.btn.d:hover{background:var(--danger-50)}
+.btn.d svg{stroke:var(--danger)}
+.btn.sm{padding:7px 13px;font-size:12.5px}
+.btn.xs{padding:5px 11px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:15px;height:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.pad{padding:20px 22px}
+.tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--green-100);color:#14301f}
+.t-live{background:var(--ink);color:#EDF6EF}
+.t-warn{background:#FBEFD3;color:#7A5A05}
+.t-off{background:#EDEAE0;color:#5F625A}
+.t-due{background:var(--danger-50);color:var(--danger)}
+.bar{height:6px;background:var(--line-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.bar.full i{background:var(--ink)}
+.bar.zero i{background:var(--line)}
+.iconbtn{border:0;background:none;padding:7px;border-radius:9px;cursor:pointer;color:var(--muted)}
+.iconbtn:hover{background:var(--green-50);color:var(--text)}
+.iconbtn svg{stroke:currentColor;width:16px;height:16px}
+.field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+input,select,textarea{width:100%;font-family:inherit;font-size:14px;color:var(--text);background:var(--card);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:0}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-100)}
+input::placeholder,textarea::placeholder{color:#A3A69C}
+.hint{color:var(--muted);font-size:12px;margin-top:5px}
+.req{color:var(--danger)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.sec-title{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:26px 0 14px}
+.sec-title h2{font-size:19px}
+.sec-title p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.sec-title .mono{color:var(--muted)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:40px 22px;text-align:center;color:var(--muted);font-size:13px;background:var(--card)}
+.empty b{display:block;color:var(--text);font-size:16px;margin-bottom:5px}
+.note{border-left:3px solid var(--green);background:var(--green-50);border-radius:0 10px 10px 0;padding:11px 14px;font-size:12.5px}
+.note.warn{border-left-color:var(--danger);background:var(--danger-50)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.kpi{padding:15px 17px;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.kpi .mono{color:var(--muted);display:block}
+.kpi b{display:block;font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:5px}
+.kpi small{color:var(--muted);font-size:12px}
+.kpi.alert{background:var(--danger-50);border-color:#EBD3C4}
+.kpi.alert b{color:var(--danger)}
+
+/* filtros: buscador largo arriba, pestañas abajo, selects a la derecha */
+.filterbar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 4px;margin-bottom:18px}
+.searchwide{position:relative;margin-bottom:12px}
+.searchwide input{padding-left:40px;height:44px;font-size:14.5px;background:#FDFBF5}
+.searchwide .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.searchwide .ic svg{stroke:currentColor;width:17px;height:17px}
+.searchwide .n{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.frow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line-2);padding:9px 0 10px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{border:0;background:none;font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 14px;border-radius:999px;cursor:pointer;
+  display:inline-flex;gap:7px;align-items:center}
+.seg button:hover{background:var(--green-50);color:var(--text)}
+.seg button[aria-selected="true"]{background:var(--ink);color:#f4efe2}
+.seg .c{font-size:11px;background:var(--line-2);border-radius:99px;padding:0 6px;color:var(--muted)}
+.seg button[aria-selected="true"] .c{background:#2c5540;color:#dcebe0}
+.picks{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pick{display:flex;gap:8px;align-items:center}
+.pick .mono{color:var(--muted)}
+.pick select{width:auto;min-width:118px;padding:8px 11px;font-size:13px;border-radius:999px;background:#FDFBF5}
+
+/* tabla */
+.tablewrap{border:1px solid var(--line);border-radius:var(--r);overflow:auto;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+thead th{position:sticky;top:0;background:#FBF7EE;text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;padding:11px 16px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:3}
+thead th.r{text-align:right}
+tbody td{padding:14px 16px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#FBF7EE}
+tbody tr.off td{opacity:.62}
+td.r{text-align:right}
+.tname{font-size:14.5px;font-weight:600;display:block;min-width:150px}
+.tsub{color:var(--muted);font-size:11.5px;display:block;margin-top:2px}
+.when{display:flex;gap:11px;align-items:center}
+.datebox{width:46px;flex:none;text-align:center;border:1px solid var(--line);border-radius:10px;padding:5px 0;background:#FBF7EE}
+.datebox b{display:block;font-size:17px;line-height:1.1}
+.datebox span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.when .w b{display:block;font-size:13px}
+.when .w small{color:var(--muted);font-size:11.5px;display:block}
+.price{font-size:15px;font-weight:700;white-space:nowrap}
+.price small{display:block;color:var(--muted);font-size:11px;font-weight:500}
+.who{display:flex;gap:9px;align-items:center}
+.who .av{width:28px;height:28px;border-radius:50%;background:var(--green-100);color:#14301f;display:grid;place-items:center;
+  font-weight:700;font-size:11px;flex:none}
+.who b{display:block;font-size:13px;font-weight:600}
+.who small{color:var(--muted);font-size:11px}
+.occ{min-width:150px}
+.occ .row{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:5px}
+.occ .row b{font-size:12.5px}
+.occ .row span{color:var(--muted)}
+.tfoot{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line);
+  background:#FBF7EE;font-size:12.5px;color:var(--muted)}
+
+/* menú de acciones */
+.menu{position:fixed;z-index:900;background:var(--card);border:1px solid var(--line);border-radius:12px;min-width:206px;
+  padding:6px;display:none;box-shadow:0 24px 50px -26px rgba(20,48,31,.55)}
+.menu.on{display:block}
+.menu .mh{padding:7px 10px 8px;color:var(--muted);border-bottom:1px solid var(--line-2);margin-bottom:5px}
+.menu button{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:center;width:100%;border:0;background:none;
+  text-align:left;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer}
+.menu button svg{stroke:var(--muted);width:16px;height:16px}
+.menu button:hover{background:var(--green-50)}
+.menu button:hover svg{stroke:var(--green-d)}
+.menu button.danger{color:var(--danger)}
+.menu button.danger svg{stroke:var(--danger)}
+.menu button.danger:hover{background:var(--danger-50)}
+
+/* fichas logística */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.rescard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column}
+.rescard:hover{border-color:#CFC7B4;box-shadow:0 14px 34px -28px rgba(20,48,31,.5)}
+.rescard .top{display:flex;gap:12px;align-items:flex-start;padding:16px 16px 10px}
+.glyphbox{width:38px;height:38px;border-radius:11px;background:var(--green-50);border:1px solid var(--green-100);display:grid;place-items:center;flex:none}
+.glyphbox svg{stroke:var(--green-d);width:18px;height:18px}
+.rescard h3{font-size:15.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rescard .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.rescard .desc{color:var(--muted);font-size:12.5px;padding:0 16px 12px;margin:0}
+.rescard dl{margin:0;padding:0 16px 14px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px}
+.rescard dt{color:var(--muted)}
+.rescard dd{margin:0;font-weight:500;text-align:right}
+.rescard .foot{margin-top:auto;border-top:1px solid var(--line-2);background:#FDFBF5;padding:11px 14px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:0 0 var(--r) var(--r)}
+.rescard .use{font-size:12px;color:var(--muted)}
+.newcard{border:1.5px dashed var(--line);border-radius:var(--r);background:#FDFBF5;display:grid;place-items:center;padding:24px;
+  cursor:pointer;color:var(--muted);text-align:center;font-family:inherit;font-size:12.5px;min-height:150px}
+.newcard:hover{border-color:var(--green);color:var(--green-d);background:var(--green-50)}
+.newcard b{display:block;font-size:14.5px;color:var(--text);margin-bottom:4px}
+.newcard:hover b{color:var(--green-d)}
+
+/* modal / drawer */
+.veil{position:fixed;inset:0;background:rgba(20,32,24,.42);backdrop-filter:blur(2px);z-index:800;display:none}
+.veil.on{display:block}
+.modal{position:fixed;z-index:820;left:50%;top:50%;transform:translate(-50%,-50%);width:880px;max-width:95vw;height:min(88vh,760px);
+  background:var(--cream);border:1px solid var(--line);border-radius:18px;display:none;flex-direction:column;overflow:hidden;
+  box-shadow:0 40px 90px -50px rgba(20,48,31,.7)}
+.modal.on{display:flex}
+.modal>header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 24px;border-bottom:1px solid var(--line);background:var(--card)}
+.modal>header h2{font-size:20px}
+.modal>header p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+.mbody{flex:1;min-height:0;display:grid;grid-template-columns:206px minmax(0,1fr)}
+.mside{border-right:1px solid var(--line);background:#FBF7EE;padding:14px 12px;overflow:auto;display:flex;flex-direction:column;gap:3px}
+.mside button{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:center;text-align:left;border:0;background:none;
+  padding:9px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
+.mside button i{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;
+  font-style:normal;font-size:10px;font-weight:700;color:var(--muted);background:var(--card)}
+.mside button:hover{background:var(--green-50)}
+.mside button[aria-current="true"]{background:var(--green-100)}
+.mside button[data-done="1"] i{background:var(--green);border-color:var(--green);color:#fff}
+.mside .tip{margin-top:auto;border-top:1px solid var(--line);padding:12px 10px 4px;color:var(--muted);font-size:11.5px}
+.mform{overflow:auto;padding:20px 24px 28px;display:flex;flex-direction:column;gap:22px;scroll-behavior:smooth}
+.mform section{display:flex;flex-direction:column;gap:14px}
+.mform section+section{border-top:1px solid var(--line);padding-top:20px}
+.mform h3{font-size:16px}
+.mform .lead{color:var(--muted);font-size:12.5px;margin:-6px 0 0}
+.modal>footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--line);background:var(--card)}
+.modal>footer .l{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12.5px}
+.modal>footer .r{display:flex;gap:10px}
+.drawer{position:fixed;z-index:820;top:0;right:0;height:100vh;width:470px;max-width:95vw;background:var(--cream);
+  border-left:1px solid var(--line);transform:translateX(101%);transition:transform .24s ease;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer>header{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;align-items:flex-start;background:var(--card)}
+.drawer>header h2{font-size:19px}
+.dbody{overflow:auto;padding:20px 22px 28px;display:flex;flex-direction:column;gap:16px}
+.drawer>footer{margin-top:auto;border-top:1px solid var(--line);padding:14px 22px;display:flex;gap:10px;background:var(--card)}
+.x{border:0;background:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1;padding:4px}
+
+/* chips / opciones */
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer}
+.opts button:hover{border-color:var(--green)}
+.opts button[aria-pressed="true"]{background:var(--green-50);border-color:var(--green);box-shadow:0 0 0 2px var(--green-100)}
+.rrow{display:grid;gap:9px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px 10px}
+.rrow input,.rrow select{border-color:transparent;background:#FDFBF5;padding:8px 10px;font-size:13px}
+.switch{display:flex;justify-content:space-between;gap:14px;align-items:center;border:1px solid var(--line);background:var(--card);
+  border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;width:100%}
+.switch b{display:block;font-size:13px}
+.switch small{color:var(--muted);font-size:11.5px}
+.switch i{width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.switch i:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.switch[aria-pressed="true"] i{background:var(--green)}
+.switch[aria-pressed="true"] i:after{left:19px}
+.chk{display:flex;justify-content:space-between;gap:14px;align-items:center;border-bottom:1px solid var(--line-2);padding:10px 0;
+  background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;cursor:pointer;font-size:13px}
+.chk i{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line);flex:none;display:grid;place-items:center;background:var(--card)}
+.chk i svg{stroke:transparent;width:13px;height:13px}
+.chk[aria-pressed="true"] i{background:var(--green);border-color:var(--green)}
+.chk[aria-pressed="true"] i svg{stroke:#fff}
+
+/* permisos */
+.permgrp{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:14px 16px}
+.permgrp .gt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.permgrp .gt b{font-size:14px}
+.permrow{display:flex;justify-content:space-between;gap:14px;align-items:center;border-top:1px solid var(--line-2);padding:9px 0;font-size:12.5px}
+.permrow span{color:var(--muted)}
+.pmk{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;flex:none;border:1.5px solid var(--line);background:#FDFBF5}
+.pmk svg{width:13px;height:13px;stroke:transparent}
+.pmk.y{background:var(--green);border-color:var(--green)}
+.pmk.y svg{stroke:#fff}
+.rolecard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.rolecard .rt{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.rolecard h3{font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rolecard p{margin:0;color:var(--muted);font-size:12.5px}
+.rolecard .mt{display:flex;gap:14px;color:var(--muted);font-size:12px}
+
+/* newsletter / reseñas / config */
+.mail{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.prev{position:sticky;top:70px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.prev .ph{padding:14px 16px;border-bottom:1px solid var(--line-2)}
+.prev .ph b{display:block;font-size:15px;margin-top:6px}
+.prev .pb{padding:16px;font-size:12.5px;color:var(--muted);min-height:140px;white-space:pre-wrap}
+.prev .pf{border-top:1px solid var(--line-2);padding:11px 16px;color:var(--muted);background:#FDFBF5}
+.rev{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start;padding:16px 18px;border-bottom:1px solid var(--line-2)}
+.rev:last-child{border-bottom:0}
+.rev .stars{color:var(--warn);letter-spacing:.14em;font-size:13px}
+.rev h4{font-size:14.5px;margin-top:5px}
+.rev p{margin:6px 0 0;color:var(--muted);font-size:13px;max-width:76ch}
+.rev .meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);margin-top:8px}
+.cfg{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.swatch{display:flex;gap:10px;align-items:center}
+.swatch .sw{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);flex:none}
+.store{position:sticky;top:70px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.store .hero{padding:22px 18px;color:#fff}
+.store .hero b{display:block;font-family:"Instrument Serif",serif;font-size:25px;margin-top:8px;font-weight:400}
+.store .cta{display:flex;gap:9px;flex-wrap:wrap;padding:15px 18px;border-bottom:1px solid var(--line-2)}
+.store .cta span{padding:9px 15px;border-radius:999px;font-size:12.5px;font-weight:600;color:#fff}
+.store .body{padding:14px 18px;color:var(--muted);font-size:12.5px}
+.store .foot{border-top:1px solid var(--line-2);padding:11px 18px;color:var(--muted);background:#FDFBF5}
+.invite{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) auto;gap:14px;align-items:end}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);background:var(--ink);color:#EDF6EF;padding:12px 20px;
+  border-radius:999px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:.2s;pointer-events:none;
+  box-shadow:0 22px 44px -24px rgba(20,48,31,.8)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:1240px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1180px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .mail,.cfg{grid-template-columns:minmax(0,1fr)}
+  .mbody{grid-template-columns:minmax(0,1fr)}.mside{display:none}
+}
+@media (max-width:760px){.page{padding:20px 16px 60px}.g2,.g3,.invite{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo">Demo Eco Adventures</div>
+    <div><div class="mono" style="margin-bottom:8px">Administración</div><nav id="nav"></nav></div>
+    <div class="who"><span class="avatar">DA</span><span><b>Demo Admin</b><br><span style="color:#8fa896">Administrador</span></span></div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="crumbs"><a href="#" data-nav="dash">Dashboard</a><span>›</span><b id="crumb">Salidas</b></div>
+      <div class="mono" style="color:var(--muted)">Quindío · GMT-5</div>
+    </div>
+    <div id="views"></div>
+  </div>
+</div>
+
+<div class="veil" id="veil" data-close></div>
+<div class="menu" id="menu"></div>
+<div class="modal" id="modal"></div>
+<div class="drawer" id="drawer"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ iconos ============ */
+const s = (d,w=16) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const IC = {
+  dash: s('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  tours: s('<path d="M3 19l6-11 4 7 2-3 6 7z"/>'),
+  cal: s('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>'),
+  truck: s('<rect x="2" y="7" width="12" height="9" rx="1.5"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18.5" r="1.8"/><circle cx="17" cy="18.5" r="1.8"/>'),
+  promo: s('<path d="M3 11l14-6v14L3 13z"/><path d="M17 9a3 3 0 0 1 0 6"/>'),
+  mail: s('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+  star: s('<path d="M12 4l2.5 5.2 5.5.8-4 3.9 1 5.6-5-2.9-5 2.9 1-5.6-4-3.9 5.5-.8z"/>'),
+  team: s('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 11a3 3 0 1 0 0-6"/><path d="M18 20c0-2.4-1-4.2-2.5-5.2"/>'),
+  shield: s('<path d="M12 3l7 3v6c0 4.2-3 7.6-7 9-4-1.4-7-4.8-7-9V6z"/><path d="m9 12 2 2 4-4"/>'),
+  gear: s('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>'),
+  edit: s('<path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="m14 6 4 4"/>'),
+  ban: s('<circle cx="12" cy="12" r="8.5"/><path d="M6.2 17.8 17.8 6.2"/>'),
+  check: s('<path d="M4.5 12.5 9.5 17.5 19.5 7"/>'),
+  dots: s('<circle cx="12" cy="5.5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="18.5" r="1.4"/>'),
+  search: s('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>'),
+  eye: s('<path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>'),
+  copy: s('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5H6a1 1 0 0 0-1 1v9"/>'),
+  send: s('<path d="M3.5 11 21 3.5 13.5 21l-2.8-6.7z"/>'),
+  plus: s('<path d="M12 5v14M5 12h14"/>'),
+  key: s('<circle cx="8" cy="14" r="4"/><path d="m11 11 9-9m-3 3 2 2m-4 0 2 2"/>'),
+  pin: s('<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>'),
+  home: s('<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>'),
+  trash: s('<path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13h10l1-13"/>')
+};
+
+/* ============ datos ============ */
+const TODAY = new Date('2026-08-25T12:00:00');
+const MES3 = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DIA = ['dom','lun','mar','mié','jue','vie','sáb'];
+const esc = v => String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dt = x => new Date(x+'T12:00:00');
+const dd = x => Math.round((dt(x)-TODAY)/864e5);
+const usd = n => 'US$ '+n.toLocaleString('es-CO');
+const fdate = x => dt(x).getDate()+' '+MES3[dt(x).getMonth()]+' '+dt(x).getFullYear();
+const ini = n => n.split(' ').map(w=>w[0]).slice(0,2).join('');
+
+const DEPS = [
+  {id:'s12',tour:'Travesía Sierra Nevada',code:'TSN-0912',d:'2026-09-07',h:'8:00 a. m.',days:'4 días',cap:19,sold:1,price:1145,guide:'Eduardo Papa',on:true},
+  {id:'s11',tour:'Valle de Cocora',code:'VDC-0906',d:'2026-09-06',h:'6:30 a. m.',days:'1 día',cap:20,sold:0,price:480,guide:'Demo Guide',on:true},
+  {id:'s10',tour:'Tour Demo #5',code:'TD5-0905',d:'2026-09-05',h:'7:00 a. m.',days:'1 día',cap:16,sold:3,price:530,guide:'Demo Guide',on:true},
+  {id:'s9',tour:'Tour Demo #5',code:'TD5-0904',d:'2026-09-04',h:'7:00 a. m.',days:'1 día',cap:5,sold:0,price:530,guide:null,on:false},
+  {id:'s8',tour:'Tour Demo #4',code:'TD4-0902',d:'2026-09-02',h:'6:00 a. m.',days:'2 días',cap:9,sold:4,price:403,guide:'Demo Guide',on:true},
+  {id:'s7',tour:'Tour Demo #4',code:'TD4-0901',d:'2026-09-01',h:'6:00 a. m.',days:'2 días',cap:14,sold:0,price:403,guide:null,on:true},
+  {id:'s6',tour:'Tour Demo #3',code:'TD3-0830',d:'2026-08-30',h:'5:30 a. m.',days:'3 días',cap:17,sold:12,price:1428,guide:'Demo Guide',on:true},
+  {id:'s5',tour:'Tour Demo #2',code:'TD2-0828',d:'2026-08-28',h:'7:15 a. m.',days:'3 días',cap:18,sold:18,price:358,guide:'Demo Guide 2',on:true},
+  {id:'s4',tour:'Tour Demo #2',code:'TD2-0826',d:'2026-08-26',h:'7:15 a. m.',days:'3 días',cap:7,sold:7,price:358,guide:'Demo Guide',on:true},
+  {id:'s3',tour:'Tour Demo #1',code:'TD1-0825',d:'2026-08-25',h:'6:00 a. m.',days:'3 días',cap:19,sold:14,price:443,guide:'Demo Guide 2',on:true},
+  {id:'s2',tour:'Tour Demo #1',code:'TD1-0823',d:'2026-08-23',h:'6:00 a. m.',days:'3 días',cap:17,sold:17,price:443,guide:'Demo Guide',on:true},
+  {id:'s1',tour:'Tour Demo #3',code:'TD3-0818',d:'2026-08-18',h:'5:30 a. m.',days:'3 días',cap:15,sold:11,price:1428,guide:'Valeria Rincón',on:true}
+];
+const LB = {ruta:{one:'ruta',many:'Rutas',nw:'Nueva ruta',ic:IC.pin},proveedor:{one:'proveedor',many:'Proveedores',nw:'Nuevo proveedor',ic:IC.truck},
+  hotel:{one:'hotel',many:'Hoteles',nw:'Nuevo hotel',ic:IC.home}};
+const RES = {
+  ruta:[
+    {id:'r1',n:'Ruta Cascadas',desc:'Recorrido de tres cascadas por el cañón, con dos tramos de sendero moderado.',city:'Salento, Quindío',
+      f:[['Distancia','11,4 km'],['Duración','6 h'],['Dificultad','Moderada'],['Paradas','5 · senderismo']],uses:3,on:true},
+    {id:'r2',n:'Ruta El Mirador',desc:'Ascenso al mirador con parada de café y regreso en chiva.',city:'Filandia, Quindío',
+      f:[['Distancia','7,8 km'],['Duración','4 h'],['Dificultad','Fácil'],['Paradas','3 · mixta']],uses:2,on:true}],
+  proveedor:[
+    {id:'p1',n:'Transportes Andinos',desc:'Buses de 20 y 40 puestos con conductor y seguro de pasajeros.',city:'Armenia, Quindío',
+      f:[['Servicio','Transporte'],['NIT','901.223.114-3'],['Tarifa','US$ 320 / día'],['Póliza','Vence 12 oct 2026']],uses:2,on:true},
+    {id:'p2',n:'Cocina del Valle',desc:'Almuerzos campesinos y refrigerios, con opción vegetariana y sin gluten.',city:'Salento, Quindío',
+      f:[['Servicio','Alimentación'],['NIT','900.884.201-1'],['Tarifa','US$ 14 / persona'],['Sanidad','Al día']],uses:3,on:true}],
+  hotel:[
+    {id:'h1',n:'Ecohotel La Montaña',desc:'12 habitaciones, desayuno incluido y zona de fogata.',city:'Vereda Demo, Colombia',
+      f:[['Categoría','3 estrellas'],['Capacidad','28 camas'],['Tarifa','US$ 62 / noche'],['Check-in','3:00 p. m.']],uses:4,on:true},
+    {id:'h2',n:'Posada del Río',desc:'Posada rural a orillas del río, seis habitaciones dobles.',city:'Vereda Demo, Colombia',
+      f:[['Categoría','Posada rural'],['Capacidad','14 camas'],['Tarifa','US$ 41 / noche'],['Check-in','2:00 p. m.']],uses:1,on:false}]
+};
+const PROMOS = [
+  {id:'pr1',code:'VERANO2026',tipo:'Porcentaje',val:'10 %',desde:'2026-08-26',hasta:'2026-09-25',max:120,usos:38,on:true},
+  {id:'pr2',code:'COCORA50',tipo:'Monto fijo',val:'US$ 50',desde:'2026-07-01',hasta:'2026-08-31',max:60,usos:57,on:true},
+  {id:'pr3',code:'MADRUGADOR',tipo:'Porcentaje',val:'15 %',desde:'2026-05-01',hasta:'2026-06-30',max:0,usos:212,on:false}
+];
+const SUBS = [
+  {m:'ana.torres@correo.com',d:'2026-08-19',src:'Ficha de tour'},
+  {m:'jrivas@correo.com',d:'2026-08-11',src:'Pie de página'},
+  {m:'lucia.m@correo.com',d:'2026-07-28',src:'Checkout'},
+  {m:'daniel.b@correo.com',d:'2026-07-14',src:'Ficha de tour'}
+];
+const REVS = [
+  {id:'rv1',st:'pend',n:'Ana Torres',tour:'Valle de Cocora',r:5,d:'2026-08-22',t:'La caminata estuvo impecable y el guía explicó cada especie de palma. El desayuno fue muy generoso.'},
+  {id:'rv2',st:'pend',n:'Daniel Bermúdez',tour:'Tour Demo #3',r:3,d:'2026-08-20',t:'El recorrido vale la pena, pero el transporte llegó cuarenta minutos tarde al punto de encuentro.'},
+  {id:'rv3',st:'apr',n:'Lucía Mejía',tour:'Tour Demo #1',r:5,d:'2026-08-12',t:'Segunda vez que viajo con ellos. La logística es puntual y el hotel muy cómodo.'},
+  {id:'rv4',st:'rech',n:'Anónimo',tour:'Tour Demo #5',r:1,d:'2026-08-03',t:'Reseña sin contenido verificable sobre el servicio.'}
+];
+const TEAM = [
+  {id:'t1',n:'Demo Admin',m:'admin@demo.montree.test',rol:'Administrador',on:true,last:'hace 1 hora',self:true},
+  {id:'t2',n:'Demo Guide',m:'guide@demo.montree.test',rol:'Guía',on:true,last:'hace 5 días'},
+  {id:'t3',n:'Demo Guide 2',m:'guide2@demo.montree.test',rol:'Guía',on:true,last:'Nunca'},
+  {id:'t4',n:'Demo Operator',m:'operator@demo.montree.test',rol:'Operador',on:true,last:'Nunca'},
+  {id:'t5',n:'Demo Sales',m:'sales@demo.montree.test',rol:'Vendedor',on:false,last:'hace 5 días'}
+];
+const PERMS = {
+  'Tours':['Ver tours','Crear y editar tours','Publicar o despublicar','Eliminar tours'],
+  'Salidas':['Ver salidas','Editar salidas','Asignar guía','Inhabilitar salidas'],
+  'Reservas':['Ver reservas','Registrar pagos','Editar pasajeros','Cancelar reservas'],
+  'Logística':['Ver fichas','Crear y editar fichas','Inhabilitar fichas'],
+  'Contenido':['Ver reseñas','Moderar reseñas','Enviar newsletter','Gestionar promociones'],
+  'Equipo':['Ver equipo','Invitar miembros','Asignar roles','Suspender miembros'],
+  'Configuración':['Ver configuración','Editar identidad','Editar reglas de reserva']
+};
+const ALLP = Object.values(PERMS).flat().length;
+const ROLES = [
+  {id:'ro1',n:'Administrador',sys:true,members:1,allow:'all',desc:'Control total del panel y de la configuración de la agencia.'},
+  {id:'ro2',n:'Vendedor',sys:true,members:1,allow:['Ver tours','Ver salidas','Ver reservas','Registrar pagos','Editar pasajeros','Cancelar reservas','Ver fichas','Ver reseñas','Gestionar promociones','Ver equipo','Ver configuración'],desc:'Vende y gestiona reservas, sin tocar la operación ni la configuración.'},
+  {id:'ro3',n:'Operador',sys:true,members:1,allow:['Ver tours','Ver salidas','Editar salidas','Asignar guía','Inhabilitar salidas','Ver reservas','Ver fichas','Crear y editar fichas','Inhabilitar fichas','Ver reseñas','Moderar reseñas','Ver equipo','Ver configuración'],desc:'Arma la operación: salidas, guías y fichas de logística.'},
+  {id:'ro4',n:'Guía',sys:true,members:3,allow:['Ver tours','Ver salidas','Ver reservas','Ver fichas','Ver reseñas'],desc:'Consulta lo que necesita el día del viaje. Sin permisos de edición.'}
+];
+const CFG = {primary:'#12A150',secondary:'#B4562A',tagline:'Aventuras inolvidables en Colombia',
+  desc:'Agencia demo precargada para desarrollo local. Operamos el eje cafetero con guías propios.',
+  mod:true,datos:true,ig:'https://instagram.com/demo',fb:'',tw:'',yt:'',tk:''};
+
+/* ============ navegación ============ */
+const NAV = [
+  {k:'dash',l:'Dashboard',i:IC.dash},{k:'tours',l:'Tours',i:IC.tours},{k:'salidas',l:'Salidas',i:IC.cal},
+  {k:'logistica',l:'Logística',i:IC.truck},{k:'promos',l:'Promociones',i:IC.promo},{k:'news',l:'Newsletter',i:IC.mail},
+  {k:'revs',l:'Reseñas',i:IC.star},{k:'equipo',l:'Equipo',i:IC.team},{k:'roles',l:'Roles y permisos',i:IC.shield},
+  {k:'config',l:'Configuración',i:IC.gear}
+];
+let V = 'salidas';
+document.getElementById('nav').innerHTML = NAV.map(n=>`<a href="#" data-nav="${n.k}">${n.i}${n.l}</a>`).join('');
+document.addEventListener('click',e=>{ const a = e.target.closest('[data-nav]'); if(!a) return; e.preventDefault(); go(a.dataset.nav); });
+function go(k){
+  V = k;
+  document.querySelectorAll('#nav a').forEach(a=>{ a.dataset.nav===k?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'); });
+  document.getElementById('crumb').textContent = (NAV.find(n=>n.k===k)||{l:'Panel'}).l;
+  render(); window.scrollTo(0,0);
+}
+function head(title,sub,right){
+  return `<div class="head"><div><h1>${esc(title)}</h1>${sub?`<p>${sub}</p>`:''}</div><div style="display:flex;gap:10px;flex-wrap:wrap">${right||''}</div></div>`;
+}
+const kpis = list => `<div class="kpis">${list.map(k=>`<div class="kpi${k[3]?' alert':''}">
+  <span class="mono">${esc(k[0])}</span><b>${k[1]}</b><small>${esc(k[2]||'')}</small></div>`).join('')}</div>`;
+function occCell(sold,cap){
+  const pct = Math.round(sold/cap*100);
+  return `<div class="occ"><div class="row"><b>${sold}/${cap}</b><span>${cap-sold} libres</span></div>
+    <div class="bar ${pct>=100?'full':pct===0?'zero':''}"><i style="width:${pct||3}%"></i></div></div>`;
+}
+/* buscador largo arriba + pestañas abajo + selects a la derecha */
+function filterBar({id,ph,val,count,tabs,picks}){
+  return `<div class="filterbar">
+    <div class="searchwide"><span class="ic">${IC.search}</span>
+      <input id="${id}" type="text" value="${esc(val)}" placeholder="${esc(ph)}">
+      ${count?`<span class="n mono">${count}</span>`:''}</div>
+    <div class="frow"><div class="seg">${tabs}</div><div class="picks">${picks||''}</div></div>
+  </div>`;
+}
+const pick = (label,id,opts) => `<span class="pick"><span class="mono">${label}</span><select id="${id}">${opts}</select></span>`;
+
+/* ============ menú ============ */
+const menu = document.getElementById('menu');
+function openMenu(btn,title,items){
+  menu.innerHTML = `<div class="mh mono">${esc(title)}</div>`+items.map((it,i)=>
+    `<button data-mi="${i}" class="${it.danger?'danger':''}">${it.icon}<span>${esc(it.label)}</span></button>`).join('');
+  menu.classList.add('on');
+  const r = btn.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = Math.max(10,Math.min(r.right-w,window.innerWidth-w-10))+'px';
+  menu.style.top = (r.bottom+h>window.innerHeight-10 ? r.top-h-6 : r.bottom+6)+'px';
+  menu.onclick = ev => { const b = ev.target.closest('[data-mi]'); if(!b) return; menu.classList.remove('on'); items[+b.dataset.mi].run(); };
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('#menu') && !e.target.closest('[data-menu]')) menu.classList.remove('on'); },true);
+window.addEventListener('scroll',()=>menu.classList.remove('on'),true);
+
+/* ============ modal / drawer / toast ============ */
+const veil = document.getElementById('veil'), modal = document.getElementById('modal'), drawer = document.getElementById('drawer');
+function closeAll(){ [veil,modal,drawer].forEach(el=>el.classList.remove('on')); }
+document.addEventListener('click',e=>{ if(e.target.closest('[data-close]')) closeAll(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeAll(); menu.classList.remove('on'); } });
+let tt; function toast(m){ const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on');
+  clearTimeout(tt); tt = setTimeout(()=>t.classList.remove('on'),2400); }
+function keepFocus(id,fn){
+  const el = document.getElementById(id), p = el.selectionStart; fn();
+  const n = document.getElementById(id); if(n){ n.focus(); try{ n.setSelectionRange(p,p); }catch(e){} }
+}
+
+/* ============ SALIDAS ============ */
+const SF = {q:'',tab:'proximas',tour:'all',sort:'asc'};
+const STABS = [
+  {k:'proximas',l:'Próximas',f:d=>dd(d.d)>=0&&d.on},
+  {k:'hoy',l:'Hoy',f:d=>dd(d.d)===0&&d.on},
+  {k:'pasadas',l:'Realizadas',f:d=>dd(d.d)<0},
+  {k:'off',l:'Inhabilitadas',f:d=>!d.on},
+  {k:'all',l:'Todas',f:()=>true}
+];
+function sList(){
+  let o = DEPS.filter(STABS.find(t=>t.k===SF.tab).f);
+  if(SF.tour!=='all') o = o.filter(d=>d.tour===SF.tour);
+  if(SF.q){ const q = SF.q.toLowerCase(); o = o.filter(d=>(d.tour+' '+d.code+' '+(d.guide||'')).toLowerCase().includes(q)); }
+  return o.slice().sort((a,b)=>SF.sort==='asc'?dt(a.d)-dt(b.d):dt(b.d)-dt(a.d));
+}
+function vSalidas(){
+  const L = sList(), fut = DEPS.filter(d=>dd(d.d)>=0&&d.on), tours = [...new Set(DEPS.map(d=>d.tour))];
+  return head('Salidas','Cada salida es una fecha real con su cupo, su precio y su guía.') +
+  kpis([['Salidas activas',fut.length,'próximas y habilitadas'],
+    ['Cupos por vender',fut.reduce((a,d)=>a+(d.cap-d.sold),0),'en salidas futuras'],
+    ['Viajeros confirmados',DEPS.filter(d=>dd(d.d)>=0).reduce((a,d)=>a+d.sold,0),'con reserva activa'],
+    ['Sin guía asignado',fut.filter(d=>!d.guide).length,'requieren asignación',fut.filter(d=>!d.guide).length>0]]) +
+  filterBar({id:'sq',ph:'Buscar salida por tour, código o guía',val:SF.q,count:L.length+' de '+DEPS.length,
+    tabs:STABS.map(t=>`<button data-stab="${t.k}" aria-selected="${SF.tab===t.k}">${t.l}<span class="c">${DEPS.filter(t.f).length}</span></button>`).join(''),
+    picks: pick('Tour','stour',`<option value="all">Todos</option>`+tours.map(t=>`<option${SF.tour===t?' selected':''}>${esc(t)}</option>`).join(''))
+      + pick('Orden','ssort',`<option value="asc"${SF.sort==='asc'?' selected':''}>Más próxima</option><option value="desc"${SF.sort==='desc'?' selected':''}>Más lejana</option>`)}) +
+  (L.length ? `<div class="tablewrap"><table><thead><tr>
+      <th>Tour</th><th style="width:180px">Fecha</th><th style="width:120px">Precio</th>
+      <th style="width:180px">Guía</th><th style="width:190px">Ocupación</th><th class="r" style="width:60px">Acciones</th>
+    </tr></thead><tbody>${L.map(d=>{
+      const day = dt(d.d), rel = dd(d.d)===0?'hoy':dd(d.d)>0?'en '+dd(d.d)+' días':'hace '+Math.abs(dd(d.d))+' días';
+      return `<tr class="${d.on?'':'off'}">
+        <td><span class="tname">${esc(d.tour)}</span>
+          <span class="tsub">${d.code} · ${d.days}${d.on?'':' · inhabilitada'}</span></td>
+        <td><div class="when"><span class="datebox"><b>${String(day.getDate()).padStart(2,'0')}</b><span>${MES3[day.getMonth()]}</span></span>
+          <span class="w"><b>${DIA[day.getDay()]} · ${d.h}</b><small>${rel}</small></span></div></td>
+        <td><span class="price">${usd(d.price)}<small>por persona</small></span></td>
+        <td>${d.guide?`<span class="who"><span class="av">${ini(d.guide)}</span><span><b>${esc(d.guide)}</b><small>asignado</small></span></span>`
+          :`<span class="tag t-due">Sin guía</span>`}</td>
+        <td>${occCell(d.sold,d.cap)}</td>
+        <td class="r"><button class="iconbtn" data-menu="dep:${d.id}" aria-label="Acciones">${IC.dots}</button></td>
+      </tr>`;}).join('')}</tbody></table>
+      <div class="tfoot"><span>${L.length} ${L.length===1?'salida':'salidas'}</span>
+        <span>${L.reduce((a,d)=>a+d.sold,0)} viajeros · ${L.reduce((a,d)=>a+(d.cap-d.sold),0)} cupos libres</span></div></div>`
+    : `<div class="empty"><b>Ninguna salida coincide</b>Cambia de pestaña o limpia la búsqueda.</div>`);
+}
+function bindSalidas(){
+  document.getElementById('sq').oninput = e => { SF.q = e.target.value.trim(); keepFocus('sq',render); };
+  document.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{ SF.tab = b.dataset.stab; render(); });
+  document.getElementById('stour').onchange = e => { SF.tour = e.target.value; render(); };
+  document.getElementById('ssort').onchange = e => { SF.sort = e.target.value; render(); };
+}
+function depMenu(btn,id){
+  const d = DEPS.find(x=>x.id===id);
+  openMenu(btn,d.code,[
+    {label:'Editar salida',icon:IC.edit,run:()=>toast('Abriría el editor de '+d.code)},
+    d.on ? {label:'Inhabilitar',icon:IC.ban,danger:true,run:()=>{ d.on=false; render(); toast('Salida '+d.code+' inhabilitada'); }}
+         : {label:'Habilitar',icon:IC.check,run:()=>{ d.on=true; render(); toast('Salida '+d.code+' habilitada'); }}
+  ]);
+}
+
+/* ============ LOGÍSTICA ============ */
+const LF = {tab:'ruta',q:'',estado:'all'};
+function lList(){
+  let o = RES[LF.tab];
+  if(LF.estado!=='all') o = o.filter(r=>LF.estado==='on'?r.on:!r.on);
+  if(LF.q){ const q = LF.q.toLowerCase();
+    o = o.filter(r=>(r.n+' '+r.city+' '+r.desc+' '+r.f.map(x=>x[1]).join(' ')).toLowerCase().includes(q)); }
+  return o;
+}
+function vLog(){
+  const L = lList();
+  return head('Logística','Rutas, proveedores y hoteles que reutilizas al armar cada salida.',
+    `<button class="btn p" data-lnew="1">${IC.plus} ${LB[LF.tab].nw}</button>`) +
+  filterBar({id:'lq',ph:'Buscar ficha por nombre, municipio, contacto o tarifa',val:LF.q,count:L.length+(L.length===1?' ficha':' fichas'),
+    tabs:Object.keys(LB).map(k=>`<button data-ltab="${k}" aria-selected="${LF.tab===k}">${LB[k].many}<span class="c">${RES[k].length}</span></button>`).join(''),
+    picks: pick('Estado','lest',`<option value="all"${LF.estado==='all'?' selected':''}>Todos</option>
+      <option value="on"${LF.estado==='on'?' selected':''}>Habilitados</option>
+      <option value="off"${LF.estado==='off'?' selected':''}>Inhabilitados</option>`)}) +
+  `<div class="cards">${L.map(r=>`
+    <article class="rescard">
+      <div class="top"><span class="glyphbox">${LB[LF.tab].ic}</span>
+        <div style="min-width:0"><h3>${esc(r.n)}${r.on?'':'<span class="tag t-off">Inhabilitado</span>'}</h3>
+          <div class="sub">${esc(r.city)}</div></div></div>
+      <p class="desc">${esc(r.desc)}</p>
+      <dl>${r.f.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+      <div class="foot"><span class="use">Usada en <b>${r.uses}</b> ${r.uses===1?'salida':'salidas'}</span>
+        <button class="btn g xs" data-ledit="${r.id}">${IC.edit} Editar</button></div>
+    </article>`).join('')}
+    <button class="newcard" data-lnew="1"><span><b>${esc(LB[LF.tab].nw)}</b>
+      Guarda la ficha completa una vez y reutilízala en cada salida.</span></button>
+    ${L.length?'':`<div class="empty" style="grid-column:1/-1"><b>Sin resultados</b>Ninguna ficha coincide con la búsqueda o el estado elegido.</div>`}
+  </div>`;
+}
+function bindLog(){
+  document.getElementById('lq').oninput = e => { LF.q = e.target.value.trim(); keepFocus('lq',render); };
+  document.querySelectorAll('[data-ltab]').forEach(b=>b.onclick=()=>{ LF.tab = b.dataset.ltab; render(); });
+  document.getElementById('lest').onchange = e => { LF.estado = e.target.value; render(); };
+  document.querySelectorAll('[data-lnew]').forEach(b=>b.onclick=()=>openResModal(LF.tab));
+  document.querySelectorAll('[data-ledit]').forEach(b=>b.onclick=()=>openResModal(LF.tab,RES[LF.tab].find(r=>r.id===b.dataset.ledit)));
+}
+
+/* ---- modal de ficha ---- */
+const PLACES = [
+  {n:'Ecohotel La Montaña',a:'Vereda El Castillo, km 4',c:'Salento, Quindío'},
+  {n:'Posada del Río',a:'Vereda Boquía',c:'Salento, Quindío'},
+  {n:'Terminal de Transportes',a:'Cra 19 #35-05',c:'Armenia, Quindío'},
+  {n:'Plaza de Bolívar',a:'Cra 14 con Cl 21',c:'Armenia, Quindío'},
+  {n:'Entrada Valle de Cocora',a:'Vía Cocora, km 11',c:'Salento, Quindío'},
+  {n:'Mirador de Filandia',a:'Alto de la Cruz',c:'Filandia, Quindío'}
+];
+const sec = (id,nav,title,lead,body) => ({id,nav,html:`<section data-sid="${id}"><div><h3>${title}</h3>${lead?`<p class="lead">${lead}</p>`:''}</div>${body}</section>`});
+const fld = (k,l,ph,req,help,type='text') => `<div class="field"><label>${l}${req?' <span class="req">*</span>':''}</label>
+  <input type="${type}" data-k="${k}" placeholder="${esc(ph||'')}">${help?`<div class="hint">${help}</div>`:''}</div>`;
+const sel2 = (k,l,opts,req) => `<div class="field"><label>${l}${req?' <span class="req">*</span>':''}</label>
+  <select data-k="${k}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+const ta = (k,l,ph,rows=2) => `<div class="field"><label>${l}</label><textarea rows="${rows}" data-k="${k}" placeholder="${esc(ph)}"></textarea></div>`;
+const geo = (k,l) => `<div class="field" data-geo><label>${l} <span class="req">*</span></label>
+  <input type="text" data-k="${k}" data-hunt="1" autocomplete="off" placeholder="Escribe la dirección o el nombre del lugar">
+  <div class="hint">Sin coordenadas: se busca la dirección y se guarda el punto.</div>
+  <div class="opts" style="margin-top:9px" data-geolist></div></div>`;
+const repRow = cols => `<div class="rrow" data-rrow style="grid-template-columns:${cols.map(c=>c.w).join(' ')} 34px">
+  ${cols.map(c=>c.t==='select'?`<select>${c.o.map(o=>`<option>${o}</option>`).join('')}</select>`
+    :`<input type="text" placeholder="${esc(c.p||'')}" value="${esc(c.v||'')}">`).join('')}
+  <button class="iconbtn" data-del="1" aria-label="Quitar">${IC.trash}</button></div>`;
+const rep = (id,l,row,addl) => `<div class="field"><label>${l}</label><div class="stack" data-rep="${id}" style="gap:9px">${row}</div>
+  <button class="btn g sm" style="margin-top:10px" data-add="${id}">${IC.plus} ${addl}</button></div>`;
+const sw = (l,sub,on) => `<button class="switch" data-sw="1" aria-pressed="${on?'true':'false'}"><span><b>${l}</b><small>${sub}</small></span><i></i></button>`;
+
+const FORMS = {
+  ruta:[
+    sec('id','Identificación','Identificación','Cómo se llama y qué tipo de recorrido es.',
+      `<div class="stack">${fld('n','Nombre de la ruta','Ruta Cascadas',1,'Así la verás al armar una salida.')}
+       ${ta('desc','Descripción operativa','Qué recorre, cómo es el terreno y qué debe saber el guía')}
+       <div class="g2">${sel2('tipo','Tipo de recorrido',['Senderismo','Terrestre','Mixta','Acuática','Ciclismo'],1)}
+       ${sel2('dif','Dificultad',['Fácil','Moderada','Exigente','Alta montaña'],1)}</div></div>`),
+    sec('ub','Ubicación','Ubicación','Punto de inicio y de cierre del recorrido.',
+      `<div class="stack">${geo('inicio','Punto de inicio')}${geo('fin','Punto de finalización')}
+       <div class="g3">${fld('city','Municipio','Salento',1)}${fld('dep','Departamento','Quindío')}${fld('pais','País','Colombia')}</div></div>`),
+    sec('pf','Perfil','Perfil del recorrido','Datos que definen el esfuerzo y el tamaño del grupo.',
+      `<div class="stack"><div class="g3">${fld('km','Distancia','11,4 km',1)}${fld('dur','Duración estimada','6 h',1)}${fld('alt','Altitud máxima','2 860 m')}</div>
+       <div class="g2">${fld('up','Desnivel positivo','640 m')}${fld('capg','Capacidad máxima del grupo','20 personas',1)}</div>
+       <div class="field"><label>Temporada recomendada</label><div class="opts">
+        ${['Todo el año','Dic–feb','Jun–ago','Evitar lluvias'].map(o=>`<button data-opt="1">${o}</button>`).join('')}</div></div></div>`),
+    sec('pa','Paradas','Paradas','El orden define el recorrido; cada parada guarda su hora prevista.',
+      rep('paradas','Paradas de la ruta',
+        repRow([{t:'text',p:'Nombre de la parada',v:'Recogida · Plaza de Bolívar',w:'minmax(0,1.6fr)'},{t:'text',p:'Hora',v:'8:00 a. m.',w:'minmax(0,.7fr)'},
+          {t:'select',o:['Recogida','Parada','Regreso'],w:'minmax(0,.9fr)'}]),'Agregar parada')),
+    sec('sg','Seguridad','Seguridad y notas','Lo que el guía necesita si algo se sale del plan.',
+      `<div class="stack">${ta('riesgo','Riesgos y protocolo','Tramos expuestos, señal de celular, punto de evacuación',3)}
+       <div class="field"><label>Equipo obligatorio</label><div class="opts">
+        ${['Calzado de trekking','Impermeable','Hidratación 2 L','Bloqueador','Linterna','Bastones'].map(o=>`<button data-opt="1">${o}</button>`).join('')}</div></div>
+       <div class="g2">${fld('permiso','Permisos o entradas','Entrada al parque · US$ 6')}${fld('emerg','Contacto de emergencia en zona','Bomberos Salento · +57 …')}</div>
+       ${sw('Ficha habilitada','Disponible al armar nuevas salidas.',true)}</div>`)],
+  proveedor:[
+    sec('id','Identificación','Identificación','Quién es y qué presta exactamente.',
+      `<div class="stack">${fld('n','Nombre del proveedor','Transportes Andinos',1)}
+       <div class="field"><label>Tipo de servicio <span class="req">*</span></label><div class="opts">
+        ${['Transporte','Alimentación','Guianza','Actividades','Equipos','Otro'].map(o=>`<button data-opt="tipo">${o}</button>`).join('')}</div></div>
+       ${ta('desc','Descripción del servicio','Capacidad, restricciones y detalles del servicio')}</div>`),
+    sec('lg','Datos legales','Datos legales y facturación','Lo que necesita contabilidad para pagarle.',
+      `<div class="stack"><div class="g2">${fld('razon','Razón social','Transportes Andinos S.A.S.',1)}${fld('nit','NIT o documento','901.223.114-3',1)}</div>
+       <div class="g2">${sel2('reg','Régimen tributario',['Responsable de IVA','No responsable de IVA','Régimen simple'])}${fld('mailfac','Correo de facturación','facturacion@proveedor.com','','','email')}</div>
+       <div class="g2">${fld('banco','Banco y cuenta','Bancolombia · Ahorros 123-456789-00')}${sel2('pago','Condiciones de pago',['Anticipo 50 % y saldo al finalizar','Pago total anticipado','Crédito 15 días','Crédito 30 días'],1)}</div></div>`),
+    sec('ct','Contacto','Contacto operativo','A quién se llama el día del viaje.',
+      `<div class="stack"><div class="g2">${fld('cont','Persona de contacto','Jorge Rivas',1)}${fld('cargo','Cargo','Coordinador de flota')}</div>
+       <div class="g2">${fld('tel','Teléfono / WhatsApp','+57 310 555 8821',1)}${fld('mail','Correo','operaciones@proveedor.com','','','email')}</div>
+       <div class="g2">${fld('alt','Contacto alterno 24/7','Nombre y teléfono')}${fld('hor','Horario de atención','Lun–sáb 6:00 a. m. – 8:00 p. m.')}</div>
+       ${geo('dir','Dirección')}
+       <div class="g3">${fld('city','Municipio','Armenia',1)}${fld('dep','Departamento','Quindío')}${fld('cob','Cobertura','Eje cafetero')}</div></div>`),
+    sec('tf','Tarifas','Tarifas','Cada modalidad que te cobran, para calcular el costo de la salida.',
+      `<div class="stack">${rep('tarifas','Tarifas acordadas',
+        repRow([{t:'text',p:'Concepto',v:'Bus 40 puestos',w:'minmax(0,1.5fr)'},{t:'text',p:'Valor',v:'US$ 320',w:'minmax(0,.8fr)'},
+          {t:'select',o:['Por día','Por persona','Por servicio','Por hora'],w:'minmax(0,.9fr)'}]),'Agregar tarifa')}
+       <div class="g2">${sel2('mon','Moneda',['USD','COP','EUR'],1)}${fld('vig','Vigencia de tarifas','Hasta 31 dic 2026')}</div></div>`),
+    sec('dc','Documentos','Documentos y cumplimiento','Vencimientos que te avisamos antes de cada salida.',
+      `<div class="stack">${rep('docs','Documentos',
+        repRow([{t:'select',o:['Póliza de responsabilidad civil','RUT','Cámara de comercio','Registro sanitario','Tarjeta de operación'],w:'minmax(0,1.6fr)'},
+          {t:'text',p:'Número',w:'minmax(0,.8fr)'},{t:'text',p:'Vence',w:'minmax(0,.9fr)'}]),'Agregar documento')}
+       ${ta('notas','Notas internas','Acuerdos, incidentes previos, preferencias',3)}
+       ${sw('Proveedor habilitado','Disponible al armar nuevas salidas.',true)}</div>`)],
+  hotel:[
+    sec('id','Identificación','Identificación','Nombre, tipo y datos de la propiedad.',
+      `<div class="stack">${fld('n','Nombre del hotel','Ecohotel La Montaña',1)}
+       <div class="g2">${sel2('tipo','Tipo de alojamiento',['Ecolodge','Hotel','Posada rural','Hostal','Glamping','Finca'],1)}
+       ${sel2('cat','Categoría',['Sin categorizar','2 estrellas','3 estrellas','4 estrellas','5 estrellas'])}</div>
+       ${ta('desc','Descripción','Qué encuentra el viajero al llegar')}
+       <div class="g2">${fld('razon','Razón social','Ecohotel La Montaña S.A.S.')}${fld('nit','NIT','900.884.201-1',1)}</div></div>`),
+    sec('ub','Ubicación','Ubicación','El guía verá este punto en el mapa del día.',
+      `<div class="stack">${geo('dir','Dirección')}
+       <div class="g3">${fld('city','Municipio','Salento',1)}${fld('dep','Departamento','Quindío')}${fld('pais','País','Colombia')}</div>
+       ${ta('llegar','Cómo llegar','Últimos 2 km en destapado, apto para bus pequeño')}</div>`),
+    sec('hb','Habitaciones','Habitaciones y tarifas','Cada tipo con su tarifa negociada.',
+      `<div class="stack">${rep('hab','Tipos de habitación',
+        repRow([{t:'text',p:'Tipo de habitación',v:'Doble',w:'minmax(0,1.5fr)'},{t:'text',p:'Cantidad',v:'6',w:'minmax(0,.6fr)'},
+          {t:'text',p:'Tarifa por noche',v:'US$ 62',w:'minmax(0,1fr)'}]),'Agregar tipo')}
+       <div class="g3">${fld('capt','Capacidad total','28 camas',1)}${sel2('mon','Moneda',['USD','COP','EUR'],1)}${fld('vig','Vigencia de tarifas','Hasta 31 dic 2026')}</div>
+       <div class="g2">${fld('in','Check-in','3:00 p. m.',1)}${fld('out','Check-out','11:00 a. m.',1)}</div></div>`),
+    sec('sv','Servicios','Servicios incluidos','Lo que el viajero recibe sin costo extra.',
+      `<div class="stack"><div class="field"><label>Incluye</label><div class="opts">
+        ${['Desayuno','Almuerzo','Cena','Wi-Fi','Agua caliente','Parqueadero','Piscina','Fogata','Lavandería','Acceso silla de ruedas']
+          .map(o=>`<button data-opt="1">${o}</button>`).join('')}</div></div>
+       <div class="g2">${sel2('alim','Alimentación',['Solo desayuno','Media pensión','Pensión completa','Sin alimentación'])}${fld('dieta','Dietas que manejan','Vegetariana, sin gluten')}</div>
+       ${ta('restr','Restricciones','No admite mascotas, sin señal de celular')}</div>`),
+    sec('ct','Contacto','Contacto y políticas','Con quién se confirma y bajo qué reglas.',
+      `<div class="stack"><div class="g2">${fld('cont','Persona de contacto','Recepción / nombre',1)}${fld('tel','Teléfono / WhatsApp','+57 312 400 1188',1)}</div>
+       <div class="g2">${fld('mail','Correo de reservas','reservas@hotel.com','','','email')}${fld('emerg','Contacto de emergencia','Nombre y teléfono')}</div>
+       <div class="g2">${sel2('canc','Política de cancelación',['Gratis hasta 48 h antes','Gratis hasta 7 días antes','No reembolsable','Según contrato'],1)}
+       ${sel2('pagoh','Condiciones de pago',['Anticipo 30 %','Anticipo 50 %','Pago total anticipado','Crédito 15 días'],1)}</div>
+       ${ta('notas','Notas internas','Acuerdos, habitaciones preferidas, historial',3)}
+       ${sw('Hotel habilitado','Disponible al armar nuevas salidas.',true)}</div>`)]
+};
+let mKind = 'ruta';
+function openResModal(kind,rec){
+  mKind = kind; const F = FORMS[kind];
+  modal.innerHTML = `<header><div><span class="mono" style="color:var(--muted)">Ficha de logística · ${LB[kind].one}</span>
+      <h2 style="margin-top:3px">${rec?'Editar '+esc(rec.n):esc(LB[kind].nw)}</h2>
+      <p>${rec?'Los cambios se aplican a las salidas futuras que la usan.':'Se guarda una vez y se reutiliza en cada salida que la necesite.'}</p></div>
+      <button class="x" data-close aria-label="Cerrar">×</button></header>
+    <div class="mbody"><nav class="mside">
+      ${F.map((x,i)=>`<button data-sec="${x.id}" data-done="0" aria-current="${i===0}"><i>${i+1}</i>${x.nav}</button>`).join('')}
+      <div class="tip">Los campos con <span class="req">*</span> son obligatorios. Puedes guardar un borrador y terminarla después.</div></nav>
+      <form class="mform" id="mform" onsubmit="return false">${F.map(x=>x.html).join('')}</form></div>
+    <footer><div class="l" id="mstat"></div><div class="r">
+      <button class="btn g" data-close>Cancelar</button>
+      <button class="btn g" id="mdraft">Guardar borrador</button>
+      <button class="btn p" id="msave">${IC.check} Guardar ficha</button></div></footer>`;
+  if(rec){ const q = x => modal.querySelector(x);
+    q('[data-k="n"]').value = rec.n; if(q('[data-k="desc"]')) q('[data-k="desc"]').value = rec.desc;
+    if(q('[data-k="city"]')) q('[data-k="city"]').value = rec.city.split(',')[0]; }
+  bindResModal(rec); veil.classList.add('on'); modal.classList.add('on');
+  setTimeout(()=>modal.querySelector('input')?.focus(),80);
+}
+function bindResModal(rec){
+  const form = document.getElementById('mform');
+  const stat = () => {
+    const req = [...form.querySelectorAll('.field')].filter(f=>f.querySelector('.req'));
+    const ok = req.filter(f=>{ const el = f.querySelector('input,select,textarea'); return el && el.value.trim(); }).length;
+    document.getElementById('mstat').innerHTML = `<span class="tag ${ok===req.length?'t-ok':'t-warn'}">${ok} de ${req.length} obligatorios</span>
+      <span>El resto puede completarse luego.</span>`;
+    document.getElementById('msave').disabled = ok < req.length;
+    modal.querySelectorAll('[data-sec]').forEach(b=>{
+      const sc = form.querySelector(`[data-sid="${b.dataset.sec}"]`);
+      const r = [...sc.querySelectorAll('.field')].filter(f=>f.querySelector('.req'));
+      b.dataset.done = (r.length && r.every(f=>{ const el = f.querySelector('input,select,textarea'); return el && el.value.trim(); }))?'1':'0';
+    });
+  };
+  form.addEventListener('input',e=>{ if(e.target.dataset.hunt) hunt(e.target); stat(); });
+  form.addEventListener('change',stat);
+  form.addEventListener('click',e=>{
+    const o = e.target.closest('[data-opt]');
+    if(o){ if(o.dataset.opt==='tipo') o.parentElement.querySelectorAll('[data-opt]').forEach(b=>b.setAttribute('aria-pressed',b===o));
+      else o.setAttribute('aria-pressed',o.getAttribute('aria-pressed')!=='true'); return; }
+    const w = e.target.closest('[data-sw]'); if(w){ w.setAttribute('aria-pressed',w.getAttribute('aria-pressed')!=='true'); return; }
+    const a = e.target.closest('[data-add]');
+    if(a){ const box = form.querySelector(`[data-rep="${a.dataset.add}"]`), row = box.firstElementChild.cloneNode(true);
+      row.querySelectorAll('input').forEach(i=>i.value=''); box.appendChild(row); return; }
+    const d = e.target.closest('[data-del]');
+    if(d){ const box = d.closest('[data-rep]'); if(box.children.length>1) d.closest('[data-rrow]').remove(); stat(); return; }
+    const g = e.target.closest('[data-pickgeo]');
+    if(g){ const f = g.closest('[data-geo]'); f.querySelector('input').value = g.dataset.a+', '+g.dataset.c;
+      f.querySelector('[data-geolist]').innerHTML = `<span class="tag t-ok">${IC.check} ${esc(g.dataset.n)}</span>`;
+      const sc = f.closest('section'), city = sc.querySelector('[data-k="city"]'), dep = sc.querySelector('[data-k="dep"]'), parts = g.dataset.c.split(',');
+      if(city&&!city.value) city.value = parts[0].trim(); if(dep&&parts[1]&&!dep.value) dep.value = parts[1].trim();
+      stat(); return; }
+  });
+  modal.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{
+    modal.querySelectorAll('[data-sec]').forEach(x=>x.setAttribute('aria-current',x===b));
+    form.querySelector(`[data-sid="${b.dataset.sec}"]`).scrollIntoView({block:'start'}); });
+  form.onscroll = () => { let cur = null;
+    form.querySelectorAll('[data-sid]').forEach(x=>{ if(x.offsetTop <= form.scrollTop+40) cur = x.dataset.sid; });
+    modal.querySelectorAll('[data-sec]').forEach(b=>b.setAttribute('aria-current',b.dataset.sec===cur)); };
+  document.getElementById('mdraft').onclick = () => { closeAll(); toast('Borrador guardado'); };
+  document.getElementById('msave').onclick = () => {
+    const g = k => (form.querySelector(`[data-k="${k}"]`)||{value:''}).value.trim();
+    const f = mKind==='ruta' ? [['Distancia',g('km')||'—'],['Duración',g('dur')||'—'],['Dificultad',g('dif')||'—'],['Paradas',form.querySelectorAll('[data-rep="paradas"] [data-rrow]').length+' paradas']]
+      : mKind==='hotel' ? [['Categoría',g('cat')||g('tipo')||'—'],['Capacidad',g('capt')||'—'],['Tarifa',g('mon')?'Tarifas en '+g('mon'):'—'],['Check-in',g('in')||'—']]
+      : [['Servicio',(form.querySelector('[data-opt="tipo"][aria-pressed="true"]')||{textContent:'—'}).textContent],['NIT',g('nit')||'—'],['Tarifa',g('mon')?'Tarifas en '+g('mon'):'—'],['Contacto',g('cont')||'—']];
+    if(rec) Object.assign(rec,{n:g('n')||rec.n,desc:g('desc')||rec.desc,city:[g('city'),g('dep')].filter(Boolean).join(', ')||rec.city,f});
+    else RES[mKind].unshift({id:'x'+Date.now(),n:g('n'),desc:g('desc')||'Ficha creada desde el panel.',
+      city:[g('city'),g('dep')].filter(Boolean).join(', ')||'Sin ubicación',f,uses:0,on:true});
+    closeAll(); LF.tab = mKind; render(); toast((rec?'Ficha actualizada':'Ficha creada')+' · '+g('n'));
+  };
+  stat();
+}
+function hunt(input){
+  const box = input.closest('[data-geo]').querySelector('[data-geolist]'), q = input.value.trim().toLowerCase();
+  if(q.length<2){ box.innerHTML=''; return; }
+  const hits = PLACES.filter(p=>(p.n+' '+p.a+' '+p.c).toLowerCase().includes(q)).slice(0,4);
+  box.innerHTML = hits.length ? hits.map(p=>`<button data-pickgeo="1" data-n="${esc(p.n)}" data-a="${esc(p.a)}" data-c="${esc(p.c)}">
+      ${esc(p.n)} <span style="font-weight:400;color:var(--muted)">· ${esc(p.a)}</span></button>`).join('')
+    : `<span class="hint">Sin resultados: se guarda la dirección tal cual la escribiste.</span>`;
+}
+
+/* ============ PROMOCIONES ============ */
+function vPromos(){
+  const act = PROMOS.filter(p=>p.on&&dt(p.hasta)>=TODAY);
+  return head('Promociones','Códigos de descuento que se aplican al reservar en la tienda pública.',
+    `<button class="btn p" id="pnew">${IC.plus} Nueva promoción</button>`) +
+  kpis([['Códigos creados',PROMOS.length,'histórico'],['Vigentes',act.length,'activos hoy'],
+    ['Usos totales',PROMOS.reduce((a,p)=>a+p.usos,0),'reservas con descuento'],
+    ['Vencen este mes',PROMOS.filter(p=>p.on&&dt(p.hasta).getMonth()===TODAY.getMonth()).length,'revisar antes del cierre']]) +
+  `<div class="tablewrap"><table><thead><tr><th>Código</th><th style="width:130px">Descuento</th>
+    <th style="width:210px">Vigencia</th><th style="width:180px">Uso</th><th style="width:130px">Estado</th><th class="r" style="width:60px">Acciones</th></tr></thead>
+    <tbody>${PROMOS.map(p=>`<tr class="${p.on?'':'off'}">
+      <td><span class="tname" style="font-family:'IBM Plex Mono',monospace;letter-spacing:.04em">${esc(p.code)}</span>
+        <span class="tsub">${esc(p.tipo)}</span></td>
+      <td><span class="price">${esc(p.val)}</span></td>
+      <td><b style="font-size:12.5px">${fdate(p.desde)} → ${fdate(p.hasta)}</b>
+        <span class="tsub">${dt(p.hasta)<TODAY?'Vencida':'Vence en '+dd(p.hasta)+' días'}</span></td>
+      <td>${p.max?occCell(Math.min(p.usos,p.max),p.max):`<span style="font-size:12.5px">${p.usos} usos<span class="tsub">sin límite</span></span>`}</td>
+      <td>${p.on?(dt(p.hasta)<TODAY?'<span class="tag t-warn">Vencida</span>':'<span class="tag t-ok">Activa</span>'):'<span class="tag t-off">Inhabilitada</span>'}</td>
+      <td class="r"><button class="iconbtn" data-menu="promo:${p.id}" aria-label="Acciones">${IC.dots}</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function bindPromos(){ document.getElementById('pnew').onclick = () => openPromoModal(); }
+function openPromoModal(rec){
+  modal.innerHTML = `<header><div><span class="mono" style="color:var(--muted)">Promoción</span>
+      <h2 style="margin-top:3px">${rec?'Editar '+esc(rec.code):'Nueva promoción'}</h2>
+      <p>El código se escribe tal cual en el checkout.</p></div>
+      <button class="x" data-close aria-label="Cerrar">×</button></header>
+    <div class="mbody" style="grid-template-columns:minmax(0,1fr)">
+      <form class="mform" onsubmit="return false"><section>
+        <div><h3>Definición del descuento</h3><p class="lead">Cuatro datos y la vigencia.</p></div>
+        <div class="g2"><div class="field"><label>Código <span class="req">*</span></label>
+          <input id="pc" type="text" value="${rec?esc(rec.code):''}" placeholder="VERANO2026" style="font-family:'IBM Plex Mono',monospace"></div>
+          <div class="field"><label>Tipo <span class="req">*</span></label><select id="pt">
+            <option${rec&&rec.tipo==='Porcentaje'?' selected':''}>Porcentaje</option>
+            <option${rec&&rec.tipo==='Monto fijo'?' selected':''}>Monto fijo</option></select></div></div>
+        <div class="g2"><div class="field"><label>Valor <span class="req">*</span></label>
+          <input id="pv" type="text" value="${rec?esc(rec.val):''}" placeholder="10 %"></div>
+          <div class="field"><label>Máximo de usos</label><input id="pm" type="number" value="${rec&&rec.max?rec.max:''}" placeholder="Sin límite"></div></div>
+        <div class="g2"><div class="field"><label>Desde <span class="req">*</span></label><input id="pd" type="date" value="${rec?rec.desde:'2026-08-26'}"></div>
+          <div class="field"><label>Hasta <span class="req">*</span></label><input id="ph" type="date" value="${rec?rec.hasta:'2026-09-25'}"></div></div>
+        <div class="note">Los códigos vencidos dejan de aplicarse solos: no hace falta inhabilitarlos.</div>
+      </section></form></div>
+    <footer><div class="l"><span class="tag t-off">Aplica a todos los tours</span></div>
+      <div class="r"><button class="btn g" data-close>Cancelar</button>
+      <button class="btn p" id="psave">${IC.check} ${rec?'Guardar cambios':'Crear promoción'}</button></div></footer>`;
+  veil.classList.add('on'); modal.classList.add('on');
+  document.getElementById('psave').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!v('pc')||!v('pv')){ toast('Falta el código o el valor'); return; }
+    if(rec) Object.assign(rec,{code:v('pc').toUpperCase(),tipo:v('pt'),val:v('pv'),max:+v('pm')||0,desde:v('pd'),hasta:v('ph')});
+    else PROMOS.unshift({id:'p'+Date.now(),code:v('pc').toUpperCase(),tipo:v('pt'),val:v('pv'),desde:v('pd'),hasta:v('ph'),max:+v('pm')||0,usos:0,on:true});
+    closeAll(); render(); toast(rec?'Promoción actualizada':'Promoción creada');
+  };
+}
+function promoMenu(btn,id){
+  const p = PROMOS.find(x=>x.id===id);
+  openMenu(btn,p.code,[
+    {label:'Editar promoción',icon:IC.edit,run:()=>openPromoModal(p)},
+    {label:'Copiar código',icon:IC.copy,run:()=>toast('Código '+p.code+' copiado')},
+    p.on?{label:'Inhabilitar',icon:IC.ban,danger:true,run:()=>{p.on=false;render();toast('Promoción inhabilitada');}}
+        :{label:'Habilitar',icon:IC.check,run:()=>{p.on=true;render();toast('Promoción habilitada');}}
+  ]);
+}
+
+/* ============ NEWSLETTER ============ */
+const MAIL = {sub:'',prev:'',body:''};
+function vNews(){
+  return head('Newsletter','Una lista de suscriptores y una campaña a la vez.') +
+  kpis([['Suscriptores activos',SUBS.length,'reciben campañas'],
+    ['Altas este mes',SUBS.filter(x=>dt(x.d).getMonth()===TODAY.getMonth()).length,'nuevos correos'],
+    ['Campañas enviadas',0,'sin historial todavía'],['Bajas',0,'este mes']]) +
+  `<div class="mail"><div>
+    <div class="card pad">
+      <div class="sec-title" style="margin:0 0 14px"><div><h2>Redactar campaña</h2>
+        <p>Se envía a los ${SUBS.length} suscriptores activos.</p></div><span class="tag t-off">Borrador</span></div>
+      <div class="stack">
+        <div class="field"><label>Asunto <span class="req">*</span></label>
+          <input id="msub" type="text" value="${esc(MAIL.sub)}" placeholder="Cocora en temporada seca: cupos de septiembre"></div>
+        <div class="field"><label>Texto de vista previa</label>
+          <input id="mprev" type="text" value="${esc(MAIL.prev)}" placeholder="Lo que se lee debajo del asunto en la bandeja">
+          <div class="hint">Recomendado: menos de 90 caracteres.</div></div>
+        <div class="field"><label>Cuerpo del correo <span class="req">*</span></label>
+          <textarea id="mbody" rows="9" placeholder="Escribe el mensaje. Puedes usar HTML simple.">${esc(MAIL.body)}</textarea></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn p" id="msend" ${SUBS.length?'':'disabled'}>${IC.send} Enviar campaña</button>
+          <button class="btn g" id="mtest">Enviarme una prueba</button></div>
+      </div>
+    </div>
+    <div class="sec-title"><div><h2>Suscriptores</h2><p>De dónde llegó cada correo.</p></div>
+      <span class="mono" style="color:var(--muted)">${SUBS.length} activos</span></div>
+    <div class="tablewrap"><table style="min-width:600px"><thead><tr><th>Correo</th><th style="width:170px">Alta</th>
+      <th style="width:180px">Origen</th><th class="r" style="width:60px">Acciones</th></tr></thead>
+      <tbody>${SUBS.map(x=>`<tr><td style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">${esc(x.m)}</td>
+        <td>${fdate(x.d)}</td><td>${esc(x.src)}</td>
+        <td class="r"><button class="iconbtn" data-unsub="${esc(x.m)}" aria-label="Dar de baja">${IC.ban}</button></td></tr>`).join('')}</tbody></table></div>
+  </div>
+  <div class="prev"><div class="ph"><span class="mono" style="color:var(--muted)">Vista previa en bandeja</span>
+      <b id="pvsub">${esc(MAIL.sub)||'Asunto de la campaña'}</b>
+      <span style="color:var(--muted);font-size:12px" id="pvprev">${esc(MAIL.prev)||'Texto de vista previa'}</span></div>
+    <div class="pb" id="pvbody">${esc(MAIL.body)||'El cuerpo del correo aparecerá aquí mientras escribes.'}</div>
+    <div class="pf mono">Demo Eco Adventures · Quindío, Colombia</div></div></div>`;
+}
+function bindNews(){
+  const a = document.getElementById('msub'), b = document.getElementById('mprev'), c = document.getElementById('mbody');
+  const sync = () => { MAIL.sub=a.value; MAIL.prev=b.value; MAIL.body=c.value;
+    document.getElementById('pvsub').textContent = a.value||'Asunto de la campaña';
+    document.getElementById('pvprev').textContent = b.value||'Texto de vista previa';
+    document.getElementById('pvbody').textContent = c.value||'El cuerpo del correo aparecerá aquí mientras escribes.'; };
+  [a,b,c].forEach(el=>el.oninput = sync);
+  document.getElementById('msend').onclick = () => { if(!a.value.trim()||!c.value.trim()){ toast('Falta asunto o cuerpo'); return; }
+    toast('Campaña enviada a '+SUBS.length+' suscriptores'); };
+  document.getElementById('mtest').onclick = () => toast('Prueba enviada a admin@demo.montree.test');
+  document.querySelectorAll('[data-unsub]').forEach(x=>x.onclick=()=>toast('Se daría de baja a '+x.dataset.unsub));
+}
+
+/* ============ RESEÑAS ============ */
+let RTAB = 'pend';
+function vRevs(){
+  const T = [['pend','Pendientes'],['apr','Aprobadas'],['rech','Rechazadas']];
+  const L = REVS.filter(r=>r.st===RTAB), ap = REVS.filter(r=>r.st==='apr');
+  return head('Reseñas','Nada se publica en la tienda hasta que lo apruebas.') +
+  kpis([['Por moderar',REVS.filter(r=>r.st==='pend').length,'esperando revisión',REVS.filter(r=>r.st==='pend').length>0],
+    ['Publicadas',ap.length,'visibles en la tienda'],
+    ['Promedio publicado',(ap.reduce((a,r)=>a+r.r,0)/Math.max(1,ap.length)).toFixed(1),'sobre 5'],
+    ['Rechazadas',REVS.filter(r=>r.st==='rech').length,'no se publican']]) +
+  `<div class="filterbar" style="padding:8px 10px"><div class="frow" style="border-top:0;padding:2px 0">
+      <div class="seg">${T.map(([k,l])=>`<button data-rtab="${k}" aria-selected="${RTAB===k}">${l}
+        <span class="c">${REVS.filter(r=>r.st===k).length}</span></button>`).join('')}</div></div></div>` +
+  (L.length ? `<div class="card">${L.map(r=>`<div class="rev"><div>
+        <div class="stars">${'★'.repeat(r.r)}<span style="color:var(--line)">${'★'.repeat(5-r.r)}</span></div>
+        <h4>${esc(r.n)}</h4><p>${esc(r.t)}</p>
+        <div class="meta mono"><span>${esc(r.tour)}</span><span>${fdate(r.d)}</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          ${r.st!=='apr'?`<button class="btn p sm" data-rev="apr:${r.id}">${IC.check} Aprobar</button>`:''}
+          ${r.st!=='rech'?`<button class="btn d sm" data-rev="rech:${r.id}">${IC.ban} Rechazar</button>`:''}
+          ${r.st!=='pend'?`<button class="btn g sm" data-rev="pend:${r.id}">Volver a revisión</button>`:''}
+        </div></div>`).join('')}</div>`
+    : `<div class="empty"><b>Nada por aquí</b>No hay reseñas en esta bandeja.</div>`);
+}
+function bindRevs(){
+  document.querySelectorAll('[data-rtab]').forEach(b=>b.onclick=()=>{ RTAB = b.dataset.rtab; render(); });
+  document.querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{
+    const [st,id] = b.dataset.rev.split(':'); REVS.find(r=>r.id===id).st = st; render();
+    toast(st==='apr'?'Reseña publicada':st==='rech'?'Reseña rechazada':'Reseña devuelta a revisión'); });
+}
+
+/* ============ EQUIPO ============ */
+const TF = {q:'',estado:'all',rol:'all'};
+function vTeam(){
+  let L = TEAM;
+  if(TF.estado!=='all') L = L.filter(t=>TF.estado==='on'?t.on:!t.on);
+  if(TF.rol!=='all') L = L.filter(t=>t.rol===TF.rol);
+  if(TF.q){ const q = TF.q.toLowerCase(); L = L.filter(t=>(t.n+' '+t.m+' '+t.rol).toLowerCase().includes(q)); }
+  return head('Equipo','Quién trabaja en tu agencia, con qué rol y desde cuándo.') +
+  kpis([['Miembros',TEAM.length,'con cuenta creada'],['Activos',TEAM.filter(t=>t.on).length,'pueden entrar al panel'],
+    ['Guías',TEAM.filter(t=>t.rol==='Guía').length,'disponibles para salidas'],
+    ['Suspendidos',TEAM.filter(t=>!t.on).length,'sin acceso',TEAM.filter(t=>!t.on).length>0]]) +
+  `<div class="card pad" style="margin-bottom:18px">
+     <div class="sec-title" style="margin:0 0 14px"><div><h2>Invitar miembro</h2>
+       <p>Recibe un correo con el enlace para crear su contraseña.</p></div></div>
+     <div class="invite">
+       <div class="field"><label>Correo <span class="req">*</span></label><input id="inv-m" type="email" placeholder="persona@correo.com"></div>
+       <div class="field"><label>Nombre</label><input id="inv-n" type="text" placeholder="Nombre y apellido"></div>
+       <div class="field"><label>Rol</label><select id="inv-r">${ROLES.map(r=>`<option>${r.n}</option>`).join('')}</select></div>
+       <button class="btn p" id="inv-go">${IC.send} Invitar</button>
+     </div></div>` +
+  filterBar({id:'tq',ph:'Buscar miembro por nombre, correo o rol',val:TF.q,count:L.length+' de '+TEAM.length,
+    tabs:[['all','Todos',()=>true],['on','Activos',t=>t.on],['off','Suspendidos',t=>!t.on]].map(([k,l,f])=>
+      `<button data-ttab="${k}" aria-selected="${TF.estado===k}">${l}<span class="c">${TEAM.filter(f).length}</span></button>`).join(''),
+    picks: pick('Rol','trol',`<option value="all">Todos</option>`+ROLES.map(r=>`<option${TF.rol===r.n?' selected':''}>${r.n}</option>`).join(''))}) +
+  `<div class="tablewrap"><table><thead><tr><th>Miembro</th><th style="width:170px">Rol</th>
+    <th style="width:130px">Estado</th><th style="width:160px">Último acceso</th><th class="r" style="width:60px">Acciones</th></tr></thead>
+    <tbody>${L.map(t=>`<tr class="${t.on?'':'off'}">
+      <td><span class="who"><span class="av">${ini(t.n)}</span><span><b>${esc(t.n)}</b><small>${esc(t.m)}</small></span></span></td>
+      <td><span class="tag t-off">${esc(t.rol)}</span></td>
+      <td>${t.on?'<span class="tag t-ok">Activo</span>':'<span class="tag t-off">Suspendido</span>'}</td>
+      <td>${esc(t.last)}</td>
+      <td class="r"><button class="iconbtn" data-menu="team:${t.id}" aria-label="Acciones">${IC.dots}</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function bindTeam(){
+  document.getElementById('tq').oninput = e => { TF.q = e.target.value.trim(); keepFocus('tq',render); };
+  document.querySelectorAll('[data-ttab]').forEach(b=>b.onclick=()=>{ TF.estado = b.dataset.ttab; render(); });
+  document.getElementById('trol').onchange = e => { TF.rol = e.target.value; render(); };
+  document.getElementById('inv-go').onclick = () => {
+    const m = document.getElementById('inv-m').value.trim();
+    if(!m){ toast('Escribe un correo'); return; }
+    TEAM.push({id:'t'+Date.now(),n:document.getElementById('inv-n').value.trim()||m.split('@')[0],m,
+      rol:document.getElementById('inv-r').value,on:true,last:'Nunca'});
+    render(); toast('Invitación enviada a '+m);
+  };
+}
+function teamMenu(btn,id){
+  const t = TEAM.find(x=>x.id===id);
+  const items = [{label:'Editar rol',icon:IC.key,run:()=>openRoleAssign(t)}];
+  if(!t.self) items.push(t.on?{label:'Suspender acceso',icon:IC.ban,danger:true,run:()=>{t.on=false;render();toast(t.n+' suspendido');}}
+    :{label:'Reactivar acceso',icon:IC.check,run:()=>{t.on=true;render();toast(t.n+' reactivado');}});
+  openMenu(btn,t.n,items);
+}
+function openRoleAssign(t){
+  drawer.innerHTML = `<header><div><span class="mono" style="color:var(--muted)">Miembro</span>
+      <h2 style="margin-top:3px">${esc(t.n)}</h2><p class="hint">${esc(t.m)}</p></div>
+      <button class="x" data-close aria-label="Cerrar">×</button></header>
+    <div class="dbody"><div class="field"><label>Rol asignado</label>
+      <select id="ra">${ROLES.map(r=>`<option${t.rol===r.n?' selected':''}>${r.n}</option>`).join('')}</select>
+      <div class="hint">Un miembro tiene un rol a la vez; los permisos vienen del rol.</div></div>
+      <div id="rapv" class="stack"></div></div>
+    <footer><button class="btn p" id="rasave" style="flex:1;justify-content:center">${IC.check} Guardar rol</button>
+      <button class="btn g" data-close>Cancelar</button></footer>`;
+  const paint = () => { const r = ROLES.find(x=>x.n===document.getElementById('ra').value);
+    document.getElementById('rapv').innerHTML = `<div class="note"><b>${esc(r.n)}</b> · ${r.allow==='all'?ALLP:r.allow.length} de ${ALLP} permisos<br>${esc(r.desc)}</div>`+permTable(r); };
+  document.getElementById('ra').onchange = paint; paint();
+  document.getElementById('rasave').onclick = () => { t.rol = document.getElementById('ra').value; closeAll(); render(); toast('Rol actualizado'); };
+  veil.classList.add('on'); drawer.classList.add('on');
+}
+
+/* ============ ROLES Y PERMISOS ============ */
+function permTable(r,editable){
+  return Object.entries(PERMS).map(([g,list])=>`<div class="permgrp">
+    <div class="gt"><b>${esc(g)}</b><span class="mono" style="color:var(--muted)">
+      ${list.filter(p=>r.allow==='all'||r.allow.includes(p)).length}/${list.length}</span></div>
+    ${list.map(p=>{ const on = r.allow==='all'||r.allow.includes(p);
+      return `<div class="permrow"><span>${esc(p)}</span>
+        ${editable?`<button class="pmk ${on?'y':''}" data-perm="${esc(p)}">${IC.check}</button>`
+          :`<span class="pmk ${on?'y':''}">${IC.check}</span>`}</div>`;}).join('')}</div>`).join('');
+}
+function vRoles(){
+  const sys = ROLES.filter(r=>r.sys), own = ROLES.filter(r=>!r.sys);
+  const card = r => { const cnt = r.allow==='all'?ALLP:r.allow.length;
+    return `<article class="rolecard">
+      <div class="rt"><div><h3>${esc(r.n)}${r.sys?'<span class="tag t-off">Solo lectura</span>':'<span class="tag t-ok">Propio</span>'}</h3>
+        <div class="mt"><span>${cnt} de ${ALLP} permisos</span><span>${r.members} ${r.members===1?'miembro':'miembros'}</span></div></div></div>
+      <div class="bar" style="max-width:220px"><i style="width:${Math.round(cnt/ALLP*100)}%"></i></div>
+      <p>${esc(r.desc)}</p>
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <button class="btn g sm" data-rview="${r.id}">${IC.eye} Ver permisos</button>
+        ${r.sys?'':`<button class="btn g sm" data-redit="${r.id}">${IC.edit} Editar</button>`}</div></article>`; };
+  return head('Roles y permisos','Qué puede hacer cada rol dentro del panel. Los del sistema son iguales para todas las agencias; los propios los defines tú.',
+    `<button class="btn p" id="rnew">${IC.plus} Crear rol</button>`) +
+  kpis([['Roles en uso',ROLES.length,'sistema y propios'],['Permisos disponibles',ALLP,'en 7 módulos'],
+    ['Miembros con acceso',TEAM.filter(t=>t.on).length,'cuentas activas'],['Roles propios',own.length,'creados por la agencia']]) +
+  `<div class="sec-title" style="margin-top:6px"><div><h2>Roles del sistema</h2>
+     <p>Vienen con Montree. Puedes ver sus permisos, no modificarlos.</p></div>
+     <span class="mono" style="color:var(--muted)">${sys.length} roles</span></div>
+   <div class="cards">${sys.map(card).join('')}</div>
+   <div class="sec-title"><div><h2>Roles propios de la agencia</h2>
+     <p>Combinaciones de permisos que creas tú. Solo existen dentro de tu agencia.</p></div>
+     <span class="mono" style="color:var(--muted)">${own.length} roles</span></div>
+   ${own.length ? `<div class="cards">${own.map(card).join('')}</div>`
+     : `<div class="empty"><b>Todavía no hay roles propios</b>
+        Crea uno cuando necesites una combinación que los roles del sistema no cubren.
+        <div style="margin-top:14px"><button class="btn g" id="rnew2">${IC.plus} Crear rol</button></div></div>`}`;
+}
+function bindRoles(){
+  ['rnew','rnew2'].forEach(id=>{ const b = document.getElementById(id); if(b) b.onclick = () => openRoleModal(); });
+  document.querySelectorAll('[data-rview]').forEach(b=>b.onclick=()=>openRoleDrawer(ROLES.find(r=>r.id===b.dataset.rview)));
+  document.querySelectorAll('[data-redit]').forEach(b=>b.onclick=()=>openRoleModal(ROLES.find(r=>r.id===b.dataset.redit)));
+}
+function openRoleDrawer(r){
+  const cnt = r.allow==='all'?ALLP:r.allow.length;
+  drawer.innerHTML = `<header><div><span class="mono" style="color:var(--muted)">${r.sys?'Rol del sistema':'Rol propio'}</span>
+      <h2 style="margin-top:3px">${esc(r.n)}</h2><p class="hint">${esc(r.desc)}</p>
+      <div style="display:flex;gap:8px;margin-top:9px"><span class="tag t-ok">${cnt} de ${ALLP} permisos</span>
+        <span class="tag t-off">${r.members} ${r.members===1?'miembro':'miembros'}</span></div></div>
+      <button class="x" data-close aria-label="Cerrar">×</button></header>
+    <div class="dbody">${r.sys?'<div class="note">Este rol lo administra Montree. Si necesitas otra combinación, duplícalo como rol propio.</div>':''}
+      ${permTable(r)}</div>
+    <footer>${r.sys?`<button class="btn g" id="rclone" style="flex:1;justify-content:center">${IC.copy} Duplicar como rol propio</button>`
+      :`<button class="btn p" id="rgo" style="flex:1;justify-content:center">${IC.edit} Editar rol</button>`}
+      <button class="btn g" data-close>Cerrar</button></footer>`;
+  const c = document.getElementById('rclone'); if(c) c.onclick = () => { closeAll(); openRoleModal(null,r); };
+  const g = document.getElementById('rgo'); if(g) g.onclick = () => { closeAll(); openRoleModal(r); };
+  veil.classList.add('on'); drawer.classList.add('on');
+}
+function openRoleModal(rec,base){
+  const src = rec||base;
+  const draft = {allow: src ? (src.allow==='all'?Object.values(PERMS).flat().slice():src.allow.slice()) : ['Ver tours','Ver salidas']};
+  modal.innerHTML = `<header><div><span class="mono" style="color:var(--muted)">Rol propio de la agencia</span>
+      <h2 style="margin-top:3px">${rec?'Editar '+esc(rec.n):'Crear rol'}</h2>
+      <p>Elige el nombre y marca exactamente lo que puede hacer.</p></div>
+      <button class="x" data-close aria-label="Cerrar">×</button></header>
+    <div class="mbody" style="grid-template-columns:minmax(0,1fr)">
+      <form class="mform" onsubmit="return false">
+        <section><div><h3>Identificación del rol</h3></div>
+          <div class="g2"><div class="field"><label>Nombre <span class="req">*</span></label>
+            <input id="rn" type="text" value="${rec?esc(rec.n):base?esc(base.n)+' (copia)':''}" placeholder="Coordinador de operación"></div>
+            <div class="field"><label>Miembros con este rol</label><input type="text" value="${rec?rec.members:0}" disabled></div></div>
+          <div class="field"><label>Para qué sirve</label>
+            <textarea id="rd" rows="2" placeholder="Una línea que explique cuándo usar este rol">${rec?esc(rec.desc):base?esc(base.desc):''}</textarea></div></section>
+        <section><div><h3>Permisos</h3><p class="lead" id="rcount"></p></div><div class="stack" id="rperms"></div></section>
+      </form></div>
+    <footer><div class="l"><button class="btn g sm" id="rall">Marcar todo</button><button class="btn g sm" id="rnone">Quitar todo</button></div>
+      <div class="r"><button class="btn g" data-close>Cancelar</button>
+        <button class="btn p" id="rsave">${IC.check} ${rec?'Guardar cambios':'Crear rol'}</button></div></footer>`;
+  const paint = () => {
+    document.getElementById('rperms').innerHTML = permTable({allow:draft.allow},true);
+    document.getElementById('rcount').textContent = draft.allow.length+' de '+ALLP+' permisos marcados.';
+    document.querySelectorAll('#rperms [data-perm]').forEach(b=>b.onclick=()=>{
+      const p = b.dataset.perm, i = draft.allow.indexOf(p);
+      i<0?draft.allow.push(p):draft.allow.splice(i,1); paint(); });
+  };
+  paint();
+  document.getElementById('rall').onclick = () => { draft.allow = Object.values(PERMS).flat().slice(); paint(); };
+  document.getElementById('rnone').onclick = () => { draft.allow = []; paint(); };
+  document.getElementById('rsave').onclick = () => {
+    const n = document.getElementById('rn').value.trim();
+    if(!n){ toast('El rol necesita un nombre'); return; }
+    const d = document.getElementById('rd').value.trim()||'Rol propio de la agencia.';
+    if(rec) Object.assign(rec,{n,desc:d,allow:draft.allow});
+    else ROLES.push({id:'r'+Date.now(),n,sys:false,members:0,allow:draft.allow,desc:d});
+    closeAll(); render(); toast(rec?'Rol actualizado':'Rol creado');
+  };
+  veil.classList.add('on'); modal.classList.add('on');
+}
+
+/* ============ CONFIGURACIÓN ============ */
+function vCfg(){
+  return head('Configuración','Identidad, reglas de operación y enlaces que ven los viajeros.',
+    `<button class="btn g" id="cdisc">Descartar</button><button class="btn p" id="csave">${IC.check} Guardar cambios</button>`) +
+  `<div class="cfg"><div class="stack" style="gap:18px">
+    <div class="card pad"><div class="sec-title" style="margin:0 0 14px"><div><h2>Identidad visual</h2>
+      <p>Colores y mensajes que ven los viajeros en tu tienda.</p></div></div>
+      <div class="stack">
+        <div class="g2">
+          <div class="field"><label>Color primario</label><div class="swatch"><span class="sw" id="sw1" style="background:${CFG.primary}"></span>
+            <input type="text" id="c1" value="${CFG.primary}" style="font-family:'IBM Plex Mono',monospace"></div>
+            <div class="hint">Botones de acción y enlaces destacados.</div></div>
+          <div class="field"><label>Color secundario</label><div class="swatch"><span class="sw" id="sw2" style="background:${CFG.secondary}"></span>
+            <input type="text" id="c2" value="${CFG.secondary}" style="font-family:'IBM Plex Mono',monospace"></div>
+            <div class="hint">Acentos y elementos de soporte.</div></div></div>
+        <div class="field"><label>Tagline</label><input type="text" id="ctag" value="${esc(CFG.tagline)}">
+          <div class="hint">Máximo 160 caracteres.</div></div>
+        <div class="field"><label>Descripción</label><textarea id="cdesc" rows="3">${esc(CFG.desc)}</textarea>
+          <div class="hint">Máximo 2000 caracteres.</div></div></div></div>
+
+    <div class="card pad"><div class="sec-title" style="margin:0 0 14px"><div><h2>Operación</h2>
+      <p>Moneda, zona horaria y reglas de reserva.</p></div></div>
+      <div class="stack"><div class="g3">
+        <div class="field"><label>Moneda</label><select><option>COP — Peso colombiano</option><option>USD — Dólar</option><option>EUR — Euro</option></select></div>
+        <div class="field"><label>Zona horaria</label><select><option>Bogotá (GMT-5)</option><option>Ciudad de México (GMT-6)</option><option>Madrid (GMT+2)</option></select></div>
+        <div class="field"><label>Idioma</label><select><option>Español</option><option>English</option><option>Português</option></select></div></div>
+        ${sw('Moderar reseñas antes de publicar','Las reseñas quedan en revisión hasta que las apruebas.',CFG.mod).replace('data-sw="1"','data-cfg="mod"')}
+        ${sw('Requerir datos de cada viajero','Pide nombre, documento y contacto por persona al reservar.',CFG.datos).replace('data-sw="1"','data-cfg="datos"')}
+      </div></div>
+
+    <div class="card pad"><div class="sec-title" style="margin:0 0 14px"><div><h2>Redes sociales</h2>
+      <p>Enlaces opcionales que aparecen en el pie del sitio.</p></div></div>
+      <div class="stack">${[['ig','Instagram','https://instagram.com/tu-agencia'],['fb','Facebook','https://facebook.com/tu-agencia'],
+        ['tw','Twitter / X','https://twitter.com/tu-agencia'],['yt','YouTube','https://youtube.com/@tu-agencia'],
+        ['tk','TikTok','https://tiktok.com/@tu-agencia']].map(([k,l,ph])=>
+        `<div class="field"><label>${l}</label><input type="text" data-soc="${k}" value="${esc(CFG[k])}" placeholder="${ph}"></div>`).join('')}</div></div>
+  </div>
+  <div class="store"><div class="hero" id="phero" style="background:${CFG.primary}">
+      <span class="mono">Demo Eco Adventures</span><b id="ptag">${esc(CFG.tagline)}</b></div>
+    <div class="cta"><span id="pc1" style="background:${CFG.primary}">Reservar ahora</span>
+      <span id="pc2" style="background:${CFG.secondary}">Saber más</span></div>
+    <div class="body" id="pdesc">${esc(CFG.desc)}</div>
+    <div class="foot mono">Vista previa de la tienda pública</div></div></div>`;
+}
+function bindCfg(){
+  const g = id => document.getElementById(id);
+  const sync = () => {
+    CFG.primary = g('c1').value; CFG.secondary = g('c2').value; CFG.tagline = g('ctag').value; CFG.desc = g('cdesc').value;
+    g('sw1').style.background = CFG.primary; g('sw2').style.background = CFG.secondary;
+    g('phero').style.background = CFG.primary; g('pc1').style.background = CFG.primary; g('pc2').style.background = CFG.secondary;
+    g('ptag').textContent = CFG.tagline; g('pdesc').textContent = CFG.desc;
+  };
+  ['c1','c2','ctag','cdesc'].forEach(id=>g(id).oninput = sync);
+  document.querySelectorAll('[data-cfg]').forEach(b=>b.onclick=()=>{
+    const on = b.getAttribute('aria-pressed')!=='true'; b.setAttribute('aria-pressed',on); CFG[b.dataset.cfg] = on; });
+  document.querySelectorAll('[data-soc]').forEach(i=>i.oninput=()=>CFG[i.dataset.soc]=i.value);
+  g('csave').onclick = () => toast('Configuración guardada');
+  g('cdisc').onclick = () => { render(); toast('Cambios descartados'); };
+}
+
+/* ============ vistas fuera de alcance ============ */
+const vStub = (t,p) => head(t,p) + `<div class="empty"><b>Fuera de este prototipo</b>
+  El rediseño en curso cubre Salidas, Logística, Promociones, Newsletter, Reseñas, Equipo, Roles y permisos y Configuración.</div>`;
+
+/* ============ render ============ */
+function render(){
+  const box = document.getElementById('views');
+  box.innerHTML = `<div class="page">${
+    V==='salidas'?vSalidas():V==='logistica'?vLog():V==='promos'?vPromos():V==='news'?vNews():
+    V==='revs'?vRevs():V==='equipo'?vTeam():V==='roles'?vRoles():V==='config'?vCfg():
+    V==='dash'?vStub('Dashboard','Resumen operativo de la agencia.'):vStub('Tours','Catálogo de tours publicados.')
+  }</div>`;
+  ({salidas:bindSalidas,logistica:bindLog,promos:bindPromos,news:bindNews,revs:bindRevs,equipo:bindTeam,roles:bindRoles,config:bindCfg}[V]||(()=>{}))();
+  box.querySelectorAll('[data-menu]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); const [kind,id] = b.dataset.menu.split(':');
+    if(kind==='dep') depMenu(b,id); if(kind==='promo') promoMenu(b,id); if(kind==='team') teamMenu(b,id); });
+}
+go('salidas');
+</script>
+</body>
+</html>

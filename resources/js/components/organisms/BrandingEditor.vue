@@ -74,7 +74,7 @@ function onDescription(value: string | number): void {
             />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="tagline">{{ $t('Tagline') }}</Label>
             <Input
                 id="tagline"
@@ -89,7 +89,7 @@ function onDescription(value: string | number): void {
             <InputError :message="errors?.tagline" />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid content-start gap-2">
             <Label for="description">{{ $t('Descripción') }}</Label>
             <Textarea
                 id="description"

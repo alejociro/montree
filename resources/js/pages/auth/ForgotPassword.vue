@@ -26,14 +26,14 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-primary"
+        class="mb-4 text-center text-sm font-medium text-primary-readable"
     >
         {{ status }}
     </div>
 
     <div class="space-y-6">
         <Form v-bind="email.form()" v-slot="{ errors, processing }">
-            <div class="grid gap-2">
+            <div class="grid content-start gap-2">
                 <Label for="email">{{ $t('Correo electrónico') }}</Label>
                 <Input
                     id="email"

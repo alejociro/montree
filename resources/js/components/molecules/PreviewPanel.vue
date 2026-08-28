@@ -8,6 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { readableInk } from '@/lib/color';
 
 type Props = {
     tenantName: string;
@@ -27,6 +28,16 @@ const safePrimary = computed(() =>
 const safeSecondary = computed(() =>
     HEX_REGEX.test(props.secondaryColor) ? props.secondaryColor : '#0f766e',
 );
+
+/**
+ * WHY: la vista previa escribía en blanco fijo sobre el color elegido. Con un
+ * primario claro —un amarillo, un beige— el texto desaparecía justo en la
+ * pantalla donde la agencia decide el color. La tinta se calcula igual que en
+ * la aplicación real (`--primary-foreground`), así que lo que se ve aquí es lo
+ * que se verá en la tienda.
+ */
+const onPrimary = computed(() => readableInk(safePrimary.value));
+const onSecondary = computed(() => readableInk(safeSecondary.value));
 </script>
 
 <template>
@@ -44,8 +55,11 @@ const safeSecondary = computed(() =>
                 :aria-label="$t('Tenant branding preview')"
             >
                 <div
-                    class="px-5 py-6 text-white"
-                    :style="{ backgroundColor: safePrimary }"
+                    class="px-5 py-6"
+                    :style="{
+                        backgroundColor: safePrimary,
+                        color: onPrimary,
+                    }"
                 >
                     <p
                         class="text-xs font-medium tracking-wider uppercase opacity-80"
@@ -71,17 +85,25 @@ const safeSecondary = computed(() =>
                     </p>
                     <button
                         type="button"
-                        class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-white shadow-xs transition-opacity hover:opacity-90"
-                        :style="{ backgroundColor: safePrimary }"
+                        class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium shadow-xs transition-opacity hover:opacity-90"
+                        :style="{
+                            backgroundColor: safePrimary,
+                            color: onPrimary,
+                        }"
                     >
                         {{ $t('Reservar ahora') }}
                     </button>
+                    <!--
+                      El secundario se muestra RELLENO, no como borde: es el
+                      color que pinta chips, etiquetas y botones secundarios en
+                      la tienda, y de contorno no se alcanzaba a juzgar.
+                    -->
                     <button
                         type="button"
-                        class="ml-2 inline-flex h-9 items-center justify-center rounded-md border border-input bg-transparent px-4 text-sm font-medium shadow-xs transition-colors hover:opacity-90"
+                        class="ml-2 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium shadow-xs transition-opacity hover:opacity-90"
                         :style="{
-                            borderColor: safeSecondary,
-                            color: safeSecondary,
+                            backgroundColor: safeSecondary,
+                            color: onSecondary,
                         }"
                     >
                         {{ $t('Saber más') }}

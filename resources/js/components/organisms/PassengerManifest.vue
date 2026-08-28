@@ -62,13 +62,9 @@ const showDeparture = computed(
     () => isTourScope.value && tourDateId.value === null,
 );
 
+/** Pasajero, documento, contacto y pago; más salida y acciones si aplican. */
 const columnCount = computed(
-    () =>
-        4 +
-        (canViewMedical.value ? 1 : 0) +
-        (showDeparture.value ? 1 : 0) +
-        1 +
-        (props.readonly ? 0 : 1),
+    () => 4 + (showDeparture.value ? 1 : 0) + (props.readonly ? 0 : 1),
 );
 
 const drawerOpen = ref(false);
@@ -215,16 +211,6 @@ function print(): void {
                                     {{ $t('Contacto') }}
                                 </MonoLabel>
                             </th>
-                            <th class="px-3 py-2.5">
-                                <MonoLabel as="span">
-                                    {{ $t('Emergencia') }}
-                                </MonoLabel>
-                            </th>
-                            <th v-if="canViewMedical" class="px-3 py-2.5">
-                                <MonoLabel as="span">
-                                    {{ $t('Observaciones') }}
-                                </MonoLabel>
-                            </th>
                             <th v-if="showDeparture" class="px-3 py-2.5">
                                 <MonoLabel as="span">
                                     {{ $t('Salida') }}
@@ -316,9 +302,14 @@ function print(): void {
             </div>
         </div>
 
+        <!--
+          La paginación se dibuja SIEMPRE que haya pasajeros, aunque quepan en
+          una página: escondida, la lista parecía completa cuando no lo estaba
+          y no había forma de saber cuántos había en total.
+        -->
         <div
-            v-if="!loading && !error && lastPage > 1"
-            class="flex items-center justify-between gap-3 print:hidden"
+            v-if="!loading && !error && passengers.length > 0"
+            class="flex flex-wrap items-center justify-between gap-3 print:hidden"
         >
             <p class="text-sm text-muted-foreground">
                 {{

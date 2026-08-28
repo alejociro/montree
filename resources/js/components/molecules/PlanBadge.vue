@@ -12,7 +12,7 @@ const planClasses = computed(() => {
         case 'enterprise':
             return 'border-brand-ink bg-brand-ink text-brand-cream';
         case 'professional':
-            return 'bg-secondary text-primary border-secondary';
+            return 'bg-secondary-soft text-secondary-readable border-secondary/40';
         case 'basic':
         default:
             return 'bg-muted text-foreground border-border';

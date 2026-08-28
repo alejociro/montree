@@ -57,7 +57,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
 
             <span
                 v-if="!hasRating"
-                class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm"
+                class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground shadow-sm"
             >
                 <Sparkles class="size-3" aria-hidden="true" />
                 {{ $t('Nuevo') }}
@@ -76,7 +76,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
             <div class="flex items-start justify-between gap-2">
                 <Link
                     :href="href"
-                    class="line-clamp-2 text-sm leading-snug font-bold tracking-tight text-foreground transition group-hover:text-primary"
+                    class="line-clamp-2 text-sm leading-snug font-bold tracking-tight text-foreground transition group-hover:text-primary-readable"
                 >
                     {{ tour.name }}
                 </Link>
@@ -85,7 +85,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
                     class="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground"
                     :title="`${tour.rating_average} de 5`"
                 >
-                    <Star class="size-3.5 fill-primary text-primary" />
+                    <Star class="size-3.5 fill-primary text-primary-readable" />
                     {{ Number(tour.rating_average).toFixed(1) }}
                     <span class="font-normal text-muted-foreground"
                         >({{ tour.rating_count }})</span

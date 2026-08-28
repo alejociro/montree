@@ -288,6 +288,44 @@ final class RoleManagementTest extends TestCase
         $response->assertJsonPath('meta.available_permissions.0.module', 'dashboard');
     }
 
+    public function test_stores_the_description_of_an_agency_own_role_and_can_clear_it(): void
+    {
+        $tenant = $this->makeTenant();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $created = $this->actingAs($admin)->postJson($this->url(), [
+            'name' => 'Coordinación',
+            'description' => '  Arma la operación del fin de semana.  ',
+            'permissions' => ['bookings.view'],
+        ]);
+
+        $created->assertCreated();
+        $created->assertJsonPath('data.description', 'Arma la operación del fin de semana.');
+
+        $roleId = $created->json('data.id');
+
+        $cleared = $this->actingAs($admin)->patchJson($this->url("/{$roleId}"), ['description' => null]);
+
+        $cleared->assertOk();
+        $cleared->assertJsonPath('data.description', null);
+        $this->assertDatabaseHas('roles', ['id' => $roleId, 'description' => null]);
+    }
+
+    public function test_a_base_role_describes_itself_even_though_it_has_no_stored_description(): void
+    {
+        $tenant = $this->makeTenant();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->getJson($this->url());
+
+        $response->assertOk();
+
+        $guide = collect($response->json('data'))->firstWhere('name', UserRole::Guide->value);
+
+        $this->assertNotNull($guide);
+        $this->assertSame(UserRole::Guide->description(), $guide['description']);
+    }
+
     private function url(string $path = ''): string
     {
         return 'http://demo.montree.test/api/v1/admin/roles'.$path;

@@ -234,10 +234,25 @@ decisiones: `proyectos/montree/tablero/paginas/tourspax.md`.
 
 - **Given** dos agencias con colores distintos, **when** cada una abre el panel, **then** los
   botones primarios, el subrayado de la pestaña activa, las barras de ocupación, el pin de
-  recogida y el ítem activo de la barra lateral siguen **su** color: `useTenantBranding.ts` ya
-  sobrescribe `--primary`, `--secondary`, sus dos `*-foreground`, `--ring`, `--sidebar-primary` y
-  `--sidebar-ring`. El `--green #12A150` del handoff **es «el color principal»**, no un verde
+  recogida y **la barra lateral entera** siguen **su** color. `useTenantBranding.ts` escribe siete
+  variables —`--primary`, `--secondary`, sus dos `*-foreground`, sus dos `*-readable` y `--ring`—
+  y `app.css` deriva de ellas, con `color-mix()` contra `--background`, las superficies suaves
+  (`--primary-soft`, `--secondary-soft`), el estado hover (`--primary-hover`) y **todos** los
+  `--sidebar-*`. El `--green #12A150` del handoff **es «el color principal»**, no un verde
   literal.
+- **Given** un color de marca cualquiera, **when** se pinta texto encima de él, **then** la tinta
+  se **calcula**: `*-foreground` es la crema o el verde tinta de la paleta, la que se lea sobre
+  ese fondo. La decisión es un umbral de luminancia relativa (WCAG 2.1), no la razón de contraste
+  a secas: sobre un rojo puro la tinta oscura gana por 3.63 contra 3.55 —un empate técnico— y el
+  resultado en pantalla era verde tinta sobre rojo, ilegible en un número de 11 px. La razón de
+  contraste queda solo como veto cuando la preferida baja de 3:1.
+- **Given** un color de marca claro, **when** se usa como TEXTO sobre el fondo de la página
+  (`text-primary-readable`), **then** se oscurece hasta llegar al 4.5:1 conservando tono y
+  saturación. Es el otro caso donde la letra se perdía: un `text-primary` amarillo sobre crema.
+- **Given** un elemento de interfaz **secundario** —chips del detalle, iconos de categoría,
+  etiqueta «Nuevo», contador de la pestaña, botones `variant="secondary"`—, **then** usa
+  `--secondary`, que es un COLOR de marca y no un tinte. El tinte suave que ese token cubría antes
+  vive en `--secondary-soft`.
 - **Given** cualquier agencia, **then** los colores **semánticos** no siguen al tenant: «Pagado»
   en verde, «Saldo pendiente» en terracota, los avisos en ámbar y la observación médica resaltada
   son estados, no marca. Colgados de `--primary`, una agencia con el principal en rojo mostraría
@@ -249,6 +264,38 @@ decisiones: `proyectos/montree/tablero/paginas/tourspax.md`.
   propone por defecto.
 - **Given** un tour con reservas activas, **when** se cambia o elimina una parada de tipo `pickup`,
   **then** se notifica por correo a los pasajeros afectados y la UI lo advierte antes de guardar.
+
+### Ruta y mapa del formulario (Fase 9)
+
+- **Given** quien programa un tour, **when** ubica el punto de encuentro o una parada, **then**
+  escribe una **dirección o el nombre del lugar** y elige de una lista; nunca teclea coordenadas.
+  Las coordenadas quedan como pie de solo lectura de cada fila.
+- **Given** una dirección que ningún callejero conoce —un mirador, una finca—, **when** el
+  buscador no devuelve nada, **then** el punto se coloca **haciendo clic en el mapa** o arrastrando
+  su pin. Que el geocodificador falle no puede bloquear el formulario: devuelve lista vacía.
+- **Given** el formulario de ruta, **then** el orden de trabajo es **explícito**: primero DÓNDE
+  (mapa y paradas), después QUÉ pasa (itinerario). El enlace paso ↔ parada se edita desde el paso,
+  donde las paradas ya existen; al revés era una pregunta sin respuesta posible.
+- **Given** una lista de paradas donde el regreso no queda al final, **then** la UI lo advierte y
+  ofrece ordenar recogida → recorrido → regreso: ese orden **es** el trazo del mapa público.
+
+### Planilla en pantalla (Fase 9)
+
+- **Given** la planilla del tour, **then** la tabla muestra **pasajero, documento, contacto y
+  pago**, más la salida en la vista consolidada. Emergencia y observaciones dejan de tener columna
+  —siete columnas en un portátil no se leen— y viven en la ficha del pasajero.
+- **Given** el tipo de documento, **then** se pinta **abreviado** (CC, CE, TI, SI, PA); la
+  etiqueta larga parte la celda en tres líneas y tapa el número, que es con lo que se identifica a
+  la persona.
+- **Given** un correo largo, **then** se recorta con puntos suspensivos y se ve entero al pasar el
+  ratón.
+- **Given** la columna de pago, **then** dice «Pagado» o «Pendiente» **sin el importe**: cuánto
+  debe cada quien se consulta en la ficha y en el total del pie.
+- **Given** quien puede ver el dato de salud (D7), **then** una marca de alerta junto al nombre
+  señala a quien tiene observaciones médicas, aunque la columna ya no exista.
+- **Given** una reserva sin datos de pasajero, **when** se abre su formulario, **then** el título
+  dice «Completar datos del pasajero» y el icono es de edición: el cupo ya está vendido, no se
+  está agregando a nadie.
 
 ## Edge cases
 
@@ -391,6 +438,14 @@ el equipo esté mirando en ese momento.
 
 ## Changelog
 
+- `2026-08-21` — **Fase 9: correcciones de UI reportadas desde el navegador.** (a) El color del
+  tenant pasa a mandar en TODA la interfaz —barra lateral, superficies suaves, hover— derivando en
+  CSS con `color-mix()` en vez de repartir la decisión entre CSS y JS; el secundario deja de ser
+  un tinte y pesa como color; las tintas de texto se calculan por luminancia. (b) La planilla se
+  recorta a cuatro columnas y el resto se lee en la ficha. (c) El editor de ruta cambia las dos
+  casillas de latitud y longitud por un buscador de direcciones y un mapa con pines arrastrables,
+  y se fija el orden lugares → itinerario. (d) El riel de contexto acompaña a todas las pestañas
+  de la edición y la pestaña de pasajeros pasa a ser un avance con enlace a la lista completa.
 - `2026-08-20` — Creación inicial a partir del handoff `design_handoff_tours_admin` y del
   requerimiento de lista de pasajeros del guía.
 - `2026-08-20` — Sincronización con las **siete decisiones ratificadas** por producto. Cambios de
