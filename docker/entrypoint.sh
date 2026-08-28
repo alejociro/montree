@@ -30,6 +30,12 @@ php artisan storage:link || true
 # No abortamos el arranque si falla, para poder inspeccionar con la app viva.
 php artisan migrate --force || echo "[entrypoint] AVISO: migrate fallo, revisar logs/DB"
 
+# Catalogo de permisos y matriz rol->permiso (idempotente, sin datos demo).
+# Sin esto, role_has_permissions queda vacio tras un despliegue nuevo y el menu
+# del panel se muestra en blanco para todas las agencias.
+php artisan montree:sync-permissions 2>&1 \
+    || echo "[entrypoint] AVISO: sync-permissions fallo, revisar logs/DB"
+
 # Limpiar cualquier cache stale del build
 php artisan optimize:clear || true
 
