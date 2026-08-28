@@ -18,6 +18,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -38,7 +39,56 @@ class HomePageTest extends TestCase
         $response = $this->get('http://montree.test/');
 
         $response->assertOk();
-        $response->assertSee('Landing');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Landing')
+            ->where('registerUrl', '/start')
+            ->where('loginUrl', '/login')
+            ->where('contactUrl', 'mailto:hola@montree.co')
+            ->where('demoUrl', '#funciones'));
+    }
+
+    public function test_every_hero_variant_referenced_by_the_landing_exists(): void
+    {
+        $markup = file_get_contents(resource_path('js/pages/Landing.vue'));
+
+        preg_match_all('#/landing/[\w-]+\.(?:avif|webp)#', $markup, $matches);
+
+        $referenced = array_unique($matches[0]);
+
+        $this->assertNotEmpty($referenced, 'The landing hero no longer references any generated image variant.');
+
+        foreach ($referenced as $url) {
+            $this->assertFileExists(public_path(ltrim($url, '/')));
+        }
+    }
+
+    public function test_the_landing_preloads_its_hero_image(): void
+    {
+        $response = $this->get('http://montree.test/');
+
+        $response->assertOk();
+        $response->assertSee('rel="preload" as="image" type="image/avif"', false);
+        $response->assertSee('/landing/cocora-wide-2560.avif', false);
+    }
+
+    public function test_the_tenant_home_does_not_preload_the_marketing_hero(): void
+    {
+        $tenant = $this->makeTenant();
+
+        $response = $this->get('http://'.$tenant->domain.'/');
+
+        $response->assertOk();
+        $response->assertDontSee('/landing/cocora-wide-2560.avif', false);
+    }
+
+    public function test_tenant_keeps_its_public_home_instead_of_the_marketing_landing(): void
+    {
+        $tenant = $this->makeTenant();
+
+        $response = $this->get('http://'.$tenant->domain.'/');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page->component('Home'));
     }
 
     public function test_super_admin_is_redirected_to_their_panel_from_the_platform_home(): void
