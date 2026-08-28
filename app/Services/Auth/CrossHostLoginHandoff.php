@@ -23,14 +23,21 @@ final class CrossHostLoginHandoff
 
     private const TTL_SECONDS = 60;
 
-    public function issue(User $user, string $redirectTo): string
+    /**
+     * WHY: el handoff de login viaja en la misma respuesta y vive 60 segundos. Un
+     * enlace que sale por correo necesita el tiempo que el dueño tarda en abrir su
+     * bandeja: se le da el mismo hold de la reserva (30 min), ni un minuto más.
+     */
+    public const EMAIL_TTL_SECONDS = 1800;
+
+    public function issue(User $user, string $redirectTo, ?int $ttlSeconds = null): string
     {
         $token = Str::random(64);
 
         Cache::put(self::PREFIX.$token, [
             'user_id' => $user->getKey(),
             'redirect_to' => $redirectTo,
-        ], self::TTL_SECONDS);
+        ], $ttlSeconds ?? self::TTL_SECONDS);
 
         return $token;
     }
