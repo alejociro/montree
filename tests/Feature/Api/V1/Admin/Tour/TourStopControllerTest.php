@@ -41,6 +41,9 @@ final class TourStopControllerTest extends TestCase
             'duration_hours' => 10,
             'difficulty' => 'moderate',
             'default_capacity' => 12,
+            'meeting_point' => 'Plaza de Bolívar, Armenia',
+            'meeting_latitude' => 4.5350,
+            'meeting_longitude' => -75.6813,
             'stops' => [
                 ['kind' => 'pickup', 'name' => 'Plaza de Bolívar', 'label' => 'Recogida', 'place' => 'Armenia', 'time' => '8:00 a. m.', 'latitude' => 4.5350, 'longitude' => -75.6813, 'itinerary_step' => 1],
                 ['kind' => 'site', 'name' => 'Salento', 'latitude' => 4.6376, 'longitude' => -75.5706],

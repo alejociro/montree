@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
@@ -28,6 +29,12 @@ import type { PermissionSummary, RoleDetail } from '@/types/role';
 const { t } = useTranslations();
 
 type Mode = 'create' | 'edit' | 'view';
+
+export type RoleSeed = {
+    name: string;
+    description: string | null;
+    permissions: string[];
+};
 
 type Props = {
     open: boolean;
@@ -39,9 +46,17 @@ type Props = {
      * roles (`meta.available_permissions`); vacío = se usa el espejo local.
      */
     catalog?: PermissionSummary[];
+    /**
+     * Punto de partida al duplicar un rol del sistema: nombre, descripción y
+     * permisos ya marcados. Solo se usa en modo creación.
+     */
+    seed?: RoleSeed | null;
 };
 
-const props = withDefaults(defineProps<Props>(), { catalog: () => [] });
+const props = withDefaults(defineProps<Props>(), {
+    catalog: () => [],
+    seed: null,
+});
 
 const emit = defineEmits<{
     'update:open': [value: boolean];
@@ -52,6 +67,8 @@ const api = useApi();
 
 /** Espejo de `StoreRoleRequest`/`UpdateRoleRequest`: `max:60`. */
 const NAME_MAX_LENGTH = 60;
+/** Mismo espejo, para `description`: `max:200`. */
+const DESCRIPTION_MAX_LENGTH = 200;
 
 const detail = ref<RoleDetail | null>(null);
 const loading = ref(false);
@@ -61,6 +78,7 @@ const errors = ref<ApiErrors>({});
 const submitted = ref(false);
 
 const name = ref('');
+const description = ref('');
 const permissions = ref<string[]>([]);
 
 const isReadonly = computed(
@@ -75,7 +93,8 @@ const title = computed(() => {
     return isReadonly.value ? t('Permisos del rol') : t('Editar rol');
 });
 
-const description = computed(() => {
+/** Bajada del modal, no la descripción del rol (esa es el campo `description`). */
+const subtitle = computed(() => {
     if (props.mode === 'create') {
         return t(
             'Elige un nombre y marca los permisos que tendrá este rol dentro de tu agencia.',
@@ -147,7 +166,15 @@ function reset(): void {
     submitted.value = false;
     loadError.value = false;
     name.value = '';
+    description.value = '';
     permissions.value = [];
+}
+
+/** Duplicar un rol del sistema: se abre en creación con todo precargado. */
+function applySeed(seed: RoleSeed): void {
+    name.value = seed.name;
+    description.value = seed.description ?? '';
+    permissions.value = [...seed.permissions];
 }
 
 async function loadDetail(roleId: number): Promise<void> {
@@ -171,6 +198,7 @@ async function loadDetail(roleId: number): Promise<void> {
 
         detail.value = role;
         name.value = role.label !== '' ? role.label : role.name;
+        description.value = role.description ?? '';
         permissions.value = role.permissions.map(
             (permission) => permission.slug,
         );
@@ -197,6 +225,8 @@ function submit(): void {
 
     const payload = {
         name: name.value.trim(),
+        description:
+            description.value.trim() === '' ? null : description.value.trim(),
         permissions: permissions.value,
     };
 
@@ -229,6 +259,12 @@ watch(
 
         if (roleId !== null) {
             void loadDetail(roleId);
+
+            return;
+        }
+
+        if (props.seed) {
+            applySeed(props.seed);
         }
     },
     { immediate: true },
@@ -253,7 +289,7 @@ watch(
                         {{ $t('Solo lectura') }}
                     </Badge>
                 </DialogTitle>
-                <DialogDescription>{{ description }}</DialogDescription>
+                <DialogDescription>{{ subtitle }}</DialogDescription>
             </DialogHeader>
 
             <!-- Loading -->
@@ -304,6 +340,28 @@ watch(
                         class="text-xs text-destructive"
                     >
                         {{ nameError }}
+                    </p>
+                </div>
+
+                <div class="space-y-1.5">
+                    <Label for="role-description">
+                        {{ $t('Para qué sirve') }}
+                    </Label>
+                    <Textarea
+                        id="role-description"
+                        v-model="description"
+                        :disabled="isReadonly"
+                        :maxlength="DESCRIPTION_MAX_LENGTH"
+                        rows="2"
+                        :placeholder="
+                            $t('Una línea que explique cuándo usar este rol.')
+                        "
+                    />
+                    <p
+                        v-if="errors.description"
+                        class="text-xs text-destructive"
+                    >
+                        {{ errors.description }}
                     </p>
                 </div>
 

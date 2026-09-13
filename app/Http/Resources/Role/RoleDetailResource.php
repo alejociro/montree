@@ -31,6 +31,7 @@ final class RoleDetailResource extends JsonResource
             'name' => $role->name,
             'label' => TenantRoleCatalog::labelFor($role),
             'is_base' => TenantRoleCatalog::isBase($role),
+            'description' => TenantRoleCatalog::descriptionFor($role),
             'permissions' => app(PermissionCatalog::class)->describe($slugs),
         ];
     }

@@ -33,7 +33,9 @@ defineProps<{
         >
             <span
                 v-if="trend !== undefined && trend !== null"
-                :class="trend >= 0 ? 'text-primary' : 'text-destructive'"
+                :class="
+                    trend >= 0 ? 'text-primary-readable' : 'text-destructive'
+                "
             >
                 {{ trend >= 0 ? '+' : '' }}{{ trend }}%
             </span>

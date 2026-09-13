@@ -22,7 +22,7 @@ final class ModerateReviewRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:approved,rejected'],
+            'status' => ['required', 'in:approved,rejected,pending'],
             'rejection_reason' => ['nullable', 'string', 'max:500'],
         ];
     }

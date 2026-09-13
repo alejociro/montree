@@ -9,6 +9,7 @@ use App\Actions\Team\ResendInvitationAction;
 use App\Actions\Team\UpdateMemberRoleAction;
 use App\Actions\Team\UpdateMemberStatusAction;
 use App\Enums\TenantMembershipStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Team\InviteMemberRequest;
 use App\Http\Requests\Admin\Team\TeamIndexRequest;
@@ -18,6 +19,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Rbac\TenantRoleCatalog;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -52,7 +54,8 @@ final class TeamController extends Controller
             ->paginate($request->perPage())
             ->withQueryString();
 
-        return TeamMemberResource::collection($members);
+        return TeamMemberResource::collection($members)
+            ->additional(['meta' => ['stats' => $this->stats($tenant)]]);
     }
 
     public function store(InviteMemberRequest $request): JsonResponse
@@ -93,6 +96,34 @@ final class TeamController extends Controller
         $this->updateStatus->handle(Tenant::current(), $user, TenantMembershipStatus::Active);
 
         return new JsonResponse(['data' => ['id' => $user->id, 'status' => 'active']]);
+    }
+
+    /**
+     * Las cuatro cifras de la cabecera de Equipo. Se calculan sobre el equipo
+     * COMPLETO, no sobre la página ni sobre el filtro activo: son el estado de
+     * la agencia, y cambiarlas al escribir en el buscador las volvería ruido.
+     *
+     * @return array{total: int, active: int, guides: int, suspended: int}
+     */
+    private function stats(Tenant $tenant): array
+    {
+        $assignable = $this->roles->assignableNames($tenant);
+
+        $team = fn (): BelongsToMany => $tenant->users()
+            ->whereHas('roles', fn (Builder $query) => $query->whereIn('name', $assignable));
+
+        $byStatus = fn (TenantMembershipStatus $status): int => $team()
+            ->where('tenant_user.status', $status->value)
+            ->count();
+
+        return [
+            'total' => $team()->count(),
+            'active' => $byStatus(TenantMembershipStatus::Active),
+            'guides' => $team()
+                ->whereHas('roles', fn (Builder $query) => $query->where('name', UserRole::Guide->value))
+                ->count(),
+            'suspended' => $byStatus(TenantMembershipStatus::Suspended),
+        ];
     }
 
     /**

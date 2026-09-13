@@ -299,7 +299,7 @@ const mainNavItems: NavItem[] = [
                             <Link
                                 v-if="notifications.length > 0"
                                 href="/account/notifications"
-                                class="block border-t p-2 text-center text-xs text-primary hover:underline"
+                                class="block border-t p-2 text-center text-xs text-primary-readable hover:underline"
                             >
                                 {{ $t('Ver todas') }}
                             </Link>

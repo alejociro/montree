@@ -26,7 +26,7 @@ const classes = computed(() =>
         props.size === 'sm' ? 'size-7 text-[10px]' : 'size-9 text-xs',
         props.pending
             ? 'bg-muted text-muted-foreground'
-            : 'bg-primary/10 text-primary',
+            : 'bg-primary/10 text-primary-readable',
     ),
 );
 </script>

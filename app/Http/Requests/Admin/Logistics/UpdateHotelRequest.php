@@ -11,12 +11,6 @@ final class UpdateHotelRequest extends LogisticsFormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'address' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'contact_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'contact_email' => ['sometimes', 'nullable', 'email', 'max:255'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-        ];
+        return LogisticsRules::forUpdate(LogisticsRules::hotel());
     }
 }

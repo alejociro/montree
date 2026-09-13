@@ -21,6 +21,7 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
 import KpiCard from '@/components/atoms/KpiCard.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
+import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
 import type { TourTabItem } from '@/components/molecules/TourTabs.vue';
@@ -30,6 +31,7 @@ import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
 import TourUpcomingDatesList from '@/components/organisms/TourUpcomingDatesList.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/composables/usePermissions';
 import { useTenant } from '@/composables/useTenant';
 import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
@@ -87,6 +89,14 @@ const coverImage = computed(
 const galleryImages = computed(() =>
     sortedImages.value.filter((image) => image.id !== coverImage.value?.id),
 );
+
+/**
+ * WHY: la portada ocupaba 2×2 siempre. Con una o dos miniaturas el mosaico
+ * dejaba media rejilla vacía —y en móvil, donde solo hay dos columnas, el
+ * `row-span-2` abría una fila entera en blanco—. Solo se destaca cuando hay
+ * miniaturas suficientes para llenar las dos filas de la derecha.
+ */
+const featureCover = computed(() => galleryImages.value.length >= 4);
 
 const ratingValue = computed(() => Number(props.tour.rating_average) || 0);
 
@@ -221,7 +231,29 @@ const kpis = computed<ShowKpi[]>(() => {
 
 type TourShowTab = 'summary' | 'passengers' | 'route';
 
-const activeTab = ref<TourShowTab>('summary');
+const TOUR_SHOW_TABS: TourShowTab[] = ['summary', 'passengers', 'route'];
+
+/**
+ * La edición enlaza aquí con `?tab=passengers` cuando alguien pide la lista
+ * completa desde su avance. Sin esto, el salto caía en «Resumen» y había que
+ * buscar la pestaña a mano.
+ */
+function initialTab(): TourShowTab {
+    if (typeof window === 'undefined') {
+        return 'summary';
+    }
+
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    const match = TOUR_SHOW_TABS.find((tab) => tab === requested);
+
+    if (match === 'passengers' && !canViewPassengers.value) {
+        return 'summary';
+    }
+
+    return match ?? 'summary';
+}
+
+const activeTab = ref<TourShowTab>(initialTab());
 
 const routeStops = computed(() => routeStopsFromTour(props.tour));
 
@@ -302,23 +334,35 @@ const manifestSource = computed(
                 class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"
             />
 
+            <!--
+              WHY: las dos acciones de la cabecera viven en un menú ⋯, como
+              pide el sistema de diseño. Sobre la foto del héroe dos botones
+              sólidos compiten con el título; el menú deja una sola diana y
+              conserva icono y etiqueta de cada opción.
+            -->
             <div class="absolute inset-x-0 top-0 flex justify-end gap-2 p-4">
-                <Link
-                    :href="publicTourShow(props.tour.slug).url"
-                    target="_blank"
-                    rel="noopener"
+                <ActionMenu
+                    variant="solid"
+                    :label="$t('Acciones del tour')"
+                    class="shadow-sm"
                 >
-                    <Button variant="secondary" size="sm">
-                        <ExternalLink class="size-4" />
-                        {{ $t('Ver como viajero') }}
-                    </Button>
-                </Link>
-                <Link :href="editPage({ tour: props.tour.id }).url">
-                    <Button size="sm">
-                        <Pencil class="size-4" />
-                        {{ $t('Editar') }}
-                    </Button>
-                </Link>
+                    <DropdownMenuItem as-child>
+                        <a
+                            :href="publicTourShow(props.tour.slug).url"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <ExternalLink class="size-4" />
+                            {{ $t('Ver como viajero') }}
+                        </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem as-child>
+                        <Link :href="editPage({ tour: props.tour.id }).url">
+                            <Pencil class="size-4" />
+                            {{ $t('Editar') }}
+                        </Link>
+                    </DropdownMenuItem>
+                </ActionMenu>
             </div>
 
             <div class="absolute inset-x-0 bottom-0 space-y-3 p-5 md:p-7">
@@ -422,7 +466,7 @@ const manifestSource = computed(
                                 class="size-4"
                                 :class="
                                     filled
-                                        ? 'fill-primary text-primary'
+                                        ? 'fill-primary text-primary-readable'
                                         : 'text-muted-foreground/30'
                                 "
                             />
@@ -540,24 +584,30 @@ const manifestSource = computed(
                         {{ $t('Este tour todavía no tiene itinerario.') }}
                     </p>
 
-                    <ol v-else class="mt-5 space-y-5">
+                    <!--
+                      El hilo entre pasos va ABSOLUTO, no como hermano flexible
+                      del número: con `space-y` entre `<li>` la línea terminaba
+                      en el borde del ítem y quedaba un hueco visible antes del
+                      círculo siguiente. Anclada al `<li>`, cruza también su
+                      relleno inferior y los pasos quedan encadenados.
+                    -->
+                    <ol v-else class="mt-5">
                         <li
                             v-for="(step, index) in props.tour.itinerary"
                             :key="step.step_number"
-                            class="flex gap-4"
+                            class="relative flex gap-4 pb-5 last:pb-0"
                         >
+                            <span
+                                v-if="index < props.tour.itinerary.length - 1"
+                                aria-hidden="true"
+                                class="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-brand-line-2"
+                            />
                             <div class="flex flex-col items-center">
                                 <span
                                     class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                                 >
                                     {{ step.step_number }}
                                 </span>
-                                <span
-                                    v-if="
-                                        index < props.tour.itinerary.length - 1
-                                    "
-                                    class="mt-1 w-px flex-1 bg-brand-line-2"
-                                />
                             </div>
                             <div class="min-w-0 pb-1">
                                 <div
@@ -593,10 +643,17 @@ const manifestSource = computed(
                 <h2 class="mb-4 text-base font-semibold text-foreground">
                     {{ $t('Galería') }}
                 </h2>
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div
+                    class="grid grid-flow-row-dense grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
+                >
                     <div
                         v-if="coverImage"
-                        class="col-span-2 row-span-2 overflow-hidden rounded-xl md:col-span-2"
+                        class="overflow-hidden rounded-xl"
+                        :class="
+                            featureCover
+                                ? 'col-span-2 md:row-span-2'
+                                : undefined
+                        "
                     >
                         <img
                             :src="coverImage.url"
@@ -647,7 +704,7 @@ const manifestSource = computed(
                             class="flex items-start gap-2"
                         >
                             <Check
-                                class="mt-0.5 size-4 shrink-0 text-primary"
+                                class="mt-0.5 size-4 shrink-0 text-primary-readable"
                             />
                             <span class="text-foreground">{{ item }}</span>
                         </li>
@@ -778,7 +835,7 @@ const manifestSource = computed(
                 v-if="props.tour.meeting_point"
                 class="mt-4 flex items-start gap-2 text-sm text-muted-foreground"
             >
-                <MapPin class="mt-0.5 size-4 shrink-0 text-primary" />
+                <MapPin class="mt-0.5 size-4 shrink-0 text-primary-readable" />
                 <span>
                     <span class="font-medium text-foreground">
                         {{ $t('Punto de encuentro') }}:

@@ -39,6 +39,8 @@ final class PassengerResource extends JsonResource
             'is_minor' => $this->is_minor === null ? null : (bool) $this->is_minor,
             'document_type' => $this->document_type?->value,
             'document_type_label' => $this->document_type?->label(),
+            // La planilla pinta la abreviatura; la ficha, la etiqueta larga.
+            'document_type_abbreviation' => $this->document_type?->abbreviation(),
             'document_number' => $this->document_number,
             'email' => $this->email,
             'phone' => $this->phone,

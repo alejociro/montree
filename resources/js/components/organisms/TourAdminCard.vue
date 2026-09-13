@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import {
-    edit as editPage,
-    show as showPage,
-} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
+import { show as showPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
-import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatDate } from '@/lib/format';
@@ -25,7 +21,6 @@ type Props = {
 const props = withDefaults(defineProps<Props>(), { fallbackCurrency: 'USD' });
 
 const showUrl = computed(() => showPage({ tour: props.tour.id }).url);
-const editUrl = computed(() => editPage({ tour: props.tour.id }).url);
 
 const subtitle = computed<string>(() => {
     const parts: string[] = [];
@@ -63,12 +58,9 @@ const nextDeparture = computed<string>(() => {
 
 <template>
     <article
-        class="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition hover:border-primary/40 hover:shadow-[0_12px_34px_-26px_rgba(20,48,31,0.55)]"
+        class="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card transition focus-within:ring-2 focus-within:ring-ring/60 hover:border-primary/40 hover:shadow-[0_12px_34px_-26px_rgba(20,48,31,0.55)]"
     >
-        <Link
-            :href="showUrl"
-            class="group relative block focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
-        >
+        <div class="relative block">
             <div class="aspect-[16/9] overflow-hidden bg-muted">
                 <img
                     v-if="props.tour.cover_image_url"
@@ -78,7 +70,7 @@ const nextDeparture = computed<string>(() => {
                 />
                 <div
                     v-else
-                    class="flex size-full items-center justify-center bg-brand-green-50"
+                    class="flex size-full items-center justify-center bg-primary-soft"
                 >
                     <MonoLabel>{{ $t('Sin portada') }}</MonoLabel>
                 </div>
@@ -87,14 +79,19 @@ const nextDeparture = computed<string>(() => {
                 :status="props.tour.status"
                 class="absolute top-2.5 left-2.5 shadow-sm"
             />
-        </Link>
+        </div>
 
         <div class="flex flex-1 flex-col gap-2.5 px-4 py-3.5">
             <div>
                 <h3 class="text-[15px] leading-snug font-semibold">
+                    <!--
+                      WHY: el enlace se estira sobre toda la tarjeta (`after:`)
+                      para que el clic en cualquier punto abra el detalle, sin
+                      anidar el resto del contenido dentro del <a>.
+                    -->
                     <Link
                         :href="showUrl"
-                        class="hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                        class="group-hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
                     >
                         {{ props.tour.name }}
                     </Link>
@@ -148,23 +145,14 @@ const nextDeparture = computed<string>(() => {
         <div
             class="flex items-center justify-between gap-2.5 border-t border-brand-line-2 px-4 py-2.5"
         >
-            <span class="text-[15px] leading-tight font-bold">
+            <MonoLabel>{{ $t('Precio') }}</MonoLabel>
+            <span class="text-right text-[15px] leading-tight font-bold">
                 {{ price }}
                 <small
                     class="block text-[11.5px] font-medium text-muted-foreground"
                 >
                     {{ $t('por persona') }}
                 </small>
-            </span>
-            <span class="flex gap-1.5">
-                <Link :href="showUrl">
-                    <Button size="sm" variant="ghost">{{ $t('Ver') }}</Button>
-                </Link>
-                <Link :href="editUrl">
-                    <Button size="sm" variant="outline">{{
-                        $t('Editar')
-                    }}</Button>
-                </Link>
             </span>
         </div>
     </article>

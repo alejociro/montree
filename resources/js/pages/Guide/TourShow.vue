@@ -327,22 +327,24 @@ function occupancy(departure: GuideDeparture): number {
                 <h2 class="mb-4 text-base font-semibold text-foreground">
                     {{ $t('Itinerario') }}
                 </h2>
-                <ol class="space-y-6">
+                <ol>
                     <li
                         v-for="(step, index) in tour.itinerary"
                         :key="step.step_number"
-                        class="flex gap-4"
+                        class="relative flex gap-4 pb-6 last:pb-0"
                     >
+                        <!-- Mismo hilo continuo que en el detalle admin. -->
+                        <span
+                            v-if="index < tour.itinerary.length - 1"
+                            aria-hidden="true"
+                            class="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
+                        />
                         <div class="flex flex-col items-center">
                             <span
                                 class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                             >
                                 {{ step.step_number }}
                             </span>
-                            <span
-                                v-if="index < tour.itinerary.length - 1"
-                                class="mt-1 w-px flex-1 bg-border"
-                            />
                         </div>
                         <div class="pb-1">
                             <div class="flex flex-wrap items-baseline gap-x-2">
@@ -445,7 +447,9 @@ function occupancy(departure: GuideDeparture): number {
             >
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="flex items-start gap-3">
-                        <MapPin class="mt-0.5 size-5 shrink-0 text-primary" />
+                        <MapPin
+                            class="mt-0.5 size-5 shrink-0 text-primary-readable"
+                        />
                         <div>
                             <MonoLabel>
                                 {{ $t('Punto de encuentro') }}

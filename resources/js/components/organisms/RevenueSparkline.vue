@@ -62,7 +62,7 @@ const areaPath = computed(() => {
             :d="areaPath"
             fill="currentColor"
             fill-opacity="0.1"
-            class="text-primary"
+            class="text-primary-readable"
         />
         <path
             v-if="path"
@@ -72,7 +72,7 @@ const areaPath = computed(() => {
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="text-primary"
+            class="text-primary-readable"
         />
         <text
             v-if="!path"

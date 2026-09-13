@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
+import { readableInk } from '@/lib/color';
 import { stopColor } from '@/lib/tour-route';
 import type { TourRouteStop } from '@/types/tour-route';
 
@@ -43,14 +44,17 @@ watch(
             class="grid w-full grid-cols-[30px_1fr] gap-3 border-b border-l-[3px] border-border px-4 py-3.5 text-left transition last:border-b-0"
             :class="
                 index === selectedIndex
-                    ? 'border-l-brand-green-600 bg-brand-green-100'
-                    : 'border-l-transparent hover:bg-brand-green-100/60'
+                    ? 'border-l-primary bg-primary-soft'
+                    : 'border-l-transparent hover:bg-primary-soft/60'
             "
             @click="emit('select', index)"
         >
             <span
-                class="mt-0.5 grid size-[26px] place-items-center rounded-full text-xs font-bold text-white"
-                :style="{ background: stopColor(stop) }"
+                class="mt-0.5 grid size-[26px] place-items-center rounded-full text-xs font-bold"
+                :style="{
+                    background: stopColor(stop),
+                    color: readableInk(stopColor(stop)),
+                }"
             >
                 {{ stop.code }}
             </span>

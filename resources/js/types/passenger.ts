@@ -37,6 +37,8 @@ export type Passenger = {
     is_minor: boolean | null;
     document_type: DocumentType | null;
     document_type_label: string | null;
+    /** `CC`, `CE`, `TI`, `SI`, `PA`: lo que se pinta en la planilla. */
+    document_type_abbreviation: string | null;
     document_number: string | null;
     email: string | null;
     phone: string | null;

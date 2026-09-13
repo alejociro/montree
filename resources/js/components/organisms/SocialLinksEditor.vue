@@ -83,7 +83,11 @@ function update(key: keyof TenantSocialLinks, value: string | number): void {
         />
 
         <div class="grid gap-4">
-            <div v-for="field in fields" :key="field.key" class="grid gap-2">
+            <div
+                v-for="field in fields"
+                :key="field.key"
+                class="grid content-start gap-2"
+            >
                 <Label
                     :for="`social-${field.key}`"
                     class="flex items-center gap-2"

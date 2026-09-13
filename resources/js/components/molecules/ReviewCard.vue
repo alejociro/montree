@@ -30,7 +30,7 @@ const initials = computed(() =>
     <article class="rounded-2xl bg-accent p-5">
         <div class="flex items-center gap-2.5">
             <span
-                class="grid size-[34px] flex-none place-items-center rounded-full bg-brand-green-100 text-[13px] font-bold text-brand-green"
+                class="grid size-[34px] flex-none place-items-center rounded-full bg-secondary-soft text-[13px] font-bold text-secondary-readable"
                 aria-hidden="true"
             >
                 {{ initials }}
@@ -45,7 +45,7 @@ const initials = computed(() =>
                     {{ formattedDate }}
                 </p>
             </div>
-            <span class="ml-auto tracking-[1px] text-primary">
+            <span class="ml-auto tracking-[1px] text-primary-readable">
                 {{ '★'.repeat(review.rating) }}
             </span>
         </div>

@@ -92,6 +92,48 @@ export function useTourCompletion(
         payload.value.stops.some((stop) => stop.kind === 'drop'),
     );
 
+    const hasSite = computed<boolean>(() =>
+        payload.value.stops.some((stop) => stop.kind === 'site'),
+    );
+
+    const meetingDone = computed<boolean>(
+        () =>
+            filled(payload.value.meeting_point) &&
+            Number.isFinite(
+                Number.parseFloat(payload.value.meeting_latitude),
+            ) &&
+            Number.isFinite(Number.parseFloat(payload.value.meeting_longitude)),
+    );
+
+    /**
+     * WHY: crear un tour exige punto de encuentro, destino y regreso
+     * (`StoreTourRequest`). El riel marca el paso «Ruta y mapa» como hecho solo
+     * cuando los tres están, y dice cuál falta: antes bastaba una parada
+     * cualquiera y el borrador se rechazaba al guardar sin explicar por qué.
+     */
+    const routeDone = computed<boolean>(
+        () => meetingDone.value && hasSite.value && hasDrop.value,
+    );
+
+    const routeHint = computed<string>(() => {
+        if (routeDone.value) {
+            return t(':steps pasos · :stops paradas', {
+                steps: formatNumber(payload.value.itinerary.length),
+                stops: formatNumber(payload.value.stops.length),
+            });
+        }
+
+        if (!meetingDone.value) {
+            return t('Falta el punto de encuentro');
+        }
+
+        if (!hasSite.value) {
+            return t('Falta el destino');
+        }
+
+        return t('Falta el punto de regreso');
+    });
+
     const guideDone = computed<boolean>(
         () => payload.value.default_guide_id !== null,
     );
@@ -139,13 +181,8 @@ export function useTourCompletion(
             id: 'route',
             anchor: 'tour-block-route',
             label: t('Ruta y mapa'),
-            hint:
-                payload.value.stops.length === 0
-                    ? t('Sin paradas')
-                    : t(':count paradas', {
-                          count: formatNumber(payload.value.stops.length),
-                      }),
-            done: payload.value.stops.length > 0,
+            hint: routeHint.value,
+            done: routeDone.value,
         },
         {
             id: 'gallery',
@@ -170,6 +207,7 @@ export function useTourCompletion(
         image: images.value > 0,
         guide: guideDone.value,
         stops: hasPickup.value && hasDrop.value,
+        route: routeDone.value,
     }));
 
     const localRequirements = computed<TourPublishRequirement[]>(() => [

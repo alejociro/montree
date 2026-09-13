@@ -38,10 +38,21 @@ export interface TeamMemberPayload {
     last_login_at?: string | null;
 }
 
+/**
+ * Cifras del equipo COMPLETO, no de la pagina ni del filtro activo: viajan en
+ * `meta.stats` junto a la paginacion.
+ */
+export interface TeamStats {
+    total: number;
+    active: number;
+    guides: number;
+    suspended: number;
+}
+
 export interface TeamListResponse {
     data: TeamMemberPayload[];
     links?: PaginationLinks;
-    meta?: PaginationMeta;
+    meta?: PaginationMeta & { stats?: TeamStats };
 }
 
 /** Filtros del listado, espejo de los query params del endpoint. */

@@ -6,10 +6,9 @@ import InputError from '@/components/InputError.vue';
 import CapacityInput from '@/components/molecules/CapacityInput.vue';
 import ChipsInput from '@/components/molecules/ChipsInput.vue';
 import DifficultySelector from '@/components/molecules/DifficultySelector.vue';
-import MeetingPointPicker from '@/components/molecules/MeetingPointPicker.vue';
 import PriceInput from '@/components/molecules/PriceInput.vue';
-import TourItineraryBuilder from '@/components/organisms/TourItineraryBuilder.vue';
-import TourRouteStopsBuilder from '@/components/organisms/TourRouteStopsBuilder.vue';
+import type { MeetingDraft } from '@/components/organisms/TourItineraryPlanner.vue';
+import TourItineraryPlanner from '@/components/organisms/TourItineraryPlanner.vue';
 import {
     Card,
     CardContent,
@@ -107,11 +106,7 @@ function handleCategoryChange(raw: AcceptableValue): void {
     );
 }
 
-function handleMeetingPoint(meeting: {
-    meeting_point: string;
-    meeting_latitude: string;
-    meeting_longitude: string;
-}): void {
+function handleMeetingPoint(meeting: MeetingDraft): void {
     emit('update:modelValue', {
         ...value.value,
         meeting_point: meeting.meeting_point,
@@ -132,12 +127,6 @@ const meetingValue = computed(() => ({
     meeting_point: value.value.meeting_point,
     meeting_latitude: value.value.meeting_latitude,
     meeting_longitude: value.value.meeting_longitude,
-}));
-
-const meetingErrors = computed(() => ({
-    meeting_point: props.errors.meeting_point,
-    meeting_latitude: props.errors.meeting_latitude,
-    meeting_longitude: props.errors.meeting_longitude,
 }));
 </script>
 
@@ -165,7 +154,7 @@ const meetingErrors = computed(() => ({
                     </div>
                 </CardHeader>
                 <CardContent class="space-y-4">
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="name">{{ $t('Nombre') }}</Label>
                         <Input
                             id="name"
@@ -177,7 +166,7 @@ const meetingErrors = computed(() => ({
                         <InputError :message="errors.name" />
                     </div>
 
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="short_description">{{
                             $t('Resumen corto')
                         }}</Label>
@@ -201,7 +190,7 @@ const meetingErrors = computed(() => ({
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="category_id">{{
                                 $t('Categoría')
                             }}</Label>
@@ -236,7 +225,7 @@ const meetingErrors = computed(() => ({
                             <InputError :message="errors.category_id" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="default_guide_id">{{
                                 $t('Guía por defecto')
                             }}</Label>
@@ -268,7 +257,7 @@ const meetingErrors = computed(() => ({
                         </div>
                     </div>
 
-                    <div class="grid gap-2">
+                    <div class="grid content-start gap-2">
                         <Label for="description">{{
                             $t('Descripción completa')
                         }}</Label>
@@ -335,7 +324,7 @@ const meetingErrors = computed(() => ({
                             "
                         />
 
-                        <div class="grid gap-2">
+                        <div class="grid content-start gap-2">
                             <Label for="duration_hours">{{
                                 $t('Duración (horas)')
                             }}</Label>
@@ -436,7 +425,7 @@ const meetingErrors = computed(() => ({
                             }}</CardTitle>
                             <CardDescription>{{
                                 $t(
-                                    'El orden dibuja la ruta pública: recogida, recorrido y regreso.',
+                                    'El paso a paso del tour y dónde ocurre cada momento. El orden de las paradas dibuja la ruta pública.',
                                 )
                             }}</CardDescription>
                         </div>
@@ -445,29 +434,22 @@ const meetingErrors = computed(() => ({
                         }}</MonoLabel>
                     </div>
                 </CardHeader>
-                <CardContent class="space-y-6">
-                    <MeetingPointPicker
-                        :model-value="meetingValue"
-                        :errors="meetingErrors"
-                        @update:model-value="handleMeetingPoint"
+                <CardContent>
+                    <!--
+                      Un solo bloque: el itinerario manda y cada paso contiene
+                      sus paradas. Antes eran dos listas independientes —el mapa
+                      con las paradas por un lado, el paso a paso por otro— con
+                      dos mapas y sin un orden en el que trabajarlas.
+                    -->
+                    <TourItineraryPlanner
+                        :meeting="meetingValue"
+                        :steps="value.itinerary"
+                        :stops="value.stops"
+                        :errors="errors"
+                        @update:meeting="handleMeetingPoint"
+                        @update:steps="handleItinerary"
+                        @update:stops="handleStops"
                     />
-
-                    <div class="border-t border-brand-line-2 pt-6">
-                        <TourItineraryBuilder
-                            :model-value="value.itinerary"
-                            :errors="errors"
-                            @update:model-value="handleItinerary"
-                        />
-                    </div>
-
-                    <div class="border-t border-brand-line-2 pt-6">
-                        <TourRouteStopsBuilder
-                            :model-value="value.stops"
-                            :steps="value.itinerary"
-                            :errors="errors"
-                            @update:model-value="handleStops"
-                        />
-                    </div>
                 </CardContent>
             </Card>
         </section>

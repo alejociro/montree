@@ -83,7 +83,7 @@ defineExpose({ selectStop, fit });
         >
             <div
                 role="tablist"
-                class="flex w-max gap-1.5 rounded-full bg-brand-green-100 p-1"
+                class="flex w-max gap-1.5 rounded-full bg-primary-soft p-1"
             >
                 <button
                     v-for="view in availableViews"

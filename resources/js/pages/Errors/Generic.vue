@@ -73,14 +73,14 @@ const copy = computed(() => {
         <Head :title="copy.title" />
 
         <div
-            class="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary"
+            class="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary-readable"
         >
             <ShieldAlert class="size-8" />
         </div>
 
         <div class="max-w-md space-y-3">
             <p
-                class="text-xs font-semibold tracking-widest text-primary uppercase"
+                class="text-xs font-semibold tracking-widest text-primary-readable uppercase"
             >
                 Error {{ status }}
             </p>

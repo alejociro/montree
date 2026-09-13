@@ -144,7 +144,7 @@ const highlights = [
                     {{ $t('¿Ya tienes una agencia?') }}
                     <Link
                         :href="login().url"
-                        class="font-medium text-primary underline-offset-4 hover:underline"
+                        class="font-medium text-primary-readable underline-offset-4 hover:underline"
                     >
                         {{ $t('Inicia sesión') }}
                     </Link>

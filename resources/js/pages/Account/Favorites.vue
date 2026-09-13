@@ -114,7 +114,7 @@ function formatPrice(amount: string, currency: string) {
                             $t('No disponible')
                         }}</Badge>
                     </div>
-                    <p class="text-sm font-semibold text-primary">
+                    <p class="text-sm font-semibold text-primary-readable">
                         {{ formatPrice(f.tour.base_price, f.tour.currency) }}
                     </p>
                     <p class="text-xs text-muted-foreground">
