@@ -50,6 +50,98 @@ class TenantConfigurationControllerTest extends TestCase
         $this->assertNotNull($response->json('data.configuration.primary_color_hsl'));
     }
 
+    public function test_admin_can_configure_its_own_placetopay_merchant(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $admin = $this->adminFor($tenant);
+
+        $response = $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            [
+                'placetopay_login' => 'tenant-login',
+                'placetopay_tran_key' => 'tenant-tran-key',
+                'placetopay_url' => 'https://checkout.placetopay.ec',
+            ],
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.configuration.placetopay.login', 'tenant-login');
+        $response->assertJsonPath('data.configuration.placetopay.url', 'https://checkout.placetopay.ec');
+        $response->assertJsonPath('data.configuration.placetopay.tran_key_set', true);
+        // El tranKey nunca vuelve al panel.
+        $response->assertJsonMissing(['tran_key' => 'tenant-tran-key']);
+
+        $this->assertSame('tenant-tran-key', $tenant->configuration->fresh()->placetopay_tran_key);
+    }
+
+    public function test_saving_without_a_new_tran_key_keeps_the_stored_one(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $configuration = TenantConfiguration::factory()->for($tenant)->create([
+            'placetopay_login' => 'tenant-login',
+            'placetopay_tran_key' => 'tenant-tran-key',
+        ]);
+        $admin = $this->adminFor($tenant);
+
+        $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['placetopay_login' => 'tenant-login', 'placetopay_url' => 'https://checkout.placetopay.com'],
+        )->assertOk();
+
+        $this->assertSame('tenant-tran-key', $configuration->fresh()->placetopay_tran_key);
+    }
+
+    public function test_clearing_the_login_disables_the_tenant_merchant(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $configuration = TenantConfiguration::factory()->for($tenant)->create([
+            'placetopay_login' => 'tenant-login',
+            'placetopay_tran_key' => 'tenant-tran-key',
+            'placetopay_url' => 'https://checkout.placetopay.ec',
+        ]);
+        $admin = $this->adminFor($tenant);
+
+        $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['placetopay_login' => null],
+        )->assertOk();
+
+        $configuration->refresh();
+
+        $this->assertNull($configuration->placetopay_login);
+        $this->assertNull($configuration->placetopay_tran_key);
+        $this->assertNull($configuration->placetopay_url);
+    }
+
+    public function test_a_new_login_without_tran_key_is_rejected(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $admin = $this->adminFor($tenant);
+
+        $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['placetopay_login' => 'tenant-login'],
+        )->assertStatus(422)->assertJsonValidationErrors('placetopay_tran_key');
+    }
+
+    public function test_an_http_checkout_url_is_rejected(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $admin = $this->adminFor($tenant);
+
+        $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            [
+                'placetopay_login' => 'tenant-login',
+                'placetopay_tran_key' => 'tenant-tran-key',
+                'placetopay_url' => 'http://checkout.placetopay.com',
+            ],
+        )->assertStatus(422)->assertJsonValidationErrors('placetopay_url');
+    }
+
     public function test_custom_css_rejected_when_plan_not_enterprise(): void
     {
         $tenant = Tenant::factory()->basic()->create(['slug' => 'basic-shop', 'domain' => 'basic-shop.montree.test']);

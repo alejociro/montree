@@ -47,6 +47,14 @@ export type TenantConfiguration = {
     custom_css: string | null;
     hero_image_url: string | null;
     min_partial_payment_pct: number;
+    placetopay: TenantCheckoutCredentials;
+};
+
+export type TenantCheckoutCredentials = {
+    login: string | null;
+    url: string | null;
+    /** El tranKey nunca sale del servidor; solo se informa si hay uno guardado. */
+    tran_key_set: boolean;
 };
 
 export type TenantConfigurationPayload = {
@@ -62,4 +70,7 @@ export type TenantConfigurationPayload = {
     reviews_require_moderation?: boolean;
     require_traveler_details?: boolean;
     custom_css?: string | null;
+    placetopay_login?: string | null;
+    placetopay_tran_key?: string | null;
+    placetopay_url?: string | null;
 };

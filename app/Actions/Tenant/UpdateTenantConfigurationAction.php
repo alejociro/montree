@@ -30,9 +30,40 @@ final class UpdateTenantConfigurationAction
             $data['custom_css'] = $sanitized['css'];
         }
 
+        $data = $this->resolveCheckoutCredentials($configuration, $data);
+
         $configuration->fill($data);
         $configuration->save();
 
         return $configuration->fresh() ?? $configuration;
+    }
+
+    /**
+     * Vaciar el login apaga el comercio propio del tenant (vuelve al de
+     * plataforma). Mandar login sin tranKey conserva el guardado: el panel nunca
+     * recibe el tranKey de vuelta, así que no puede reenviarlo.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function resolveCheckoutCredentials(TenantConfiguration $configuration, array $data): array
+    {
+        if (! Arr::hasAny($data, ['placetopay_login', 'placetopay_tran_key', 'placetopay_url'])) {
+            return $data;
+        }
+
+        if (blank($data['placetopay_login'] ?? null)) {
+            return array_merge($data, [
+                'placetopay_login' => null,
+                'placetopay_tran_key' => null,
+                'placetopay_url' => null,
+            ]);
+        }
+
+        if (blank($data['placetopay_tran_key'] ?? null)) {
+            $data['placetopay_tran_key'] = $configuration->placetopay_tran_key;
+        }
+
+        return $data;
     }
 }

@@ -15,10 +15,15 @@ use App\Http\Controllers\NotificationPagesController;
 use App\Http\Controllers\Onboarding\AgencyOnboardingController;
 use App\Http\Controllers\Onboarding\ClaimAgencyController;
 use App\Http\Controllers\Onboarding\SubdomainAvailabilityController;
+use App\Http\Controllers\PaymentCheckoutController;
+use App\Http\Controllers\PaymentNotificationController;
+use App\Http\Controllers\PaymentReturnController;
 use App\Http\Controllers\PublicTourPageController;
+use App\Http\Controllers\QueryTransactionController;
 use App\Http\Controllers\RoleHomeRedirectController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
+use App\Http\Controllers\TransactionPagesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomePageController::class)->name('home');
@@ -34,6 +39,12 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
     ->name('auth.handoff');
 
 Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+
+Route::match(['get', 'post'], 'payments/{payment}/return', PaymentReturnController::class)
+    ->middleware('signed')
+    ->name('payments.return');
+
+Route::post('payments/notification', PaymentNotificationController::class)->name('payments.notification');
 
 // WHY: self-serve onboarding (F016). `/start` + check-email + resend + verify run
 // on the platform host; `claim` runs on the tenant subdomain and produces the
@@ -62,6 +73,7 @@ Route::get('onboarding/claim', ClaimAgencyController::class)
 Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function () {
     Route::get('dashboard', RoleHomeRedirectController::class)->name('dashboard');
     Route::get('bookings/{bookingNumber}', [BookingPagesController::class, 'show'])->name('booking.show');
+    Route::post('bookings/{bookingNumber}/pay', [PaymentCheckoutController::class, 'store'])->name('booking.pay');
 
     // WHY: F018 B4 — la zona de viajero es solo del cliente. Quien tiene permisos de
     // panel (`dashboard.view` o `guide.schedule.view`) vuelve a su home de rol.
@@ -89,6 +101,9 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::get('reviews', [ReviewPagesController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
     Route::get('team', [TeamPagesController::class, 'index'])->middleware('can:team.view')->name('team.index');
     Route::inertia('roles', 'Admin/Roles/Index')->middleware('can:team.role.update')->name('roles.index');
+    Route::get('transactions', [TransactionPagesController::class, 'index'])->middleware('can:payments.view')->name('transactions.index');
+    Route::get('transactions/{payment}', [TransactionPagesController::class, 'show'])->middleware('can:payments.view')->name('transactions.show');
+    Route::post('transactions/{payment}/query', QueryTransactionController::class)->middleware('can:payments.query')->name('transactions.query');
     Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->middleware('can:tenant.view')->name('tenant.configuration');
 });
 

@@ -30,6 +30,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $booking_advance_hours
  * @property int $booking_expiration_minutes
  * @property int $min_partial_payment_pct
+ * @property string|null $placetopay_login
+ * @property string|null $placetopay_tran_key
+ * @property string|null $placetopay_url
  */
 class TenantConfiguration extends Model
 {
@@ -56,6 +59,9 @@ class TenantConfiguration extends Model
         'booking_advance_hours',
         'booking_expiration_minutes',
         'min_partial_payment_pct',
+        'placetopay_login',
+        'placetopay_tran_key',
+        'placetopay_url',
     ];
 
     protected function casts(): array
@@ -68,6 +74,7 @@ class TenantConfiguration extends Model
             'booking_advance_hours' => 'integer',
             'booking_expiration_minutes' => 'integer',
             'min_partial_payment_pct' => 'integer',
+            'placetopay_tran_key' => 'encrypted',
         ];
     }
 

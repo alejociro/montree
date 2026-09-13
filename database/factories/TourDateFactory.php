@@ -63,6 +63,13 @@ class TourDateFactory extends Factory
         ]);
     }
 
+    public function withMinPaymentPct(int $pct): self
+    {
+        return $this->state(fn () => [
+            'min_payment_pct' => $pct,
+        ]);
+    }
+
     public function past(): self
     {
         return $this->state(fn () => [

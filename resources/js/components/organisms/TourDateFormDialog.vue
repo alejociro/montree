@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
+import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import type { DepartureRange } from '@/types/guide-availability';
 import type {
@@ -63,6 +64,19 @@ const emit = defineEmits<{
 }>();
 
 const api = useApi();
+const { configuration } = useTenant();
+
+/**
+ * El porcentaje de la agencia, que es el que rige cuando la salida no define el
+ * suyo. Llega en la prop compartida `tenantConfiguration`, así que ninguna de
+ * las dos páginas que abren el diálogo necesita pasarlo.
+ */
+const DEFAULT_MIN_PAYMENT_PCT = 30;
+
+const agencyMinPaymentPct = computed<number>(
+    () =>
+        configuration.value?.min_partial_payment_pct ?? DEFAULT_MIN_PAYMENT_PCT,
+);
 
 const processing = ref(false);
 const errors = ref<ApiErrors>({});
@@ -71,6 +85,7 @@ const form = reactive<TourDateFormInput>({
     starts_at: '',
     capacity: 10,
     price_override: '',
+    min_payment_pct: '',
     notes: '',
     guide_id: null,
     route_id: null,
@@ -181,6 +196,7 @@ function resetFromEditing(): void {
         form.starts_at = '';
         form.capacity = 10;
         form.price_override = '';
+        form.min_payment_pct = '';
         form.notes = '';
         form.guide_id = props.defaultGuideId;
         form.route_id = null;
@@ -193,6 +209,8 @@ function resetFromEditing(): void {
     form.starts_at = toDateTimeLocal(date.starts_at);
     form.capacity = date.capacity;
     form.price_override = date.price_override ?? '';
+    form.min_payment_pct =
+        date.min_payment_pct === null ? '' : String(date.min_payment_pct);
     form.notes = date.notes ?? '';
     form.guide_id = date.guide?.id ?? null;
     form.route_id = date.route?.id ?? null;
@@ -215,6 +233,19 @@ function close(): void {
 
 function parseSelectId(value: string): number | null {
     return value === '' ? null : Number(value);
+}
+
+/** Vacío → `null`: la salida vuelve al porcentaje de la agencia. */
+function minPaymentPctPayload(): number | null {
+    const trimmed = String(form.min_payment_pct).trim();
+
+    if (trimmed === '') {
+        return null;
+    }
+
+    const parsed = Number(trimmed);
+
+    return Number.isNaN(parsed) ? null : Math.trunc(parsed);
 }
 
 function toggleHotel(hotelId: number): void {
@@ -240,6 +271,16 @@ function validateLocally(): boolean {
         errors.value.capacity = t('La capacidad debe ser al menos 1.');
     }
 
+    // Espejo de `StoreTourDateRequest`: el servidor sigue siendo la fuente de
+    // verdad, esto solo evita el viaje de ida y vuelta.
+    const minPaymentPct = minPaymentPctPayload();
+
+    if (minPaymentPct !== null && (minPaymentPct < 1 || minPaymentPct > 100)) {
+        errors.value.min_payment_pct = t(
+            'El mínimo de abono debe estar entre 1 y 100.',
+        );
+    }
+
     // D7: no existe «Sin asignar». El servidor lo rechaza igual; pedirlo acá
     // evita perder el formulario entero por un campo vacío.
     if (form.guide_id === null) {
@@ -257,6 +298,7 @@ function buildPayload(): Record<string, unknown> {
             form.price_override.trim() === ''
                 ? null
                 : form.price_override.trim(),
+        min_payment_pct: minPaymentPctPayload(),
         notes: form.notes.trim() === '' ? null : form.notes.trim(),
         guide_id: form.guide_id,
         route_id: form.route_id,
@@ -409,6 +451,49 @@ function submit(): void {
                             class="text-xs text-destructive"
                         >
                             {{ errors.price_override }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <Label for="date-min-payment-pct">
+                            {{ $t('Mínimo de abono (%)') }}
+                        </Label>
+                        <Input
+                            id="date-min-payment-pct"
+                            v-model="form.min_payment_pct"
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            inputmode="numeric"
+                            :aria-describedby="
+                                errors.min_payment_pct
+                                    ? 'date-min-payment-pct-error'
+                                    : 'date-min-payment-pct-hint'
+                            "
+                            :placeholder="
+                                $t('Por defecto: :percent%', {
+                                    percent: agencyMinPaymentPct,
+                                })
+                            "
+                        />
+                        <p
+                            v-if="errors.min_payment_pct"
+                            id="date-min-payment-pct-error"
+                            class="text-xs text-destructive"
+                        >
+                            {{ errors.min_payment_pct }}
+                        </p>
+                        <p
+                            v-else
+                            id="date-min-payment-pct-hint"
+                            class="text-xs text-muted-foreground"
+                        >
+                            {{
+                                $t(
+                                    'Porcentaje del total que el viajero debe abonar para asegurar esta salida.',
+                                )
+                            }}
                         </p>
                     </div>
                 </div>

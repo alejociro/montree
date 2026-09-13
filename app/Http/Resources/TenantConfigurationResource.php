@@ -39,6 +39,13 @@ class TenantConfigurationResource extends JsonResource
             'custom_css' => $this->custom_css,
             'hero_image_url' => $this->resolveUrl($this->hero_image_path),
             'min_partial_payment_pct' => $this->min_partial_payment_pct,
+            // El tranKey nunca sale del servidor: el panel solo necesita saber
+            // si hay uno guardado para decidir si pide reemplazarlo.
+            'placetopay' => [
+                'login' => $this->placetopay_login,
+                'url' => $this->placetopay_url,
+                'tran_key_set' => filled($this->placetopay_tran_key),
+            ],
         ];
     }
 

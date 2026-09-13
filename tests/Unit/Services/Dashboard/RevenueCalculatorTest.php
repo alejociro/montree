@@ -114,10 +114,9 @@ class RevenueCalculatorTest extends TestCase
         ]);
 
         Payment::factory()->for($booking)->create([
-            'amount' => 500,
+            'amount' => 200,
             'status' => PaymentStatus::Refunded->value,
-            'refunded_amount' => 200,
-            'refunded_at' => Carbon::parse('2026-04-15 12:00:00'),
+            'processed_at' => Carbon::parse('2026-04-15 12:00:00'),
         ]);
 
         $breakdown = (new RevenueCalculator)->between(
@@ -128,8 +127,8 @@ class RevenueCalculatorTest extends TestCase
             Carbon::parse('2026-03-31 23:59:59'),
         );
 
-        $this->assertSame('500.00', $breakdown->gross);
-        $this->assertSame('300.00', $breakdown->net);
+        $this->assertSame('700.00', $breakdown->gross);
+        $this->assertSame('500.00', $breakdown->net);
     }
 
     public function test_series_groups_gross_revenue_by_day_on_short_periods(): void
