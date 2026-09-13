@@ -1,4 +1,5 @@
 import type { DocumentType, Eps } from '@/types/booking';
+import type { TransactionSummary } from '@/types/transaction';
 
 /**
  * Espejo exacto de `contracts.md §0` (`App\Http\Resources\Passenger\*`).
@@ -53,6 +54,11 @@ export type Passenger = {
     medical_notes?: string | null;
     dietary_restrictions: string | null;
     payment: PassengerPayment | null;
+    /**
+     * Historial de transacciones de la reserva. Ausente —no vacío— cuando quien
+     * pide no tiene `payments.view`: el guía nunca lo recibe.
+     */
+    payments?: TransactionSummary[];
 };
 
 /** Espejo de `App\Data\PassengerManifestFilters::SEGMENTS`. */

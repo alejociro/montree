@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Passenger;
 
+use App\Http\Resources\Payment\PaymentSummaryResource;
 use App\Models\BookingTraveler;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -55,6 +56,10 @@ final class PassengerResource extends JsonResource
             ]),
             'dietary_restrictions' => $this->dietary_restrictions,
             'payment' => $booking?->passengerShare(),
+            'payments' => $this->when(
+                $booking?->relationLoaded('payments') ?? false,
+                fn (): array => PaymentSummaryResource::collection($booking->payments)->resolve(),
+            ),
         ];
     }
 

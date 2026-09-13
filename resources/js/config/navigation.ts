@@ -10,6 +10,7 @@ import {
     Mail,
     Megaphone,
     Mountain,
+    Receipt,
     Settings,
     ShieldCheck,
     Star,
@@ -35,6 +36,7 @@ import { index as rolesIndex } from '@/routes/admin/roles';
 import { index as teamIndex } from '@/routes/admin/team';
 import { configuration as tenantConfiguration } from '@/routes/admin/tenant';
 import { index as toursIndex } from '@/routes/admin/tours';
+import { index as transactionsIndex } from '@/routes/admin/transactions';
 import { schedule as guideSchedule } from '@/routes/guide';
 import type { NavItem, NavSection } from '@/types';
 import type { PermissionCheck } from '@/types/auth';
@@ -152,6 +154,15 @@ const panelSection: NavSectionDefinition = {
             icon: CalendarClock,
             requiresPanel: true,
             anyOf: ['departures.view'],
+        },
+        // Conciliación: el módulo vive detrás de `payments.view`, igual que en
+        // el backend (`can:payments.view` en las tres rutas).
+        {
+            title: 'Transacciones',
+            href: transactionsIndex().url,
+            icon: Receipt,
+            requiresPanel: true,
+            anyOf: ['payments.view'],
         },
         {
             title: 'Logística',

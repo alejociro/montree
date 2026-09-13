@@ -8,6 +8,7 @@ import Heading from '@/components/Heading.vue';
 import PreviewPanel from '@/components/molecules/PreviewPanel.vue';
 import BrandingEditor from '@/components/organisms/BrandingEditor.vue';
 import OperationalSettingsForm from '@/components/organisms/OperationalSettingsForm.vue';
+import PaymentGatewayForm from '@/components/organisms/PaymentGatewayForm.vue';
 import SocialLinksEditor from '@/components/organisms/SocialLinksEditor.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,9 @@ type ConfigurationForm = {
     require_traveler_details: boolean;
     social_links: TenantSocialLinks;
     custom_css: string;
+    placetopay_login: string;
+    placetopay_tran_key: string;
+    placetopay_url: string;
 };
 
 const { tenant, configuration } = useTenant();
@@ -59,6 +63,10 @@ const initialValues: ConfigurationForm = {
         configuration.value?.require_traveler_details ?? true,
     social_links: { ...(configuration.value?.social_links ?? {}) },
     custom_css: configuration.value?.custom_css ?? '',
+    placetopay_login: configuration.value?.placetopay?.login ?? '',
+    // Nunca se precarga: el servidor no devuelve el tranKey guardado.
+    placetopay_tran_key: '',
+    placetopay_url: configuration.value?.placetopay?.url ?? '',
 };
 
 const form = useForm<ConfigurationForm>(() => ({ ...initialValues }));
@@ -95,6 +103,19 @@ const operationalValues = computed({
     },
 });
 
+const gatewayValues = computed({
+    get: () => ({
+        placetopay_login: form.placetopay_login,
+        placetopay_tran_key: form.placetopay_tran_key,
+        placetopay_url: form.placetopay_url,
+    }),
+    set: (value) => {
+        form.placetopay_login = value.placetopay_login;
+        form.placetopay_tran_key = value.placetopay_tran_key;
+        form.placetopay_url = value.placetopay_url;
+    },
+});
+
 const socialValues = computed({
     get: () => form.social_links,
     set: (value) => {
@@ -116,7 +137,14 @@ function buildPayload(data: ConfigurationForm): TenantConfigurationPayload {
             : null,
         reviews_require_moderation: data.reviews_require_moderation,
         require_traveler_details: data.require_traveler_details,
+        placetopay_login: data.placetopay_login || null,
+        placetopay_url: data.placetopay_url || null,
     };
+
+    // Solo viaja cuando el admin escribió uno nuevo: mandarlo vacío borraria el guardado.
+    if (data.placetopay_tran_key) {
+        payload.placetopay_tran_key = data.placetopay_tran_key;
+    }
 
     if (isEnterprise.value && data.custom_css) {
         payload.custom_css = data.custom_css;
@@ -235,6 +263,18 @@ function resetForm(): void {
                         currency: form.errors.currency,
                         timezone: form.errors.timezone,
                         locale: form.errors.locale,
+                    }"
+                />
+
+                <PaymentGatewayForm
+                    v-model="gatewayValues"
+                    :tran-key-set="
+                        configuration?.placetopay?.tran_key_set ?? false
+                    "
+                    :errors="{
+                        placetopay_login: form.errors.placetopay_login,
+                        placetopay_tran_key: form.errors.placetopay_tran_key,
+                        placetopay_url: form.errors.placetopay_url,
                     }"
                 />
 

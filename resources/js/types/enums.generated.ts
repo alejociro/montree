@@ -111,7 +111,7 @@ export type NewsletterSubscriberStatus = (typeof NEWSLETTER_SUBSCRIBER_STATUS_VA
 
 /** `App\Enums\PaymentGateway` */
 export const PAYMENT_GATEWAY_VALUES = [
-    'stripe',
+    'placetopay',
     'manual',
 ] as const;
 
@@ -124,7 +124,6 @@ export const PAYMENT_STATUS_VALUES = [
     'completed',
     'failed',
     'refunded',
-    'partially_refunded',
 ] as const;
 
 export type PaymentStatus = (typeof PAYMENT_STATUS_VALUES)[number];
@@ -316,6 +315,19 @@ export const TOUR_STOP_KIND_VALUES = [
 ] as const;
 
 export type TourStopKind = (typeof TOUR_STOP_KIND_VALUES)[number];
+
+/** `App\Enums\TransactionSearchField` */
+export const TRANSACTION_SEARCH_FIELD_VALUES = [
+    'reference',
+    'request_id',
+    'internal_reference',
+    'authorization',
+    'receipt',
+    'booking_number',
+    'payer',
+] as const;
+
+export type TransactionSearchField = (typeof TRANSACTION_SEARCH_FIELD_VALUES)[number];
 
 /** `App\Enums\UserRole` */
 export const USER_ROLE_VALUES = [

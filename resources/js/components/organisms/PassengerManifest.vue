@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import {
     AlertTriangle,
     Download,
     Printer,
+    Receipt,
     RefreshCw,
     UsersRound,
 } from 'lucide-vue-next';
@@ -18,6 +20,7 @@ import { usePassengerManifest } from '@/composables/usePassengerManifest';
 import type { PassengerManifestSource } from '@/composables/usePassengerManifest';
 import { usePermissions } from '@/composables/usePermissions';
 import { formatCurrency, formatTourDate } from '@/lib/format';
+import { index as transactionsIndex } from '@/routes/admin/transactions';
 import type { Passenger } from '@/types/passenger';
 
 type Props = {
@@ -54,6 +57,17 @@ const {
 } = usePassengerManifest(props.source);
 
 const canEdit = computed(() => !props.readonly && can('bookings.update'));
+
+/**
+ * Enlace al módulo de transacciones filtrado por esta salida. Exige el mismo
+ * permiso que gobierna las rutas (`payments.view`) y una salida concreta: en
+ * «Todas las salidas» el filtro no tendría a qué apuntar.
+ */
+const transactionsUrl = computed(() =>
+    can('payments.view') && tourDateId.value !== null
+        ? transactionsIndex.url({ query: { tour_date_id: tourDateId.value } })
+        : null,
+);
 
 const isTourScope = computed(() => props.source.kind === 'tour');
 
@@ -115,6 +129,12 @@ function print(): void {
             </div>
 
             <div class="flex flex-wrap items-center gap-2 print:hidden">
+                <Link v-if="transactionsUrl" :href="transactionsUrl">
+                    <Button variant="outline" size="sm">
+                        <Receipt class="size-4" />
+                        {{ $t('Ver transacciones de esta salida') }}
+                    </Button>
+                </Link>
                 <Button variant="outline" size="sm" @click="print">
                     <Printer class="size-4" />
                     {{ $t('Imprimir') }}

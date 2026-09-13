@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/Admin/BookingPaymentController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import PaymentStatusChip from '@/components/molecules/PaymentStatusChip.vue';
+import TransactionStatusChip from '@/components/molecules/TransactionStatusChip.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,8 +19,10 @@ import {
 import type { ApiErrors } from '@/composables/useApi';
 import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatCurrency, formatTourDate } from '@/lib/format';
+import { formatCurrency, formatDate, formatTourDate } from '@/lib/format';
+import { show as transactionShow } from '@/routes/admin/transactions';
 import type { ManualPaymentInput, Passenger } from '@/types/passenger';
+import type { TransactionSummary } from '@/types/transaction';
 
 const { t } = useTranslations();
 
@@ -43,6 +47,22 @@ const api = useApi();
 const isPending = computed(() => props.passenger?.id === null);
 
 const payment = computed(() => props.passenger?.payment ?? null);
+
+/**
+ * Solo llega con `payments.view`: el backend carga la relación según el
+ * permiso, así que si la clave no está el bloque no existe (no es un vacío).
+ */
+const transactions = computed<TransactionSummary[]>(
+    () => props.passenger?.payments ?? [],
+);
+
+const currency = computed(() => payment.value?.currency ?? 'COP');
+
+function transactionDate(transaction: TransactionSummary): string {
+    return transaction.processed_at === null
+        ? t('Sin fecha')
+        : formatDate(transaction.processed_at);
+}
 
 const medicalNote = computed(() => {
     const note = props.passenger?.medical_notes;
@@ -368,6 +388,57 @@ function registerPayment(): void {
                                 )
                             }}
                         </p>
+                    </section>
+
+                    <section v-if="transactions.length > 0" class="space-y-2">
+                        <MonoLabel>{{ $t('Transacciones') }}</MonoLabel>
+                        <ul class="space-y-2">
+                            <li
+                                v-for="transaction in transactions"
+                                :key="transaction.id"
+                                class="rounded-lg border border-border p-2.5"
+                            >
+                                <Link
+                                    :href="transactionShow(transaction.id).url"
+                                    class="flex items-center justify-between gap-3 text-sm"
+                                >
+                                    <span class="min-w-0">
+                                        <span
+                                            class="block truncate font-mono text-xs"
+                                        >
+                                            {{
+                                                transaction.reference ??
+                                                $t('Sin referencia')
+                                            }}
+                                        </span>
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{ transaction.gateway_label }}
+                                            ·
+                                            {{ transactionDate(transaction) }}
+                                        </span>
+                                    </span>
+                                    <span
+                                        class="flex shrink-0 items-center gap-2"
+                                    >
+                                        <TransactionStatusChip
+                                            :status="transaction.status"
+                                            :label="transaction.status_label"
+                                            size="sm"
+                                        />
+                                        <span class="font-medium tabular-nums">
+                                            {{
+                                                formatCurrency(
+                                                    transaction.amount,
+                                                    currency,
+                                                )
+                                            }}
+                                        </span>
+                                    </span>
+                                </Link>
+                            </li>
+                        </ul>
                     </section>
 
                     <!--

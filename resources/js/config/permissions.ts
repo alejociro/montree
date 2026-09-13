@@ -1,7 +1,7 @@
 import type { PermissionModule, PermissionSummary } from '@/types/role';
 
 /**
- * Catalogo de los 39 permisos de F018, agrupado por modulo.
+ * Catalogo de los 40 permisos del panel, agrupado por modulo.
  *
  * **No es la fuente de verdad**: el catalogo real llega del backend en
  * `GET /api/v1/admin/roles` → `meta.available_permissions`
@@ -30,6 +30,7 @@ export const PERMISSION_MODULE_LABELS: Record<string, string> = {
     reviews: 'Reseñas',
     team: 'Equipo',
     tenant: 'Agencia',
+    payments: 'Pagos',
     guide: 'Guía',
 };
 
@@ -63,7 +64,6 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
         ['bookings.view', 'Ver reservas'],
         ['bookings.update', 'Editar reservas'],
         ['bookings.passengers.medical.view', 'Ver EPS y observaciones médicas'],
-        ['payments.refund', 'Emitir reembolsos'],
     ],
     promotions: [
         ['promotions.view', 'Ver promociones'],
@@ -91,13 +91,17 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
         ['tenant.update', 'Editar los datos de la agencia'],
         ['tenant.settings.update', 'Editar la configuración operativa'],
     ],
+    payments: [
+        ['payments.view', 'Ver transacciones'],
+        ['payments.query', 'Consultar el estado en la pasarela'],
+    ],
     guide: [
         ['guide.schedule.view', 'Ver la agenda de salidas'],
         ['guide.travelers.view', 'Ver los viajeros de una salida'],
     ],
 };
 
-/** Los 39 permisos como lista plana, en el orden del catalogo. */
+/** Los 40 permisos como lista plana, en el orden del catalogo. */
 export const PERMISSION_CATALOG: PermissionSummary[] = Object.entries(
     CATALOG_BY_MODULE,
 ).flatMap(([module, entries]) =>

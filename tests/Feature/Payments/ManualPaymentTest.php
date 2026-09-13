@@ -9,6 +9,7 @@ use App\Enums\PaymentGateway;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\Support\PassengerManifestScenario;
 use Tests\TestCase;
 
@@ -45,11 +46,61 @@ final class ManualPaymentTest extends TestCase
             ->assertJsonPath('data.due_amount', '0.00')
             ->assertJsonPath('data.status', BookingStatus::Confirmed->value);
 
+        // La referencia va en su columna: es por donde el módulo de transacciones
+        // busca y muestra un pago recibido fuera de pasarela.
         $this->assertDatabaseHas('payments', [
             'booking_id' => $booking->id,
             'gateway' => PaymentGateway::Manual->value,
             'amount' => '60000.00',
+            'reference' => 'Transferencia Bancolombia 4412',
         ]);
+    }
+
+    /**
+     * El efectivo asienta con la misma regla que la pasarela: llegado el mínimo
+     * de la salida la reserva queda confirmada con saldo. Lo que no hace es
+     * notificar —el guía tiene al viajero delante—.
+     */
+    public function test_a_cash_deposit_at_or_above_the_minimum_confirms_the_booking_with_balance_due(): void
+    {
+        Notification::fake();
+
+        $tenant = $this->tenantAt();
+        $admin = $this->memberOf($tenant, UserRole::Admin);
+        $departure = $this->departureFor($this->memberOf($tenant, UserRole::Guide));
+        $departure->update(['min_payment_pct' => 50]);
+        $booking = $this->bookingOn($departure, 2, '400000.00', '0.00');
+        $booking->update(['status' => BookingStatus::PendingPayment, 'expires_at' => now()->addMinutes(30)]);
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'amount' => '200000.00',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.due_amount', '200000.00')
+            ->assertJsonPath('data.status', BookingStatus::Confirmed->value);
+
+        $this->assertNull($booking->fresh()->expires_at);
+        Notification::assertNothingSent();
+    }
+
+    public function test_a_cash_deposit_below_the_minimum_keeps_the_booking_pending(): void
+    {
+        $tenant = $this->tenantAt();
+        $admin = $this->memberOf($tenant, UserRole::Admin);
+        $departure = $this->departureFor($this->memberOf($tenant, UserRole::Guide));
+        $departure->update(['min_payment_pct' => 50]);
+        $booking = $this->bookingOn($departure, 2, '400000.00', '0.00');
+        $booking->update(['status' => BookingStatus::PendingPayment]);
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'amount' => '199999.99',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.status', BookingStatus::PendingPayment->value);
+
+        $this->assertNull($booking->fresh()->confirmed_at);
     }
 
     public function test_the_amount_cannot_exceed_the_outstanding_balance(): void

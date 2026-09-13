@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 
 Schedule::job(new SendBookingReminderJob)->hourly();
 Schedule::job(new ExpirePendingBookingsJob)->hourly();
+
+Schedule::command('payment:check')->everyTenMinutes()->withoutOverlapping();

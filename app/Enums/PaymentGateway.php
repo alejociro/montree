@@ -6,13 +6,13 @@ namespace App\Enums;
 
 enum PaymentGateway: string
 {
-    case Stripe = 'stripe';
+    case PlaceToPay = 'placetopay';
     case Manual = 'manual';
 
     public function label(): string
     {
         return match ($this) {
-            self::Stripe => __('Stripe'),
+            self::PlaceToPay => __('PlacetoPay'),
             self::Manual => __('Manual'),
         };
     }
