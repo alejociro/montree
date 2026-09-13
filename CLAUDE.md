@@ -11,7 +11,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 - php - 8.4
 - inertiajs/inertia-laravel (INERTIA_LARAVEL) - v3
-- laravel/cashier (CASHIER) - v16
 - laravel/fortify (FORTIFY) - v1
 - laravel/framework (LARAVEL) - v13
 - laravel/prompts (PROMPTS) - v0
@@ -106,7 +105,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Always use curly braces for control structures, even for single-line bodies.
 - Use PHP 8 constructor property promotion: `public function __construct(public GitHub $github) { }`. Do not leave empty zero-parameter `__construct()` methods unless the constructor is private.
 - Use explicit return type declarations and type hints for all method parameters: `function isAccessible(User $user, ?string $path = null): bool`
-- Use TitleCase for Enum keys: `FavoritePerson`, `BestLake`, `Monthly`.
+- Follow existing application Enum naming conventions.
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
@@ -115,13 +114,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-
-=== herd rules ===
-
-# Laravel Herd
-
-- The application is served by Laravel Herd at `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs. Never run commands to serve the site. It is always available.
-- Use the `herd` CLI to manage services, PHP versions, and sites (e.g. `herd sites`, `herd services:start <service>`, `herd php:list`). Run `herd list` to discover all available commands.
 
 === tests rules ===
 
@@ -236,11 +228,21 @@ This project follows a spec-driven, multi-agent workflow. Before writing any cod
 3. `docs/api-conventions.md` — endpoints, versioning, response shape, errors
 4. `docs/testing-policy.md` — PHPUnit 12, minimum coverage per endpoint
 5. `docs/workflow.md` — how a feature flows from spec to merged PR
-6. The relevant feature spec at `docs/specs/F0XX-<slug>/spec.md`
+6. The relevant feature spec at `docs/specs/<feature>/spec.md`
+
+## Local environment
+
+The app is served by Laravel Herd at `http://<tenant>.montree.test` (e.g.
+`http://demo.montree.test`). It is always up: never run `php artisan serve` or
+`npm run dev` to bring it up. The Herd CLI is not on the PATH, so manage services
+from the Herd app. After changing frontend code run `npm run build` for the
+served site to pick it up. Test accounts and URLs live in `docs/review-playbook.md`.
 
 ## Feature workflow
 
-Each of the 15 features (F001..F015) lives in `docs/specs/F0XX-<slug>/` with 4 files:
+`F001`–`F018` keep their numeric prefix; **new features use a descriptive slug**
+(`docs/specs/payments-transactions-admin/`) and a branch named after it. Each
+feature folder has 4 files:
 - `spec.md` — functional spec (stable)
 - `contracts.md` — exact request/response shapes (contract between backend and frontend)
 - `plan.md` — technical decisions
@@ -265,12 +267,23 @@ Defined in `.claude/agents/`. Invoke with the `Agent` tool when working on a fea
 - `montree-reviewer` — audits a finished feature against spec + constitution + runs tests/lint/types. Returns go/no-go report. Never modifies code.
 - `montree-spec-updater` — updates spec.md / contracts.md / plan.md / tasks.md when implementation reveals the spec was wrong. Tracks changes in each file's Changelog.
 
+**Never run `git checkout <file>`, `git restore` or `git stash` to undo your own
+edits** — yours or a sub-agent's. This happened twice on 2026-09-12 and destroyed
+uncommitted translations in `lang/en.json` (~30 keys the first time, 116 the
+second); neither was recoverable, because content that never reached the index is
+not in `git fsck`. `lang/en.json` is the usual victim: `TranslationCatalogTest`
+forces almost every UI feature to touch it. Undo by editing, and pass this rule to
+every sub-agent you launch. Commit per layer instead of piling up the branch: on a
+clean tree that command is harmless.
+
 ## Key technical decisions (already made)
 
 - **Multi-tenancy**: single DB with `tenant_id`, subdomain-based resolution via `spatie/laravel-multitenancy`
 - **RBAC**: `spatie/laravel-permission` with `teams` feature (team = tenant)
 - **Auth**: Sanctum SPA (cookies) via Fortify
-- **Payments**: Stripe (Cashier decision pending in F007 plan)
+- **Payments**: PlacetoPay Checkout by redirection with `dnetix/redirection`. Per-tenant
+  merchant credentials in `tenant_configurations`, with the platform merchant as
+  fallback. Stripe and Cashier were removed from the project; do not reintroduce them.
 - **Code style**: Pint with `--format agent`; strict types everywhere; no comments unless WHY is non-obvious; no dead code; early returns; max 2 nesting levels
 
 ## Hard rules (from constitution)

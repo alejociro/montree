@@ -21,7 +21,7 @@
 **Paquetes a instalar (requieren PR aprobado):**
 - `spatie/laravel-multitenancy` — estrategia single DB + tenant_id
 - `spatie/laravel-permission` — RBAC granular
-- `laravel/cashier` — Stripe (cuando se aborde F007)
+- `dnetix/redirection` — SDK de PlacetoPay Checkout (F007)
 
 ---
 
@@ -87,7 +87,7 @@ HTTP Request
 **Services** (`app/Services/...`)
 - Solo si hay lógica compartida por 2+ actions/jobs.
 - Stateless. Sin propiedades mutables.
-- Ej: `StripePaymentGateway`, `TenantResolver`, `BookingPriceCalculator`.
+- Ej: `BookingSettlementService`, `TenantResolver`, `BookingPriceCalculator`.
 
 **Models** (`app/Models/...`)
 - Sin lógica de negocio. Solo: relaciones, scopes, accessors/mutators, casts, eventos.
@@ -212,7 +212,7 @@ Ver [`testing-policy.md`](./testing-policy.md). Resumen:
 - **Feature tests** por defecto; Unit solo para clases puras complejas.
 - Cobertura mínima por endpoint: **1 happy + 1 failure + 1 edge**.
 - Factories para todo modelo. Sin `DB::insert` manual en tests.
-- Sin mocks de BD. Sí mocks de servicios externos (Stripe, mail).
+- Sin mocks de BD. Sí mocks de servicios externos (PlacetoPay, mail).
 - `RefreshDatabase` en todo feature test.
 
 ---
