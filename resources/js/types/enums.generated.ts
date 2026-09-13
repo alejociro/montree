@@ -112,7 +112,8 @@ export type NewsletterSubscriberStatus = (typeof NEWSLETTER_SUBSCRIBER_STATUS_VA
 /** `App\Enums\PaymentGateway` */
 export const PAYMENT_GATEWAY_VALUES = [
     'placetopay',
-    'manual',
+    'cash',
+    'transfer',
 ] as const;
 
 export type PaymentGateway = (typeof PAYMENT_GATEWAY_VALUES)[number];

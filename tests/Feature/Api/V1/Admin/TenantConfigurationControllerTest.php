@@ -180,6 +180,71 @@ class TenantConfigurationControllerTest extends TestCase
         $this->assertSame(TenantPlan::Enterprise, $tenant->fresh()?->plan);
     }
 
+    public function test_admin_can_save_its_own_terms(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create(['terms_body' => null]);
+        $admin = $this->adminFor($tenant);
+
+        $response = $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['terms_body' => "## Cancelaciones\n\nHasta 15 días antes."],
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.configuration.terms_body', "## Cancelaciones\n\nHasta 15 días antes.");
+        $response->assertJsonPath('data.configuration.terms_is_default', false);
+
+        $this->assertSame("## Cancelaciones\n\nHasta 15 días antes.", $tenant->configuration->fresh()?->terms_body);
+    }
+
+    public function test_blank_terms_go_back_to_the_default_text(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $configuration = TenantConfiguration::factory()->for($tenant)->create(['terms_body' => '## Los míos']);
+        $admin = $this->adminFor($tenant);
+
+        $response = $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['terms_body' => "   \n\t "],
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.configuration.terms_body', null);
+        $response->assertJsonPath('data.configuration.terms_is_default', true);
+
+        $this->assertNull($configuration->fresh()?->terms_body);
+    }
+
+    public function test_terms_longer_than_the_limit_are_rejected(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $admin = $this->adminFor($tenant);
+
+        $this->actingAs($admin)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['terms_body' => str_repeat('a', 20001)],
+        )->assertStatus(422)->assertJsonValidationErrors('terms_body');
+    }
+
+    public function test_a_member_without_the_settings_permission_cannot_save_terms(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+
+        $user = User::factory()->create();
+        $tenant->users()->attach($user->id, ['status' => 'active', 'joined_at' => now()]);
+        Role::findOrCreate(UserRole::Guide->value, 'web');
+        setPermissionsTeamId($tenant->id);
+        $user->assignRole(UserRole::Guide->value);
+
+        $this->actingAs($user)->putJson(
+            'http://demo.montree.test/api/v1/admin/tenant/configuration',
+            ['terms_body' => '## Intento'],
+        )->assertForbidden();
+    }
+
     public function test_invalidates_cache_on_update(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'cache-test', 'domain' => 'cache-test.montree.test']);

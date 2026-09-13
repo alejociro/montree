@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Payment;
 
+use App\Enums\PaymentGateway;
 use App\Models\Booking;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 final class RegisterManualPaymentRequest extends FormRequest
 {
@@ -22,9 +24,21 @@ final class RegisterManualPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'method' => ['required', Rule::enum(PaymentGateway::class)->only([PaymentGateway::Cash, PaymentGateway::Transfer])],
             'amount' => ['required', 'numeric', 'gt:0'],
             'reference' => ['nullable', 'string', 'max:180'],
             'paid_at' => ['nullable', 'date', 'before_or_equal:today'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'method.required' => __('Elegí si el pago fue en efectivo o por transferencia.'),
+            'method.Illuminate\Validation\Rules\Enum' => __('Elegí si el pago fue en efectivo o por transferencia.'),
         ];
     }
 
@@ -39,6 +53,11 @@ final class RegisterManualPaymentRequest extends FormRequest
 
             $validator->errors()->add('amount', __('El monto supera el saldo pendiente de la reserva.'));
         });
+    }
+
+    public function method(): PaymentGateway
+    {
+        return PaymentGateway::from((string) $this->validated('method'));
     }
 
     public function amount(): string

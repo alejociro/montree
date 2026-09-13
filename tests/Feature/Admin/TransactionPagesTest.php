@@ -79,7 +79,7 @@ final class TransactionPagesTest extends TestCase
             ->where('transactions.meta.total', 2)
             ->where('filters.search', null)
             ->has('statuses', 5)
-            ->has('gateways', 2)
+            ->has('gateways', 3)
             ->where('can.query', true)
         );
     }
@@ -92,7 +92,7 @@ final class TransactionPagesTest extends TestCase
         $this->payment(['reference' => 'MTR-11', 'status' => PaymentStatus::Failed]);
         $this->payment([
             'reference' => 'caja-3',
-            'gateway' => PaymentGateway::Manual,
+            'gateway' => PaymentGateway::Cash,
             'request_id' => null,
             'status' => PaymentStatus::Completed,
         ]);
@@ -108,6 +108,46 @@ final class TransactionPagesTest extends TestCase
                 ->where('filters.status', 'completed')
                 ->where('filters.gateway', 'placetopay')
                 ->where('filters.tour_date_id', $this->departure->id)
+            );
+    }
+
+    public function test_the_gateway_filter_tells_cash_apart_from_transfer(): void
+    {
+        $admin = $this->memberWithRole(UserRole::Admin);
+
+        $cash = $this->payment([
+            'reference' => 'caja-9',
+            'gateway' => PaymentGateway::Cash,
+            'request_id' => null,
+            'status' => PaymentStatus::Completed,
+        ]);
+        $this->payment([
+            'reference' => 'consignacion-9',
+            'gateway' => PaymentGateway::Transfer,
+            'request_id' => null,
+            'status' => PaymentStatus::Completed,
+        ]);
+
+        $this->actingAs($admin)->get($this->url('?gateway=cash'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('transactions.data', 1)
+                ->where('transactions.data.0.id', $cash->id)
+                ->where('filters.gateway', 'cash')
+            );
+    }
+
+    public function test_the_gateway_options_offer_the_three_payment_methods(): void
+    {
+        $admin = $this->memberWithRole(UserRole::Admin);
+
+        $this->actingAs($admin)->get($this->url())
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('gateways', 3)
+                ->where('gateways.0.value', 'placetopay')
+                ->where('gateways.1.value', 'cash')
+                ->where('gateways.2.value', 'transfer')
             );
     }
 
@@ -306,12 +346,12 @@ final class TransactionPagesTest extends TestCase
             );
     }
 
-    public function test_a_manual_payment_shows_its_reference_and_no_gateway_fields(): void
+    public function test_a_payment_received_outside_the_gateway_shows_its_reference_and_no_gateway_fields(): void
     {
         $admin = $this->memberWithRole(UserRole::Admin);
 
         $payment = $this->payment([
-            'gateway' => PaymentGateway::Manual,
+            'gateway' => PaymentGateway::Transfer,
             'request_id' => null,
             'reference' => 'Consignación 4471',
             'status' => PaymentStatus::Completed,

@@ -47,10 +47,28 @@ class UpdateTenantConfigurationRequest extends FormRequest
             'reviews_require_moderation' => ['nullable', 'boolean'],
             'require_traveler_details' => ['nullable', 'boolean'],
             'custom_css' => ['nullable', 'string', 'max:10000'],
+            'terms_body' => ['nullable', 'string', 'max:20000'],
             'placetopay_login' => ['nullable', 'string', 'max:60'],
             'placetopay_tran_key' => ['nullable', 'string', 'max:120'],
             'placetopay_url' => ['nullable', 'url', 'max:255', 'starts_with:https://'],
         ];
+    }
+
+    /**
+     * Un texto en blanco equivale a «sin personalizar»: se guarda `null` y vuelve
+     * a regir el texto por defecto.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('terms_body')) {
+            return;
+        }
+
+        $body = $this->input('terms_body');
+
+        $this->merge([
+            'terms_body' => blank($body) ? null : trim((string) $body),
+        ]);
     }
 
     public function withValidator(Validator $validator): void
@@ -73,6 +91,7 @@ class UpdateTenantConfigurationRequest extends FormRequest
             'timezone.in' => __('The selected timezone is not valid.'),
             'locale.in' => __('The selected locale is not supported.'),
             'custom_css.max' => __('Custom CSS must be 10000 characters or less.'),
+            'terms_body.max' => __('Los términos y condiciones deben tener 20000 caracteres o menos.'),
             'placetopay_url.starts_with' => __('La URL del checkout debe usar https.'),
         ];
     }

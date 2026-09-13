@@ -111,11 +111,11 @@ class Payment extends Model
 
     /**
      * Se puede volver a preguntarle a la pasarela: es una sesión de PlacetoPay
-     * con `requestId`. Un pago manual no tiene a quién consultarle.
+     * con `requestId`. Un pago recibido en mano no tiene a quién consultarle.
      */
     public function isQueryable(): bool
     {
-        return $this->gateway === PaymentGateway::PlaceToPay && $this->request_id !== null;
+        return $this->gateway->isGateway() && $this->request_id !== null;
     }
 
     /**

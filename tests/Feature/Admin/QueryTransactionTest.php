@@ -107,7 +107,7 @@ final class QueryTransactionTest extends TestCase
     {
         $admin = $this->memberWithRole(UserRole::Admin);
         $payment = $this->payment($this->booking(), [
-            'gateway' => PaymentGateway::Manual,
+            'gateway' => PaymentGateway::Transfer,
             'request_id' => null,
             'status' => PaymentStatus::Completed,
             'reference' => 'Consignación 4471',

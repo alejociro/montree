@@ -21,7 +21,11 @@ import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatDate, formatTourDate } from '@/lib/format';
 import { show as transactionShow } from '@/routes/admin/transactions';
-import type { ManualPaymentInput, Passenger } from '@/types/passenger';
+import type {
+    ManualPaymentInput,
+    ManualPaymentMethod,
+    Passenger,
+} from '@/types/passenger';
 import type { TransactionSummary } from '@/types/transaction';
 
 const { t } = useTranslations();
@@ -83,10 +87,33 @@ const epsLabel = computed(() => {
 });
 
 const paymentForm = reactive<ManualPaymentInput>({
+    method: '',
     amount: '',
     reference: '',
     paid_at: '',
 });
+
+/**
+ * Sin valor por defecto a propósito (contracts.md): si arrancara en efectivo,
+ * todo lo que se registre a las apuradas quedaría marcado como efectivo y el
+ * desglose del dashboard mentiría. El backend responde 422 si falta.
+ */
+const paymentMethods = computed<
+    { value: ManualPaymentMethod; label: string }[]
+>(() => [
+    { value: 'cash', label: t('Efectivo') },
+    { value: 'transfer', label: t('Transferencia') },
+]);
+
+const referenceLabel = computed(() =>
+    paymentForm.method === 'transfer' ? t('Comprobante') : t('Referencia'),
+);
+
+const referencePlaceholder = computed(() =>
+    paymentForm.method === 'transfer'
+        ? t('Número de comprobante o transacción')
+        : t('Nota opcional'),
+);
 
 const showPaymentForm = ref(false);
 const processing = ref(false);
@@ -97,14 +124,22 @@ watch(
     () => {
         showPaymentForm.value = false;
         errors.value = {};
+        paymentForm.method = '';
         paymentForm.amount = '';
         paymentForm.reference = '';
         paymentForm.paid_at = '';
     },
 );
 
+/** Elegir el medio limpia su error: el problema ya está resuelto. */
+function selectPaymentMethod(value: ManualPaymentMethod): void {
+    paymentForm.method = value;
+    delete errors.value.method;
+}
+
 function openPaymentForm(): void {
     showPaymentForm.value = true;
+    paymentForm.method = '';
     paymentForm.amount = payment.value?.due_amount ?? '';
 }
 
@@ -121,6 +156,7 @@ function registerPayment(): void {
     void api.post(
         storePayment.url(bookingNumber),
         {
+            method: paymentForm.method,
             amount: paymentForm.amount,
             reference: paymentForm.reference.trim() || null,
             paid_at: paymentForm.paid_at || null,
@@ -480,6 +516,46 @@ function registerPayment(): void {
                             @submit.prevent="registerPayment"
                         >
                             <div class="space-y-1.5">
+                                <span
+                                    id="manual-payment-method-label"
+                                    class="text-sm leading-none font-medium"
+                                >
+                                    {{ $t('Medio de pago') }}
+                                </span>
+                                <div
+                                    class="flex flex-wrap gap-2"
+                                    role="radiogroup"
+                                    aria-labelledby="manual-payment-method-label"
+                                >
+                                    <button
+                                        v-for="option in paymentMethods"
+                                        :key="option.value"
+                                        type="button"
+                                        role="radio"
+                                        :aria-checked="
+                                            paymentForm.method === option.value
+                                        "
+                                        class="rounded-full border px-3.5 py-1.5 text-[13px] transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        :class="
+                                            paymentForm.method === option.value
+                                                ? 'border-secondary bg-secondary text-secondary-foreground'
+                                                : 'border-input bg-card text-foreground hover:border-secondary/60 hover:bg-secondary-soft'
+                                        "
+                                        @click="
+                                            selectPaymentMethod(option.value)
+                                        "
+                                    >
+                                        {{ option.label }}
+                                    </button>
+                                </div>
+                                <p
+                                    v-if="errors.method"
+                                    class="text-xs text-destructive"
+                                >
+                                    {{ errors.method }}
+                                </p>
+                            </div>
+                            <div class="space-y-1.5">
                                 <Label for="manual-payment-amount">
                                     {{ $t('Monto') }}
                                 </Label>
@@ -499,15 +575,13 @@ function registerPayment(): void {
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="manual-payment-reference">
-                                    {{ $t('Referencia') }}
+                                    {{ referenceLabel }}
                                 </Label>
                                 <Input
                                     id="manual-payment-reference"
                                     v-model="paymentForm.reference"
                                     type="text"
-                                    :placeholder="
-                                        $t('Transferencia, recibo, efectivo…')
-                                    "
+                                    :placeholder="referencePlaceholder"
                                 />
                             </div>
                             <div class="space-y-1.5">

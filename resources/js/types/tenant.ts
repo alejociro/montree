@@ -57,6 +57,16 @@ export type TenantCheckoutCredentials = {
     tran_key_set: boolean;
 };
 
+/**
+ * Los términos llegan como prop de la página que los edita, no dentro de
+ * `TenantConfiguration`: esa viaja compartida en toda respuesta Inertia y el
+ * cuerpo crudo admite 20.000 caracteres.
+ */
+export type TenantTerms = {
+    body: string | null;
+    is_default: boolean;
+};
+
 export type TenantConfigurationPayload = {
     primary_color?: string | null;
     secondary_color?: string | null;
@@ -73,4 +83,5 @@ export type TenantConfigurationPayload = {
     placetopay_login?: string | null;
     placetopay_tran_key?: string | null;
     placetopay_url?: string | null;
+    terms_body?: string | null;
 };

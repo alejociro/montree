@@ -26,6 +26,7 @@ return new class extends Migration
             $table->json('social_links')->nullable();
             $table->json('contact_info')->nullable();
             $table->longText('custom_css')->nullable();
+            $table->longText('terms_body')->nullable();
             $table->boolean('reviews_require_moderation')->default(true);
             $table->boolean('require_traveler_details')->default(true);
             $table->unsignedSmallInteger('booking_advance_hours')->default(24);

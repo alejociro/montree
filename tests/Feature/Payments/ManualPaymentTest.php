@@ -37,6 +37,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $response = $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'method' => PaymentGateway::Transfer->value,
             'amount' => '60000.00',
             'reference' => 'Transferencia Bancolombia 4412',
         ]);
@@ -50,10 +51,65 @@ final class ManualPaymentTest extends TestCase
         // busca y muestra un pago recibido fuera de pasarela.
         $this->assertDatabaseHas('payments', [
             'booking_id' => $booking->id,
-            'gateway' => PaymentGateway::Manual->value,
+            'gateway' => PaymentGateway::Transfer->value,
             'amount' => '60000.00',
             'reference' => 'Transferencia Bancolombia 4412',
         ]);
+    }
+
+    public function test_a_cash_payment_is_stored_with_its_own_method(): void
+    {
+        $tenant = $this->tenantAt();
+        $admin = $this->memberOf($tenant, UserRole::Admin);
+        $booking = $this->bookingOn($this->departureFor($this->memberOf($tenant, UserRole::Guide)), 2, '400000.00', '0.00');
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'method' => PaymentGateway::Cash->value,
+            'amount' => '50000.00',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('payments', [
+            'booking_id' => $booking->id,
+            'gateway' => PaymentGateway::Cash->value,
+            'amount' => '50000.00',
+        ]);
+    }
+
+    public function test_the_payment_method_is_required(): void
+    {
+        $tenant = $this->tenantAt();
+        $admin = $this->memberOf($tenant, UserRole::Admin);
+        $booking = $this->bookingOn($this->departureFor($this->memberOf($tenant, UserRole::Guide)), 2, '400000.00', '0.00');
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['amount' => '50000.00'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.method.0', __('Elegí si el pago fue en efectivo o por transferencia.'));
+
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    /**
+     * La pasarela no se registra a mano: ese pago lo asienta el retorno firmado
+     * de PlacetoPay, no un humano en la planilla.
+     */
+    public function test_the_gateway_cannot_be_chosen_as_a_manual_method(): void
+    {
+        $tenant = $this->tenantAt();
+        $admin = $this->memberOf($tenant, UserRole::Admin);
+        $booking = $this->bookingOn($this->departureFor($this->memberOf($tenant, UserRole::Guide)), 2, '400000.00', '0.00');
+        Tenant::forgetCurrent();
+
+        $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'method' => PaymentGateway::PlaceToPay->value,
+            'amount' => '50000.00',
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.method.0', __('Elegí si el pago fue en efectivo o por transferencia.'));
+
+        $this->assertDatabaseCount('payments', 0);
     }
 
     /**
@@ -74,6 +130,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'method' => PaymentGateway::Cash->value,
             'amount' => '200000.00',
         ])
             ->assertCreated()
@@ -95,6 +152,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", [
+            'method' => PaymentGateway::Cash->value,
             'amount' => '199999.99',
         ])
             ->assertCreated()
@@ -111,7 +169,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)
-            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['amount' => '60000.01'])
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['method' => PaymentGateway::Cash->value, 'amount' => '60000.01'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('amount');
     }
@@ -125,7 +183,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)
-            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['amount' => '10000.00'])
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['method' => PaymentGateway::Cash->value, 'amount' => '10000.00'])
             ->assertStatus(409)
             ->assertJsonPath('error_code', 'BOOKING_PAYMENTS_LOCKED');
     }
@@ -142,7 +200,7 @@ final class ManualPaymentTest extends TestCase
 
         $this->actingAs($admin)->postJson(
             $this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments",
-            ['amount' => '100000.00'],
+            ['method' => PaymentGateway::Cash->value, 'amount' => '100000.00'],
         )->assertCreated();
 
         $this->actingAs($admin)
@@ -163,7 +221,7 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($admin)
-            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$foreign->booking_number}/payments", ['amount' => '10000.00'])
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$foreign->booking_number}/payments", ['method' => PaymentGateway::Cash->value, 'amount' => '10000.00'])
             ->assertNotFound();
     }
 
@@ -176,11 +234,11 @@ final class ManualPaymentTest extends TestCase
         Tenant::forgetCurrent();
 
         $this->actingAs($sales)
-            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['amount' => '10000.00'])
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['method' => PaymentGateway::Cash->value, 'amount' => '10000.00'])
             ->assertCreated();
 
         $this->actingAs($guide)
-            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['amount' => '10000.00'])
+            ->postJson($this->host($tenant)."/api/v1/admin/bookings/{$booking->booking_number}/payments", ['method' => PaymentGateway::Cash->value, 'amount' => '10000.00'])
             ->assertForbidden();
     }
 }

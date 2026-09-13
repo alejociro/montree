@@ -34,7 +34,7 @@ const props = defineProps<Props>();
 const querying = ref(false);
 
 /** Un pago manual no tiene sesión de pasarela: no se pintan campos vacíos. */
-const isManual = computed(() => props.transaction.gateway === 'manual');
+const isManual = computed(() => props.transaction.gateway !== 'placetopay');
 
 /**
  * La regla de si una transacción se puede reconsultar la decide el backend

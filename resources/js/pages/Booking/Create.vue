@@ -17,6 +17,7 @@ import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatTourDate, formatCurrency as money } from '@/lib/format';
+import { terms as termsRoute } from '@/routes/policies';
 import type { TourDifficulty } from '@/types/tour';
 
 const { t } = useTranslations();
@@ -1075,14 +1076,13 @@ async function submit(): Promise<void> {
                                 <span>
                                     {{ $t('Acepto los') }}
                                     <a
-                                        href="/terms"
+                                        :href="termsRoute.url()"
                                         target="_blank"
                                         rel="noopener"
                                         class="text-primary-readable underline underline-offset-2"
                                     >
-                                        {{ $t('términos y condiciones') }}
-                                    </a>
-                                    {{ $t('y la política de cancelación.') }}
+                                        {{ $t('términos y condiciones') }}</a
+                                    >.
                                 </span>
                             </label>
 

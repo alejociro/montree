@@ -4,10 +4,12 @@ use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\ReviewPagesController;
 use App\Http\Controllers\Admin\TeamPagesController;
+use App\Http\Controllers\Admin\TenantConfigurationPagesController;
 use App\Http\Controllers\Admin\TourPagesController;
 use App\Http\Controllers\Auth\CrossHostLoginController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
+use App\Http\Controllers\DashboardPagesController;
 use App\Http\Controllers\Guide\GuidePagesController;
 use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\NewsletterPagesController;
@@ -18,6 +20,7 @@ use App\Http\Controllers\Onboarding\SubdomainAvailabilityController;
 use App\Http\Controllers\PaymentCheckoutController;
 use App\Http\Controllers\PaymentNotificationController;
 use App\Http\Controllers\PaymentReturnController;
+use App\Http\Controllers\PolicyPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\QueryTransactionController;
 use App\Http\Controllers\RoleHomeRedirectController;
@@ -39,6 +42,10 @@ Route::get('auth/handoff/{token}', CrossHostLoginController::class)
     ->name('auth.handoff');
 
 Route::get('booking/new', [BookingPagesController::class, 'create'])->name('booking.new');
+
+// WHY: los términos son de la agencia y se leen desde el checkout, en el
+// subdominio del tenant. Por eso la ruta va fuera del grupo de platform_host.
+Route::get('terminos', [PolicyPagesController::class, 'terms'])->name('policies.terms');
 
 Route::match(['get', 'post'], 'payments/{payment}/return', PaymentReturnController::class)
     ->middleware('signed')
@@ -89,7 +96,7 @@ Route::middleware(['auth', 'verified', 'tenant_member.only'])->group(function ()
 // WHY: mismo criterio que routes/api.php — `dashboard.view` abre el panel y cada pantalla
 // exige además el permiso de su módulo (F018 contracts.md §1).
 Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'])->prefix('admin')->name('admin.')->group(function () {
-    Route::inertia('dashboard', 'Admin/Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardPagesController::class)->name('dashboard');
     Route::get('tours', [TourPagesController::class, 'index'])->middleware('can:tours.view')->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->middleware('can:tours.create')->name('tours.create');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->middleware('can:tours.update')->name('tours.edit');
@@ -104,7 +111,7 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::get('transactions', [TransactionPagesController::class, 'index'])->middleware('can:payments.view')->name('transactions.index');
     Route::get('transactions/{payment}', [TransactionPagesController::class, 'show'])->middleware('can:payments.view')->name('transactions.show');
     Route::post('transactions/{payment}/query', QueryTransactionController::class)->middleware('can:payments.query')->name('transactions.query');
-    Route::inertia('tenant/configuration', 'Admin/Tenant/Configuration')->middleware('can:tenant.view')->name('tenant.configuration');
+    Route::get('tenant/configuration', TenantConfigurationPagesController::class)->middleware('can:tenant.view')->name('tenant.configuration');
 });
 
 Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->name('guide.')->group(function () {

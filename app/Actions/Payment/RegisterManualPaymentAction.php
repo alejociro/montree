@@ -18,18 +18,18 @@ final class RegisterManualPaymentAction
 {
     public function __construct(private BookingSettlementService $settlement) {}
 
-    public function handle(Booking $booking, string $amount, ?string $reference, ?Carbon $paidAt): Booking
+    public function handle(Booking $booking, PaymentGateway $method, string $amount, ?string $reference, ?Carbon $paidAt): Booking
     {
         if ($booking->isLocked()) {
             throw BookingException::paymentsLocked();
         }
 
-        return DB::transaction(function () use ($booking, $amount, $reference, $paidAt): Booking {
+        return DB::transaction(function () use ($booking, $method, $amount, $reference, $paidAt): Booking {
             $locked = Booking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
 
             $payment = Payment::query()->create([
                 'booking_id' => $locked->id,
-                'gateway' => PaymentGateway::Manual,
+                'gateway' => $method,
                 'amount' => $amount,
                 'currency' => $locked->currency,
                 'type' => $this->type($locked, $amount),

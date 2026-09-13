@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Api\V1\Admin;
+namespace Tests\Feature\Admin;
 
 use App\Enums\BookingStatus;
+use App\Enums\PaymentGateway;
 use App\Enums\ReviewStatus;
 use App\Enums\TourDateStatus;
 use App\Enums\UserRole;
@@ -21,9 +22,19 @@ use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
-class DashboardControllerTest extends TestCase
+/**
+ * El panel de la agencia ya no se pide por API: llega por props de Inertia.
+ */
+final class DashboardPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
 
     protected function tearDown(): void
     {
@@ -33,7 +44,7 @@ class DashboardControllerTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_admin_sees_full_dashboard_payload(): void
+    public function test_admin_sees_the_full_snapshot_with_the_breakdown_by_method(): void
     {
         Carbon::setTestNow('2026-05-17 12:00:00');
 
@@ -61,7 +72,7 @@ class DashboardControllerTest extends TestCase
             'tour_date_id' => $tourDate->id,
             'created_at' => Carbon::parse('2026-05-10'),
         ]);
-        $bookingC = Booking::factory()->create([
+        Booking::factory()->create([
             'tour_id' => $tour->id,
             'tour_date_id' => $tourDate->id,
             'status' => BookingStatus::PendingPayment,
@@ -69,8 +80,14 @@ class DashboardControllerTest extends TestCase
         ]);
 
         Payment::factory()->completed()->for($bookingA)->create([
+            'gateway' => PaymentGateway::PlaceToPay,
             'amount' => 240,
             'processed_at' => Carbon::parse('2026-05-01 13:00:00'),
+        ]);
+        Payment::factory()->completed()->for($bookingB)->create([
+            'gateway' => PaymentGateway::Cash,
+            'amount' => 60,
+            'processed_at' => Carbon::parse('2026-05-02 13:00:00'),
         ]);
 
         Review::factory()->approved()->create([
@@ -79,117 +96,83 @@ class DashboardControllerTest extends TestCase
             'rating' => 5,
             'approved_at' => Carbon::parse('2026-05-02'),
         ]);
-        Review::factory()->approved()->create([
-            'tour_id' => $tour->id,
-            'booking_id' => $bookingB->id,
-            'rating' => 4,
-            'approved_at' => Carbon::parse('2026-05-03'),
-        ]);
         Review::factory()->create([
             'tour_id' => $tour->id,
-            'booking_id' => $bookingC->id,
+            'booking_id' => $bookingB->id,
             'status' => ReviewStatus::Pending,
         ]);
 
         Tenant::forgetCurrent();
         $admin = $this->memberFor($tenant, UserRole::Admin);
 
-        $response = $this->actingAs($admin)->getJson(
-            'http://demo.montree.test/api/v1/admin/dashboard?period=last_30_days',
-        );
-
-        $response->assertOk();
-        $response->assertJsonPath('data.period.key', 'last_30_days');
-        $response->assertJsonPath('data.revenue.gross', '240.00');
-        $response->assertJsonPath('data.revenue.currency', 'COP');
-        $response->assertJsonPath('data.revenue.series', [
-            ['date' => '2026-05-01', 'amount' => '240.00'],
-        ]);
-        $response->assertJsonPath('data.bookings.total', 3);
-        $response->assertJsonPath('data.bookings.confirmed', 2);
-        $response->assertJsonPath('data.bookings.pending_payment', 1);
-        $response->assertJsonPath('data.rating.average', '4.50');
-        $response->assertJsonPath('data.rating.count', 2);
-        $response->assertJsonPath('data.pending_reviews_count', 1);
-        $response->assertJsonPath('data.permissions.can_export_reports', true);
-        $response->assertJsonPath('data.top_tours.0.name', 'Senderismo Cocora');
-        $response->assertJsonPath('data.top_tours.0.bookings_count', 3);
-        $response->assertJsonPath('data.upcoming_dates.0.tour_name', 'Senderismo Cocora');
+        $this->actingAs($admin)
+            ->get('http://demo.montree.test/admin/dashboard?period=last_30_days')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Dashboard')
+                ->where('filters.period', 'last_30_days')
+                ->where('snapshot.period.key', 'last_30_days')
+                ->where('snapshot.revenue.gross', '300.00')
+                ->where('snapshot.revenue.currency', 'COP')
+                ->where('snapshot.revenue.by_method', [
+                    ['method' => 'placetopay', 'label' => PaymentGateway::PlaceToPay->label(), 'amount' => '240.00', 'share_pct' => 80],
+                    ['method' => 'cash', 'label' => PaymentGateway::Cash->label(), 'amount' => '60.00', 'share_pct' => 20],
+                    ['method' => 'transfer', 'label' => PaymentGateway::Transfer->label(), 'amount' => '0.00', 'share_pct' => 0],
+                ])
+                ->where('snapshot.bookings.total', 3)
+                ->where('snapshot.bookings.confirmed', 2)
+                ->where('snapshot.bookings.pending_payment', 1)
+                ->where('snapshot.rating.average', '5.00')
+                ->where('snapshot.pending_reviews_count', 1)
+                ->where('snapshot.permissions.can_export_reports', true)
+                ->where('snapshot.top_tours.0.name', 'Senderismo Cocora')
+                ->where('snapshot.upcoming_dates.0.tour_name', 'Senderismo Cocora')
+                ->has('periods', 6)
+                ->where('periods.1.value', 'last_30_days')
+            );
 
         Carbon::setTestNow();
     }
 
-    public function test_operator_cannot_export_reports(): void
+    public function test_the_operator_cannot_export_reports(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'op-demo', 'domain' => 'op-demo.montree.test']);
         TenantConfiguration::factory()->for($tenant)->create();
         $operator = $this->memberFor($tenant, UserRole::Operator);
 
-        $response = $this->actingAs($operator)->getJson(
-            'http://op-demo.montree.test/api/v1/admin/dashboard',
-        );
-
-        $response->assertOk();
-        $response->assertJsonPath('data.permissions.can_export_reports', false);
+        $this->actingAs($operator)
+            ->get('http://op-demo.montree.test/admin/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('snapshot.permissions.can_export_reports', false)
+                ->where('filters.period', 'last_30_days')
+            );
     }
 
-    public function test_growth_pct_is_null_when_previous_period_is_zero(): void
-    {
-        Carbon::setTestNow('2026-05-17 12:00:00');
-
-        $tenant = Tenant::factory()->create(['slug' => 'fresh', 'domain' => 'fresh.montree.test']);
-        TenantConfiguration::factory()->for($tenant)->create();
-        $admin = $this->memberFor($tenant, UserRole::Admin);
-
-        $response = $this->actingAs($admin)->getJson(
-            'http://fresh.montree.test/api/v1/admin/dashboard?period=last_30_days',
-        );
-
-        $response->assertOk();
-        $response->assertJsonPath('data.bookings.growth_pct', null);
-        $response->assertJsonPath('data.revenue.growth_pct', null);
-
-        Carbon::setTestNow();
-    }
-
-    public function test_customer_cannot_access_dashboard(): void
-    {
-        $tenant = Tenant::factory()->create(['slug' => 'no-go', 'domain' => 'no-go.montree.test']);
-        TenantConfiguration::factory()->for($tenant)->create();
-        $customer = $this->memberFor($tenant, UserRole::Customer);
-
-        $response = $this->actingAs($customer)->getJson(
-            'http://no-go.montree.test/api/v1/admin/dashboard',
-        );
-
-        $response->assertStatus(403);
-    }
-
-    public function test_unauthenticated_request_is_rejected(): void
-    {
-        $tenant = Tenant::factory()->create(['slug' => 'anon', 'domain' => 'anon.montree.test']);
-        TenantConfiguration::factory()->for($tenant)->create();
-
-        $response = $this->getJson('http://anon.montree.test/api/v1/admin/dashboard');
-
-        $response->assertStatus(401);
-    }
-
-    public function test_invalid_period_returns_validation_error(): void
+    public function test_an_invalid_period_is_rejected(): void
     {
         $tenant = Tenant::factory()->create(['slug' => 'bad-period', 'domain' => 'bad-period.montree.test']);
         TenantConfiguration::factory()->for($tenant)->create();
         $admin = $this->memberFor($tenant, UserRole::Admin);
 
-        $response = $this->actingAs($admin)->getJson(
-            'http://bad-period.montree.test/api/v1/admin/dashboard?period=invalid_key',
-        );
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['period']);
+        $this->actingAs($admin)
+            ->get('http://bad-period.montree.test/admin/dashboard?period=invalid_key')
+            ->assertStatus(302)
+            ->assertSessionHasErrors(['period']);
     }
 
-    public function test_metrics_are_isolated_per_tenant(): void
+    public function test_a_customer_cannot_reach_the_dashboard(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'no-go', 'domain' => 'no-go.montree.test']);
+        TenantConfiguration::factory()->for($tenant)->create();
+        $customer = $this->memberFor($tenant, UserRole::Customer);
+
+        $this->actingAs($customer)
+            ->get('http://no-go.montree.test/admin/dashboard')
+            ->assertForbidden();
+    }
+
+    public function test_the_snapshot_is_isolated_per_tenant(): void
     {
         Carbon::setTestNow('2026-05-17 12:00:00');
 
@@ -205,6 +188,7 @@ class DashboardControllerTest extends TestCase
             'created_at' => Carbon::parse('2026-05-01'),
         ]);
         Payment::factory()->completed()->for($bookingA)->create([
+            'gateway' => PaymentGateway::Cash,
             'amount' => 999,
             'processed_at' => Carbon::parse('2026-05-01 13:00:00'),
         ]);
@@ -219,13 +203,14 @@ class DashboardControllerTest extends TestCase
         Tenant::forgetCurrent();
         $adminB = $this->memberFor($tenantB, UserRole::Admin);
 
-        $response = $this->actingAs($adminB)->getJson(
-            'http://iso-b.montree.test/api/v1/admin/dashboard?period=last_30_days',
-        );
-
-        $response->assertOk();
-        $response->assertJsonPath('data.revenue.gross', '0.00');
-        $response->assertJsonPath('data.bookings.total', 1);
+        $this->actingAs($adminB)
+            ->get('http://iso-b.montree.test/admin/dashboard?period=last_30_days')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('snapshot.revenue.gross', '0.00')
+                ->where('snapshot.revenue.by_method.1.amount', '0.00')
+                ->where('snapshot.bookings.total', 1)
+            );
 
         Carbon::setTestNow();
     }

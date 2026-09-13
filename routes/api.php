@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideC
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\BookingPaymentController as AdminBookingPaymentController;
 use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
-use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\GeocodeController as AdminGeocodeController;
 use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideAvailabilityController;
 use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
@@ -106,7 +105,6 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::put('tenant', [AdminTenantController::class, 'update'])->middleware('can:tenant.update')->name('tenant.update');
     Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->middleware('can:tenant.settings.update')->name('tenant.configuration.update');
 
-    Route::get('dashboard', [AdminDashboardController::class, 'show'])->name('dashboard.show');
     Route::get('reports/revenue', AdminRevenueReportController::class)->middleware('can:reports.view')->name('reports.revenue');
     Route::get('bookings', [AdminBookingController::class, 'index'])->middleware('can:bookings.view')->name('bookings.index');
     Route::get('tours/{tour}/passengers', [AdminTourPassengerController::class, 'index'])->middleware('can:bookings.view')->name('tours.passengers.index');

@@ -20,6 +20,7 @@ final class BookingPaymentController extends Controller
     {
         $booking = $this->registerPayment->handle(
             $booking,
+            $request->method(),
             $request->amount(),
             $request->validated('reference'),
             $request->paidAt(),

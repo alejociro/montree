@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Dashboard;
 
+use App\Data\Dashboard\RevenueBreakdown;
+use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Models\Booking;
 use App\Models\Payment;
@@ -249,5 +251,115 @@ class RevenueCalculatorTest extends TestCase
         );
 
         $this->assertSame([], (new RevenueCalculator)->grossSeries($period->start, $period->end));
+    }
+
+    public function test_the_breakdown_by_method_adds_up_to_the_gross(): void
+    {
+        $start = Carbon::parse('2026-04-01 00:00:00');
+        $end = Carbon::parse('2026-04-30 23:59:59');
+        $booking = Booking::factory()->confirmed()->create();
+
+        Payment::factory()->completed()->for($booking)->create([
+            'gateway' => PaymentGateway::PlaceToPay,
+            'amount' => 310,
+            'processed_at' => Carbon::parse('2026-04-10 12:00:00'),
+        ]);
+        Payment::factory()->completed()->for($booking)->create([
+            'gateway' => PaymentGateway::Cash,
+            'amount' => 78,
+            'processed_at' => Carbon::parse('2026-04-12 12:00:00'),
+        ]);
+        Payment::factory()->completed()->for($booking)->create([
+            'gateway' => PaymentGateway::Transfer,
+            'amount' => 32,
+            'processed_at' => Carbon::parse('2026-04-14 12:00:00'),
+        ]);
+        Payment::factory()->failed()->for($booking)->create([
+            'gateway' => PaymentGateway::Cash,
+            'amount' => 999,
+            'processed_at' => Carbon::parse('2026-04-15 12:00:00'),
+        ]);
+
+        $breakdown = $this->breakdownBetween($start, $end);
+
+        $this->assertSame([
+            ['method' => 'placetopay', 'label' => PaymentGateway::PlaceToPay->label(), 'amount' => '310.00', 'share_pct' => 74],
+            ['method' => 'cash', 'label' => PaymentGateway::Cash->label(), 'amount' => '78.00', 'share_pct' => 19],
+            ['method' => 'transfer', 'label' => PaymentGateway::Transfer->label(), 'amount' => '32.00', 'share_pct' => 8],
+        ], $breakdown->byMethod);
+
+        $sum = array_reduce(
+            $breakdown->byMethod,
+            fn (string $carry, array $row): string => bcadd($carry, $row['amount'], 2),
+            '0.00',
+        );
+
+        $this->assertSame($breakdown->gross, $sum);
+    }
+
+    public function test_a_method_without_movements_comes_back_at_zero(): void
+    {
+        $start = Carbon::parse('2026-04-01 00:00:00');
+        $end = Carbon::parse('2026-04-30 23:59:59');
+        $booking = Booking::factory()->confirmed()->create();
+
+        Payment::factory()->completed()->for($booking)->create([
+            'gateway' => PaymentGateway::Cash,
+            'amount' => 400,
+            'processed_at' => Carbon::parse('2026-04-10 12:00:00'),
+        ]);
+
+        $breakdown = $this->breakdownBetween($start, $end);
+
+        $this->assertCount(3, $breakdown->byMethod);
+        $this->assertSame(['placetopay', 'cash', 'transfer'], array_column($breakdown->byMethod, 'method'));
+        $this->assertSame('0.00', $breakdown->byMethod[0]['amount']);
+        $this->assertSame(0, $breakdown->byMethod[0]['share_pct']);
+        $this->assertSame('400.00', $breakdown->byMethod[1]['amount']);
+        $this->assertSame(100, $breakdown->byMethod[1]['share_pct']);
+    }
+
+    public function test_the_share_is_zero_for_every_method_when_the_gross_is_zero(): void
+    {
+        $breakdown = $this->breakdownBetween(
+            Carbon::parse('2026-04-01 00:00:00'),
+            Carbon::parse('2026-04-30 23:59:59'),
+        );
+
+        $this->assertSame('0.00', $breakdown->gross);
+        $this->assertSame(['0.00', '0.00', '0.00'], array_column($breakdown->byMethod, 'amount'));
+        $this->assertSame([0, 0, 0], array_column($breakdown->byMethod, 'share_pct'));
+    }
+
+    public function test_a_refunded_payment_counts_in_the_gross_of_its_method(): void
+    {
+        $start = Carbon::parse('2026-04-01 00:00:00');
+        $end = Carbon::parse('2026-04-30 23:59:59');
+        $booking = Booking::factory()->confirmed()->create();
+
+        Payment::factory()->for($booking)->create([
+            'gateway' => PaymentGateway::Transfer,
+            'amount' => 200,
+            'status' => PaymentStatus::Refunded->value,
+            'processed_at' => Carbon::parse('2026-04-15 12:00:00'),
+        ]);
+
+        $breakdown = $this->breakdownBetween($start, $end);
+
+        $this->assertSame('200.00', $breakdown->gross);
+        $this->assertSame('0.00', $breakdown->net);
+        $this->assertSame('200.00', $breakdown->byMethod[2]['amount']);
+        $this->assertSame(100, $breakdown->byMethod[2]['share_pct']);
+    }
+
+    private function breakdownBetween(Carbon $start, Carbon $end): RevenueBreakdown
+    {
+        return (new RevenueCalculator)->between(
+            $this->tenant,
+            $start,
+            $end,
+            Carbon::parse('2026-03-01 00:00:00'),
+            Carbon::parse('2026-03-31 23:59:59'),
+        );
     }
 }

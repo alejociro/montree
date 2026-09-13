@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<string, string>|null $social_links
  * @property array<string, string>|null $contact_info
  * @property string|null $custom_css
+ * @property string|null $terms_body
  * @property bool $reviews_require_moderation
  * @property bool $require_traveler_details
  * @property int $booking_advance_hours
@@ -54,6 +55,7 @@ class TenantConfiguration extends Model
         'social_links',
         'contact_info',
         'custom_css',
+        'terms_body',
         'reviews_require_moderation',
         'require_traveler_details',
         'booking_advance_hours',

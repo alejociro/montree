@@ -1,4 +1,5 @@
 import type { DocumentType, Eps } from '@/types/booking';
+import type { PaymentGateway } from '@/types/enums.generated';
 import type { TransactionSummary } from '@/types/transaction';
 
 /**
@@ -132,8 +133,20 @@ export type PassengerFormInput = {
     medical_notes: string;
 };
 
-/** Cuerpo de `POST /admin/bookings/{n}/payments`. */
+/**
+ * Medio de un pago registrado a mano. `placetopay` no entra acá: lo crea la
+ * pasarela, no la planilla.
+ */
+export type ManualPaymentMethod = Extract<PaymentGateway, 'cash' | 'transfer'>;
+
+/**
+ * Cuerpo de `POST /admin/bookings/{n}/payments`.
+ *
+ * `method` arranca vacío a propósito: sin valor por defecto quien registra
+ * elige, en vez de que todo quede marcado como efectivo por inercia.
+ */
 export type ManualPaymentInput = {
+    method: ManualPaymentMethod | '';
     amount: string;
     reference: string;
     paid_at: string;

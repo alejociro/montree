@@ -153,7 +153,7 @@ final class BookingSettlementServiceTest extends TestCase
     {
         return Payment::query()->create([
             'booking_id' => $booking->id,
-            'gateway' => PaymentGateway::Manual,
+            'gateway' => PaymentGateway::Cash,
             'amount' => $amount,
             'currency' => 'COP',
             'type' => $type,
