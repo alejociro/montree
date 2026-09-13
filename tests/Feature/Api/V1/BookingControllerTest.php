@@ -8,15 +8,18 @@ use App\Enums\BookingStatus;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
+use App\Enums\UserRole;
 use App\Models\Booking;
 use App\Models\Tenant;
 use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
+use App\Notifications\Auth\BookingAccessLinkNotification;
 use App\Notifications\Auth\TenantAwareResetPassword;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 final class BookingControllerTest extends TestCase
@@ -116,6 +119,77 @@ final class BookingControllerTest extends TestCase
         $this->assertTrue($guest->mustSetPassword());
 
         Notification::assertSentTo($guest, TenantAwareResetPassword::class);
+    }
+
+    /**
+     * S-01: escribir el correo de otra persona no puede abrir su sesión.
+     */
+    public function test_guest_booking_with_existing_email_does_not_open_a_session(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        Notification::fake();
+
+        [$tenant, $tour, $tourDate] = $this->setupTenantWithUser(10);
+
+        $owner = User::factory()->create(['email' => 'owner@example.com']);
+
+        $response = $this->postJson('http://demo.montree.test/api/v1/bookings', [
+            'email' => 'owner@example.com',
+            'email_confirmation' => 'owner@example.com',
+            'full_name' => 'Impostor',
+            'phone' => '+57 300 000 0000',
+            'tour_date_id' => $tourDate->id,
+            'adults_count' => 1,
+            'minors_count' => 0,
+        ]);
+
+        $response->assertAccepted()
+            ->assertJsonPath('data.requires_email_access', true)
+            ->assertJsonMissingPath('data.booking_number');
+
+        $this->assertGuest();
+
+        $booking = Booking::query()->firstOrFail();
+        $this->assertSame($owner->id, $booking->user_id);
+
+        Notification::assertSentTo($owner, BookingAccessLinkNotification::class);
+    }
+
+    /**
+     * S-01: `AttachUserToTenant` hace `syncRoles`. Reservar como invitado con el correo
+     * de un administrador no puede dejarlo en `customer`.
+     */
+    public function test_guest_booking_does_not_downgrade_an_existing_member(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        Notification::fake();
+
+        [$tenant, $tour, $tourDate] = $this->setupTenantWithUser(10);
+
+        $admin = User::factory()->create(['email' => 'admin@demo.test']);
+        $tenant->users()->attach($admin->id, [
+            'status' => TenantMembershipStatus::Active->value,
+            'joined_at' => now(),
+        ]);
+        Role::findOrCreate(UserRole::Admin->value, 'web');
+        setPermissionsTeamId($tenant->id);
+        $admin->assignRole(UserRole::Admin->value);
+
+        $this->postJson('http://demo.montree.test/api/v1/bookings', [
+            'email' => 'admin@demo.test',
+            'email_confirmation' => 'admin@demo.test',
+            'full_name' => 'Impostor',
+            'phone' => '+57 300 000 0000',
+            'tour_date_id' => $tourDate->id,
+            'adults_count' => 1,
+            'minors_count' => 0,
+        ])->assertAccepted();
+
+        setPermissionsTeamId($tenant->id);
+        $admin->unsetRelation('roles');
+
+        $this->assertTrue($admin->hasRole(UserRole::Admin->value));
+        $this->assertFalse($admin->hasRole(UserRole::Customer->value));
     }
 
     public function test_rejects_when_insufficient_capacity(): void

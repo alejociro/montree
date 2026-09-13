@@ -53,7 +53,15 @@ const api = useApi();
 const MAX_TOTAL_TRAVELERS = 50;
 
 type BookingCreateResponse = {
-    data?: { booking_number?: string };
+    data?: {
+        booking_number?: string;
+        // WHY (S-01): el correo pertenecía a una cuenta que ya existía. El backend
+        // no abre sesión con solo escribirlo: crea la reserva a nombre del dueño y
+        // manda el acceso a su bandeja. Aquí no hay pago que iniciar.
+        requires_email_access?: boolean;
+        email?: string;
+        minutes_valid?: number;
+    };
 };
 
 const personal = reactive({
@@ -73,6 +81,8 @@ const emergency = reactive({
 
 const acceptedTerms = ref(false);
 const submitting = ref(false);
+const accessLinkSentTo = ref<string | null>(null);
+const accessLinkMinutes = ref(30);
 
 const seatCap = computed(() =>
     Math.min(MAX_TOTAL_TRAVELERS, props.tourDate.available_seats),
@@ -201,6 +211,14 @@ async function submit(): Promise<void> {
 
     await api.post<BookingCreateResponse>(storeBooking().url, buildPayload(), {
         onSuccess: async (response) => {
+            if (response?.data?.requires_email_access === true) {
+                submitting.value = false;
+                accessLinkSentTo.value = response.data.email ?? personal.email;
+                accessLinkMinutes.value = response.data.minutes_valid ?? 30;
+
+                return;
+            }
+
             const bookingNumber = response?.data?.booking_number ?? null;
 
             if (bookingNumber === null) {
@@ -258,7 +276,40 @@ async function submit(): Promise<void> {
                 </p>
             </header>
 
-            <form class="space-y-8" @submit.prevent="submit">
+            <section
+                v-if="accessLinkSentTo !== null"
+                class="rounded-lg border border-border bg-card p-6 text-center"
+                role="status"
+                aria-live="polite"
+            >
+                <h2 class="text-lg font-semibold text-foreground">
+                    {{ $t('Revisa tu correo para continuar') }}
+                </h2>
+                <p class="mt-2 text-sm text-muted-foreground">
+                    {{
+                        $t(
+                            'Ya existe una cuenta con :email. Guardamos tu reserva a su nombre y enviamos ahí un enlace para entrar y completar el pago.',
+                            { email: accessLinkSentTo },
+                        )
+                    }}
+                </p>
+                <p class="mt-2 text-sm text-muted-foreground">
+                    {{
+                        $t(
+                            'El enlace vence en :minutes minutos, igual que el cupo reservado.',
+                            { minutes: accessLinkMinutes },
+                        )
+                    }}
+                </p>
+                <Link
+                    href="/login"
+                    class="mt-4 inline-block text-sm font-medium text-primary-readable underline underline-offset-2"
+                >
+                    {{ $t('Prefiero iniciar sesión con mi contraseña') }}
+                </Link>
+            </section>
+
+            <form v-else class="space-y-8" @submit.prevent="submit">
                 <!-- Section 1: Información personal -->
                 <section class="space-y-4">
                     <div class="flex items-center gap-3">

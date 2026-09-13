@@ -1,2813 +1,1447 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import {
-    ArrowRight,
-    BarChart3,
-    Calendar,
-    CheckCircle,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    CreditCard,
-    Leaf,
-    Mail,
-    Mountain,
-    Palette,
-    Sparkles,
-    TrendingUp,
-    Users,
-} from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft, ArrowRight, Menu, X } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { useTranslations } from '@/composables/useTranslations';
-import { start } from '@/routes/onboarding';
+import { home } from '@/routes';
 
+interface Props {
+    registerUrl: string;
+    loginUrl: string;
+    contactUrl: string;
+    demoUrl: string;
+}
+
+const props = defineProps<Props>();
 const { t } = useTranslations();
 
-// ── Carousel ─────────────────────────────────────────────────
-const carouselImages = [
+const nav = [
+    { label: t('Funciones'), href: '#funciones' },
+    { label: t('Tu sitio'), href: '#sitio' },
+    { label: t('Planes'), href: '#planes' },
+    { label: t('Agencias'), href: '#reviews' },
+];
+
+const mobileNav = ref(false);
+
+const heroCards = [
     {
-        src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80&auto=format&fit=crop',
-        label: t('Valle de Cocora'),
-        sub: t('Quindío, Colombia'),
+        kicker: t('TU SITIO'),
+        title: 'sierranevada',
+        image: 'card-sierra-nevada',
+        alt: t('Panel de administración mostrando el tour Travesía Sierra Nevada'),
+        pos: 'left-0 bottom-[6%] h-[clamp(146px,18vw,204px)] w-[clamp(118px,14.5vw,164px)] -rotate-[4deg] rounded-[22px]',
     },
     {
-        src: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1400&q=80&auto=format&fit=crop',
-        label: t('Selva Amazónica'),
-        sub: 'Amazonas, Colombia',
+        kicker: t('RESERVA'),
+        title: t('Pago confirmado'),
+        image: 'card-pago-confirmado',
+        alt: t('Planilla de pasajeros del panel con pagos marcados como confirmados'),
+        pos: 'left-[31%] bottom-[22%] z-20 h-[clamp(156px,19.5vw,218px)] w-[clamp(128px,15.5vw,176px)] rounded-[24px]',
     },
     {
-        src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=80&auto=format&fit=crop',
-        label: t('Los Andes'),
-        sub: t('Boyacá, Colombia'),
-    },
-    {
-        src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1400&q=80&auto=format&fit=crop',
-        label: t('Sierra Nevada'),
-        sub: 'Magdalena, Colombia',
+        kicker: t('CUPOS HOY'),
+        title: '18 / 24',
+        image: 'card-cupos',
+        alt: t('Listado de salidas del panel con cupos disponibles por tour'),
+        pos: 'right-0 bottom-[2%] h-[clamp(146px,18vw,204px)] w-[clamp(118px,14.5vw,164px)] rotate-[5deg] rounded-[22px]',
     },
 ];
 
-const currentSlide = ref(0);
-let carouselTimer: ReturnType<typeof setInterval>;
+const stats = [
+    { label: t('MENOS ADMINISTRACIÓN'), value: '85%' },
+    { label: t('MÁS RESERVAS'), value: '3×' },
+    { label: t('PUBLICAR TU PRIMER TOUR'), value: '<10min' },
+];
 
-const nextSlide = () => {
-    currentSlide.value = (currentSlide.value + 1) % carouselImages.length;
+const screens = [
+    {
+        url: t('panel de reservas'),
+        label: '',
+        pos: 'left-0 top-[14%] h-[68%] w-[56%] -rotate-[3deg] rounded-[22px]',
+    },
+    {
+        url: t('sitio del tenant'),
+        label: t('captura: página pública de la agencia'),
+        pos: 'left-[24%] top-0 z-30 h-[74%] w-[58%] rounded-[24px]',
+    },
+    {
+        url: t('agenda del guía'),
+        label: '',
+        pos: 'right-0 bottom-0 z-20 h-[56%] w-[42%] rotate-[4deg] rounded-[22px]',
+    },
+];
+
+const pillars = [
+    { icon: '24/7', label: t('Reservas automáticas') },
+    { icon: 'ES', label: t('Soporte en español') },
+    { icon: 'CO', label: t('Datos en Colombia') },
+];
+
+const textures = {
+    a: 'bg-[repeating-linear-gradient(135deg,#E4EDE0_0_10px,#D8E4D4_10px_20px)]',
+    b: 'bg-[repeating-linear-gradient(135deg,#DCE8D8_0_9px,#CFDECB_9px_18px)]',
+    c: 'bg-[repeating-linear-gradient(135deg,#E8EFE2_0_12px,#DDE7D8_12px_24px)]',
 };
-const prevSlide = () => {
-    currentSlide.value =
-        (currentSlide.value - 1 + carouselImages.length) %
-        carouselImages.length;
-};
-const goToSlide = (i: number) => {
-    currentSlide.value = i;
-    resetTimer();
-};
-const resetTimer = () => {
-    clearInterval(carouselTimer);
-    carouselTimer = setInterval(nextSlide, 5000);
-};
 
-// ── Feature tabs ──────────────────────────────────────────────
-const activeFeature = ref(0);
-
-// ── Scroll reveal + header ────────────────────────────────────
-onMounted(() => {
-    carouselTimer = setInterval(nextSlide, 5000);
-
-    const observer = new IntersectionObserver(
-        (entries) =>
-            entries.forEach((e) => {
-                if (e.isIntersecting) {
-                    e.target.classList.add('revealed');
-                    observer.unobserve(e.target);
-                }
-            }),
-        { threshold: 0.07 },
-    );
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-
-    const header = document.querySelector('.site-header') as HTMLElement | null;
-
-    if (header) {
-        const onScroll = () =>
-            header.classList.toggle('is-scrolled', window.scrollY > 40);
-        window.addEventListener('scroll', onScroll, { passive: true });
-    }
-});
-
-onUnmounted(() => clearInterval(carouselTimer));
-
-// ── Data ──────────────────────────────────────────────────────
 const features = [
     {
-        icon: Mountain,
-        title: t('Catálogo de tours'),
-        body: t('Tu vitrina siempre actualizada.'),
-        detail: t(
-            'Publica tours con fotos HD, itinerarios día a día, nivel de dificultad, qué incluye y qué no, y cupos en tiempo real. Todo editable desde el celular en segundos. Tu catálogo luce tan profesional como el de cualquier operadora internacional.',
+        title: t('Catálogo'),
+        up: t('EL CATÁLOGO'),
+        body: t(
+            'Publica tours con fotos en alta, itinerario día a día, dificultad, qué incluye y qué no. Editable desde el celular en medio del campo.',
         ),
-        bullets: [
-            t('Galería de fotos y video optimizada para móvil y web'),
-            t(
-                'Cupos en tiempo real: cuando se llena, se cierra automáticamente',
-            ),
-            t('Filtros por dificultad, duración, precio y tipo de experiencia'),
+        blocks: [
+            {
+                title: t('Cupos en vivo'),
+                description: t(
+                    'cuando se llena, la salida se cierra sola. Sin sobreventas los sábados.',
+                ),
+            },
+            {
+                title: t('Fichas completas'),
+                description: t(
+                    'punto de encuentro, qué llevar, nivel de exigencia y política de cancelación.',
+                ),
+            },
+            {
+                title: t('Todo desde el móvil'),
+                description: t(
+                    'cambias precio o cupo desde el celular y el sitio se actualiza al instante.',
+                ),
+            },
         ],
-        image: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t('Vista aérea de bosque tropical — destinos de ecoturismo'),
+        shots: [t('editor de tour'), t('galería'), t('ficha pública')],
     },
     {
-        icon: Calendar,
         title: t('Reservas 24/7'),
-        body: t('Confirma reservas mientras duermes.'),
-        detail: t(
-            'El sistema recibe, confirma y gestiona reservas las 24 horas sin que respondas un solo WhatsApp. El cliente elige el tour, la fecha y el número de personas, paga en línea y recibe su confirmación automáticamente por email.',
+        up: t('LAS RESERVAS'),
+        body: t(
+            'El turista reserva y paga solo, a cualquier hora, sin que nadie responda un WhatsApp de madrugada.',
         ),
-        bullets: [
-            t('Confirmación automática por email y WhatsApp al instante'),
-            t(
-                'Gestión de cupos en tiempo real: nunca más vender más lugares de los que tienes',
-            ),
-            t('Historial completo por cliente: quién reservó qué y cuándo'),
+        blocks: [
+            {
+                title: t('Confirmación automática'),
+                description: t(
+                    'comprobante por correo y WhatsApp, y el guía queda agendado.',
+                ),
+            },
+            {
+                title: t('Reglas por salida'),
+                description: t(
+                    'anticipación mínima, mínimo de personas y máximo de cupos.',
+                ),
+            },
+            {
+                title: t('Lista de espera'),
+                description: t(
+                    'cuando el cupo se llena, Montree guarda al interesado para la próxima salida.',
+                ),
+            },
         ],
-        image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t(
-            'Viajero reservando tour desde su teléfono en la naturaleza',
-        ),
+        shots: [t('flujo de reserva'), t('confirmación'), t('lista de espera')],
     },
     {
-        icon: BarChart3,
-        title: t('Dashboard de control'),
-        body: t('Tu negocio en tiempo real de un vistazo.'),
-        detail: t(
-            'Una vista central de todo en tiempo real. Ingresos del día, tours más vendidos, próximas salidas, cupos disponibles y rendimiento por guía. Con reportes por mes y por tour, tomas decisiones con datos, no con intuición.',
+        title: t('Dashboard'),
+        up: t('EL DASHBOARD'),
+        body: t(
+            'Ocupación por salida, caja del día, tours más vendidos y comisiones por vendedor. Sin cuadrar Excel a las 11 de la noche.',
         ),
-        bullets: [
-            t(
-                'Ingresos del día, semana y mes con comparativo vs período anterior',
-            ),
-            t('Top de tours más vendidos y más rentables por margen neto'),
-            t(
-                'Próximas salidas con lista de viajeros y estado de pago por persona',
-            ),
+        blocks: [
+            {
+                title: t('Caja del día'),
+                description: t(
+                    'lo que entró, lo que falta por cobrar y lo que se devolvió.',
+                ),
+            },
+            {
+                title: t('Alertas de riesgo'),
+                description: t(
+                    'te avisa qué salida va a quedar por debajo del mínimo.',
+                ),
+            },
+            {
+                title: t('Reportes'),
+                description: t('exportas el mes en un clic para tu contador.'),
+            },
         ],
-        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t('Dashboard de métricas y análisis de negocio'),
+        shots: [t('métricas'), t('reporte mensual'), t('ocupación')],
     },
     {
-        icon: Users,
-        title: t('Gestión de equipo'),
-        body: t('Roles diferenciados para cada miembro.'),
-        detail: t(
-            'Cada persona de tu equipo ve exactamente lo que necesita, nada más. El guía ve sus tours y la lista de viajeros. El operador gestiona logística. El admin controla todo. Sin riesgo de que alguien modifique algo que no debe.',
+        title: t('Equipo'),
+        up: t('EL EQUIPO'),
+        body: t(
+            'Cuatro roles con permisos reales: cada persona ve exactamente lo que necesita para su trabajo.',
         ),
-        bullets: [
-            t('Roles: Admin, Operador, Guía — permisos específicos por rol'),
-            t('Asignación de guías a tours con notificación automática'),
-            t(
-                'Registro de actividad: quién hizo qué y cuándo en cada operación',
-            ),
+        blocks: [
+            {
+                title: t('Agenda por guía'),
+                description: t(
+                    'asignación con notificación y lista de pasajeros en el celular.',
+                ),
+            },
+            {
+                title: t('Vendedores'),
+                description: t('enlace propio y comisión calculada sola.'),
+            },
+            {
+                title: t('Operadores'),
+                description: t('checklist de salida y control de asistencia.'),
+            },
         ],
-        image: 'https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t('Equipo de guías y operadores de ecoturismo'),
+        shots: [t('agenda de guías'), t('comisiones'), t('checklist')],
     },
     {
-        icon: CreditCard,
-        title: t('Pagos integrados'),
-        body: t('Cobra con Bre-B y PSE directo a tu cuenta.'),
-        detail: t(
-            'Configura si cobras el 100% anticipado o solo un depósito para asegurar el cupo. El dinero llega a la cuenta bancaria de tu agencia ya con la comisión descontada, sin intermediarios que lo retengan semanas. Comisiones claras desde el primer día.',
+        title: t('Pagos'),
+        up: t('LOS PAGOS'),
+        body: t(
+            'Cobra anticipo o el 100% en línea con los medios de pago que se usan en Colombia. Cada reserva conciliada con su pago.',
         ),
-        bullets: [
-            t('Bre-B y PSE, los medios que ya usan tus clientes en Colombia'),
-            t('Configura el anticipo por tour: 30%, 50% o pago total'),
-            t('Reembolsos según tu política de cancelación'),
+        blocks: [
+            {
+                title: t('PSE y tarjetas'),
+                description: t(
+                    'más efectivo registrado en caja para las ventas en el mostrador.',
+                ),
+            },
+            {
+                title: t('Anticipo flexible'),
+                description: t(
+                    'define el porcentaje por tour o por temporada.',
+                ),
+            },
+            {
+                title: t('Devoluciones'),
+                description: t(
+                    'aplicadas según tu propia política de cancelación.',
+                ),
+            },
         ],
-        image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t('Pago móvil y transacciones digitales seguras'),
-    },
-    {
-        icon: Palette,
-        title: t('Tu marca, tu sitio'),
-        body: 'Dominio propio, identidad 100% tuya.',
-        detail: t(
-            'Tu agencia tiene su propio sitio con logo, colores y dominio personalizado. Sin mencionar "Powered by Montree" en ningún lado. Para tus clientes, es tu plataforma 100%. Con SEO básico incluido para que Google te encuentre.',
-        ),
-        bullets: [
-            t('Subdominio gratis (tu-agencia.montree.co) o dominio propio'),
-            t('Logo, colores primarios y foto de portada personalizables'),
-            t('SEO incluido: meta tags, Open Graph y sitemap automático'),
-        ],
-        image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=900&q=80&auto=format&fit=crop',
-        imageAlt: t(
-            'Paleta de colores y personalización de marca para tu agencia',
-        ),
+        shots: [t('pasarela de pago'), t('conciliación'), t('devoluciones')],
     },
 ];
 
-const painPoints = [
-    t(
-        '¿Manejas las reservas por WhatsApp y pierdes clientes cuando no alcanzas a responder a tiempo?',
-    ),
-    t(
-        '¿Tu Excel se desactualiza y terminas vendiendo más cupos de los que tienes, con el costo y el mal rato que eso implica?',
-    ),
-    t(
-        '¿No sabes cuánto ganaste el mes pasado sin revisar diez hojas de cálculo distintas?',
-    ),
+const featureIdx = ref(0);
+const activeFeature = computed(() => features[featureIdx.value]);
+const clusterCaption = computed(
+    () => `CAPTURAS: ${activeFeature.value.shots.join(' · ').toUpperCase()}`,
+);
+const featureCluster = [
+    { texture: textures.c, pos: 'left-[2%] top-[6%] z-10 w-[26%]' },
+    { texture: textures.a, pos: 'left-[16%] top-[24%] z-30 w-[34%]' },
+    { texture: textures.b, pos: 'left-[38%] top-[2%] z-20 w-[27%]' },
+    { texture: textures.a, pos: 'left-[45%] top-[26%] z-40 w-[36%]' },
+    { texture: textures.c, pos: 'left-[26%] top-[56%] z-20 w-[26%]' },
+    { texture: textures.b, pos: 'right-[2%] top-[56%] z-30 w-[30%]' },
 ];
 
-const steps = [
-    {
-        num: '01',
-        title: t('Regístrate gratis'),
-        body: t('Solo tu email. Sin tarjeta de crédito. Listo en 60 segundos.'),
-    },
-    {
-        num: '02',
-        title: t('Personaliza tu agencia'),
-        body: t(
-            'Sube tu logo, elige colores y activa tu subdominio en minutos.',
-        ),
-    },
-    {
-        num: '03',
-        title: t('Publica tus tours'),
-        body: t(
-            'Fotos, itinerarios, precios y cupos. Tan fácil como publicar en redes.',
-        ),
-    },
-    {
-        num: '04',
-        title: t('Recibe y cobra'),
-        body: t(
-            'Reservas 24/7 y cobros con Bre-B o PSE. Nos quedamos con una comisión de 3% a 5% por reserva confirmada; el resto va a tu cuenta.',
-        ),
-    },
+const tenantDiamonds = [
+    { texture: textures.c, pos: 'left-[8%] top-[16%] z-10 w-[23%]' },
+    { texture: textures.a, pos: 'left-[19%] top-[31%] z-30 w-[29%]' },
+    { texture: textures.b, pos: 'left-[31%] top-[8%] z-20 w-[25%]' },
+    { texture: textures.a, pos: 'left-[40%] top-[27%] z-40 w-[31%]' },
+    { texture: textures.b, pos: 'right-[9%] top-[14%] z-20 w-[25%]' },
+    { texture: textures.c, pos: 'left-[28%] bottom-[8%] z-20 w-[23%]' },
+    { texture: textures.a, pos: 'right-[13%] bottom-[10%] z-30 w-[26%]' },
 ];
 
-const testimonials = [
-    {
-        avatar: 'CM',
-        name: 'Carlos Mendoza',
-        role: 'Fundador, EcoAndes Colombia',
-        text: t(
-            'Pasamos de manejar todo por WhatsApp a un sistema profesional en una semana. Las reservas aumentaron y el caos administrativo desapareció.',
-        ),
-    },
-    {
-        avatar: 'LJ',
-        name: t('Laura Jiménez'),
-        role: 'Directora, Naturaleza Viva',
-        text: t(
-            'Antes perdíamos clientes porque no podíamos responder a tiempo. Ahora el sistema trabaja solo y nosotros nos enfocamos en lo que importa.',
-        ),
-    },
-    {
-        avatar: 'MT',
-        name: 'Miguel Torres',
-        role: t('Operador, Sierra Nevada Tours'),
-        text: t(
-            'Por primera vez sé exactamente cuánto gano, cuáles tours son más rentables y qué guías necesitan apoyo. Cambió todo.',
-        ),
-    },
+const tenantList = [
+    t('Página pública propia con tu logo, tus colores y tus fotos'),
+    t('Empieza en tuagencia.montree.co y conecta tu dominio cuando quieras'),
+    t('Catálogo, precios y políticas independientes de cualquier otra agencia'),
+    t('Datos aislados: ningún tenant ve la información de otro'),
+    t('Editable sin código desde el panel, sin depender de un desarrollador'),
+];
+
+const roles = [
+    { name: t('Admin'), description: t('todo el negocio') },
+    { name: t('Guía'), description: t('su agenda') },
+    { name: t('Vendedor'), description: t('ventas y comisión') },
+    { name: t('Operador'), description: t('salidas del día') },
 ];
 
 const plans = [
     {
-        name: 'Starter',
-        price: '$99.000',
-        period: '/mes',
-        desc: t('Para agencias que comienzan su transformación digital'),
+        number: '01',
+        name: t('Semilla'),
+        price: t('Gratis'),
+        unit: t('· gratis para siempre'),
+        cta: t('Crear mi agencia'),
+        description: t(
+            'Para la agencia que está empezando o quiere probar Montree con su operación real, sin compromiso.',
+        ),
         items: [
-            t('Hasta 5 tours activos'),
-            t('Reservas ilimitadas'),
-            t('Subdominio incluido'),
-            t('Cobros con Bre-B y PSE'),
-            t('Dashboard básico'),
-            t('Soporte por email'),
+            t('Hasta 25 reservas al mes'),
+            t('1 usuario administrador'),
+            t('Página pública en tuagencia.montree.co'),
+            t('Catálogo de tours ilimitado'),
+            t('Pagos en línea con comisión por transacción'),
         ],
-        cta: t('Probar 30 días gratis'),
-        hot: false,
+        specs: [
+            { key: t('RESERVAS'), value: t('25 / mes') },
+            { key: t('USUARIOS'), value: t('1 admin') },
+            { key: t('SITIO'), value: t('subdominio') },
+            { key: t('SOPORTE'), value: t('correo') },
+        ],
     },
     {
-        name: 'Pro',
-        price: '$249.000',
-        period: '/mes',
-        desc: t('Para agencias en crecimiento que quieren escalar sin límites'),
+        number: '02',
+        name: t('Sendero'),
+        price: '$149.000',
+        unit: t('· COP / mes'),
+        cta: t('Empezar 30 días gratis'),
+        description: t(
+            'Para la agencia con operación constante, guías en campo y vendedores. El plan que usa la mayoría.',
+        ),
         items: [
-            t('Tours ilimitados'),
-            t('Dominio personalizado'),
-            t('Gestión de equipo completa'),
-            t('Dashboard + métricas avanzadas'),
-            'Newsletter integrado',
-            t('Reseñas de clientes'),
-            'Soporte prioritario 24/7',
-            'Onboarding personalizado',
+            t('Reservas ilimitadas'),
+            t('Hasta 8 usuarios con roles (Admin, Guía, Vendedor, Operador)'),
+            t('Dominio propio: www.tuagencia.com'),
+            t('Comisiones por vendedor y reportes exportables'),
+            t('Soporte prioritario en español'),
         ],
-        cta: t('Probar 30 días gratis'),
-        hot: true,
+        specs: [
+            { key: t('RESERVAS'), value: t('ilimitadas') },
+            { key: t('USUARIOS'), value: t('hasta 8') },
+            { key: t('SITIO'), value: t('dominio propio') },
+            { key: t('SOPORTE'), value: t('prioritario') },
+        ],
+    },
+    {
+        number: '03',
+        name: t('Expedición'),
+        price: t('A medida'),
+        unit: t('· hablemos'),
+        cta: t('Contactar al equipo'),
+        description: t(
+            'Para operadores con varias sedes o marcas, integraciones con su contabilidad y necesidades especiales.',
+        ),
+        items: [
+            t('Varias sedes o marcas en una sola cuenta'),
+            t('Usuarios ilimitados'),
+            t('API y conexión con tu contabilidad'),
+            t('Onboarding y migración asistida de datos'),
+            t('Acuerdo de nivel de servicio (SLA)'),
+        ],
+        specs: [
+            { key: t('RESERVAS'), value: t('ilimitadas') },
+            { key: t('USUARIOS'), value: t('ilimitados') },
+            { key: t('SITIO'), value: t('multi-marca') },
+            { key: t('SOPORTE'), value: t('dedicado') },
+        ],
     },
 ];
 
-const page = usePage();
-const user = computed(() => page.props.auth?.user ?? null);
-const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
+const planIdx = ref(1);
+const activePlan = computed(() => plans[planIdx.value]);
+
+const reviews = [
+    {
+        quote: t(
+            'Pasamos del cuaderno a tener la agenda de los guías cuadrada desde el domingo anterior.',
+        ),
+        name: 'Laura Restrepo',
+        role: t('Sierra Nevada Tours · Santa Marta'),
+        photo: t('foto: trekking Cerro Kennedy'),
+    },
+    {
+        quote: t(
+            'Los turistas reservan de madrugada desde Europa y a mí me llega todo confirmado y pagado.',
+        ),
+        name: 'Andrés Muñoz',
+        role: t('Ruta Verde · Salento'),
+        photo: t('foto: valle de Cocora'),
+    },
+    {
+        quote: t(
+            'Mis tres vendedores ya no me llaman a preguntar si hay cupo: lo ven en su celular.',
+        ),
+        name: 'Camila Ortiz',
+        role: t('Amazonía Viva · Leticia'),
+        photo: t('foto: río Amazonas'),
+    },
+    {
+        quote: t(
+            'Dejamos de perder reservas en WhatsApp. Eso solo ya pagó el plan del año.',
+        ),
+        name: 'Julián Pardo',
+        role: t('Ecorutas · Villa de Leyva'),
+        photo: t('foto: desierto de la Candelaria'),
+    },
+];
+
+const reviewIdx = ref(0);
+const visibleReviews = computed(() =>
+    [0, 1, 2].map(
+        (offset) => reviews[(reviewIdx.value + offset) % reviews.length],
+    ),
+);
+const nextReview = () => {
+    reviewIdx.value = (reviewIdx.value + 1) % reviews.length;
+};
+const prevReview = () => {
+    reviewIdx.value = (reviewIdx.value + reviews.length - 1) % reviews.length;
+};
+
+const footerColumns = [
+    {
+        title: t('PRODUCTO'),
+        links: [
+            [t('Funciones'), '#funciones'],
+            [t('Tu sitio propio'), '#sitio'],
+            [t('Planes'), '#planes'],
+            [t('Preguntas frecuentes'), '#'],
+        ],
+    },
+    {
+        title: t('AGENCIAS'),
+        links: [
+            [t('Casos de éxito'), '#'],
+            [t('Guía de migración'), '#'],
+            [t('Soporte'), '#'],
+            [t('Estado del servicio'), '#'],
+        ],
+    },
+    {
+        title: t('LEGAL'),
+        links: [
+            [t('Política de pago'), '#'],
+            [t('Política de cancelación'), '#'],
+            [t('Tratamiento de datos'), '#'],
+            [t('Términos'), '#'],
+        ],
+    },
+];
 </script>
 
 <template>
-    <Head
-        :title="
-            $t('Montree — Digitaliza y automatiza tu agencia de ecoturismo')
-        "
+    <Head :title="$t('Montree — Software para agencias de ecoturismo')" />
+
+    <div
+        class="min-h-screen overflow-x-hidden bg-[#F6EFE1] font-['IBM_Plex_Sans',system-ui,sans-serif] text-[#123524] antialiased"
     >
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossorigin="anonymous"
-        />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Inter:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-    </Head>
+        <section
+            class="relative isolate flex min-h-[clamp(560px,80vh,820px)] flex-col bg-[#123524]"
+        >
+            <picture>
+                <source
+                    type="image/avif"
+                    media="(orientation: portrait) and (max-width: 639px)"
+                    sizes="100vw"
+                    srcset="
+                        /landing/cocora-portrait-540.avif   540w,
+                        /landing/cocora-portrait-720.avif   720w,
+                        /landing/cocora-portrait-1080.avif 1080w
+                    "
+                />
+                <source
+                    type="image/webp"
+                    media="(orientation: portrait) and (max-width: 639px)"
+                    sizes="100vw"
+                    srcset="
+                        /landing/cocora-portrait-540.webp   540w,
+                        /landing/cocora-portrait-720.webp   720w,
+                        /landing/cocora-portrait-1080.webp 1080w
+                    "
+                />
+                <source
+                    type="image/avif"
+                    sizes="100vw"
+                    srcset="
+                        /landing/cocora-wide-640.avif   640w,
+                        /landing/cocora-wide-960.avif   960w,
+                        /landing/cocora-wide-1280.avif 1280w,
+                        /landing/cocora-wide-1600.avif 1600w,
+                        /landing/cocora-wide-1920.avif 1920w,
+                        /landing/cocora-wide-2560.avif 2560w,
+                        /landing/cocora-wide-3200.avif 3200w,
+                        /landing/cocora-wide-3840.avif 3840w,
+                        /landing/cocora-wide-4480.avif 4480w,
+                        /landing/cocora-wide-5120.avif 5120w
+                    "
+                />
+                <source
+                    type="image/webp"
+                    sizes="100vw"
+                    srcset="
+                        /landing/cocora-wide-640.webp   640w,
+                        /landing/cocora-wide-960.webp   960w,
+                        /landing/cocora-wide-1280.webp 1280w,
+                        /landing/cocora-wide-1600.webp 1600w,
+                        /landing/cocora-wide-1920.webp 1920w,
+                        /landing/cocora-wide-2560.webp 2560w,
+                        /landing/cocora-wide-3200.webp 3200w,
+                        /landing/cocora-wide-3840.webp 3840w,
+                        /landing/cocora-wide-4480.webp 4480w,
+                        /landing/cocora-wide-5120.webp 5120w
+                    "
+                />
+                <img
+                    src="/landing/cocora-wide-1600.webp"
+                    :alt="
+                        $t(
+                            'Palmas de cera del Valle de Cocora entre montañas al amanecer',
+                        )
+                    "
+                    fetchpriority="high"
+                    decoding="async"
+                    class="absolute inset-0 -z-10 size-full object-cover"
+                />
+            </picture>
+            <div
+                class="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(10_32_20/52%)_0%,rgb(10_32_20/20%)_38%,rgb(10_32_20/72%)_100%)]"
+            ></div>
+            <header
+                class="relative z-20 mx-auto flex w-full max-w-[1320px] items-center gap-[18px] px-[clamp(16px,4vw,44px)] py-[22px] text-[#FBF6EC]"
+            >
+                <Link :href="home().url" class="flex items-center gap-2.5">
+                    <span
+                        class="grid size-8 place-items-center rounded-full bg-[#FBF6EC] font-['Newsreader',serif] text-base font-semibold text-[#123524]"
+                        >M</span
+                    >
+                    <span
+                        class="font-['Newsreader',serif] text-[21px] font-medium tracking-[0.01em]"
+                        >Montree</span
+                    >
+                </Link>
 
-    <div class="page-root">
-        <!-- ── TOP ACCENT ──────────────────────────────────────── -->
-        <div class="top-accent-bar" />
-
-        <!-- ── HEADER ──────────────────────────────────────────── -->
-        <header class="site-header">
-            <div class="header-inner container">
-                <a href="/" class="brand">
-                    <div class="brand-icon"><Leaf class="size-4" /></div>
-                    <span class="brand-name">{{ $t('Montree') }}</span>
-                    <span class="brand-tag">{{ $t('Beta') }}</span>
-                </a>
-                <nav class="main-nav">
-                    <a href="#features">{{ $t('Funciones') }}</a>
-                    <a href="#problem">{{ $t('El problema') }}</a>
-                    <a href="#how-it-works">{{ $t('Cómo funciona') }}</a>
-                    <a href="#pricing">{{ $t('Precios') }}</a>
-                    <a href="/faq">{{ $t('FAQ') }}</a>
+                <nav
+                    class="ml-auto hidden items-center gap-[clamp(10px,1.6vw,22px)] rounded-full border border-[#FBF6EC]/28 bg-[#FBF6EC]/16 px-[clamp(14px,2vw,22px)] py-[9px] text-[13px] backdrop-blur-[8px] lg:flex"
+                >
+                    <a
+                        v-for="item in nav"
+                        :key="item.href"
+                        :href="item.href"
+                        class="text-[#FBF6EC] transition-colors hover:text-[#E9D9B4]"
+                        >{{ item.label }}</a
+                    >
                 </nav>
-                <div class="flex items-center gap-3">
-                    <template v-if="user">
+                <Link
+                    :href="props.loginUrl"
+                    class="ml-auto hidden text-[13px] text-[#FBF6EC]/85 transition-colors hover:text-[#E9D9B4] sm:block lg:ml-0"
+                    >{{ $t('Iniciar sesión') }}</Link
+                >
+                <Link
+                    :href="props.registerUrl"
+                    class="rounded-full bg-[#FBF6EC] px-[22px] py-[11px] text-[13px] font-medium text-[#123524] transition-colors hover:bg-white"
+                    >{{ $t('Comenzar gratis') }}</Link
+                >
+                <button
+                    type="button"
+                    class="grid size-10 place-items-center rounded-full border border-[#FBF6EC]/40 text-[#FBF6EC] lg:hidden"
+                    :aria-expanded="mobileNav"
+                    aria-controls="mobile-navigation"
+                    :aria-label="$t('Abrir menú')"
+                    @click="mobileNav = !mobileNav"
+                >
+                    <X v-if="mobileNav" class="size-4" />
+                    <Menu v-else class="size-4" />
+                </button>
+            </header>
+
+            <nav
+                v-if="mobileNav"
+                id="mobile-navigation"
+                class="relative z-20 mx-auto w-full max-w-[1320px] px-[clamp(16px,4vw,44px)] lg:hidden"
+            >
+                <div
+                    class="rounded-3xl border border-[#FBF6EC]/25 bg-[#0A2014]/70 px-5 py-3 backdrop-blur-[8px]"
+                >
+                    <a
+                        v-for="item in nav"
+                        :key="item.href"
+                        :href="item.href"
+                        class="block py-2 text-sm text-[#FBF6EC]"
+                        @click="mobileNav = false"
+                        >{{ item.label }}</a
+                    >
+                    <Link
+                        :href="props.loginUrl"
+                        class="block py-2 text-sm text-[#FBF6EC]"
+                        @click="mobileNav = false"
+                        >{{ $t('Iniciar sesión') }}</Link
+                    >
+                </div>
+            </nav>
+
+            <div
+                class="relative z-10 mx-auto mt-auto grid w-full max-w-[1220px] items-end gap-[clamp(24px,4vw,48px)] px-[clamp(16px,4vw,44px)] pb-[clamp(120px,15vw,220px)] text-[#FBF6EC] lg:grid-cols-2"
+            >
+                <div>
+                    <span
+                        class="inline-flex items-center gap-2 rounded-full border border-[#FBF6EC]/30 bg-[#FBF6EC]/16 px-[15px] py-[7px] text-xs backdrop-blur-[6px]"
+                    >
+                        <span class="size-1.5 rounded-full bg-[#E9D9B4]" />
+                        {{ $t('Plataforma para ecoturismo colombiano') }}
+                    </span>
+                    <h1
+                        class="mt-5 font-['Newsreader',serif] text-[clamp(42px,6.4vw,84px)] leading-[1.04] font-semibold italic drop-shadow-[0_8px_34px_rgba(10,32,20,0.5)]"
+                    >
+                        {{ $t('Digitaliza tu agencia') }}<br />{{
+                            $t('de ecoturismo')
+                        }}
+                    </h1>
+                    <p
+                        class="mt-[18px] max-w-[44ch] text-[15.5px] leading-[1.65] text-[#FBF6EC]/90"
+                    >
+                        {{
+                            $t(
+                                'Reservas automáticas, pagos en línea, equipo coordinado y tu propia página pública con tu marca. Todo en un solo lugar.',
+                            )
+                        }}
+                    </p>
+                    <div class="mt-[26px] flex flex-wrap gap-3">
                         <Link
-                            v-if="isSuperAdmin"
-                            href="/super-admin/dashboard"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
+                            :href="props.registerUrl"
+                            class="rounded-full bg-[#FBF6EC] px-7 py-3.5 text-[13.5px] font-medium text-[#123524] transition-colors hover:bg-white"
+                            >{{ $t('Crear mi agencia') }}</Link
                         >
-                            {{ $t('Ir al panel') }}
-                        </Link>
-                        <Link
-                            href="/logout"
-                            method="post"
-                            as="button"
-                            class="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                        <a
+                            :href="props.demoUrl"
+                            class="rounded-full border border-[#FBF6EC]/55 px-[26px] py-3.5 text-[13.5px] text-[#FBF6EC] transition-colors hover:bg-[#FBF6EC]/16"
+                            >{{ $t('Ver demo') }}</a
                         >
-                            {{ $t('Cerrar sesión') }}
-                        </Link>
-                    </template>
-                    <template v-else>
-                        <Link
-                            href="/login"
-                            class="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
-                        >
-                            {{ $t('Iniciar sesión') }}
-                        </Link>
-                        <Link
-                            :href="start().url"
-                            class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary"
-                        >
-                            {{ $t('Comenzar gratis') }}
-                        </Link>
-                    </template>
+                    </div>
+                </div>
+
+                <div
+                    class="relative hidden h-[clamp(190px,23vw,290px)] md:block"
+                >
+                    <article
+                        v-for="card in heroCards"
+                        :key="card.kicker"
+                        class="absolute overflow-hidden border border-[#FBF6EC]/35 text-[#FBF6EC] shadow-[0_24px_44px_-26px_rgba(10,32,20,0.8)]"
+                        :class="card.pos"
+                    >
+                        <div class="relative h-full bg-[#1B4632]">
+                            <picture>
+                                <source
+                                    type="image/avif"
+                                    sizes="220px"
+                                    :srcset="`
+                                        /landing/${card.image}-320.avif   320w,
+                                        /landing/${card.image}-480.avif   480w,
+                                        /landing/${card.image}-640.avif   640w,
+                                        /landing/${card.image}-960.avif   960w,
+                                        /landing/${card.image}-1280.avif 1280w
+                                    `"
+                                />
+                                <source
+                                    type="image/webp"
+                                    sizes="220px"
+                                    :srcset="`
+                                        /landing/${card.image}-320.webp   320w,
+                                        /landing/${card.image}-480.webp   480w,
+                                        /landing/${card.image}-640.webp   640w,
+                                        /landing/${card.image}-960.webp   960w,
+                                        /landing/${card.image}-1280.webp 1280w
+                                    `"
+                                />
+                                <img
+                                    :src="`/landing/${card.image}-640.webp`"
+                                    :alt="card.alt"
+                                    loading="lazy"
+                                    decoding="async"
+                                    class="absolute inset-0 size-full object-cover"
+                                />
+                            </picture>
+                            <div
+                                class="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,32,20,0)_40%,rgba(10,32,20,.85)_100%)]"
+                            />
+                            <div class="absolute inset-x-[13px] bottom-3">
+                                <p
+                                    class="font-['IBM_Plex_Mono',monospace] text-[8.5px] tracking-[0.14em] text-[#E9D9B4]"
+                                >
+                                    {{ card.kicker }}
+                                </p>
+                                <p
+                                    class="mt-[3px] font-['Newsreader',serif] text-[15px] leading-[1.15] font-medium [overflow-wrap:anywhere]"
+                                >
+                                    {{ card.title }}
+                                </p>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
-        </header>
 
-        <!-- ── HERO ───────────────────────────────────────────── -->
-        <section class="hero-section">
-            <div class="hero-texture" />
-            <div class="hero-grid container">
-                <!-- Left -->
-                <div class="hero-left">
-                    <div class="hero-badge">
-                        <Sparkles class="size-3.5" />
-                        {{ $t('Plataforma para ecoturismo colombiano') }}
-                    </div>
+            <svg
+                viewBox="0 0 1440 150"
+                preserveAspectRatio="none"
+                class="absolute -bottom-px left-0 block h-[clamp(70px,10vw,150px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,52 C210,132 400,4 700,58 C980,108 1180,18 1440,66 L1440,150 L0,150 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+        </section>
 
-                    <!-- WHY: el titular va como una sola clave con su markup. Partido en
-                         palabras sueltas ('agencia', 'de', 'ecoturismo.') el ingles queda con
-                         el orden del espanol; asi cada idioma acomoda las lineas a su gusto.
-                         El HTML sale del catalogo propio, nunca de input del usuario. -->
-                    <h1
-                        class="hero-headline"
-                        v-html="
-                            $t(
-                                'Digitaliza tu<br /><em>agencia</em> de<br />ecoturismo.',
-                            )
-                        "
-                    ></h1>
-
-                    <p class="hero-sub">
+        <section
+            class="mx-auto max-w-[1220px] px-[clamp(16px,4vw,44px)] pt-[clamp(20px,3vw,44px)] pb-[clamp(48px,6vw,84px)]"
+        >
+            <div
+                class="grid items-center gap-[clamp(30px,5vw,60px)] lg:grid-cols-2"
+            >
+                <div>
+                    <dl class="flex items-end gap-[clamp(14px,2vw,26px)]">
+                        <div
+                            v-for="(stat, index) in stats"
+                            :key="stat.value"
+                            :class="
+                                index < stats.length - 1
+                                    ? 'border-r border-[#123524]/12 pr-[clamp(14px,2vw,26px)]'
+                                    : ''
+                            "
+                        >
+                            <dd
+                                class="font-['Newsreader',serif] text-[clamp(24px,2.6vw,32px)] leading-none font-semibold whitespace-nowrap"
+                            >
+                                {{ stat.value }}
+                            </dd>
+                            <dt
+                                class="mt-[5px] font-['IBM_Plex_Mono',monospace] text-[8px] leading-[1.3] tracking-[0.08em] text-[#7A8B7E]"
+                            >
+                                {{ stat.label }}
+                            </dt>
+                        </div>
+                    </dl>
+                    <p
+                        class="mt-6 max-w-[52ch] text-[15px] leading-[1.75] text-[#4A5C4E]"
+                    >
                         {{
                             $t(
-                                'Montree reemplaza el WhatsApp, el Excel y los papeles. Reservas automáticas, pagos en línea y gestión de equipo en un solo lugar — que trabaja 24/7 por ti.',
+                                'Montree se construyó con operadores de la Sierra Nevada, el Eje Cafetero y la Amazonía. Cada agencia entra con su propio espacio, su catálogo y su equipo — y publica su primer tour el mismo día.',
                             )
                         }}
                     </p>
-
-                    <div class="hero-ctas">
-                        <Link :href="start().url" class="btn-hero-primary">
-                            {{ $t('Comenzar gratis') }}
-                            <ArrowRight class="size-5" />
-                        </Link>
-                        <a href="#how-it-works" class="btn-hero-ghost">
-                            {{ $t('Ver cómo funciona') }}
-                            <ChevronDown class="size-4" />
-                        </a>
-                    </div>
-
-                    <p class="hero-disclaimer">
-                        {{
-                            $t(
-                                'Sin tarjeta · Cancela cuando quieras · Soporte en español',
-                            )
-                        }}
-                    </p>
-
-                    <div class="hero-stats">
-                        <div class="hero-stat">
-                            <span class="hero-stat-num">85%</span>
-                            <span class="hero-stat-label">{{
-                                $t('menos tiempo administrativo')
-                            }}</span>
-                        </div>
-                        <div class="hero-stat-divider" />
-                        <div class="hero-stat">
-                            <span class="hero-stat-num">3×</span>
-                            <span class="hero-stat-label">{{
-                                $t('más reservas en el primer mes')
-                            }}</span>
-                        </div>
-                        <div class="hero-stat-divider" />
-                        <div class="hero-stat">
-                            <span class="hero-stat-num">&lt;10min</span>
-                            <span class="hero-stat-label">{{
-                                $t('para publicar tu primer tour')
-                            }}</span>
+                    <div class="mt-6 flex flex-wrap items-center gap-4">
+                        <a
+                            href="#funciones"
+                            class="rounded-full bg-[#E4EDE0] px-[22px] py-[11px] text-[13px] transition-colors hover:bg-[#D8E4D4]"
+                            >{{ $t('Conocer más →') }}</a
+                        >
+                        <div class="flex gap-2">
+                            <span
+                                v-for="initial in ['E', 'S', 'N', 'P']"
+                                :key="initial"
+                                class="grid size-8 place-items-center rounded-full border border-[#123524]/12 bg-[#FBF6EC] font-['Newsreader',serif] text-[13px] font-medium text-[#4A5C4E]"
+                                >{{ initial }}</span
+                            >
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: carousel only -->
-                <div class="hero-right">
-                    <div class="carousel">
+                <div class="relative h-[clamp(250px,29vw,350px)]">
+                    <article
+                        v-for="screen in screens"
+                        :key="screen.url"
+                        class="absolute overflow-hidden border border-[#123524]/10 bg-[#FBF6EC] shadow-[0_26px_50px_-32px_rgba(10,32,20,0.5)]"
+                        :class="screen.pos"
+                    >
                         <div
-                            v-for="(img, i) in carouselImages"
-                            :key="i"
-                            class="carousel-slide"
-                            :class="{ active: currentSlide === i }"
-                            :style="{ backgroundImage: `url(${img.src})` }"
+                            class="flex items-center gap-[5px] bg-[#EFE7D7] px-[11px] py-2"
+                        >
+                            <span
+                                class="size-[5px] rounded-full bg-[#123524]/25"
+                            />
+                            <span
+                                class="size-[5px] rounded-full bg-[#123524]/25"
+                            />
+                            <span
+                                class="ml-[5px] font-['IBM_Plex_Mono',monospace] text-[8px] text-[#7A8B7E]"
+                                >{{ screen.url }}</span
+                            >
+                        </div>
+                        <div
+                            class="h-[calc(100%-27px)] bg-[repeating-linear-gradient(135deg,#E4EDE0_0_9px,#D8E4D4_9px_18px)]"
                         />
-                        <div class="carousel-gradient" />
-
-                        <button
-                            class="carousel-arrow carousel-arrow--prev"
-                            :aria-label="$t('Anterior')"
-                            @click="
-                                () => {
-                                    prevSlide();
-                                    resetTimer();
-                                }
-                            "
+                        <span
+                            v-if="screen.label"
+                            class="absolute bottom-2.5 left-2.5 rounded-full bg-[#FBF6EC]/90 px-[9px] py-[5px] font-['IBM_Plex_Mono',monospace] text-[9px] text-[#3C5445]"
+                            >{{ screen.label }}</span
                         >
-                            <ChevronLeft class="size-4" />
-                        </button>
-                        <button
-                            class="carousel-arrow carousel-arrow--next"
-                            :aria-label="$t('Siguiente')"
-                            @click="
-                                () => {
-                                    nextSlide();
-                                    resetTimer();
-                                }
-                            "
-                        >
-                            <ChevronRight class="size-4" />
-                        </button>
+                    </article>
+                </div>
+            </div>
+        </section>
 
-                        <div class="carousel-footer">
-                            <div class="carousel-location">
-                                <span class="carousel-loc-label">{{
-                                    carouselImages[currentSlide].label
-                                }}</span>
-                                <span class="carousel-loc-sub">{{
-                                    carouselImages[currentSlide].sub
-                                }}</span>
-                            </div>
-                            <div class="carousel-dots">
-                                <button
-                                    v-for="(_, i) in carouselImages"
-                                    :key="i"
-                                    :class="[
-                                        'carousel-dot',
-                                        { active: currentSlide === i },
-                                    ]"
-                                    :aria-label="`Ir a imagen ${i + 1}`"
-                                    @click="goToSlide(i)"
+        <section class="relative bg-[#123524] text-[#FBF6EC]">
+            <svg
+                viewBox="0 0 1440 130"
+                preserveAspectRatio="none"
+                class="absolute -top-px left-0 z-20 block h-[clamp(60px,8vw,130px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,0 L1440,0 L1440,58 C1200,10 1010,120 720,66 C420,10 220,128 0,52 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+
+            <div
+                class="relative z-10 mx-auto grid max-w-[1220px] items-center gap-[clamp(26px,4vw,56px)] px-[clamp(16px,4vw,44px)] py-[clamp(90px,13vw,190px)] lg:grid-cols-2"
+            >
+                <div
+                    class="grid h-[clamp(240px,28vw,330px)] place-items-center overflow-hidden rounded-[28px] bg-[repeating-linear-gradient(135deg,#255036_0_12px,#2E6242_12px_24px)]"
+                >
+                    <span
+                        class="rounded-full bg-[#0A2014]/55 px-[14px] py-2 text-center font-['IBM_Plex_Mono',monospace] text-[10.5px]"
+                        >{{
+                            $t(
+                                'foto: amanecer en un sendero de la Sierra Nevada',
+                            )
+                        }}</span
+                    >
+                </div>
+                <div>
+                    <h2
+                        class="font-['Newsreader',serif] text-[clamp(34px,4.8vw,58px)] leading-[1.05] font-semibold italic"
+                    >
+                        {{ $t('¿Te suena familiar?') }}
+                    </h2>
+                    <p
+                        class="mt-[18px] max-w-[54ch] text-[15px] leading-[1.75] text-[#FBF6EC]/84"
+                    >
+                        {{
+                            $t(
+                                'Seis chats de WhatsApp por la misma reserva. Un Excel que solo entiende una persona. Dos vendedores prometiendo el mismo cupo del sábado. Y al final del mes, ninguna certeza de qué tour deja plata.',
+                            )
+                        }}
+                    </p>
+                    <p
+                        class="mt-3.5 max-w-[54ch] text-[15px] leading-[1.75] text-[#FBF6EC]/84"
+                    >
+                        {{
+                            $t(
+                                'Montree ordena esa operación: cada reserva con su pago, su guía y su estado, visible para todo el equipo en tiempo real.',
+                            )
+                        }}
+                    </p>
+                    <div
+                        class="mt-7 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3.5"
+                    >
+                        <div
+                            v-for="pillar in pillars"
+                            :key="pillar.label"
+                            class="rounded-[22px] bg-[#FBF6EC]/9 p-4 text-center"
+                        >
+                            <span
+                                class="inline-block rounded-full bg-[#E9D9B4]/16 px-3 py-1.5 font-['IBM_Plex_Mono',monospace] text-[12px] tracking-[0.08em] text-[#E9D9B4]"
+                                >{{ pillar.icon }}</span
+                            >
+                            <p class="mt-2.5 text-[12.5px] text-[#FBF6EC]/90">
+                                {{ pillar.label }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <svg
+                viewBox="0 0 1440 130"
+                preserveAspectRatio="none"
+                class="absolute -bottom-px left-0 z-20 block h-[clamp(60px,8vw,130px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,46 C230,120 420,8 720,56 C1010,102 1210,14 1440,58 L1440,130 L0,130 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+        </section>
+
+        <section
+            id="funciones"
+            class="mx-auto max-w-[1220px] px-[clamp(16px,4vw,44px)] py-[clamp(40px,6vw,80px)]"
+        >
+            <h2
+                class="text-center font-['Newsreader',serif] text-[clamp(36px,5.2vw,62px)] leading-[1.05] font-semibold italic"
+            >
+                {{ $t('Funciones') }}
+            </h2>
+            <div
+                class="mt-[clamp(22px,3vw,34px)] flex flex-wrap justify-center gap-2"
+                role="tablist"
+                :aria-label="$t('Funciones de Montree')"
+            >
+                <button
+                    v-for="(feature, index) in features"
+                    :key="feature.title"
+                    type="button"
+                    role="tab"
+                    class="rounded-full px-5 py-[11px] text-sm transition-colors duration-150"
+                    :class="
+                        index === featureIdx
+                            ? 'bg-[#123524] text-[#F6EFE1]'
+                            : 'border border-[#123524]/10 bg-[#FBF6EC] text-[#3C5445] hover:bg-[#E4EDE0]'
+                    "
+                    :aria-selected="index === featureIdx"
+                    @click="featureIdx = index"
+                >
+                    {{ feature.title }}
+                </button>
+            </div>
+
+            <p
+                class="mt-[26px] text-center font-['IBM_Plex_Mono',monospace] text-[11px] tracking-[0.14em] text-[#7A8B7E]"
+            >
+                {{
+                    $t('TRES RAZONES PARA USAR :feature', {
+                        feature: activeFeature.up,
+                    })
+                }}
+            </p>
+
+            <div
+                class="mt-[clamp(22px,3vw,34px)] grid items-center gap-[clamp(24px,3.4vw,48px)] lg:grid-cols-2"
+            >
+                <div>
+                    <div class="relative h-[clamp(340px,38vw,460px)]">
+                        <div
+                            v-for="(diamond, index) in featureCluster"
+                            :key="index"
+                            class="absolute aspect-square"
+                            :class="diamond.pos"
+                        >
+                            <div
+                                class="absolute inset-0 rotate-45 overflow-hidden rounded-[clamp(14px,1.6vw,24px)] border-2 border-[#F6EFE1] shadow-[0_22px_44px_-26px_rgba(10,32,20,0.55)]"
+                            >
+                                <div
+                                    class="absolute -inset-[42%] -rotate-45"
+                                    :class="diamond.texture"
                                 />
                             </div>
                         </div>
                     </div>
+                    <p
+                        class="mt-2.5 text-center font-['IBM_Plex_Mono',monospace] text-[9.5px] tracking-[0.1em] text-[#8A9A8E]"
+                    >
+                        {{ clusterCaption }}
+                    </p>
+                </div>
 
-                    <!-- Floating notification -->
-                    <div class="float-notif">
-                        <div class="float-notif-icon">
-                            <CheckCircle class="size-3.5" />
-                        </div>
-                        <div>
-                            <p class="float-notif-title">
-                                {{ $t('¡Nueva reserva!') }}
-                            </p>
-                            <p class="float-notif-sub">
-                                {{ $t('Senderismo Cocora · 2 personas') }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Floating revenue -->
-                    <div class="float-revenue">
-                        <TrendingUp
-                            class="size-4"
-                            style="color: var(--brand-site); flex-shrink: 0"
-                        />
-                        <div>
-                            <p class="float-notif-title">
-                                {{ $t('+$1.2M este mes') }}
-                            </p>
-                            <p class="float-notif-sub">
-                                {{ $t('↑ 34% vs mes anterior') }}
-                            </p>
-                        </div>
-                    </div>
+                <div class="flex flex-col gap-4">
+                    <p
+                        v-for="block in activeFeature.blocks"
+                        :key="block.title"
+                        class="rounded-[24px] border border-[#123524]/9 bg-[#FBF6EC] px-[22px] py-[18px] text-[14.5px] leading-[1.65] text-[#4A5C4E]"
+                    >
+                        <span
+                            class="font-['Newsreader',serif] text-[20px] font-semibold text-[#2C5C3C] italic"
+                            >{{ block.title }}</span
+                        >
+                        — {{ block.description }}
+                    </p>
+                    <p class="px-1 text-[14.5px] leading-[1.7] text-[#6A7C6E]">
+                        {{ activeFeature.body }}
+                    </p>
                 </div>
             </div>
         </section>
 
-        <!-- ── TRUSTED BY STRIP ───────────────────────────────── -->
-        <div class="trusted-strip">
-            <div class="trusted-inner container">
-                <span class="trusted-label">{{
-                    $t('Agencias que ya operan con Montree')
-                }}</span>
-                <div class="trusted-logos">
-                    <span
-                        v-for="n in [
-                            'EcoAndes',
-                            'Naturaleza Viva',
-                            'Sierra Nevada Tours',
-                            'Parque & Co',
-                            'SelvaVerde',
-                        ]"
-                        :key="n"
-                        class="trusted-logo"
-                        >{{ n }}</span
-                    >
-                </div>
-            </div>
-        </div>
-
-        <!-- ── FEATURES SHOWCASE ──────────────────────────────── -->
-        <section id="features" class="section-pale">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill">{{ $t('Funciones') }}</span>
-                    <h2 class="section-title">
-                        {{ $t('Todo lo que tu agencia necesita') }}
-                    </h2>
-                    <p class="section-sub">
-                        {{
-                            $t(
-                                'Diseñado para operadores de ecoturismo. Cada función resuelve un problema real de tu operación diaria.',
-                            )
-                        }}
-                    </p>
-                </div>
-
-                <div class="feat-showcase">
-                    <!-- Tab list -->
-                    <div class="feat-tabs">
-                        <button
-                            v-for="(feat, i) in features"
-                            :key="i"
-                            :class="[
-                                'feat-tab',
-                                activeFeature === i ? 'feat-tab--active' : '',
-                            ]"
-                            @click="activeFeature = i"
-                        >
-                            <div class="feat-tab-icon">
-                                <component :is="feat.icon" class="size-4" />
-                            </div>
-                            <div class="feat-tab-text">
-                                <span class="feat-tab-title">{{
-                                    feat.title
-                                }}</span>
-                                <span class="feat-tab-body">{{
-                                    feat.body
-                                }}</span>
-                            </div>
-                            <ChevronRight class="feat-tab-arrow size-4" />
-                        </button>
-                    </div>
-
-                    <!-- Detail panel -->
-                    <div class="feat-detail">
-                        <Transition name="feat-fade">
-                            <div :key="activeFeature" class="feat-detail-inner">
-                                <div class="feat-detail-header">
-                                    <div class="feat-detail-icon">
-                                        <component
-                                            :is="features[activeFeature].icon"
-                                            class="size-7"
-                                        />
-                                    </div>
-                                    <div>
-                                        <p class="feat-detail-eyebrow">
-                                            {{
-                                                $t(
-                                                    'Función :current de :total',
-                                                    {
-                                                        current:
-                                                            activeFeature + 1,
-                                                        total: features.length,
-                                                    },
-                                                )
-                                            }}
-                                        </p>
-                                        <h3 class="feat-detail-title">
-                                            {{ features[activeFeature].title }}
-                                        </h3>
-                                    </div>
-                                </div>
-                                <p class="feat-detail-desc">
-                                    {{ features[activeFeature].detail }}
-                                </p>
-                                <ul class="feat-detail-bullets">
-                                    <li
-                                        v-for="b in features[activeFeature]
-                                            .bullets"
-                                        :key="b"
-                                    >
-                                        <CheckCircle class="size-4 shrink-0" />
-                                        <span>{{ b }}</span>
-                                    </li>
-                                </ul>
-                                <div class="feat-detail-visual">
-                                    <img
-                                        :src="features[activeFeature].image"
-                                        :alt="features[activeFeature].imageAlt"
-                                        class="feat-detail-img"
+        <section id="sitio" class="relative bg-[#EFE7D7]">
+            <svg
+                viewBox="0 0 1440 130"
+                preserveAspectRatio="none"
+                class="absolute -top-px left-0 z-20 block h-[clamp(60px,8vw,130px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,0 L1440,0 L1440,54 C1210,6 1000,118 700,62 C420,10 220,124 0,50 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+            <div
+                class="relative z-10 mx-auto max-w-[1320px] px-[clamp(16px,4vw,44px)] py-[clamp(90px,12vw,180px)]"
+            >
+                <h2
+                    class="mb-[clamp(24px,3vw,40px)] max-w-[22ch] font-['Newsreader',serif] text-[clamp(34px,4.8vw,58px)] leading-[1.05] font-semibold italic"
+                >
+                    {{ $t('Tu propio sitio, tu propia marca') }}
+                </h2>
+                <div
+                    class="grid items-center gap-[clamp(26px,4vw,52px)] lg:grid-cols-2"
+                >
+                    <div>
+                        <div class="relative h-[clamp(360px,40vw,480px)]">
+                            <div
+                                v-for="(diamond, index) in tenantDiamonds"
+                                :key="index"
+                                class="absolute aspect-square"
+                                :class="diamond.pos"
+                            >
+                                <div
+                                    class="absolute inset-0 rotate-45 overflow-hidden rounded-[clamp(14px,1.6vw,26px)] border-2 border-[#EFE7D7] shadow-[0_24px_46px_-28px_rgba(10,32,20,0.55)]"
+                                >
+                                    <div
+                                        class="absolute -inset-[42%] -rotate-45"
+                                        :class="diamond.texture"
                                     />
                                 </div>
-                                <div class="feat-detail-nav">
-                                    <button
-                                        v-if="activeFeature > 0"
-                                        class="fdn-btn"
-                                        @click="activeFeature--"
-                                    >
-                                        {{ $t('← Anterior') }}
-                                    </button>
-                                    <div class="fdn-dots">
-                                        <span
-                                            v-for="(_, i) in features"
-                                            :key="i"
-                                            :class="[
-                                                'fdn-dot',
-                                                activeFeature === i
-                                                    ? 'fdn-dot--active'
-                                                    : '',
-                                            ]"
-                                            @click="activeFeature = i"
-                                        />
-                                    </div>
-                                    <button
-                                        v-if="
-                                            activeFeature < features.length - 1
-                                        "
-                                        class="fdn-btn fdn-btn--next"
-                                        @click="activeFeature++"
-                                    >
-                                        {{ $t('Siguiente →') }}
-                                    </button>
-                                </div>
-                            </div>
-                        </Transition>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── PROBLEMA ───────────────────────────────────────── -->
-        <section id="problem" class="section-cream section-cream--tight">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill">{{
-                        $t('El problema real')
-                    }}</span>
-                    <h2 class="section-title">
-                        {{ $t('¿Te suena familiar?') }}
-                    </h2>
-                    <p class="section-sub">
-                        {{
-                            $t(
-                                'El 90% de las agencias de ecoturismo opera con herramientas improvisadas que frenan su crecimiento.',
-                            )
-                        }}
-                    </p>
-                </div>
-                <div class="pain-list">
-                    <div
-                        v-for="(pain, i) in painPoints"
-                        :key="i"
-                        class="reveal pain-item"
-                        :style="`animation-delay:${i * 110}ms`"
-                    >
-                        <span class="pain-num">0{{ i + 1 }}</span>
-                        <p class="pain-text">{{ pain }}</p>
-                    </div>
-                </div>
-                <div class="reveal pain-cta">
-                    <CheckCircle
-                        class="size-5"
-                        style="color: var(--brand-site); flex-shrink: 0"
-                    />
-                    <p>
-                        {{
-                            $t(
-                                'Montree resuelve los tres problemas desde el mismo lugar, y lo dejas andando en menos de 10 minutos.',
-                            )
-                        }}
-                        <a href="#pricing">{{
-                            $t('Pruébalo 30 días gratis →')
-                        }}</a>
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── HOW IT WORKS ───────────────────────────────────── -->
-        <section id="how-it-works" class="section-dark-alt">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill eyebrow-pill--light">{{
-                        $t('En 10 minutos')
-                    }}</span>
-                    <h2 class="section-title section-title--light">
-                        {{ $t('En línea antes de terminar tu café') }}
-                    </h2>
-                    <p class="section-sub section-sub--light">
-                        {{
-                            $t(
-                                'Sin configuraciones complicadas. Sin técnicos. Sin esperas.',
-                            )
-                        }}
-                    </p>
-                </div>
-                <div class="steps-grid">
-                    <div
-                        v-for="(step, i) in steps"
-                        :key="step.num"
-                        class="reveal step-card"
-                        :style="`animation-delay:${i * 90}ms`"
-                    >
-                        <div class="step-num-wrap">
-                            <span class="step-num">{{ step.num }}</span>
-                            <div
-                                v-if="i < steps.length - 1"
-                                class="step-connector"
-                                aria-hidden="true"
-                            />
-                        </div>
-                        <h3 class="step-title">{{ step.title }}</h3>
-                        <p class="step-body">{{ step.body }}</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── TESTIMONIOS ─────────────────────────────────────── -->
-        <section class="section-dark">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill eyebrow-pill--light">{{
-                        $t('Testimonios')
-                    }}</span>
-                    <h2 class="section-title section-title--light">
-                        {{ $t('Agencias que ya dieron el paso') }}
-                    </h2>
-                    <p class="section-sub section-sub--light">
-                        {{
-                            $t(
-                                'Operadores que pasaron del caos a la automatización.',
-                            )
-                        }}
-                    </p>
-                </div>
-                <div class="testi-grid">
-                    <div
-                        v-for="(t, i) in testimonials"
-                        :key="t.name"
-                        class="reveal testi-card"
-                        :style="`animation-delay:${i * 100}ms`"
-                    >
-                        <span class="testi-mark">&ldquo;</span>
-                        <p class="testi-text">{{ t.text }}</p>
-                        <div class="testi-author">
-                            <div class="testi-avatar">{{ t.avatar }}</div>
-                            <div>
-                                <p class="testi-name">{{ t.name }}</p>
-                                <p class="testi-role">{{ t.role }}</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── PRICING ────────────────────────────────────────── -->
-        <section id="pricing" class="section-cream">
-            <div class="container">
-                <div class="reveal section-header">
-                    <span class="eyebrow-pill">{{ $t('Precios') }}</span>
-                    <h2 class="section-title">
-                        {{ $t('Precios claros, sin sorpresas') }}
-                    </h2>
-                    <p class="section-sub">
-                        {{
-                            $t(
-                                'Ganamos cuando tú cobras: una comisión por reserva confirmada. Sin costos ocultos y con 30 días gratis para empezar.',
-                            )
-                        }}
-                    </p>
-                </div>
-
-                <div class="reveal commission-card">
-                    <div class="commission-main">
-                        <span class="commission-label">
-                            {{ $t('Comisión por reserva') }}
-                        </span>
-                        <div class="commission-figure">
-                            <span class="commission-range">3% – 5%</span>
-                            <span class="commission-unit">
-                                {{ $t('por reserva confirmada') }}
-                            </span>
-                        </div>
-                        <p class="commission-desc">
+                        <p
+                            class="mt-2.5 text-center font-['IBM_Plex_Mono',monospace] text-[9.5px] tracking-[0.1em] text-[#93998A]"
+                        >
                             {{
                                 $t(
-                                    'El porcentaje depende del volumen mensual de tu agencia. No cobramos por reservas canceladas, expiradas ni por cupos que no se vendieron.',
+                                    'PORTADAS REALES DE SITIOS HECHOS CON MONTREE',
                                 )
                             }}
                         </p>
                     </div>
-                    <div class="commission-side">
-                        <span class="commission-label">{{
-                            $t('Medios de pago')
-                        }}</span>
-                        <ul class="commission-rails">
-                            <li>
-                                <CheckCircle class="size-4 shrink-0" />
-                                {{ $t('Bre-B — transferencia inmediata') }}
-                            </li>
-                            <li>
-                                <CheckCircle class="size-4 shrink-0" />
-                                {{ $t('PSE — débito desde tu banco') }}
+
+                    <div>
+                        <p class="text-[15px] leading-[1.75] text-[#4A5C4E]">
+                            {{
+                                $t(
+                                    'Montree es multi-tenant: al registrarte se crea un espacio aislado para tu agencia, con su página pública, su catálogo, sus precios y sus usuarios. Tus turistas ven tu marca — nunca la nuestra. Esta página es de Montree; la de tu agencia es tuya.',
+                                )
+                            }}
+                        </p>
+                        <ul class="mt-[22px] flex flex-col gap-2.5">
+                            <li
+                                v-for="item in tenantList"
+                                :key="item"
+                                class="flex items-start gap-3 text-[14.5px] leading-[1.55] text-[#2A3E30]"
+                            >
+                                <span
+                                    class="mt-1.5 size-2 flex-none rotate-45 rounded-[2px] bg-[#2C5C3C]"
+                                />
+                                {{ item }}
                             </li>
                         </ul>
-                        <p class="commission-pending">
+                        <div class="mt-6">
+                            <p
+                                class="font-['IBM_Plex_Mono',monospace] text-[10px] tracking-[0.14em] text-[#7A8B7E]"
+                            >
+                                {{ $t('ROLES EN CADA AGENCIA') }}
+                            </p>
+                            <div class="mt-3 flex flex-wrap gap-2.5">
+                                <span
+                                    v-for="role in roles"
+                                    :key="role.name"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-[#123524]/10 bg-[#FBF6EC] px-[15px] py-[9px] text-[12.5px]"
+                                >
+                                    <strong class="font-semibold">{{
+                                        role.name
+                                    }}</strong>
+                                    <span class="text-[#6A7C6E]"
+                                        >· {{ role.description }}</span
+                                    >
+                                </span>
+                            </div>
+                        </div>
+                        <a
+                            :href="props.demoUrl"
+                            class="mt-6 inline-block rounded-full bg-[#123524] px-[26px] py-[13px] text-[13.5px] text-[#F6EFE1] transition-colors hover:bg-[#2C5C3C]"
+                            >{{ $t('Ver un sitio de ejemplo') }}</a
+                        >
+                    </div>
+                </div>
+            </div>
+            <svg
+                viewBox="0 0 1440 130"
+                preserveAspectRatio="none"
+                class="absolute -bottom-px left-0 z-20 block h-[clamp(60px,8vw,130px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,50 C220,124 420,10 700,62 C1000,118 1210,6 1440,54 L1440,130 L0,130 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+        </section>
+
+        <section
+            id="planes"
+            class="mx-auto max-w-[1180px] px-[clamp(16px,4vw,44px)] py-[clamp(52px,7vw,96px)]"
+        >
+            <div class="text-center">
+                <h2
+                    class="font-['Newsreader',serif] text-[clamp(36px,5.2vw,62px)] leading-[1.05] font-semibold italic"
+                >
+                    {{ $t('Planes') }}
+                </h2>
+                <p class="mt-3 text-[14.5px] text-[#5C6E60]">
+                    {{
+                        $t(
+                            'Empieza gratis. Paga solo cuando Montree ya te esté trayendo reservas.',
+                        )
+                    }}
+                </p>
+            </div>
+
+            <div
+                class="mt-[clamp(28px,3.6vw,44px)] rounded-[36px] border border-[#123524]/9 bg-[#FBF6EC] p-[clamp(20px,3vw,40px)]"
+            >
+                <div class="grid gap-[clamp(22px,3vw,42px)] lg:grid-cols-2">
+                    <div class="flex flex-col gap-2.5" role="tablist">
+                        <button
+                            v-for="(plan, index) in plans"
+                            :key="plan.name"
+                            type="button"
+                            role="tab"
+                            class="rounded-[24px] px-[18px] py-4 text-left transition-colors duration-150"
+                            :class="
+                                index === planIdx
+                                    ? 'bg-[#123524] text-[#FBF6EC]'
+                                    : 'bg-[#F1EADB] text-[#123524] hover:bg-[#EFE7D7]'
+                            "
+                            :aria-selected="index === planIdx"
+                            @click="planIdx = index"
+                        >
+                            <span class="flex items-center gap-3">
+                                <span
+                                    class="size-2.5 flex-none rotate-45 rounded-[2px]"
+                                    :class="
+                                        index === planIdx
+                                            ? 'bg-[#E9D9B4]'
+                                            : 'bg-[#B9C7B8]'
+                                    "
+                                />
+                                <span>
+                                    <span
+                                        class="block font-['IBM_Plex_Mono',monospace] text-[9.5px] tracking-[0.14em]"
+                                        :class="
+                                            index === planIdx
+                                                ? 'text-[#FBF6EC]/70'
+                                                : 'text-[#7A8B7E]'
+                                        "
+                                        >{{
+                                            $t('PLAN :number', {
+                                                number: plan.number,
+                                            })
+                                        }}</span
+                                    >
+                                    <span
+                                        class="block font-['Newsreader',serif] text-[23px] leading-[1.2] font-medium"
+                                        >{{ plan.name }}</span
+                                    >
+                                </span>
+                                <span
+                                    class="ml-auto text-[13px]"
+                                    :class="
+                                        index === planIdx
+                                            ? 'text-[#FBF6EC]/70'
+                                            : 'text-[#7A8B7E]'
+                                    "
+                                    >{{ plan.price }}</span
+                                >
+                            </span>
+                        </button>
+                        <p
+                            class="mx-1 mt-2 text-[12.5px] leading-[1.6] text-[#7A8B7E]"
+                        >
                             {{
                                 $t(
-                                    'Tarjeta de crédito para paquetes de viaje: en evaluación.',
+                                    'Estamos evaluando una tarifa reducida para agencias pequeñas, pensada solo para cubrir costos de infraestructura. Los precios pueden ajustarse durante la beta.',
                                 )
                             }}
                         </p>
                     </div>
-                </div>
 
-                <p class="pricing-bridge">
-                    {{
-                        $t(
-                            '¿Prefieres una tarifa fija mensual? Estos son los planes que estamos evaluando:',
-                        )
-                    }}
-                </p>
-                <div class="pricing-grid">
-                    <div
-                        v-for="plan in plans"
-                        :key="plan.name"
-                        :class="[
-                            'reveal pricing-card',
-                            plan.hot ? 'pricing-card--hot' : '',
-                        ]"
-                    >
-                        <div v-if="plan.hot" class="pricing-badge">
-                            {{ $t('Más popular') }}
-                        </div>
-                        <div class="pricing-card-top">
-                            <h3 class="pricing-name">{{ plan.name }}</h3>
-                            <p class="pricing-desc">{{ plan.desc }}</p>
-                            <div class="pricing-price">
-                                <span class="pricing-amount">{{
-                                    plan.price
-                                }}</span>
-                                <span class="pricing-period">{{
-                                    plan.period
-                                }}</span>
-                            </div>
-                            <div class="pricing-divider" />
-                            <ul class="pricing-features">
-                                <li v-for="item in plan.items" :key="item">
-                                    <CheckCircle class="size-4 shrink-0" />{{
-                                        item
-                                    }}
-                                </li>
-                            </ul>
-                        </div>
+                    <div>
+                        <p class="flex flex-wrap items-baseline gap-2.5">
+                            <span
+                                class="font-['Newsreader',serif] text-[clamp(28px,3.4vw,42px)] leading-none font-semibold italic"
+                                >{{ activePlan.name }}</span
+                            >
+                            <span class="text-[13px] text-[#6A7C6E]">{{
+                                activePlan.unit
+                            }}</span>
+                        </p>
+                        <p
+                            class="mt-3 text-[14.5px] leading-[1.7] text-[#4A5C4E]"
+                        >
+                            {{ activePlan.description }}
+                        </p>
+                        <ul class="mt-[18px] flex flex-col gap-2.5">
+                            <li
+                                v-for="item in activePlan.items"
+                                :key="item"
+                                class="flex items-start gap-[11px] text-[14px] leading-[1.55] text-[#2A3E30]"
+                            >
+                                <span
+                                    class="mt-1.5 size-2 flex-none rotate-45 rounded-[2px] bg-[#2C5C3C]"
+                                />
+                                {{ item }}
+                            </li>
+                        </ul>
                         <Link
-                            :href="start().url"
-                            :class="[
-                                'pricing-btn',
-                                plan.hot
-                                    ? 'pricing-btn--hot'
-                                    : 'pricing-btn--outline',
-                            ]"
+                            v-if="planIdx < 2"
+                            :href="props.registerUrl"
+                            class="mt-[22px] inline-block rounded-full bg-[#123524] px-7 py-[13px] text-[13.5px] text-[#F6EFE1] transition-colors hover:bg-[#2C5C3C]"
+                            >{{ activePlan.cta }}</Link
                         >
-                            {{ plan.cta }}
-                        </Link>
+                        <a
+                            v-else
+                            :href="props.contactUrl"
+                            class="mt-[22px] inline-block rounded-full bg-[#123524] px-7 py-[13px] text-[13.5px] text-[#F6EFE1] transition-colors hover:bg-[#2C5C3C]"
+                            >{{ activePlan.cta }}</a
+                        >
                     </div>
                 </div>
-                <p class="pricing-note pricing-note--pending">
-                    {{
-                        $t(
-                            'Estamos evaluando una tarifa mensual reducida para agencias pequeñas, pensada solo para cubrir costos de infraestructura. Valor por confirmar.',
-                        )
-                    }}
-                </p>
-                <p class="pricing-note">
-                    {{ $t('¿Varias agencias o necesidades especiales?') }}
-                    <a href="mailto:hola@montree.co">{{
-                        $t('Contáctanos para un plan Enterprise →')
-                    }}</a>
-                    ·
-                    <a href="/politica-de-pago">{{
-                        $t('Ver política de pago')
-                    }}</a>
-                </p>
+
+                <dl
+                    class="mt-[clamp(24px,3vw,36px)] grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2.5"
+                >
+                    <div
+                        v-for="spec in activePlan.specs"
+                        :key="spec.key"
+                        class="rounded-[22px] bg-[#F1EADB] px-[18px] py-4"
+                    >
+                        <dt
+                            class="font-['IBM_Plex_Mono',monospace] text-[9.5px] tracking-[0.14em] text-[#7A8B7E]"
+                        >
+                            {{ spec.key }}
+                        </dt>
+                        <dd class="mt-1.5 text-[14px] leading-[1.4]">
+                            {{ spec.value }}
+                        </dd>
+                    </div>
+                </dl>
             </div>
         </section>
 
-        <!-- ── CTA FINAL ─────────────────────────────────────── -->
-        <section class="section-cta">
-            <div class="cta-bg-decor" />
-            <div class="cta-inner container">
-                <div class="cta-icon-wrap">
-                    <Leaf class="size-6" />
-                </div>
-                <h2
-                    class="cta-headline"
-                    v-html="
-                        $t('¿Listo para dejar<br />el <em>Excel</em> atrás?')
-                    "
-                ></h2>
-                <p class="cta-sub">
-                    {{
-                        $t(
-                            'Los primeros 30 días son completamente gratis. Sin tarjeta de crédito. Configuras en minutos y empiezas a recibir reservas hoy.',
-                        )
-                    }}
-                </p>
-                <div class="cta-actions">
-                    <Link :href="start().url" class="btn-cta-primary">
-                        <ArrowRight class="size-5" />{{ $t('Comenzar gratis') }}
-                    </Link>
-                    <a href="mailto:hola@montree.co" class="btn-cta-ghost">{{
-                        $t('Hablar con el equipo')
-                    }}</a>
-                </div>
-                <div class="cta-guarantee">
-                    <CheckCircle class="size-4" />
-                    <span>{{
-                        $t(
-                            'Sin permanencia mínima · Cancela cuando quieras · Datos exportables',
-                        )
-                    }}</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── FOOTER ─────────────────────────────────────────── -->
-        <footer class="site-footer">
-            <div class="footer-inner container">
-                <div class="footer-brand-col">
-                    <div class="brand">
-                        <div class="brand-icon"><Leaf class="size-4" /></div>
-                        <span
-                            class="brand-name"
-                            style="color: var(--brand-cream)"
-                            >{{ $t('Montree') }}</span
-                        >
-                    </div>
-                    <p class="footer-desc">
+        <section
+            id="reviews"
+            class="mx-auto max-w-[1220px] px-[clamp(16px,4vw,44px)] pb-[clamp(52px,7vw,90px)]"
+        >
+            <div class="flex flex-wrap items-end gap-[18px]">
+                <div class="min-w-[260px] flex-1">
+                    <h2
+                        class="font-['Newsreader',serif] text-[clamp(34px,4.8vw,58px)] leading-[1.05] font-semibold italic"
+                    >
+                        {{ $t('Reviews') }}
+                    </h2>
+                    <p
+                        class="mt-3 max-w-[52ch] text-[14.5px] leading-[1.7] text-[#5C6E60]"
+                    >
                         {{
                             $t(
-                                'La plataforma digital para agencias de ecoturismo que quieren crecer sin el caos administrativo.',
+                                'Operadores de la Sierra, el Eje Cafetero y la Amazonía que ya dejaron el Excel. Estas son sus palabras.',
                             )
                         }}
                     </p>
-                    <a href="mailto:hola@montree.co" class="footer-email"
-                        ><Mail class="size-4" />{{ $t('hola@montree.co') }}</a
-                    >
-                </div>
-                <div class="footer-links-col">
-                    <h4>{{ $t('Producto') }}</h4>
-                    <a href="#features">{{ $t('Funciones') }}</a>
-                    <a href="#how-it-works">{{ $t('Cómo funciona') }}</a>
-                    <a href="#pricing">{{ $t('Precios') }}</a>
-                    <a href="/faq">{{ $t('Preguntas frecuentes') }}</a>
-                </div>
-                <div class="footer-links-col">
-                    <h4>{{ $t('Legal') }}</h4>
-                    <a href="/politica-de-pago">{{ $t('Política de pago') }}</a>
-                    <a href="/politica-de-cancelacion">
-                        {{ $t('Política de cancelación') }}
-                    </a>
                 </div>
             </div>
-            <div class="footer-bottom container">
-                <p>
+
+            <div class="relative mt-[clamp(26px,3.4vw,42px)]">
+                <button
+                    type="button"
+                    :aria-label="$t('Testimonio anterior')"
+                    class="absolute top-1/2 left-[clamp(-18px,-1.6vw,-8px)] z-[5] grid size-[46px] -translate-y-1/2 place-items-center rounded-full border border-[#123524]/12 bg-[#FBF6EC] shadow-[0_14px_28px_-18px_rgba(10,32,20,0.5)] transition-colors hover:bg-[#E4EDE0]"
+                    @click="prevReview"
+                >
+                    <ArrowLeft class="size-4" />
+                </button>
+                <button
+                    type="button"
+                    :aria-label="$t('Siguiente testimonio')"
+                    class="absolute top-1/2 right-[clamp(-18px,-1.6vw,-8px)] z-[5] grid size-[46px] -translate-y-1/2 place-items-center rounded-full border border-[#123524]/12 bg-[#FBF6EC] shadow-[0_14px_28px_-18px_rgba(10,32,20,0.5)] transition-colors hover:bg-[#E4EDE0]"
+                    @click="nextReview"
+                >
+                    <ArrowRight class="size-4" />
+                </button>
+                <div
+                    class="flex items-stretch gap-[clamp(14px,2vw,24px)] overflow-hidden"
+                >
+                    <figure
+                        v-for="(review, index) in visibleReviews"
+                        :key="review.name"
+                        class="min-w-0 overflow-hidden rounded-[28px] border bg-[#FBF6EC] transition-opacity duration-[250ms]"
+                        :class="[
+                            index === 0
+                                ? 'flex-[1.25] border-[#123524]/14 opacity-100 shadow-[0_26px_50px_-36px_rgba(10,32,20,0.45)]'
+                                : 'flex-1 border-[#123524]/8',
+                            index === 1 ? 'hidden opacity-92 sm:block' : '',
+                            index === 2 ? 'hidden opacity-78 lg:block' : '',
+                        ]"
+                    >
+                        <div
+                            class="relative h-[clamp(120px,14vw,168px)] bg-[repeating-linear-gradient(135deg,#E4EDE0_0_10px,#D8E4D4_10px_20px)]"
+                        >
+                            <span
+                                class="absolute bottom-[11px] left-3 rounded-full bg-[#FBF6EC]/90 px-[9px] py-[5px] font-['IBM_Plex_Mono',monospace] text-[9px] text-[#3C5445]"
+                                >{{ review.photo }}</span
+                            >
+                        </div>
+                        <div class="p-5">
+                            <p
+                                class="font-['IBM_Plex_Mono',monospace] text-[10px] tracking-[0.12em] text-[#2C5C3C]"
+                            >
+                                ★★★★★
+                            </p>
+                            <blockquote
+                                class="mt-3 font-['Newsreader',serif] text-[17.5px] leading-[1.45] font-medium"
+                            >
+                                “{{ review.quote }}”
+                            </blockquote>
+                            <figcaption
+                                class="mt-4 flex items-center gap-[11px] border-t border-[#123524]/10 pt-3.5"
+                            >
+                                <span
+                                    class="size-[34px] flex-none rounded-full bg-[repeating-linear-gradient(135deg,#E4EDE0_0_6px,#D8E4D4_6px_12px)]"
+                                />
+                                <span>
+                                    <span class="block text-[13.5px]">{{
+                                        review.name
+                                    }}</span>
+                                    <span
+                                        class="block text-[11.5px] text-[#6A7C6E]"
+                                        >{{ review.role }}</span
+                                    >
+                                </span>
+                            </figcaption>
+                        </div>
+                    </figure>
+                </div>
+            </div>
+
+            <div class="mt-[22px] flex items-center gap-2">
+                <span
+                    v-for="(review, index) in reviews"
+                    :key="review.name"
+                    class="h-[7px] rounded-full transition-all duration-200"
+                    :class="
+                        index === reviewIdx
+                            ? 'w-5 bg-[#123524]'
+                            : 'w-[7px] bg-[#123524]/20'
+                    "
+                />
+                <span
+                    class="ml-auto font-['IBM_Plex_Mono',monospace] text-[10px] tracking-[0.14em] text-[#8A9A8E]"
+                    >{{ $t('FEEDBACK DE AGENCIAS') }}</span
+                >
+            </div>
+        </section>
+
+        <section
+            id="registro"
+            class="relative overflow-hidden bg-[#123524] text-[#FBF6EC]"
+        >
+            <svg
+                viewBox="0 0 1440 130"
+                preserveAspectRatio="none"
+                class="absolute -top-px left-0 z-20 block h-[clamp(60px,8vw,130px)] w-full"
+                aria-hidden="true"
+            >
+                <path
+                    d="M0,0 L1440,0 L1440,50 C1190,116 1000,6 700,60 C410,112 210,12 0,60 Z"
+                    fill="#F6EFE1"
+                />
+            </svg>
+            <span
+                class="absolute top-[52%] left-1/2 size-[clamp(300px,40vw,540px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#FBF6EC]/12"
+            />
+            <span
+                class="absolute top-[52%] left-1/2 size-[clamp(180px,24vw,340px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#FBF6EC]/9"
+            />
+
+            <div
+                class="relative z-10 mx-auto max-w-[660px] px-[clamp(16px,4vw,44px)] pt-[clamp(110px,15vw,190px)] pb-[clamp(70px,9vw,120px)] text-center"
+            >
+                <p
+                    class="font-['IBM_Plex_Mono',monospace] text-[10.5px] tracking-[0.18em] text-[#E9D9B4]"
+                >
+                    {{ $t('MONTREE · BETA ABIERTA') }}
+                </p>
+                <h2
+                    class="mt-[18px] font-['Newsreader',serif] text-[clamp(36px,5.6vw,68px)] leading-[1.04] font-semibold italic"
+                >
+                    {{ $t('¿Listo para dejar el Excel atrás?') }}
+                </h2>
+                <p
+                    class="mt-[18px] text-[15.5px] leading-[1.7] text-[#FBF6EC]/84"
+                >
                     {{
-                        $t('© :year Montree. Todos los derechos reservados.', {
-                            year: new Date().getFullYear(),
-                        })
+                        $t(
+                            'Los primeros 30 días son gratis y sin tarjeta. Configuras tu agencia en minutos y empiezas a recibir reservas hoy mismo.',
+                        )
                     }}
                 </p>
-                <p>
-                    {{ $t('Hecho con amor para el ecoturismo colombiano 🌿') }}
+                <div class="mt-7 flex flex-wrap justify-center gap-3">
+                    <Link
+                        :href="props.registerUrl"
+                        class="rounded-full bg-[#F6EFE1] px-8 py-[15px] text-[13.5px] font-medium text-[#123524] transition-colors hover:bg-white"
+                        >{{ $t('Comenzar gratis') }}</Link
+                    >
+                    <a
+                        :href="props.contactUrl"
+                        class="rounded-full border border-[#FBF6EC]/45 px-7 py-[15px] text-[13.5px] transition-colors hover:bg-[#FBF6EC]/14"
+                        >{{ $t('Hablar con el equipo') }}</a
+                    >
+                </div>
+                <p
+                    class="mt-[18px] font-['IBM_Plex_Mono',monospace] text-[10.5px] text-[#FBF6EC]/55"
+                >
+                    {{
+                        $t(
+                            'SIN TARJETA · CANCELA CUANDO QUIERAS · DATOS EN COLOMBIA',
+                        )
+                    }}
                 </p>
+            </div>
+        </section>
+
+        <footer
+            class="mx-auto max-w-[1220px] px-[clamp(16px,4vw,44px)] pt-[clamp(38px,5vw,64px)] pb-[26px]"
+        >
+            <div
+                class="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-8"
+            >
+                <div class="max-w-[32ch]">
+                    <div class="flex items-center gap-2.5">
+                        <span
+                            class="grid size-7 place-items-center rounded-full bg-[#123524] font-['Newsreader',serif] text-sm font-semibold text-[#F6EFE1]"
+                            >M</span
+                        >
+                        <span
+                            class="font-['Newsreader',serif] text-xl font-medium"
+                            >Montree</span
+                        >
+                    </div>
+                    <p class="mt-3.5 text-[13px] leading-[1.65] text-[#6A7C6E]">
+                        {{
+                            $t(
+                                'La plataforma digital para agencias de ecoturismo que quieren crecer sin caos administrativo.',
+                            )
+                        }}
+                    </p>
+                    <a
+                        href="mailto:hola@montree.co"
+                        class="mt-2.5 block text-[13px] transition-colors hover:text-[#2C5C3C]"
+                        >hola@montree.co</a
+                    >
+                </div>
+                <div v-for="column in footerColumns" :key="column.title">
+                    <p
+                        class="font-['IBM_Plex_Mono',monospace] text-[9.5px] tracking-[0.14em] text-[#8A9A8E]"
+                    >
+                        {{ column.title }}
+                    </p>
+                    <div class="mt-3.5 flex flex-col gap-[9px] text-[13px]">
+                        <a
+                            v-for="link in column.links"
+                            :key="link[0]"
+                            :href="link[1]"
+                            class="transition-colors hover:text-[#2C5C3C]"
+                            >{{ link[0] }}</a
+                        >
+                    </div>
+                </div>
+            </div>
+            <div
+                class="mt-8 flex flex-wrap justify-between gap-3 border-t border-[#123524]/12 pt-[18px] font-['IBM_Plex_Mono',monospace] text-[10px] text-[#8A9A8E]"
+            >
+                <span>{{
+                    $t('© 2026 MONTREE · TODOS LOS DERECHOS RESERVADOS')
+                }}</span>
+                <span>{{ $t('HECHO PARA EL ECOTURISMO COLOMBIANO') }}</span>
             </div>
         </footer>
     </div>
 </template>
-
-<style scoped>
-/* ════════════════════════════════════════════════════════════
-   TOKENS — on .page-root so scoped CSS can read them
-════════════════════════════════════════════════════════════ */
-.page-root {
-    --cream: var(--brand-cream);
-    --green-dark: var(--brand-green);
-    --green-darker: var(--brand-ink);
-    --green-mid: var(--brand-site);
-    --green-light: var(--brand-on-ink);
-    --green-pale: var(--brand-green-100);
-    --text-dark: var(--brand-ink);
-    --text-muted: var(--brand-muted);
-    --border: var(--brand-line);
-    --ff-display: 'Playfair Display', Georgia, serif;
-    --ff-body: 'Inter', system-ui, sans-serif;
-
-    font-family: var(--ff-body);
-    color: var(--text-dark);
-    background: var(--cream);
-    overflow-x: hidden;
-}
-
-.container {
-    max-width: 1200px;
-    margin-inline: auto;
-    padding-inline: 1.5rem;
-}
-.container--narrow {
-    max-width: 760px;
-}
-
-/* ════════════════════════════════════════════════════════════
-   TOP ACCENT BAR
-════════════════════════════════════════════════════════════ */
-.top-accent-bar {
-    height: 3px;
-    background: linear-gradient(
-        90deg,
-        var(--green-dark) 0%,
-        var(--green-mid) 50%,
-        var(--green-light) 100%
-    );
-}
-
-/* ════════════════════════════════════════════════════════════
-   HEADER — always distinguishable
-════════════════════════════════════════════════════════════ */
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(242, 237, 228, 0.9);
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(16px);
-    transition:
-        background 0.3s ease,
-        box-shadow 0.3s ease;
-}
-
-.site-header.is-scrolled {
-    background: rgba(242, 237, 228, 0.98);
-    box-shadow: 0 2px 24px rgba(42, 74, 52, 0.1);
-}
-
-.header-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    gap: 2rem;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    text-decoration: none;
-}
-
-.brand-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: var(--green-mid);
-    color: var(--cream);
-    flex-shrink: 0;
-    transition: transform 0.25s ease;
-}
-.brand:hover .brand-icon {
-    transform: rotate(-8deg) scale(1.05);
-}
-
-.brand-name {
-    font-family: var(--ff-display);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--green-dark);
-    letter-spacing: -0.01em;
-}
-
-.brand-tag {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--green-mid);
-    background: var(--green-pale);
-    border: 1px solid var(--border);
-    padding: 1px 6px;
-    border-radius: 4px;
-    margin-left: 2px;
-}
-
-.main-nav {
-    display: none;
-    align-items: center;
-    gap: 1.75rem;
-}
-@media (min-width: 900px) {
-    .main-nav {
-        display: flex;
-    }
-}
-
-.main-nav a {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.2s;
-    position: relative;
-}
-.main-nav a::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: var(--green-mid);
-    border-radius: 1px;
-    transition: width 0.25s ease;
-}
-.main-nav a:hover {
-    color: var(--green-dark);
-}
-.main-nav a:hover::after {
-    width: 100%;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.nav-link {
-    display: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-@media (min-width: 640px) {
-    .nav-link {
-        display: inline-flex;
-    }
-}
-.nav-link:hover {
-    color: var(--green-dark);
-}
-
-.btn-cta-sm {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 1.125rem;
-    border-radius: 8px;
-    background: var(--green-dark);
-    color: var(--cream);
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(42, 74, 52, 0.18);
-}
-.btn-cta-sm:hover {
-    background: var(--green-mid);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(42, 74, 52, 0.26);
-}
-
-/* ════════════════════════════════════════════════════════════
-   HERO
-════════════════════════════════════════════════════════════ */
-.hero-section {
-    background: var(--cream);
-    padding-top: 3rem;
-    padding-bottom: 5rem;
-    min-height: calc(100vh - 67px);
-    display: flex;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.hero-texture {
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(
-        circle,
-        rgba(74, 124, 89, 0.07) 1px,
-        transparent 1px
-    );
-    background-size: 28px 28px;
-    pointer-events: none;
-}
-
-.hero-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 3rem;
-    align-items: center;
-    width: 100%;
-    position: relative;
-    z-index: 1;
-}
-@media (min-width: 1024px) {
-    .hero-grid {
-        grid-template-columns: 11fr 9fr;
-        gap: 4rem;
-    }
-}
-
-.hero-left {
-    display: flex;
-    flex-direction: column;
-}
-
-.hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 1rem;
-    border-radius: 999px;
-    border: 1.5px solid var(--border);
-    background: white;
-    color: var(--green-mid);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    width: fit-content;
-    margin-bottom: 1.75rem;
-    box-shadow: 0 2px 12px rgba(42, 74, 52, 0.07);
-    animation: badge-in 0.5s ease 0.05s both;
-}
-
-.hero-headline {
-    font-family: var(--ff-display);
-    font-size: clamp(2.75rem, 6vw, 5rem);
-    font-weight: 900;
-    line-height: 1.07;
-    letter-spacing: -0.03em;
-    color: var(--green-dark);
-    margin-bottom: 1.5rem;
-    animation: fade-up 0.6s ease 0.15s both;
-}
-.hero-headline em {
-    font-style: italic;
-    color: var(--green-mid);
-}
-
-.hero-sub {
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    line-height: 1.78;
-    color: var(--text-muted);
-    max-width: 520px;
-    margin-bottom: 2.25rem;
-    animation: fade-up 0.6s ease 0.25s both;
-}
-
-.hero-ctas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.875rem;
-    margin-bottom: 0.875rem;
-    animation: fade-up 0.6s ease 0.35s both;
-}
-.hero-disclaimer {
-    font-size: 0.8rem;
-    color: var(--brand-muted);
-    margin-bottom: 2.75rem;
-    animation: fade-up 0.6s ease 0.42s both;
-}
-
-.btn-hero-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.9rem 2rem;
-    border-radius: 10px;
-    background: var(--green-dark);
-    color: var(--cream);
-    font-weight: 700;
-    font-size: 1rem;
-    text-decoration: none;
-    box-shadow: 0 4px 20px rgba(42, 74, 52, 0.25);
-    transition: all 0.25s ease;
-    position: relative;
-    overflow: hidden;
-}
-.btn-hero-primary::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent
-    );
-    transform: translateX(-100%);
-    transition: transform 0.5s ease;
-}
-.btn-hero-primary:hover::after {
-    transform: translateX(100%);
-}
-.btn-hero-primary:hover {
-    background: var(--green-mid);
-    box-shadow: 0 8px 32px rgba(74, 124, 89, 0.4);
-    transform: translateY(-2px);
-}
-
-.btn-hero-ghost {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.9rem 1.75rem;
-    border-radius: 10px;
-    border: 1.5px solid var(--border);
-    color: var(--text-dark);
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: all 0.22s ease;
-}
-.btn-hero-ghost:hover {
-    border-color: var(--green-mid);
-    color: var(--green-mid);
-    background: var(--green-pale);
-}
-
-.hero-stats {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    animation: fade-up 0.6s ease 0.5s both;
-}
-.hero-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-.hero-stat-num {
-    font-family: var(--ff-display);
-    font-size: 1.75rem;
-    font-weight: 900;
-    color: var(--green-dark);
-    line-height: 1;
-    letter-spacing: -0.02em;
-}
-.hero-stat-label {
-    font-size: 0.6875rem;
-    color: var(--text-muted);
-    line-height: 1.3;
-    max-width: 90px;
-}
-.hero-stat-divider {
-    width: 1px;
-    height: 38px;
-    background: var(--border);
-    flex-shrink: 0;
-}
-
-/* ── Hero right ── */
-.hero-right {
-    display: none;
-    position: relative;
-    height: 540px;
-    border-radius: 20px;
-    overflow: visible;
-    animation: fade-up 0.7s ease 0.2s both;
-}
-@media (min-width: 1024px) {
-    .hero-right {
-        display: block;
-    }
-}
-
-.carousel {
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    overflow: hidden;
-    background: var(--green-darker);
-    box-shadow:
-        0 24px 80px rgba(42, 74, 52, 0.24),
-        0 0 0 1px rgba(42, 74, 52, 0.1);
-}
-
-.carousel-slide {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 1.2s ease;
-}
-.carousel-slide.active {
-    opacity: 1;
-}
-
-.carousel-gradient {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(15, 31, 21, 0.1) 0%,
-        rgba(15, 31, 21, 0) 40%,
-        rgba(15, 31, 21, 0.72) 100%
-    );
-    z-index: 1;
-}
-
-.carousel-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid rgba(242, 237, 228, 0.3);
-    background: rgba(15, 31, 21, 0.5);
-    color: var(--cream);
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    transition: all 0.2s ease;
-    opacity: 0;
-}
-.carousel:hover .carousel-arrow {
-    opacity: 1;
-}
-.carousel-arrow:hover {
-    background: rgba(74, 124, 89, 0.75);
-    border-color: rgba(242, 237, 228, 0.5);
-}
-.carousel-arrow--prev {
-    left: 14px;
-}
-.carousel-arrow--next {
-    right: 14px;
-}
-
-.carousel-footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1rem 1.25rem;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    z-index: 2;
-}
-.carousel-location {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.carousel-loc-label {
-    font-family: var(--ff-display);
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--cream);
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-.carousel-loc-sub {
-    font-size: 0.75rem;
-    color: rgba(242, 237, 228, 0.72);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.carousel-dots {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-.carousel-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(242, 237, 228, 0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 0;
-}
-.carousel-dot.active {
-    background: var(--cream);
-    width: 20px;
-    border-radius: 3px;
-}
-
-.float-notif,
-.float-revenue {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.65rem 0.9rem;
-    border-radius: 12px;
-    background: rgba(242, 237, 228, 0.97);
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 28px rgba(42, 74, 52, 0.16);
-    backdrop-filter: blur(8px);
-    z-index: 4;
-}
-.float-notif {
-    bottom: 80px;
-    left: -18px;
-    animation: float-up-gentle 3.6s ease-in-out infinite;
-}
-.float-revenue {
-    bottom: 18px;
-    left: -18px;
-    animation: float-down-gentle 4.2s ease-in-out infinite;
-}
-
-.float-notif-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--green-pale);
-    color: var(--green-mid);
-    flex-shrink: 0;
-}
-.float-notif-title {
-    font-size: 0.71875rem;
-    font-weight: 700;
-    color: var(--green-dark);
-    line-height: 1.2;
-    white-space: nowrap;
-}
-.float-notif-sub {
-    font-size: 0.625rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-/* ════════════════════════════════════════════════════════════
-   TRUSTED STRIP
-════════════════════════════════════════════════════════════ */
-.trusted-strip {
-    background: white;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding-block: 1.25rem;
-}
-.trusted-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-@media (min-width: 640px) {
-    .trusted-inner {
-        flex-direction: row;
-        justify-content: center;
-    }
-}
-.trusted-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-.trusted-logos {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1.5rem;
-    justify-content: center;
-}
-.trusted-logo {
-    font-family: var(--ff-display);
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--green-dark);
-    opacity: 0.35;
-    transition: opacity 0.2s;
-}
-.trusted-logo:hover {
-    opacity: 0.6;
-}
-
-/* ════════════════════════════════════════════════════════════
-   SECTION BASES
-════════════════════════════════════════════════════════════ */
-.section-cream {
-    background: var(--cream);
-    padding-block: 6rem;
-}
-.section-pale {
-    background: var(--green-pale);
-    padding-block: 6rem;
-}
-.section-dark {
-    background: var(--green-dark);
-    padding-block: 6rem;
-}
-.section-dark-alt {
-    background: var(--green-darker);
-    padding-block: 6rem;
-}
-
-.section-cta {
-    background: var(--green-darker);
-    padding-block: 7rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.cta-bg-decor {
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(
-            ellipse at 20% 50%,
-            rgba(74, 124, 89, 0.22) 0%,
-            transparent 60%
-        ),
-        radial-gradient(
-            ellipse at 80% 50%,
-            rgba(74, 124, 89, 0.14) 0%,
-            transparent 60%
-        );
-    pointer-events: none;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 3.5rem;
-}
-
-.eyebrow-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.3rem 0.875rem;
-    border-radius: 999px;
-    background: white;
-    border: 1.5px solid var(--border);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--green-mid);
-    margin-bottom: 1.125rem;
-    box-shadow: 0 1px 4px rgba(42, 74, 52, 0.07);
-}
-.eyebrow-pill--light {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(184, 203, 176, 0.35);
-    color: var(--green-light);
-}
-
-.section-title {
-    font-family: var(--ff-display);
-    font-size: clamp(1.875rem, 3.5vw, 2.875rem);
-    font-weight: 900;
-    letter-spacing: -0.025em;
-    color: var(--text-dark);
-    line-height: 1.1;
-    margin-bottom: 1rem;
-}
-.section-title--light {
-    color: var(--cream);
-}
-
-.section-sub {
-    font-size: 1.0625rem;
-    line-height: 1.72;
-    color: var(--text-muted);
-    max-width: 560px;
-    margin-inline: auto;
-}
-.section-sub--light {
-    color: rgba(242, 237, 228, 0.72);
-}
-
-/* ════════════════════════════════════════════════════════════
-   PROBLEM
-════════════════════════════════════════════════════════════ */
-.section-cream--tight {
-    padding-block: 4rem;
-}
-.section-cream--tight .section-header {
-    margin-bottom: 2.5rem;
-}
-
-.pain-list {
-    display: grid;
-    gap: 1.5rem;
-    max-width: 1040px;
-    margin-inline: auto;
-    margin-bottom: 2.5rem;
-}
-@media (min-width: 768px) {
-    .pain-list {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2rem;
-    }
-}
-
-.pain-item {
-    padding-top: 1.25rem;
-    border-top: 2px solid var(--green-light);
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-}
-
-.pain-num {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--green-mid);
-    opacity: 0.6;
-}
-
-.pain-text {
-    font-family: var(--ff-display);
-    font-size: clamp(1rem, 1.4vw, 1.125rem);
-    font-style: italic;
-    color: var(--green-dark);
-    line-height: 1.5;
-}
-
-.pain-cta {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    font-size: 0.9375rem;
-    color: var(--text-muted);
-    max-width: 800px;
-    margin-inline: auto;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-}
-.pain-cta a {
-    color: var(--green-mid);
-    font-weight: 600;
-    text-decoration: none;
-}
-.pain-cta a:hover {
-    color: var(--green-dark);
-}
-
-/* ════════════════════════════════════════════════════════════
-   FEATURES SHOWCASE (tabbed)
-════════════════════════════════════════════════════════════ */
-.feat-showcase {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
-}
-@media (min-width: 900px) {
-    .feat-showcase {
-        grid-template-columns: 340px 1fr;
-        gap: 2.5rem;
-    }
-}
-
-.feat-tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.feat-tab {
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-    padding: 1rem 1.125rem;
-    border-radius: 14px;
-    border: 1.5px solid transparent;
-    background: transparent;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s ease;
-    width: 100%;
-    font-family: var(--ff-body);
-}
-.feat-tab:hover {
-    background: white;
-    border-color: var(--border);
-}
-.feat-tab--active {
-    background: white;
-    border-color: var(--green-mid);
-    box-shadow: 0 4px 20px rgba(42, 74, 52, 0.09);
-}
-
-.feat-tab-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--green-pale);
-    color: var(--text-muted);
-    flex-shrink: 0;
-    transition:
-        background 0.2s,
-        color 0.2s;
-}
-.feat-tab--active .feat-tab-icon {
-    background: var(--green-mid);
-    color: white;
-}
-
-.feat-tab-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.feat-tab-title {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-.feat-tab-body {
-    font-size: 0.78125rem;
-    color: var(--text-muted);
-}
-.feat-tab--active .feat-tab-title {
-    color: var(--green-dark);
-}
-
-.feat-tab-arrow {
-    color: var(--text-muted);
-    opacity: 0;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-}
-.feat-tab--active .feat-tab-arrow {
-    opacity: 1;
-    color: var(--green-mid);
-}
-
-.feat-detail {
-    border-radius: 20px;
-    background: white;
-    border: 1.5px solid var(--border);
-    box-shadow: 0 4px 32px rgba(42, 74, 52, 0.07);
-    overflow: hidden;
-    min-height: 440px;
-    position: relative;
-}
-
-.feat-detail-inner {
-    padding: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.feat-detail-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-.feat-detail-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 16px;
-    background: var(--green-pale);
-    color: var(--green-mid);
-    flex-shrink: 0;
-    border: 1.5px solid var(--border);
-}
-
-.feat-detail-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
-}
-
-.feat-detail-title {
-    font-family: var(--ff-display);
-    font-size: 1.625rem;
-    font-weight: 900;
-    color: var(--green-dark);
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-}
-
-.feat-detail-desc {
-    font-size: 1rem;
-    line-height: 1.78;
-    color: var(--text-muted);
-}
-
-.feat-detail-bullets {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-.feat-detail-bullets li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.625rem;
-    font-size: 0.9375rem;
-    color: var(--text-dark);
-    line-height: 1.5;
-}
-.feat-detail-bullets li svg {
-    color: var(--green-mid);
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.feat-detail-visual {
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: var(--green-pale);
-    aspect-ratio: 16 / 7;
-    flex-shrink: 0;
-}
-
-.feat-detail-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.5s ease;
-}
-
-.feat-detail-visual:hover .feat-detail-img {
-    transform: scale(1.03);
-}
-
-.feat-detail-nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border);
-}
-.fdn-btn {
-    background: none;
-    border: none;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--green-mid);
-    cursor: pointer;
-    font-family: var(--ff-body);
-    transition: color 0.2s;
-    padding: 0.25rem 0;
-}
-.fdn-btn:hover {
-    color: var(--green-dark);
-}
-.fdn-btn--next {
-    margin-left: auto;
-}
-.fdn-dots {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-    flex: 1;
-    justify-content: center;
-}
-.fdn-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--border);
-    cursor: pointer;
-    transition: all 0.25s;
-}
-.fdn-dot--active {
-    background: var(--green-mid);
-    width: 18px;
-    border-radius: 3px;
-}
-
-/* Feature transition */
-.feat-fade-enter-active {
-    transition:
-        opacity 0.22s ease,
-        transform 0.22s ease;
-}
-.feat-fade-leave-active {
-    transition: opacity 0.15s ease;
-    position: absolute;
-    inset: 0;
-}
-.feat-fade-enter-from {
-    opacity: 0;
-    transform: translateX(14px);
-}
-.feat-fade-leave-to {
-    opacity: 0;
-}
-
-/* ════════════════════════════════════════════════════════════
-   HOW IT WORKS
-════════════════════════════════════════════════════════════ */
-.steps-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-}
-@media (min-width: 900px) {
-    .steps-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.5rem;
-    }
-}
-
-.step-card {
-    position: relative;
-}
-
-.step-num-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 1.25rem;
-}
-
-.step-num {
-    font-family: var(--ff-display);
-    font-size: 2.25rem;
-    font-weight: 900;
-    color: var(--green-light);
-    line-height: 1;
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: rgba(184, 203, 176, 0.12);
-    border: 1.5px solid rgba(184, 203, 176, 0.28);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-}
-.step-card:hover .step-num {
-    background: rgba(184, 203, 176, 0.22);
-    border-color: rgba(184, 203, 176, 0.5);
-}
-
-.step-connector {
-    display: none;
-    position: absolute;
-    right: -0.75rem;
-    top: 50%;
-    width: 1.5rem;
-    height: 1px;
-    background: linear-gradient(
-        to right,
-        rgba(184, 203, 176, 0.5),
-        transparent
-    );
-}
-@media (min-width: 900px) {
-    .step-connector {
-        display: block;
-    }
-}
-
-.step-title {
-    font-family: var(--ff-display);
-    font-size: 1.0625rem;
-    font-weight: 700;
-    color: var(--cream);
-    margin-bottom: 0.5rem;
-}
-.step-body {
-    font-size: 0.875rem;
-    line-height: 1.65;
-    color: rgba(242, 237, 228, 0.6);
-}
-
-/* ════════════════════════════════════════════════════════════
-   TESTIMONIALS
-════════════════════════════════════════════════════════════ */
-.testi-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-}
-@media (min-width: 768px) {
-    .testi-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-.testi-card {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    padding: 2rem;
-    border-radius: 16px;
-    border: 1px solid rgba(184, 203, 176, 0.18);
-    background: rgba(255, 255, 255, 0.04);
-    transition: all 0.25s ease;
-}
-.testi-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(184, 203, 176, 0.32);
-    transform: translateY(-3px);
-}
-
-.testi-mark {
-    font-family: var(--ff-display);
-    font-size: 4.5rem;
-    font-weight: 900;
-    color: var(--green-mid);
-    line-height: 0.7;
-    opacity: 0.45;
-}
-.testi-text {
-    font-size: 0.9375rem;
-    line-height: 1.75;
-    color: rgba(242, 237, 228, 0.9);
-    flex: 1;
-}
-
-.testi-author {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(184, 203, 176, 0.14);
-}
-.testi-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--green-mid);
-    color: var(--cream);
-    font-size: 0.75rem;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.testi-name {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--cream);
-}
-.testi-role {
-    font-size: 0.75rem;
-    color: rgba(242, 237, 228, 0.5);
-}
-
-/* ════════════════════════════════════════════════════════════
-   PRICING — button always pinned to bottom via flex
-════════════════════════════════════════════════════════════ */
-.commission-card {
-    display: grid;
-    gap: 1.75rem;
-    background: var(--green-dark);
-    color: var(--brand-cream);
-    border-radius: 18px;
-    padding: 2.25rem 2rem;
-    margin-bottom: 2.5rem;
-}
-@media (min-width: 768px) {
-    .commission-card {
-        grid-template-columns: 1.4fr 1fr;
-        gap: 2.5rem;
-        padding: 2.75rem 2.5rem;
-    }
-}
-
-.commission-label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--green-light);
-    margin-bottom: 0.85rem;
-}
-
-.commission-figure {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.6rem;
-}
-.commission-range {
-    font-family: var(--ff-display);
-    font-size: 3rem;
-    font-weight: 900;
-    line-height: 1;
-}
-.commission-unit {
-    font-size: 0.9375rem;
-    color: var(--green-light);
-}
-
-.commission-desc {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    line-height: 1.75;
-    color: rgba(242, 237, 228, 0.78);
-    max-width: 46ch;
-}
-
-.commission-side {
-    border-top: 1px solid rgba(184, 203, 176, 0.28);
-    padding-top: 1.5rem;
-}
-@media (min-width: 768px) {
-    .commission-side {
-        border-top: none;
-        border-left: 1px solid rgba(184, 203, 176, 0.28);
-        padding-top: 0;
-        padding-left: 2.5rem;
-    }
-}
-
-.commission-rails {
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-    font-size: 0.9rem;
-}
-.commission-rails li {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-}
-.commission-rails li svg {
-    color: var(--green-light);
-}
-
-.commission-pending {
-    margin-top: 1.25rem;
-    font-size: 0.8125rem;
-    line-height: 1.6;
-    color: rgba(242, 237, 228, 0.6);
-}
-
-.pricing-bridge {
-    text-align: center;
-    font-size: 0.9375rem;
-    color: var(--text-muted);
-    margin-bottom: 1.75rem;
-}
-
-.pricing-note--pending {
-    margin-top: 2rem;
-    margin-bottom: 0.5rem;
-    font-style: italic;
-}
-
-.pricing-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    max-width: 840px;
-    margin-inline: auto;
-}
-@media (min-width: 768px) {
-    .pricing-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-.pricing-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 2.25rem;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: white;
-    box-shadow: 0 2px 16px rgba(42, 74, 52, 0.05);
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
-}
-.pricing-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(42, 74, 52, 0.1);
-}
-.pricing-card--hot {
-    background: var(--green-dark);
-    border-color: var(--green-mid);
-    box-shadow:
-        0 0 0 1px rgba(74, 124, 89, 0.3),
-        0 16px 60px rgba(42, 74, 52, 0.2);
-}
-
-/* Top content grows to fill available space, pushing button down */
-.pricing-card-top {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.pricing-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.25rem 0.875rem;
-    border-radius: 999px;
-    background: var(--green-mid);
-    color: var(--cream);
-    font-size: 0.75rem;
-    font-weight: 700;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
-}
-
-.pricing-name {
-    font-family: var(--ff-display);
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-dark);
-    margin-bottom: 0.25rem;
-}
-.pricing-card--hot .pricing-name {
-    color: var(--cream);
-}
-
-.pricing-desc {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-}
-.pricing-card--hot .pricing-desc {
-    color: rgba(242, 237, 228, 0.62);
-}
-
-.pricing-price {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    margin-bottom: 1.5rem;
-}
-.pricing-amount {
-    font-family: var(--ff-display);
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: var(--text-dark);
-    letter-spacing: -0.02em;
-}
-.pricing-card--hot .pricing-amount {
-    color: var(--cream);
-}
-.pricing-period {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-.pricing-card--hot .pricing-period {
-    color: rgba(242, 237, 228, 0.5);
-}
-
-.pricing-divider {
-    height: 1px;
-    background: var(--border);
-    margin-bottom: 1.5rem;
-}
-.pricing-card--hot .pricing-divider {
-    background: rgba(184, 203, 176, 0.2);
-}
-
-/* flex:1 makes the list grow, pushing button to bottom */
-.pricing-features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    flex: 1;
-}
-.pricing-features li {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    font-size: 0.9rem;
-    color: var(--text-dark);
-}
-.pricing-card--hot .pricing-features li {
-    color: rgba(242, 237, 228, 0.88);
-}
-.pricing-features li svg {
-    color: var(--green-mid);
-    flex-shrink: 0;
-}
-.pricing-card--hot .pricing-features li svg {
-    color: var(--green-light);
-}
-
-/* Button at the very bottom, always */
-.pricing-btn {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    padding: 0.9rem;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.9375rem;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-.pricing-btn--outline {
-    border: 1.5px solid var(--green-mid);
-    color: var(--green-mid);
-    background: transparent;
-}
-.pricing-btn--outline:hover {
-    background: var(--green-pale);
-}
-.pricing-btn--hot {
-    background: var(--green-mid);
-    color: var(--cream);
-    box-shadow: 0 4px 20px rgba(74, 124, 89, 0.3);
-}
-.pricing-btn--hot:hover {
-    background: var(--brand-green-600);
-    box-shadow: 0 6px 28px rgba(74, 124, 89, 0.45);
-    transform: translateY(-1px);
-}
-
-.pricing-note {
-    text-align: center;
-    margin-top: 2rem;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-}
-.pricing-note a {
-    color: var(--green-mid);
-    text-decoration: none;
-    font-weight: 600;
-}
-.pricing-note a:hover {
-    text-decoration: underline;
-}
-
-/* ════════════════════════════════════════════════════════════
-   CTA
-════════════════════════════════════════════════════════════ */
-.cta-inner {
-    position: relative;
-    z-index: 1;
-}
-
-.cta-icon-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 18px;
-    background: rgba(74, 124, 89, 0.2);
-    border: 1.5px solid rgba(184, 203, 176, 0.25);
-    color: var(--green-light);
-    margin-bottom: 2rem;
-    animation: cta-breathe 3s ease-in-out infinite;
-}
-
-.cta-headline {
-    font-family: var(--ff-display);
-    font-size: clamp(2.25rem, 5vw, 4.25rem);
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    line-height: 1.08;
-    color: var(--cream);
-    margin-bottom: 1.5rem;
-}
-.cta-headline em {
-    font-style: italic;
-    color: var(--green-light);
-}
-
-.cta-sub {
-    font-size: 1.0625rem;
-    line-height: 1.72;
-    color: rgba(242, 237, 228, 0.7);
-    max-width: 520px;
-    margin-inline: auto;
-    margin-bottom: 2.5rem;
-}
-
-.cta-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.875rem;
-    margin-bottom: 1.75rem;
-}
-
-.btn-cta-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.9rem 2rem;
-    border-radius: 10px;
-    background: var(--cream);
-    color: var(--green-dark);
-    font-weight: 700;
-    font-size: 1rem;
-    text-decoration: none;
-    box-shadow: 0 4px 24px rgba(242, 237, 228, 0.12);
-    transition: all 0.22s ease;
-}
-.btn-cta-primary:hover {
-    background: var(--brand-card);
-    box-shadow: 0 8px 36px rgba(242, 237, 228, 0.22);
-    transform: translateY(-2px);
-}
-
-.btn-cta-ghost {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.9rem 1.75rem;
-    border-radius: 10px;
-    border: 1px solid rgba(242, 237, 228, 0.22);
-    color: rgba(242, 237, 228, 0.8);
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: all 0.22s ease;
-}
-.btn-cta-ghost:hover {
-    border-color: rgba(242, 237, 228, 0.4);
-    color: var(--cream);
-    background: rgba(242, 237, 228, 0.07);
-}
-
-.cta-guarantee {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8125rem;
-    color: rgba(242, 237, 228, 0.45);
-}
-.cta-guarantee svg {
-    color: rgba(184, 203, 176, 0.5);
-    flex-shrink: 0;
-}
-
-/* ════════════════════════════════════════════════════════════
-   FOOTER
-════════════════════════════════════════════════════════════ */
-.site-footer {
-    background: var(--brand-ink);
-    border-top: 1px solid rgba(184, 203, 176, 0.1);
-    padding-top: 3.5rem;
-    padding-bottom: 1.5rem;
-}
-
-.footer-inner {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    margin-bottom: 3rem;
-}
-@media (min-width: 768px) {
-    .footer-inner {
-        grid-template-columns: 1.6fr 1fr 1fr;
-    }
-}
-
-.footer-brand-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-.footer-desc {
-    font-size: 0.875rem;
-    line-height: 1.65;
-    color: rgba(242, 237, 228, 0.45);
-    max-width: 300px;
-}
-.footer-email {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.875rem;
-    color: rgba(242, 237, 228, 0.5);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.footer-email:hover {
-    color: var(--green-light);
-}
-
-.footer-links-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-}
-.footer-links-col h4 {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--cream);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.25rem;
-}
-.footer-links-col a {
-    font-size: 0.875rem;
-    color: rgba(242, 237, 228, 0.45);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.footer-links-col a:hover {
-    color: var(--green-light);
-}
-
-.footer-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding-top: 2rem;
-    border-top: 1px solid rgba(184, 203, 176, 0.1);
-}
-@media (min-width: 640px) {
-    .footer-bottom {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-}
-.footer-bottom p {
-    font-size: 0.8125rem;
-    color: rgba(242, 237, 228, 0.28);
-}
-
-/* ════════════════════════════════════════════════════════════
-   ANIMATIONS
-════════════════════════════════════════════════════════════ */
-@keyframes badge-in {
-    from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes fade-up {
-    from {
-        opacity: 0;
-        transform: translateY(22px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes float-up-gentle {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-7px);
-    }
-}
-
-@keyframes float-down-gentle {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(8px);
-    }
-}
-
-@keyframes cta-breathe {
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(74, 124, 89, 0);
-    }
-    50% {
-        box-shadow: 0 0 0 12px rgba(74, 124, 89, 0.07);
-    }
-}
-
-.reveal {
-    opacity: 0;
-    transform: translateY(26px);
-}
-.reveal.revealed {
-    animation: fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-</style>
