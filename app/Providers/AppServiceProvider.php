@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\CheckoutClientFactory;
 use App\Models\Booking;
 use App\Models\BookingTraveler;
 use App\Models\Review;
@@ -19,6 +20,7 @@ use App\Policies\SuperAdminTenantPolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\TourDatePolicy;
 use App\Policies\TourPolicy;
+use App\Services\PlaceToPay\TenantCheckoutClientFactory;
 use App\Services\Rbac\TenantRoleCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -37,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(CheckoutClientFactory::class, TenantCheckoutClientFactory::class);
     }
 
     /**

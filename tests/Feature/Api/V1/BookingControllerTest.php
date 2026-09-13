@@ -45,6 +45,43 @@ final class BookingControllerTest extends TestCase
         return [$tenant, $tour, $tourDate, $user];
     }
 
+    public function test_a_new_booking_carries_the_floor_and_ceiling_of_the_next_payment(): void
+    {
+        [$tenant, $tour, $tourDate, $user] = $this->setupTenantWithUser(10);
+        $tourDate->update(['min_payment_pct' => 40]);
+
+        $response = $this->actingAs($user)->postJson('http://demo.montree.test/api/v1/bookings', [
+            'tour_date_id' => $tourDate->id,
+            'adults_count' => 2,
+            'minors_count' => 0,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.total_amount', '200000.00')
+            ->assertJsonPath('data.due_amount', '200000.00')
+            ->assertJsonPath('data.min_payment_amount', '80000.00')
+            ->assertJsonPath('data.min_payment_pct', 40);
+    }
+
+    public function test_a_new_booking_falls_back_to_the_agency_percentage(): void
+    {
+        [$tenant, $tour, $tourDate, $user] = $this->setupTenantWithUser(10);
+        $tenant->configuration()->updateOrCreate(
+            ['tenant_id' => $tenant->id],
+            ['min_partial_payment_pct' => 25],
+        );
+
+        $response = $this->actingAs($user)->postJson('http://demo.montree.test/api/v1/bookings', [
+            'tour_date_id' => $tourDate->id,
+            'adults_count' => 1,
+            'minors_count' => 0,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.min_payment_pct', 25)
+            ->assertJsonPath('data.min_payment_amount', '25000.00');
+    }
+
     public function test_creates_booking_when_capacity_available(): void
     {
         [$tenant, $tour, $tourDate, $user] = $this->setupTenantWithUser(10);

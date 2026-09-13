@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideA
 use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerController;
-use App\Http\Controllers\Api\V1\Admin\PaymentRefundController as AdminPaymentRefundController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RestoreTourDateController as AdminRestoreTourDateController;
@@ -41,7 +40,6 @@ use App\Http\Controllers\Api\V1\Guide\TourDatePassengerExportController;
 use App\Http\Controllers\Api\V1\GuideController;
 use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
@@ -92,8 +90,6 @@ Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
     Route::get('notifications', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
     Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('api.v1.notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
-
-    Route::post('bookings/{bookingNumber}/payments', [PaymentController::class, 'store'])->name('api.v1.bookings.payments.store');
 });
 
 Route::middleware(['auth', 'tenant_guide.only'])->group(function (): void {
@@ -166,8 +162,6 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::get('reviews', [AdminReviewController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
     Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->middleware('can:reviews.moderate')->name('reviews.status');
     Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->middleware('can:reviews.respond')->name('reviews.respond');
-
-    Route::post('payments/{payment}/refund', AdminPaymentRefundController::class)->middleware('can:payments.refund')->name('payments.refund');
 
     Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware('can:newsletter.view')->name('newsletter.subscribers');
     Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('can:newsletter.send')->name('newsletter.send');
