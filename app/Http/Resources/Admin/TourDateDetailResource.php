@@ -31,6 +31,8 @@ final class TourDateDetailResource extends JsonResource
             'available_seats' => max(0, $this->capacity - $this->booked_count),
             'price_override' => $this->price_override,
             'effective_price' => $this->price_override ?? $this->tour->base_price,
+            'min_payment_pct' => $this->min_payment_pct,
+            'effective_min_payment_pct' => $this->minPaymentPercentage(),
             'status' => $this->status->value,
             'display_status' => $this->displayStatus()->value,
             'notes' => $this->notes,

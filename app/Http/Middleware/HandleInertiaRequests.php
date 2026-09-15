@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Locale;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Middleware;
 
 final class HandleInertiaRequests extends Middleware
@@ -68,8 +69,14 @@ final class HandleInertiaRequests extends Middleware
             'tenant' => $tenant !== null
                 ? (new TenantResource($tenant))->resolve()
                 : null,
+            // WHY: `terms_body` admite 20.000 caracteres y esta prop viaja en TODA
+            // respuesta Inertia, incluido el catálogo público. El único lugar que lo
+            // edita es la configuración del panel, que lo recibe como prop propia.
             'tenantConfiguration' => $tenant?->configuration !== null
-                ? (new TenantConfigurationResource($tenant->configuration))->resolve()
+                ? Arr::except(
+                    (new TenantConfigurationResource($tenant->configuration))->resolve(),
+                    ['terms_body', 'terms_is_default'],
+                )
                 : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

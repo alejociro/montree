@@ -27,6 +27,7 @@ final class CreateTourDateAction
             'ends_at' => TourDate::deriveEndsAt($startsAt, $tour->duration_hours),
             'capacity' => $data['capacity'],
             'price_override' => $data['price_override'] ?? null,
+            'min_payment_pct' => $data['min_payment_pct'] ?? null,
             'notes' => $data['notes'] ?? null,
             'status' => TourDateStatus::Open,
             'booked_count' => 0,

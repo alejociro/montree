@@ -5,6 +5,7 @@ use App\Exceptions\CrossTenantAccessException;
 use App\Exceptions\InvalidTourStatusTransitionException;
 use App\Exceptions\LogisticsException;
 use App\Exceptions\NewsletterException;
+use App\Exceptions\PaymentException;
 use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
@@ -63,6 +64,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'locale']);
 
+        // WHY: PlacetoPay vuelve por POST sin token de sesion, y la notificacion
+        // servidor a servidor tampoco lo tiene. El retorno va firmado y la
+        // notificacion trae su propia firma: eso reemplaza al CSRF.
+        $middleware->validateCsrfTokens(except: ['payments/*/return', 'payments/notification']);
+
         $middleware->web(prepend: [
             RedirectToPlatformHost::class,
             ResolveTenant::class,
@@ -82,8 +88,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // WHY: this app is a same-origin Inertia SPA. The /api/v1/* endpoints
         // need session cookies (auth via guard 'web') just like the Inertia
         // pages. Laravel 11+'s api group is stateless by default, so we make
-        // it stateful here. External webhooks (Stripe etc.) can be placed in
-        // a dedicated route file later if they need to stay stateless.
+        // it stateful here. External webhooks (the PlacetoPay notification)
+        // live in routes/web.php outside this group so they stay stateless.
         $middleware->api(prepend: [
             ResolveTenant::class,
             EncryptCookies::class,
@@ -110,7 +116,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (PromotionCodeTakenException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionCodeLockedException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionInvalidException $e) => $e->toResponse());
-        $exceptions->render(fn (BookingException $e) => $e->toResponse());
         $exceptions->render(fn (ReviewException $e) => $e->toResponse());
         $exceptions->render(fn (NewsletterException $e) => $e->toResponse());
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
@@ -118,6 +123,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
         $exceptions->render(fn (CrossTenantAccessException $e) => $e->toResponse());
         $exceptions->render(fn (RoleException $e) => $e->toResponse());
+
+        // WHY: el inicio de pago sale de una visita Inertia, que no pide JSON. Un
+        // monto invalido, una reserva bloqueada o una pasarela caida tienen que
+        // volver a la reserva con el mensaje, no a la pantalla generica de error.
+        $exceptions->render(function (PaymentException|BookingException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return $e->toResponse();
+            }
+
+            return back()->with('error', $e->getMessage());
+        });
 
         // WHY: desde F018 un 403 de autorización siempre significa "te falta el permiso X",
         // no "tu rol no es Y". Se normaliza el shape para el frontend (contracts.md §4);

@@ -41,6 +41,7 @@ class DashboardResource extends JsonResource
                 'growth_pct' => $snapshot->revenue->growthPct,
                 'previous_gross' => $snapshot->revenue->previousGross,
                 'series' => $snapshot->revenue->series,
+                'by_method' => $snapshot->revenue->byMethod,
             ],
             'bookings' => [
                 'total' => $snapshot->bookings->total,

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Calendar, CheckCircle, MapPin, X, XCircle } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { store as storePayment } from '@/actions/App/Http/Controllers/Api/V1/PaymentController';
+import { store as startPayment } from '@/actions/App/Http/Controllers/PaymentCheckoutController';
 import BookingTravelersSection from '@/components/organisms/BookingTravelersSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatBookingStatus, intlLocale } from '@/lib/format';
@@ -38,6 +37,10 @@ type BookingProp = {
     total_amount: string;
     paid_amount: string;
     currency: string;
+    due_amount: string;
+    min_payment_amount: string;
+    /** Porcentaje mínimo efectivo de la salida (override o el de la agencia). */
+    min_payment_pct: number;
     expires_at: string | null;
     contact_snapshot: ContactSnapshot | null;
     /** D10: la ventana de edición del titular sigue abierta. */
@@ -62,12 +65,8 @@ const props = defineProps<{
     new_account?: boolean;
 }>();
 
-const api = useApi();
-
 const FALLBACK_HERO =
     'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop';
-
-const PARTIAL_PAYMENT_PERCENT = 0.5;
 
 const isSuccess = computed(() =>
     ['confirmed', 'completed'].includes(props.booking.status),
@@ -112,70 +111,93 @@ const subtotalNumeric = computed(() => Number(props.booking.subtotal));
 const discountNumeric = computed(() => Number(props.booking.discount_amount));
 const totalNumeric = computed(() => Number(props.booking.total_amount));
 const paidNumeric = computed(() => Number(props.booking.paid_amount));
-const pendingBalance = computed(() =>
-    Math.max(0, totalNumeric.value - paidNumeric.value),
-);
+// Saldo y piso del abono los manda el servidor: son los mismos que valida el
+// Form Request al abrir la sesion de pago.
+const pendingBalance = computed(() => Number(props.booking.due_amount));
 
 const meetingPoint = computed(() => props.booking.tour.meeting_point ?? '—');
 
 // Pending payment form state
 const paymentType = ref<'full' | 'partial'>('full');
-const partialAmount = ref(0);
+// El componente `Input` no declara `modelModifiers`, asi que `v-model.number` no
+// se aplica y el valor llega como string. Se guarda tal cual y se convierte al usarlo.
+const partialAmount = ref('');
 const processing = ref(false);
 
+/**
+ * El campo es de texto con `inputmode="decimal"`: en móvil abre el teclado
+ * numérico y, a diferencia de `type="number"`, no dibuja flechas, no cambia de
+ * valor al hacer scroll encima ni muestra el monto con la coma del idioma.
+ * A cambio hay que filtrar lo que se escribe.
+ */
+watch(partialAmount, (value) => {
+    const [whole, ...rest] = value
+        .replace(',', '.')
+        .replace(/[^\d.]/g, '')
+        .split('.');
+    const clean =
+        rest.length > 0 ? `${whole}.${rest.join('').slice(0, 2)}` : whole;
+
+    if (clean !== value) {
+        partialAmount.value = clean;
+    }
+});
+
 const minPartialAmount = computed(() =>
-    Math.ceil(totalNumeric.value * PARTIAL_PAYMENT_PERCENT),
+    Number(props.booking.min_payment_amount),
 );
 
 const amountToPay = computed(() => {
     if (paymentType.value === 'full') {
-        return totalNumeric.value;
+        return pendingBalance.value;
     }
 
-    const requested = partialAmount.value || minPartialAmount.value;
+    const requested = Number(partialAmount.value);
+
+    if (!Number.isFinite(requested) || requested <= 0) {
+        return minPartialAmount.value;
+    }
 
     return Math.min(
-        totalNumeric.value,
+        pendingBalance.value,
         Math.max(minPartialAmount.value, requested),
     );
 });
 
 const pendingAfterPartial = computed(() =>
-    Math.max(0, totalNumeric.value - amountToPay.value),
+    Math.max(0, pendingBalance.value - amountToPay.value),
 );
 
 function selectPaymentType(type: 'full' | 'partial'): void {
     paymentType.value = type;
 
-    if (type === 'partial' && partialAmount.value < minPartialAmount.value) {
-        partialAmount.value = minPartialAmount.value;
+    if (
+        type === 'partial' &&
+        Number(partialAmount.value) < minPartialAmount.value
+    ) {
+        partialAmount.value = minPartialAmount.value.toFixed(2);
     }
 }
 
-async function handlePay(): Promise<void> {
+function handlePay(): void {
     if (processing.value) {
         return;
     }
 
-    processing.value = true;
-
-    const paymentAction = storePayment(props.booking.booking_number);
-
-    await api.post(
-        paymentAction.url,
+    router.post(
+        startPayment(props.booking.booking_number).url,
         {
             type: paymentType.value,
             amount:
                 paymentType.value === 'partial' ? amountToPay.value : undefined,
         },
         {
-            onSuccess: () => {
-                toast.success(t('Pago procesado correctamente.'));
-                router.reload({ only: ['booking'] });
+            onStart: () => {
+                processing.value = true;
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ?? t('No se pudo procesar el pago.'));
+                toast.error(firstError ?? t('No pudimos iniciar el pago.'));
             },
             onFinish: () => {
                 processing.value = false;
@@ -235,6 +257,26 @@ function goBack(): void {
                             }}
                         </p>
                     </div>
+                </div>
+
+                <div
+                    v-if="pendingBalance > 0"
+                    class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-700 dark:bg-amber-950/40"
+                >
+                    <p class="font-medium text-foreground">
+                        {{
+                            $t('Te queda un saldo de :amount.', {
+                                amount: formatCurrency(pendingBalance),
+                            })
+                        }}
+                    </p>
+                    <p class="mt-0.5 text-muted-foreground">
+                        {{
+                            $t(
+                                'Tu cupo ya está asegurado; podrás pagar el saldo antes de la fecha de la actividad.',
+                            )
+                        }}
+                    </p>
                 </div>
 
                 <p class="mb-6 text-sm text-muted-foreground">
@@ -640,7 +682,7 @@ function goBack(): void {
                                         {{ $t('Pago total') }}
                                     </span>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ formatCurrency(totalNumeric) }}
+                                        {{ formatCurrency(pendingBalance) }}
                                     </p>
                                 </div>
                             </label>
@@ -672,11 +714,10 @@ function goBack(): void {
                                     >
                                         {{
                                             $t(
-                                                'Paga al menos el :percent% para asegurar tu reserva. El saldo restante podrás pagarlo antes de la fecha de la actividad.',
+                                                'Mínimo :percent% para esta salida. El saldo restante podrás pagarlo antes de la fecha de la actividad.',
                                                 {
                                                     percent:
-                                                        PARTIAL_PAYMENT_PERCENT *
-                                                        100,
+                                                        booking.min_payment_pct,
                                                 },
                                             )
                                         }}
@@ -704,10 +745,10 @@ function goBack(): void {
                                 </label>
                                 <Input
                                     id="partial-amount"
-                                    v-model.number="partialAmount"
-                                    type="number"
-                                    :min="minPartialAmount"
-                                    :max="totalNumeric"
+                                    v-model="partialAmount"
+                                    type="text"
+                                    inputmode="decimal"
+                                    autocomplete="off"
                                     class="mt-1"
                                 />
                             </div>

@@ -256,3 +256,9 @@ export function formatBookingStatus(status: string): string {
 
     return label !== undefined ? translate(label) : status;
 }
+
+/**
+ * Etiquetas de pago para las pantallas que reciben el enum crudo (la planilla
+ * manda `status`/`gateway` sin `label`). Donde el payload SÍ trae la etiqueta
+ * del backend —el listado y el detalle de transacciones— se usa esa, no esto.
+ */

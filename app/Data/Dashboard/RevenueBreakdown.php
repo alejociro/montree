@@ -8,6 +8,7 @@ final readonly class RevenueBreakdown
 {
     /**
      * @param  list<array{date: string, amount: string}>  $series
+     * @param  list<array{method: string, label: string, amount: string, share_pct: int}>  $byMethod
      */
     public function __construct(
         public string $gross,
@@ -16,5 +17,6 @@ final readonly class RevenueBreakdown
         public ?float $growthPct,
         public string $currency,
         public array $series,
+        public array $byMethod,
     ) {}
 }

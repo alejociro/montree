@@ -1,4 +1,6 @@
 import type { DocumentType, Eps } from '@/types/booking';
+import type { PaymentGateway } from '@/types/enums.generated';
+import type { TransactionSummary } from '@/types/transaction';
 
 /**
  * Espejo exacto de `contracts.md §0` (`App\Http\Resources\Passenger\*`).
@@ -53,6 +55,11 @@ export type Passenger = {
     medical_notes?: string | null;
     dietary_restrictions: string | null;
     payment: PassengerPayment | null;
+    /**
+     * Historial de transacciones de la reserva. Ausente —no vacío— cuando quien
+     * pide no tiene `payments.view`: el guía nunca lo recibe.
+     */
+    payments?: TransactionSummary[];
 };
 
 /** Espejo de `App\Data\PassengerManifestFilters::SEGMENTS`. */
@@ -126,8 +133,20 @@ export type PassengerFormInput = {
     medical_notes: string;
 };
 
-/** Cuerpo de `POST /admin/bookings/{n}/payments`. */
+/**
+ * Medio de un pago registrado a mano. `placetopay` no entra acá: lo crea la
+ * pasarela, no la planilla.
+ */
+export type ManualPaymentMethod = Extract<PaymentGateway, 'cash' | 'transfer'>;
+
+/**
+ * Cuerpo de `POST /admin/bookings/{n}/payments`.
+ *
+ * `method` arranca vacío a propósito: sin valor por defecto quien registra
+ * elige, en vez de que todo quede marcado como efectivo por inercia.
+ */
 export type ManualPaymentInput = {
+    method: ManualPaymentMethod | '';
     amount: string;
     reference: string;
     paid_at: string;

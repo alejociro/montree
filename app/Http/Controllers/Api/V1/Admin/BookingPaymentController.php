@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Actions\Payments\RegisterManualPaymentAction;
+use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\RegisterManualPaymentRequest;
 use App\Http\Resources\Payment\BookingBalanceResource;
@@ -20,6 +20,7 @@ final class BookingPaymentController extends Controller
     {
         $booking = $this->registerPayment->handle(
             $booking,
+            $request->method(),
             $request->amount(),
             $request->validated('reference'),
             $request->paidAt(),

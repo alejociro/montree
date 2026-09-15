@@ -10,12 +10,13 @@ enum PaymentType: string
     case Partial = 'partial';
     case Remainder = 'remainder';
 
+    /** Ver el WHY de [[PaymentStatus::label()]]: el idioma de origen es el español. */
     public function label(): string
     {
         return match ($this) {
-            self::Full => __('Full payment'),
-            self::Partial => __('Partial payment'),
-            self::Remainder => __('Remainder payment'),
+            self::Full => __('Pago total'),
+            self::Partial => __('Abono'),
+            self::Remainder => __('Pago del saldo'),
         };
     }
 }

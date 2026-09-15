@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data;
 
 use App\Models\BookingTraveler;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -22,6 +23,22 @@ final readonly class PassengerManifest
         public Collection $rows,
         public array $summary,
     ) {}
+
+    /**
+     * Historial de pagos de las reservas de la planilla, en una sola consulta.
+     * Quien pide decide si corresponde: el dato es del panel, no del guía.
+     */
+    public function loadPaymentsWhen(bool $shouldLoad): self
+    {
+        if (! $shouldLoad) {
+            return $this;
+        }
+
+        EloquentCollection::make($this->rows->pluck('booking')->filter()->all())
+            ->loadMissing(['payments' => fn ($query) => $query->orderByDesc('processed_at')->orderByDesc('id')]);
+
+        return $this;
+    }
 
     /**
      * @return LengthAwarePaginator<int, BookingTraveler>

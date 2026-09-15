@@ -47,6 +47,10 @@ export interface TourDateAdmin {
     available_seats: number;
     price_override: string | null;
     effective_price: string;
+    /** Override del mínimo de abono de esta salida. `null` = rige el de la agencia. */
+    min_payment_pct: number | null;
+    /** `min_payment_pct` resuelto: el override o el porcentaje de la agencia. */
+    effective_min_payment_pct: number;
     status: TourDateStatus;
     notes: string | null;
     guide: LogisticsRef | null;
@@ -110,6 +114,14 @@ export interface TourDateFormInput {
     starts_at: string;
     capacity: number;
     price_override: string;
+    /**
+     * Vacío en el formulario viaja como `null`: limpia el override.
+     *
+     * El `v-model` de un `<input type="number">` escribe un number cuando el
+     * texto es numérico y un string cuando no lo es (vacío incluido), así que
+     * el campo guarda las dos cosas y se normaliza al armar el payload.
+     */
+    min_payment_pct: string | number;
     notes: string;
     guide_id: number | null;
     route_id: number | null;

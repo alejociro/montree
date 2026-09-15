@@ -55,6 +55,30 @@ final readonly class PeriodFilter
         return new self($key, $start, $end, $previousStart, $previousEnd, $timezone);
     }
 
+    public static function label(string $key): string
+    {
+        return match ($key) {
+            self::KEY_LAST_7_DAYS => __('Últimos 7 días'),
+            self::KEY_LAST_30_DAYS => __('Últimos 30 días'),
+            self::KEY_LAST_90_DAYS => __('Últimos 90 días'),
+            self::KEY_THIS_MONTH => __('Este mes'),
+            self::KEY_LAST_MONTH => __('Mes pasado'),
+            self::KEY_THIS_YEAR => __('Este año'),
+            default => throw new InvalidArgumentException("Unsupported period key: {$key}."),
+        };
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function options(): array
+    {
+        return array_map(
+            fn (string $key): array => ['value' => $key, 'label' => self::label($key)],
+            self::SUPPORTED_KEYS,
+        );
+    }
+
     /**
      * @return array{0: Carbon, 1: Carbon}
      */

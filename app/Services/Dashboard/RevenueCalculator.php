@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Dashboard;
 
 use App\Data\Dashboard\RevenueBreakdown;
+use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Tenant;
@@ -30,7 +31,42 @@ final class RevenueCalculator
             growthPct: $this->growthPct($gross, $previousGross),
             currency: $currency,
             series: $this->grossSeries($start, $end),
+            byMethod: $this->byMethod($start, $end, $gross),
         );
+    }
+
+    /**
+     * Siempre los tres medios y en el orden del enum: un medio ausente no se
+     * distingue de uno sin movimientos.
+     *
+     * @return list<array{method: string, label: string, amount: string, share_pct: int}>
+     */
+    private function byMethod(Carbon $start, Carbon $end, string $gross): array
+    {
+        $totals = $this->collectedPayments($start, $end)
+            ->selectRaw('gateway, SUM(amount) as total')
+            ->groupBy('gateway')
+            ->pluck('total', 'gateway');
+
+        return array_map(function (PaymentGateway $method) use ($totals, $gross): array {
+            $amount = number_format((float) ($totals[$method->value] ?? 0), 2, '.', '');
+
+            return [
+                'method' => $method->value,
+                'label' => $method->label(),
+                'amount' => $amount,
+                'share_pct' => $this->sharePct($amount, $gross),
+            ];
+        }, PaymentGateway::cases());
+    }
+
+    private function sharePct(string $amount, string $gross): int
+    {
+        if (bccomp($gross, '0.00', 2) === 0) {
+            return 0;
+        }
+
+        return (int) round((float) bcdiv($amount, $gross, 4) * 100);
     }
 
     /**
@@ -40,7 +76,7 @@ final class RevenueCalculator
     {
         $granularity = $this->granularityFor($start, $end);
 
-        $dailyTotals = $this->completedPayments($start, $end)
+        $dailyTotals = $this->collectedPayments($start, $end)
             ->selectRaw('DATE(processed_at) as day, SUM(amount) as gross')
             ->groupBy('day')
             ->orderBy('day')
@@ -64,18 +100,21 @@ final class RevenueCalculator
 
     private function sumGross(Carbon $start, Carbon $end): string
     {
-        $value = $this->completedPayments($start, $end)->sum('amount');
+        $value = $this->collectedPayments($start, $end)->sum('amount');
 
         return number_format((float) $value, 2, '.', '');
     }
 
     /**
+     * WHY: un pago reembolsado se cobró primero, así que cuenta en el bruto y se
+     * descuenta en `sumRefunds()`. Sin eso el neto lo restaría dos veces.
+     *
      * @return Builder<Payment>
      */
-    private function completedPayments(Carbon $start, Carbon $end): Builder
+    private function collectedPayments(Carbon $start, Carbon $end): Builder
     {
         return Payment::query()
-            ->where('status', PaymentStatus::Completed->value)
+            ->whereIn('status', [PaymentStatus::Completed->value, PaymentStatus::Refunded->value])
             ->whereBetween('processed_at', [$start, $end]);
     }
 
@@ -106,9 +145,9 @@ final class RevenueCalculator
     private function sumRefunds(Carbon $start, Carbon $end): string
     {
         $value = Payment::query()
-            ->whereIn('status', [PaymentStatus::Refunded->value, PaymentStatus::PartiallyRefunded->value])
-            ->whereBetween('refunded_at', [$start, $end])
-            ->sum('refunded_amount');
+            ->where('status', PaymentStatus::Refunded->value)
+            ->whereBetween('processed_at', [$start, $end])
+            ->sum('amount');
 
         return number_format((float) $value, 2, '.', '');
     }

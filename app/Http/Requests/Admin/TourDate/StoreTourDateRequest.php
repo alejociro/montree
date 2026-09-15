@@ -54,6 +54,7 @@ class StoreTourDateRequest extends FormRequest
             'ends_at' => ['prohibited'],
             'capacity' => ['required', 'integer', 'min:1', 'max:500'],
             'price_override' => ['nullable', 'numeric', 'min:0'],
+            'min_payment_pct' => ['nullable', 'integer', 'min:1', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             // WHY (D7): toda salida lleva guía. No existe «Sin asignar».
             'guide_id' => ['required', 'integer', $this->guideRule()],
