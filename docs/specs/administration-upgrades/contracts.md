@@ -35,12 +35,10 @@ Request: `StoreTenantRequest` (existente, movido a web). Redirect a `tenants.sho
 
 ### POST /super-admin/tenants/{tenant}/enter  `super-admin.tenants.enter`
 Sin body. Acción: emite handoff para el super admin autenticado con `redirect_to=/admin/dashboard`
-y responde `Inertia::location("https://{slug}.{platform_host}/auth/handoff/{token}")`.
-El front abre la URL en pestaña nueva (`window.open` sobre la URL que devuelve `enter.url()`; la
-ruta es GET-able? No: es POST → el front hace `form.post` y el redirect externo abre en la misma
-pestaña. Decisión: la fila hace `router.post(enter(tenant))`, navegación en la misma pestaña;
-"abrir en nueva pestaña" es Cmd/Ctrl+clic sobre un `<a :href="enter(tenant).url">` no aplica a POST,
-así que se usa un `<form target="_blank" method="post">` con `@csrf` en la fila.)
+y responde `redirect()->away("https://{slug}.{platform_host}/auth/handoff/{token}")`.
+El front usa un `<form method="post" target="_blank">` con `@csrf` (input hidden con el token
+XSRF) en la fila, de modo que el panel del tenant abre en una pestaña nueva. Clic en la fila =
+submit de ese form; el nombre del tenant es un `<Link>` al detalle y detiene la propagación.
 Errores: 409 `TENANT_NOT_ACTIVE` si status ≠ active (flash error). 403 no super admin.
 
 ### GET /super-admin/tenants/{tenant}  `super-admin.tenants.show`
