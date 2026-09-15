@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Models\TenantConfiguration;
 use App\Services\Tenant\HexToHsl;
+use App\Services\Tenant\TermsRenderer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +39,16 @@ class TenantConfigurationResource extends JsonResource
             'require_traveler_details' => (bool) $this->require_traveler_details,
             'custom_css' => $this->custom_css,
             'hero_image_url' => $this->resolveUrl($this->hero_image_path),
+            'terms_body' => $this->terms_body,
+            'terms_is_default' => app(TermsRenderer::class)->isDefault($this->resource),
             'min_partial_payment_pct' => $this->min_partial_payment_pct,
+            // El tranKey nunca sale del servidor: el panel solo necesita saber
+            // si hay uno guardado para decidir si pide reemplazarlo.
+            'placetopay' => [
+                'login' => $this->placetopay_login,
+                'url' => $this->placetopay_url,
+                'tran_key_set' => filled($this->placetopay_tran_key),
+            ],
         ];
     }
 

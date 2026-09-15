@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\BookingStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
+use Tests\Support\FakeCheckout;
 use Tests\TestCase;
 
 final class CompleteJourneyTest extends TestCase
@@ -31,6 +35,11 @@ final class CompleteJourneyTest extends TestCase
         TenantConfiguration::factory()->for($tenant)->create([
             'reviews_require_moderation' => false,
             'require_traveler_details' => false,
+        ]);
+        config([
+            'placetopay.login' => 'platform-login',
+            'placetopay.tran_key' => 'platform-tran-key',
+            'placetopay.url' => 'https://checkout.test',
         ]);
         $tenant->makeCurrent();
 
@@ -76,9 +85,25 @@ final class CompleteJourneyTest extends TestCase
 
         $booking = Booking::query()->where('booking_number', $bookingNumber)->first();
 
+        // El pago va por redireccion: se abre la sesion, el comprador paga en
+        // PlacetoPay y vuelve al comercio con la URL firmada. Los tres pasos
+        // estan aca porque es lo que de verdad confirma una reserva.
+        URL::forceRootUrl('http://demo.montree.test');
+        $checkout = FakeCheckout::fake()->sessionCreated(requestId: 4242);
+
         $this->actingAs($customer)
-            ->postJson("http://demo.montree.test/api/v1/bookings/{$bookingNumber}/payments")
-            ->assertCreated();
+            ->post("http://demo.montree.test/bookings/{$bookingNumber}/pay", ['type' => 'full'])
+            ->assertRedirect();
+
+        $payment = Payment::query()->where('booking_id', $booking->id)->firstOrFail();
+
+        $checkout->queryApproved('100000.00', requestId: 4242);
+
+        $this->actingAs($customer)
+            ->get(URL::signedRoute('payments.return', ['payment' => $payment->id], absolute: true))
+            ->assertRedirect("http://demo.montree.test/bookings/{$bookingNumber}");
+
+        $this->assertSame(PaymentStatus::Completed, $payment->fresh()->status);
 
         $booking->refresh();
         $this->assertEquals(BookingStatus::Confirmed->value, $booking->status->value);

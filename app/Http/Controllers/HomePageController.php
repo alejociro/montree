@@ -37,7 +37,12 @@ final class HomePageController extends Controller
                 return redirect('/super-admin/dashboard');
             }
 
-            return Inertia::render('Landing');
+            return Inertia::render('Landing', [
+                'registerUrl' => route('onboarding.start', absolute: false),
+                'loginUrl' => route('login', absolute: false),
+                'contactUrl' => 'mailto:hola@montree.co',
+                'demoUrl' => '#funciones',
+            ]);
         }
 
         return Inertia::render('Home', [

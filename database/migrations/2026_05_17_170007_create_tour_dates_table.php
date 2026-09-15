@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('capacity');
             $table->unsignedInteger('booked_count')->default(0);
             $table->decimal('price_override', 12, 2)->nullable();
+            $table->unsignedTinyInteger('min_payment_pct')->nullable();
             $table->string('status')->default(TourDateStatus::Open->value);
             $table->text('notes')->nullable();
             $table->timestamps();

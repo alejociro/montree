@@ -45,9 +45,14 @@ use Illuminate\Support\Str;
  * @property Carbon|null $completed_at
  * @property string|null $cancellation_reason
  * @property string $due_amount
+ * @property string $deposit_amount
+ * @property string $min_payment_amount
  */
 class Booking extends Model
 {
+    /** Porcentaje de abono cuando ni la salida ni la agencia definen el suyo. */
+    public const DEFAULT_MIN_PAYMENT_PCT = 30;
+
     /** @use HasFactory<BookingFactory> */
     use BelongsToTenant, HasFactory, SoftDeletes;
 
@@ -164,6 +169,51 @@ class Booking extends Model
     {
         return Attribute::get(fn (): string => $this->money(
             (float) $this->total_amount - (float) $this->paid_amount,
+        ));
+    }
+
+    /**
+     * Porcentaje mínimo de abono que rige para esta reserva: manda la salida y,
+     * si no lo define, el de la agencia.
+     */
+    public function minPaymentPercentage(): int
+    {
+        $this->loadMissing(['tourDate', 'tenant.configuration']);
+
+        return $this->tourDate?->min_payment_pct
+            ?? $this->tenant?->configuration?->min_partial_payment_pct
+            ?? self::DEFAULT_MIN_PAYMENT_PCT;
+    }
+
+    /**
+     * Umbral que asegura la plaza: el porcentaje exigido sobre el total, **sin**
+     * recortar al saldo. Es contra este número que la regla de asiento decide si
+     * la reserva pasa a `confirmed`.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function depositAmount(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->money(
+            ((float) $this->total_amount) * $this->minPaymentPercentage() / 100,
+        ));
+    }
+
+    /**
+     * Piso de un abono: el depósito exigido, y nunca más de lo que falta —si no,
+     * el último abono de una reserva ya abonada sería imposible.
+     *
+     * WHY: vive acá y no en la Action de pago porque es el mismo número que
+     * necesitan el formulario, la validación del request y la sesión de la
+     * pasarela. Repartido en tres lados, se desincroniza (el front tenía un 50%
+     * fijo mientras la agencia pedía 30%).
+     *
+     * @return Attribute<string, never>
+     */
+    protected function minPaymentAmount(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->money(
+            min((float) $this->deposit_amount, (float) $this->due_amount),
         ));
     }
 

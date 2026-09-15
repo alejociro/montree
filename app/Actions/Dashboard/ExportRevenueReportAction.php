@@ -15,9 +15,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ExportRevenueReportAction
 {
-    /**
-     * @return array{from: string, to: string, group_by: string, rows: array<int, array<string, mixed>>, totals: array<string, mixed>}|StreamedResponse|Response
-     */
     public function handle(Carbon $from, Carbon $to, string $groupBy, string $format): array|StreamedResponse|Response
     {
         $rows = $this->buildRows($from, $to, $groupBy);
@@ -36,20 +33,17 @@ final class ExportRevenueReportAction
         ];
     }
 
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
     private function buildRows(Carbon $from, Carbon $to, string $groupBy): Collection
     {
         $payments = Payment::query()
-            ->where('status', PaymentStatus::Completed->value)
+            ->whereIn('status', [PaymentStatus::Completed->value, PaymentStatus::Refunded->value])
             ->whereBetween('processed_at', [$from, $to])
             ->get(['amount', 'processed_at']);
 
         $refunds = Payment::query()
-            ->whereIn('status', [PaymentStatus::Refunded->value, PaymentStatus::PartiallyRefunded->value])
-            ->whereBetween('refunded_at', [$from, $to])
-            ->get(['refunded_amount', 'refunded_at']);
+            ->where('status', PaymentStatus::Refunded->value)
+            ->whereBetween('processed_at', [$from, $to])
+            ->get(['amount', 'processed_at']);
 
         $bookings = Booking::query()
             ->whereBetween('created_at', [$from, $to])
@@ -64,9 +58,9 @@ final class ExportRevenueReportAction
 
         $refundsByBucket = $this->aggregateByBucket(
             $refunds,
-            'refunded_at',
+            'processed_at',
             $groupBy,
-            fn ($payment): float => (float) $payment->refunded_amount,
+            fn ($payment): float => (float) $payment->amount,
         );
 
         $bookingsByBucket = $this->aggregateByBucket(
@@ -98,20 +92,17 @@ final class ExportRevenueReportAction
         });
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function buildTotals(Carbon $from, Carbon $to): array
     {
         $gross = (float) Payment::query()
-            ->where('status', PaymentStatus::Completed->value)
+            ->whereIn('status', [PaymentStatus::Completed->value, PaymentStatus::Refunded->value])
             ->whereBetween('processed_at', [$from, $to])
             ->sum('amount');
 
         $refunded = (float) Payment::query()
-            ->whereIn('status', [PaymentStatus::Refunded->value, PaymentStatus::PartiallyRefunded->value])
-            ->whereBetween('refunded_at', [$from, $to])
-            ->sum('refunded_amount');
+            ->where('status', PaymentStatus::Refunded->value)
+            ->whereBetween('processed_at', [$from, $to])
+            ->sum('amount');
 
         $bookingsCount = (int) Booking::query()
             ->whereBetween('created_at', [$from, $to])

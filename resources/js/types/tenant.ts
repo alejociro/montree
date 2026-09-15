@@ -47,6 +47,24 @@ export type TenantConfiguration = {
     custom_css: string | null;
     hero_image_url: string | null;
     min_partial_payment_pct: number;
+    placetopay: TenantCheckoutCredentials;
+};
+
+export type TenantCheckoutCredentials = {
+    login: string | null;
+    url: string | null;
+    /** El tranKey nunca sale del servidor; solo se informa si hay uno guardado. */
+    tran_key_set: boolean;
+};
+
+/**
+ * Los términos llegan como prop de la página que los edita, no dentro de
+ * `TenantConfiguration`: esa viaja compartida en toda respuesta Inertia y el
+ * cuerpo crudo admite 20.000 caracteres.
+ */
+export type TenantTerms = {
+    body: string | null;
+    is_default: boolean;
 };
 
 export type TenantConfigurationPayload = {
@@ -62,4 +80,8 @@ export type TenantConfigurationPayload = {
     reviews_require_moderation?: boolean;
     require_traveler_details?: boolean;
     custom_css?: string | null;
+    placetopay_login?: string | null;
+    placetopay_tran_key?: string | null;
+    placetopay_url?: string | null;
+    terms_body?: string | null;
 };

@@ -55,7 +55,7 @@ public function test_creates_booking_when_capacity_available(): void
 
 - **Una sola assertion principal por test** (puede haber assertions secundarias del mismo concepto).
 - **No mockear lo que estás testeando.** Si testas `CreateBookingAction`, no mockees `CreateBookingAction`.
-- **Sí mockear servicios externos**: Stripe, mail driver, HTTP client a terceros.
+- **Sí mockear servicios externos**: PlacetoPay, mail driver, HTTP client a terceros.
 - **No mockear la BD.** Usar SQLite in-memory o la conexión real con `RefreshDatabase`.
 - **Factories sobre fixtures.** Si un test necesita data específica, usar `.state()` o `.set()`.
 - **No reutilizar setup entre tests** salvo lo trivial. Cada test es self-contained.
@@ -92,10 +92,11 @@ php artisan test --compact
 
 Obligatorio por cada modelo tenant-scoped. Ver patrón en [`multi-tenancy.md`](./multi-tenancy.md) §6.
 
-### Tests de webhook de Stripe
+### Tests de la notificación de PlacetoPay
 
-- Generar firma válida con la secret de testing.
-- Casos: `payment_intent.succeeded`, `payment_intent.payment_failed`, evento duplicado.
+- Generar firma válida con el `tranKey` del tenant (`sha1|sha256|sha512`).
+- Casos: firma inválida, `reference` que no coincide, notificación duplicada.
+- Nunca se confía en el `status` del body: el job re-consulta la sesión.
 
 ### Tests de jobs
 

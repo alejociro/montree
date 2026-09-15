@@ -17,6 +17,7 @@ use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -102,6 +103,79 @@ class TourDateControllerTest extends TestCase
             'provider_id' => $provider->id,
             'status' => TourDateStatus::Open->value,
         ]);
+    }
+
+    public function test_store_accepts_a_minimum_deposit_percentage_for_the_departure(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+
+        $response = $this->actingAs($admin)->postJson(
+            "http://demo.montree.test/api/v1/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+                'min_payment_pct' => 50,
+            ],
+        );
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.min_payment_pct', 50);
+        $response->assertJsonPath('data.effective_min_payment_pct', 50);
+        $this->assertDatabaseHas('tour_dates', ['tour_id' => $tour->id, 'min_payment_pct' => 50]);
+    }
+
+    /**
+     * @return array<string, array{0: int}>
+     */
+    public static function invalidMinPaymentPercentages(): array
+    {
+        return ['cero' => [0], 'mayor que cien' => [101]];
+    }
+
+    #[DataProvider('invalidMinPaymentPercentages')]
+    public function test_store_rejects_a_minimum_deposit_percentage_out_of_range(int $pct): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+
+        $this->actingAs($admin)->postJson(
+            "http://demo.montree.test/api/v1/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+                'min_payment_pct' => $pct,
+            ],
+        )->assertStatus(422)->assertJsonValidationErrors('min_payment_pct');
+    }
+
+    /** `null` limpia el override: la salida vuelve al porcentaje de la agencia. */
+    public function test_update_clears_the_override_with_a_null_percentage(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tenant->configuration->update(['min_partial_payment_pct' => 30]);
+        $tour = Tour::factory()->create();
+        $tourDate = TourDate::factory()->for($tour)->withMinPaymentPct(70)->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $response = $this->actingAs($admin)->putJson(
+            "http://demo.montree.test/api/v1/admin/tour-dates/{$tourDate->id}",
+            ['min_payment_pct' => null],
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.min_payment_pct', null);
+        $response->assertJsonPath('data.effective_min_payment_pct', 30);
+        $this->assertNull($tourDate->fresh()->min_payment_pct);
     }
 
     public function test_store_rejects_past_start_date(): void

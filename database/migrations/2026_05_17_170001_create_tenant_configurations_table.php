@@ -26,11 +26,15 @@ return new class extends Migration
             $table->json('social_links')->nullable();
             $table->json('contact_info')->nullable();
             $table->longText('custom_css')->nullable();
+            $table->longText('terms_body')->nullable();
             $table->boolean('reviews_require_moderation')->default(true);
             $table->boolean('require_traveler_details')->default(true);
             $table->unsignedSmallInteger('booking_advance_hours')->default(24);
             $table->unsignedSmallInteger('booking_expiration_minutes')->default(30);
             $table->unsignedTinyInteger('min_partial_payment_pct')->default(30);
+            $table->string('placetopay_login')->nullable();
+            $table->text('placetopay_tran_key')->nullable();
+            $table->string('placetopay_url')->nullable();
             $table->timestamps();
         });
     }

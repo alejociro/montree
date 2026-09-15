@@ -23,19 +23,18 @@ class PaymentFactory extends Factory
     {
         return [
             'booking_id' => Booking::factory(),
-            'gateway' => PaymentGateway::Stripe,
-            'gateway_payment_id' => 'pi_'.Str::random(24),
-            'gateway_charge_id' => null,
+            'gateway' => PaymentGateway::PlaceToPay,
+            'request_id' => (string) fake()->unique()->numberBetween(100000, 999999),
+            'reference' => 'MTR-'.fake()->unique()->numberBetween(1, 99999),
+            'internal_reference' => null,
             'amount' => fake()->randomFloat(2, 50, 1500),
             'currency' => 'USD',
             'type' => PaymentType::Full,
             'status' => PaymentStatus::Pending,
-            'failure_reason' => null,
+            'gateway_status' => null,
+            'status_message' => null,
             'gateway_response' => null,
-            'refunded_amount' => 0,
-            'refund_reason' => null,
             'processed_at' => null,
-            'refunded_at' => null,
         ];
     }
 
@@ -43,8 +42,26 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn () => [
             'status' => PaymentStatus::Completed,
+            'gateway_status' => 'APPROVED',
+            'status_message' => 'Aprobada',
             'processed_at' => now(),
-            'gateway_charge_id' => 'ch_'.Str::random(24),
+            'internal_reference' => (string) fake()->unique()->numberBetween(1000000000, 9999999999),
+            'authorization' => (string) fake()->numberBetween(100000, 999999),
+            'receipt' => (string) fake()->numberBetween(100000000, 999999999),
+            'franchise' => 'CR_VS',
+            'payment_method' => 'visa',
+            'payment_method_name' => 'Visa',
+            'issuer_name' => 'BANCOLOMBIA',
+        ]);
+    }
+
+    public function processing(): self
+    {
+        return $this->state(fn () => [
+            'status' => PaymentStatus::Processing,
+            'gateway_status' => 'OK',
+            'process_url' => 'https://checkout.test/session/'.Str::random(12),
+            'session_expires_at' => now()->addMinutes(30),
         ]);
     }
 
@@ -52,7 +69,8 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn () => [
             'status' => PaymentStatus::Failed,
-            'failure_reason' => 'card_declined',
+            'gateway_status' => 'REJECTED',
+            'status_message' => 'Rechazada por el banco',
         ]);
     }
 }

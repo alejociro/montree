@@ -8,19 +8,29 @@ import Heading from '@/components/Heading.vue';
 import PreviewPanel from '@/components/molecules/PreviewPanel.vue';
 import BrandingEditor from '@/components/organisms/BrandingEditor.vue';
 import OperationalSettingsForm from '@/components/organisms/OperationalSettingsForm.vue';
+import PaymentGatewayForm from '@/components/organisms/PaymentGatewayForm.vue';
 import SocialLinksEditor from '@/components/organisms/SocialLinksEditor.vue';
+import TermsEditor from '@/components/organisms/TermsEditor.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { terms as termsRoute } from '@/routes/policies';
 import type {
     TenantConfigurationPayload,
     TenantLocale,
     TenantSocialLinks,
+    TenantTerms,
 } from '@/types/tenant';
 
 const { t } = useTranslations();
+
+type Props = {
+    terms: TenantTerms;
+};
+
+const props = defineProps<Props>();
 
 type ConfigurationForm = {
     primary_color: string;
@@ -34,6 +44,19 @@ type ConfigurationForm = {
     require_traveler_details: boolean;
     social_links: TenantSocialLinks;
     custom_css: string;
+    placetopay_login: string;
+    placetopay_tran_key: string;
+    placetopay_url: string;
+    terms_body: string;
+};
+
+type UpdateConfigurationResponse = {
+    data: {
+        configuration: {
+            terms_body: string | null;
+            terms_is_default: boolean;
+        };
+    };
 };
 
 const { tenant, configuration } = useTenant();
@@ -42,6 +65,10 @@ const api = useApi();
 const enterpriseOnlyError = ref<string | null>(null);
 const saving = ref(false);
 const recentlySaved = ref(false);
+// WHY: el cuerpo de los terminos no viaja en la prop compartida
+// `tenantConfiguration` (pesa hasta 20.000 caracteres); llega como prop de esta
+// pagina y la respuesta del PUT devuelve el estado actualizado.
+const termsIsDefault = ref(props.terms.is_default);
 
 const isEnterprise = computed(() => tenant.value?.plan === 'enterprise');
 
@@ -59,6 +86,11 @@ const initialValues: ConfigurationForm = {
         configuration.value?.require_traveler_details ?? true,
     social_links: { ...(configuration.value?.social_links ?? {}) },
     custom_css: configuration.value?.custom_css ?? '',
+    placetopay_login: configuration.value?.placetopay?.login ?? '',
+    // Nunca se precarga: el servidor no devuelve el tranKey guardado.
+    placetopay_tran_key: '',
+    placetopay_url: configuration.value?.placetopay?.url ?? '',
+    terms_body: props.terms.body ?? '',
 };
 
 const form = useForm<ConfigurationForm>(() => ({ ...initialValues }));
@@ -95,6 +127,19 @@ const operationalValues = computed({
     },
 });
 
+const gatewayValues = computed({
+    get: () => ({
+        placetopay_login: form.placetopay_login,
+        placetopay_tran_key: form.placetopay_tran_key,
+        placetopay_url: form.placetopay_url,
+    }),
+    set: (value) => {
+        form.placetopay_login = value.placetopay_login;
+        form.placetopay_tran_key = value.placetopay_tran_key;
+        form.placetopay_url = value.placetopay_url;
+    },
+});
+
 const socialValues = computed({
     get: () => form.social_links,
     set: (value) => {
@@ -116,7 +161,15 @@ function buildPayload(data: ConfigurationForm): TenantConfigurationPayload {
             : null,
         reviews_require_moderation: data.reviews_require_moderation,
         require_traveler_details: data.require_traveler_details,
+        placetopay_login: data.placetopay_login || null,
+        placetopay_url: data.placetopay_url || null,
+        terms_body: data.terms_body.trim() ? data.terms_body : null,
     };
+
+    // Solo viaja cuando el admin escribió uno nuevo: mandarlo vacío borraria el guardado.
+    if (data.placetopay_tran_key) {
+        payload.placetopay_tran_key = data.placetopay_tran_key;
+    }
 
     if (isEnterprise.value && data.custom_css) {
         payload.custom_css = data.custom_css;
@@ -131,37 +184,44 @@ function submit(): void {
     form.clearErrors();
     saving.value = true;
 
-    void api.put(updateConfigAction().url, buildPayload(form.data()), {
-        onSuccess: () => {
-            toast.success(t('Configuración guardada.'));
-            recentlySaved.value = true;
-            // WHY: la marca del tenant sale de `tenantConfiguration`, no de
-            // `tenant`. Recargar solo `tenant` dejaba los colores viejos en las
-            // variables CSS hasta el siguiente refresco completo.
-            router.reload({ only: ['tenant', 'tenantConfiguration'] });
-        },
-        onError: (errors) => {
-            const cssError = errors.custom_css ?? errors.error_code ?? '';
+    void api.put<UpdateConfigurationResponse>(
+        updateConfigAction().url,
+        buildPayload(form.data()),
+        {
+            onSuccess: (response) => {
+                toast.success(t('Configuración guardada.'));
+                recentlySaved.value = true;
+                termsIsDefault.value =
+                    response?.data.configuration.terms_is_default ??
+                    termsIsDefault.value;
+                // WHY: la marca del tenant sale de `tenantConfiguration`, no de
+                // `tenant`. Recargar solo `tenant` dejaba los colores viejos en las
+                // variables CSS hasta el siguiente refresco completo.
+                router.reload({ only: ['tenant', 'tenantConfiguration'] });
+            },
+            onError: (errors) => {
+                const cssError = errors.custom_css ?? errors.error_code ?? '';
 
-            if (cssError.toLowerCase().includes('enterprise')) {
-                enterpriseOnlyError.value = t(
-                    'El CSS personalizado solo está disponible en el plan Enterprise.',
+                if (cssError.toLowerCase().includes('enterprise')) {
+                    enterpriseOnlyError.value = t(
+                        'El CSS personalizado solo está disponible en el plan Enterprise.',
+                    );
+
+                    return;
+                }
+
+                form.setError(errors);
+                toast.error(
+                    t(
+                        'No se pudieron guardar los cambios. Revisa los campos marcados.',
+                    ),
                 );
-
-                return;
-            }
-
-            form.setError(errors);
-            toast.error(
-                t(
-                    'No se pudieron guardar los cambios. Revisa los campos marcados.',
-                ),
-            );
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
         },
-        onFinish: () => {
-            saving.value = false;
-        },
-    });
+    );
 }
 
 function resetForm(): void {
@@ -236,6 +296,25 @@ function resetForm(): void {
                         timezone: form.errors.timezone,
                         locale: form.errors.locale,
                     }"
+                />
+
+                <PaymentGatewayForm
+                    v-model="gatewayValues"
+                    :tran-key-set="
+                        configuration?.placetopay?.tran_key_set ?? false
+                    "
+                    :errors="{
+                        placetopay_login: form.errors.placetopay_login,
+                        placetopay_tran_key: form.errors.placetopay_tran_key,
+                        placetopay_url: form.errors.placetopay_url,
+                    }"
+                />
+
+                <TermsEditor
+                    v-model="form.terms_body"
+                    :is-default="termsIsDefault"
+                    :public-url="termsRoute.url()"
+                    :error="form.errors.terms_body"
                 />
 
                 <SocialLinksEditor

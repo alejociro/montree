@@ -24,8 +24,9 @@ final class PermissionCatalogSeederTest extends TestCase
      * WHY: `spec.md` y `rbacbase.md` titulan el catálogo como "37 permisos" pero la lista
      * que enumeran tiene 38. Manda la enumeración; el número es un error de conteo en los
      * dos documentos y quedó anotado en `tasks.md` para `montree-spec-updater`.
+     * El módulo `payments` (transacciones en el panel) sumó dos y lo dejó en 40.
      */
-    public const CATALOG_SIZE = 39;
+    public const CATALOG_SIZE = 40;
 
     /**
      * @var array<string, array<int, string>>
@@ -35,12 +36,13 @@ final class PermissionCatalogSeederTest extends TestCase
         'Productos' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'Salidas' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'Logistica' => ['logistics.view', 'logistics.manage'],
-        'Reservas' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view', 'payments.refund'],
+        'Reservas' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view'],
         'Promociones' => ['promotions.view', 'promotions.create', 'promotions.update', 'promotions.delete'],
         'Newsletter' => ['newsletter.view', 'newsletter.send'],
         'Resenas' => ['reviews.view', 'reviews.moderate', 'reviews.respond'],
         'Equipo' => ['team.view', 'team.invite', 'team.role.update', 'team.suspend'],
         'Configuracion' => ['tenant.view', 'tenant.update', 'tenant.settings.update'],
+        'Pagos' => ['payments.view', 'payments.query'],
         'Guia' => ['guide.schedule.view', 'guide.travelers.view'],
     ];
 
@@ -72,6 +74,7 @@ final class PermissionCatalogSeederTest extends TestCase
             'departures.view',
             'newsletter.send',
             'newsletter.view',
+            'payments.view',
             'promotions.create',
             'promotions.update',
             'promotions.view',

@@ -29,6 +29,12 @@ final class BookingResource extends JsonResource
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
             'paid_amount' => $this->paid_amount,
+            // Techo y piso del próximo pago. Viajan con la reserva recién creada
+            // para que el formulario cobre los números del servidor y no los
+            // suyos: un centavo de diferencia al redondear sería un 422.
+            'due_amount' => $this->due_amount,
+            'min_payment_amount' => $this->min_payment_amount,
+            'min_payment_pct' => $this->minPaymentPercentage(),
             'currency' => $this->currency,
             'special_requests' => $this->special_requests,
             'contact_snapshot' => $this->contact_snapshot,

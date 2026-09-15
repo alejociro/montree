@@ -35,6 +35,7 @@ final class UpdateTourDateRequest extends StoreTourDateRequest
             'ends_at' => ['prohibited'],
             'capacity' => ['sometimes', 'integer', 'min:1', 'max:500', $this->capacityRule()],
             'price_override' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'min_payment_pct' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'guide_id' => ['sometimes', 'required', 'integer', $this->guideRule()],
             'route_id' => ['sometimes', 'nullable', 'integer', Rule::exists('routes', 'id')->where('tenant_id', $this->tenantId())],

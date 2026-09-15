@@ -12,6 +12,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\Feature\Rbac\PermissionCatalogSeederTest;
 use Tests\TestCase;
 
 /**
@@ -283,7 +284,7 @@ final class RoleManagementTest extends TestCase
         $response = $this->actingAs($admin)->getJson($this->url());
 
         $response->assertOk();
-        $response->assertJsonCount(39, 'meta.available_permissions');
+        $response->assertJsonCount(PermissionCatalogSeederTest::CATALOG_SIZE, 'meta.available_permissions');
         $response->assertJsonPath('meta.available_permissions.0.slug', 'dashboard.view');
         $response->assertJsonPath('meta.available_permissions.0.module', 'dashboard');
     }

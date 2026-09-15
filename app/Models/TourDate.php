@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property int $capacity
  * @property int $booked_count
  * @property string|null $price_override
+ * @property int|null $min_payment_pct
  * @property TourDateStatus $status
  * @property string|null $notes
  */
@@ -50,6 +51,7 @@ class TourDate extends Model
         'capacity',
         'booked_count',
         'price_override',
+        'min_payment_pct',
         'status',
         'notes',
     ];
@@ -62,8 +64,24 @@ class TourDate extends Model
             'capacity' => 'integer',
             'booked_count' => 'integer',
             'price_override' => 'decimal:2',
+            'min_payment_pct' => 'integer',
             'status' => TourDateStatus::class,
         ];
+    }
+
+    /**
+     * Porcentaje que asegura la plaza en esta salida: el override de la salida
+     * manda y, sin él, rige el de la agencia.
+     *
+     * WHY: el fallback sale del tenant actual —ya cacheado con su
+     * configuración— y no de `$this->tenant`, porque en un listado paginado eso
+     * sería una consulta por salida.
+     */
+    public function minPaymentPercentage(): int
+    {
+        return $this->min_payment_pct
+            ?? Tenant::current()?->configuration?->min_partial_payment_pct
+            ?? Booking::DEFAULT_MIN_PAYMENT_PCT;
     }
 
     public function tour(): BelongsTo

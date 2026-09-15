@@ -7,7 +7,7 @@ namespace App\Services\Rbac;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 /**
- * Presentación del catálogo cerrado de 39 permisos: a qué módulo pertenece cada uno
+ * Presentación del catálogo cerrado de 40 permisos: a qué módulo pertenece cada uno
  * y cómo se llama en la UI.
  *
  * WHY: la lista y el agrupamiento NO se reescriben acá — se leen de
@@ -30,6 +30,7 @@ final class PermissionCatalog
         'reviews' => 'Reseñas',
         'team' => 'Equipo',
         'tenant' => 'Agencia',
+        'payments' => 'Pagos',
         'guide' => 'Guía',
     ];
 
@@ -57,7 +58,6 @@ final class PermissionCatalog
         'bookings.view' => 'Ver reservas',
         'bookings.update' => 'Editar reservas',
         'bookings.passengers.medical.view' => 'Ver EPS y observaciones médicas de los pasajeros',
-        'payments.refund' => 'Reembolsar pagos',
         'promotions.view' => 'Ver promociones',
         'promotions.create' => 'Crear promociones',
         'promotions.update' => 'Editar promociones',
@@ -74,6 +74,8 @@ final class PermissionCatalog
         'tenant.view' => 'Ver la configuración de la agencia',
         'tenant.update' => 'Editar los datos de la agencia',
         'tenant.settings.update' => 'Editar la configuración de la agencia',
+        'payments.view' => 'Ver transacciones',
+        'payments.query' => 'Consultar el estado en la pasarela',
         'guide.schedule.view' => 'Ver la agenda del guía',
         'guide.travelers.view' => 'Ver los viajeros de sus salidas',
     ];

@@ -41,6 +41,9 @@ final class BookingPagesController extends Controller
                 'effective_price' => $tourDate->price_override ?? $tourDate->tour->base_price,
                 'available_seats' => max(0, $tourDate->capacity - $tourDate->booked_count),
                 'currency' => $tourDate->tour->currency,
+                // El formulario muestra con esto cuánto es el abono que asegura
+                // la plaza. El monto exacto lo devuelve la reserva ya creada.
+                'min_payment_pct' => $tourDate->minPaymentPercentage(),
             ],
             'prefill' => $authUser !== null ? [
                 'email' => $authUser->email,
@@ -55,7 +58,7 @@ final class BookingPagesController extends Controller
         $booking = Booking::query()
             ->where('booking_number', $bookingNumber)
             ->where('user_id', $request->user()->id)
-            ->with(['tour.coverImage', 'tourDate', 'travelers', 'promotion'])
+            ->with(['tour.coverImage', 'tourDate', 'travelers', 'promotion', 'tenant.configuration'])
             ->first();
 
         if ($booking === null) {
@@ -66,7 +69,8 @@ final class BookingPagesController extends Controller
 
         $newAccount = $request->session()->pull('booking_new_account', false);
 
-        $requireTravelerDetails = (bool) (Tenant::current()?->configuration?->require_traveler_details ?? false);
+        $configuration = Tenant::current()?->configuration;
+        $requireTravelerDetails = (bool) ($configuration?->require_traveler_details ?? false);
 
         return Inertia::render('Booking/Show', [
             'new_account' => $newAccount,
@@ -82,6 +86,13 @@ final class BookingPagesController extends Controller
                 'total_amount' => $booking->total_amount,
                 'paid_amount' => $booking->paid_amount,
                 'currency' => $booking->currency,
+                // WHY: los limites del pago los calcula el modelo, no el
+                // formulario. Es el mismo par que valida el Form Request al abrir
+                // la sesion; si el front usara su propia aritmetica, el checkout
+                // rebotaria por un monto que el viajero vio como valido.
+                'due_amount' => $booking->due_amount,
+                'min_payment_amount' => $booking->min_payment_amount,
+                'min_payment_pct' => $booking->minPaymentPercentage(),
                 'expires_at' => $booking->expires_at?->toIso8601String(),
                 'contact_snapshot' => $booking->contact_snapshot,
                 // D10: los dos campos que le dicen al formulario si todavía

@@ -82,7 +82,7 @@
 ## 8. Idempotencia
 
 - Endpoints de pago aceptan header `Idempotency-Key` (UUID). Si llega 2 veces el mismo, devuelve la misma respuesta.
-- Webhooks de Stripe son idempotentes por `gateway_payment_id`.
+- La notificación de PlacetoPay es idempotente por `(tenant_id, gateway, request_id)`.
 
 ## 9. Rate limiting
 

@@ -26,12 +26,13 @@ class RolesAndPermissionsSeeder extends Seeder
         'tours' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'departures' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'logistics' => ['logistics.view', 'logistics.manage'],
-        'bookings' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view', 'payments.refund'],
+        'bookings' => ['bookings.view', 'bookings.update', 'bookings.passengers.medical.view'],
         'promotions' => ['promotions.view', 'promotions.create', 'promotions.update', 'promotions.delete'],
         'newsletter' => ['newsletter.view', 'newsletter.send'],
         'reviews' => ['reviews.view', 'reviews.moderate', 'reviews.respond'],
         'team' => ['team.view', 'team.invite', 'team.role.update', 'team.suspend'],
         'tenant' => ['tenant.view', 'tenant.update', 'tenant.settings.update'],
+        'payments' => ['payments.view', 'payments.query'],
         'guide' => ['guide.schedule.view', 'guide.travelers.view'],
     ];
 
@@ -57,6 +58,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'reviews.view',
             'reviews.moderate',
             'reviews.respond',
+            // Ventas concilia pagos; consultar la pasarela queda en admin.
+            'payments.view',
         ],
         'operator' => [
             'dashboard.view',

@@ -18,7 +18,8 @@ final class TourPassengerController extends Controller
     {
         $departures = $tour->dates()->with('guide:id,name')->orderBy('starts_at')->get();
         $filters = $request->filters($tour->currency);
-        $manifest = $this->query->handle($departures, $request->tourDateId(), $filters);
+        $manifest = $this->query->handle($departures, $request->tourDateId(), $filters)
+            ->loadPaymentsWhen($request->user()->can('payments.view'));
 
         return new PassengerManifestResource($manifest, $departures, $filters->perPage, $request->page());
     }

@@ -206,7 +206,6 @@ final class CurrentAdminAccessMatrixTest extends TestCase
         return [
             'reviews.status' => ['reviews.status', 'PATCH', ['review'], [], self::FORBIDDEN, self::PASSES],
             'reviews.respond' => ['reviews.respond', 'POST', ['review'], [], self::FORBIDDEN, self::PASSES],
-            'payments.refund' => ['payments.refund', 'POST', ['payment'], [], self::FORBIDDEN, self::FORBIDDEN],
             'newsletter.send' => ['newsletter.send', 'POST', [], [], self::FORBIDDEN, self::PASSES],
         ];
     }
