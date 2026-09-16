@@ -27,13 +27,14 @@ class PlatformMetricsResource extends JsonResource
                 'users' => $metrics->totalUsers,
                 'bookings_this_month' => $metrics->bookingsThisMonth,
                 'revenue_this_month' => $metrics->revenueThisMonth,
-                'platform_commission_this_month' => $metrics->platformCommissionThisMonth,
+                'earnings_this_month' => $metrics->earningsThisMonth,
             ],
             'growth' => [
                 'tenants_new_this_month' => $metrics->tenantsNewThisMonth,
                 'bookings_growth_pct' => $metrics->bookingsGrowthPct,
             ],
             'plan_distribution' => $metrics->planDistribution,
+            'charts' => $metrics->charts,
         ];
     }
 }

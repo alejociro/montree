@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Tenant;
 use App\Services\SuperAdmin\PlatformMetricsAggregator;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -47,7 +48,7 @@ class PlatformMetricsAggregatorTest extends TestCase
         Tenant::forgetCurrent();
 
         $aggregator = app(PlatformMetricsAggregator::class);
-        $metrics = $aggregator->collect();
+        $metrics = $aggregator->collect(CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now()->endOfMonth());
 
         $this->assertSame(2, $metrics->totalTenants);
         $this->assertSame(4, $metrics->bookingsThisMonth);
@@ -73,7 +74,7 @@ class PlatformMetricsAggregatorTest extends TestCase
         ]);
         Tenant::forgetCurrent();
 
-        $metrics = app(PlatformMetricsAggregator::class)->collect();
+        $metrics = app(PlatformMetricsAggregator::class)->collect(CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now()->endOfMonth());
 
         $this->assertSame('50.00', $metrics->revenueThisMonth);
     }
@@ -91,8 +92,8 @@ class PlatformMetricsAggregatorTest extends TestCase
 
         Tenant::forgetCurrent();
 
-        $stats = app(PlatformMetricsAggregator::class)->statsForTenant($tenantA);
+        $stats = app(PlatformMetricsAggregator::class)->statsForTenants([$tenantA->id]);
 
-        $this->assertSame(3, $stats['bookings_count_30d']);
+        $this->assertSame(3, $stats[$tenantA->id]['bookings_count_30d']);
     }
 }

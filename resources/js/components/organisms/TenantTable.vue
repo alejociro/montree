@@ -1,32 +1,45 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { ChevronRight } from 'lucide-vue-next';
+import { Link, usePage } from '@inertiajs/vue3';
+import { LogIn } from 'lucide-vue-next';
+import { computed } from 'vue';
 import PlanBadge from '@/components/molecules/PlanBadge.vue';
 import TenantStatusBadge from '@/components/molecules/TenantStatusBadge.vue';
-import { intlLocale } from '@/lib/format';
+import { useTranslations } from '@/composables/useTranslations';
+import { formatCurrency } from '@/lib/format';
+import { enter as enterTenant } from '@/routes/super-admin/tenants';
+import { show as tenantShow } from '@/routes/super-admin/tenants';
 import type { SuperAdminTenantSummary } from '@/types';
+
+const { t } = useTranslations();
 
 defineProps<{
     tenants: SuperAdminTenantSummary[];
-    loading?: boolean;
 }>();
 
-function formatCurrency(value: string | null): string {
-    if (value === null) {
-        return '—';
+const page = usePage();
+
+/**
+ * WHY: la fila no navega, hace POST. El panel de la agencia vive en otro host y
+ * la sesión es host-only, así que hace falta un handoff — y se abre en pestaña
+ * nueva para no perder el listado. Un `<Link>` no puede hacer nada de eso, por
+ * eso cada fila es un formulario nativo con su token CSRF.
+ */
+const csrfToken = computed(() => page.props.csrfToken);
+
+function commissionLabel(tenant: SuperAdminTenantSummary): string {
+    if (tenant.commission.type === null || tenant.commission.value === null) {
+        return t('Sin cobro');
     }
 
-    const number = Number(value);
+    return tenant.commission.type === 'percentage'
+        ? `${Number(tenant.commission.value)} %`
+        : formatCurrency(tenant.commission.value, tenant.commission.currency);
+}
 
-    if (Number.isNaN(number)) {
-        return value;
-    }
-
-    return number.toLocaleString(intlLocale(), {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-    });
+function enterTitle(tenant: SuperAdminTenantSummary): string {
+    return tenant.can_enter
+        ? t('Entrar al panel de :name', { name: tenant.name })
+        : t('Solo se puede entrar al panel de una agencia activa.');
 }
 </script>
 
@@ -40,17 +53,22 @@ function formatCurrency(value: string | null): string {
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        {{ $t('Tenant') }}
+                        {{ $t('Agencia') }}
                     </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        {{ $t('Status') }}
+                        {{ $t('Estado') }}
                     </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Plan') }}
+                    </th>
+                    <th
+                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
+                        {{ $t('Cobro') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
@@ -65,35 +83,22 @@ function formatCurrency(value: string | null): string {
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        {{ $t('Bookings (30d)') }}
+                        {{ $t('Reservas (30d)') }}
                     </th>
                     <th
                         class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        {{ $t('Revenue (30d)') }}
+                        {{ $t('Ingresos (30d)') }}
                     </th>
-                    <th class="px-4 py-3" />
                 </tr>
             </thead>
             <tbody class="divide-y divide-border">
-                <tr v-if="loading">
-                    <td colspan="8" class="px-4 py-12">
-                        <div
-                            class="flex items-center justify-center gap-3 text-sm text-muted-foreground"
-                        >
-                            <span
-                                class="size-3 animate-pulse rounded-full bg-border"
-                            />
-                            {{ $t('Cargando tenants...') }}
-                        </div>
-                    </td>
-                </tr>
-                <tr v-else-if="tenants.length === 0">
+                <tr v-if="tenants.length === 0">
                     <td
                         colspan="8"
                         class="px-4 py-12 text-center text-sm text-muted-foreground"
                     >
-                        {{ $t('No se encontraron tenants con esos filtros.') }}
+                        {{ $t('No se encontraron agencias con esos filtros.') }}
                     </td>
                 </tr>
                 <tr
@@ -103,13 +108,40 @@ function formatCurrency(value: string | null): string {
                     class="hover:bg-muted"
                 >
                     <td class="px-4 py-3">
-                        <div class="flex flex-col">
-                            <span class="font-medium text-foreground">
-                                {{ tenant.name }}
-                            </span>
-                            <span class="text-xs text-muted-foreground">{{
-                                tenant.domain ?? tenant.slug
-                            }}</span>
+                        <div class="flex items-center gap-3">
+                            <form
+                                :action="enterTenant.url(tenant.id)"
+                                method="post"
+                                target="_blank"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    :value="csrfToken"
+                                />
+                                <button
+                                    type="submit"
+                                    class="inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                    :disabled="!tenant.can_enter"
+                                    :title="enterTitle(tenant)"
+                                >
+                                    <LogIn class="size-4" />
+                                    <span class="sr-only">{{
+                                        $t('Entrar')
+                                    }}</span>
+                                </button>
+                            </form>
+                            <div class="flex flex-col">
+                                <Link
+                                    :href="tenantShow.url(tenant.id)"
+                                    class="font-medium text-foreground underline-offset-4 hover:underline"
+                                >
+                                    {{ tenant.name }}
+                                </Link>
+                                <span class="text-xs text-muted-foreground">{{
+                                    tenant.domain ?? tenant.slug
+                                }}</span>
+                            </div>
                         </div>
                     </td>
                     <td class="px-4 py-3">
@@ -118,26 +150,25 @@ function formatCurrency(value: string | null): string {
                     <td class="px-4 py-3">
                         <PlanBadge :plan="tenant.plan" />
                     </td>
-                    <td class="px-4 py-3 text-right text-sm text-foreground">
-                        {{ tenant.users_count ?? '—' }}
+                    <td class="px-4 py-3 text-sm text-foreground">
+                        {{ commissionLabel(tenant) }}
                     </td>
                     <td class="px-4 py-3 text-right text-sm text-foreground">
-                        {{ tenant.tours_count ?? '—' }}
+                        {{ tenant.stats.users_count }}
                     </td>
                     <td class="px-4 py-3 text-right text-sm text-foreground">
-                        {{ tenant.bookings_count_30d ?? '—' }}
+                        {{ tenant.stats.tours_count }}
                     </td>
                     <td class="px-4 py-3 text-right text-sm text-foreground">
-                        {{ formatCurrency(tenant.revenue_30d) }}
+                        {{ tenant.stats.bookings_count_30d }}
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        <Link
-                            :href="`/super-admin/tenants/${tenant.id}`"
-                            class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            {{ $t('Detalle') }}
-                            <ChevronRight class="size-4" />
-                        </Link>
+                    <td class="px-4 py-3 text-right text-sm text-foreground">
+                        {{
+                            formatCurrency(
+                                tenant.stats.revenue_30d,
+                                tenant.commission.currency,
+                            )
+                        }}
                     </td>
                 </tr>
             </tbody>

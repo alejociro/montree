@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { store as storeTenant } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,25 +21,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { store as storeTenant } from '@/routes/super-admin/tenants';
 import type { TenantPlan } from '@/types';
 
 const { t } = useTranslations();
 
-const emit = defineEmits<{
-    created: [tenantId: number];
-}>();
-
-const api = useApi();
-
 const open = ref(false);
-const processing = ref(false);
 const slugTouched = ref(false);
-const errors = ref<ApiErrors>({});
 
-const form = reactive({
+const form = useForm({
     name: '',
     slug: '',
     plan: 'basic' as TenantPlan,
@@ -66,66 +57,35 @@ watch(
     },
 );
 
-function reset(): void {
-    form.name = '';
-    form.slug = '';
-    form.plan = 'basic';
-    form.admin_name = '';
-    form.admin_email = '';
-    slugTouched.value = false;
-    errors.value = {};
-}
-
 watch(open, (isOpen) => {
     if (!isOpen) {
-        reset();
+        form.reset();
+        form.clearErrors();
+        slugTouched.value = false;
     }
 });
 
 function submit(): void {
-    processing.value = true;
-    errors.value = {};
-
-    void api.post<{ data: { id: number } }>(
-        storeTenant().url,
-        {
-            name: form.name,
-            slug: form.slug,
-            plan: form.plan,
-            admin_name: form.admin_name,
-            admin_email: form.admin_email,
+    form.post(storeTenant.url(), {
+        preserveScroll: true,
+        onSuccess: () => {
+            open.value = false;
         },
-        {
-            onSuccess: (response) => {
-                toast.success(
-                    t('Tenant creado. Se envió la invitación al admin.'),
-                );
-                open.value = false;
-
-                if (response?.data?.id) {
-                    emit('created', response.data.id);
-                }
-            },
-            onError: (e) => {
-                errors.value = e;
-                toast.error(e._global ?? t('No se pudo crear el tenant.'));
-            },
-            onFinish: () => {
-                processing.value = false;
-            },
+        onError: () => {
+            toast.error(t('No se pudo crear la agencia.'));
         },
-    );
+    });
 }
 </script>
 
 <template>
     <Dialog v-model:open="open">
         <DialogTrigger as-child>
-            <Button>{{ $t('Nuevo tenant') }}</Button>
+            <Button>{{ $t('Nueva agencia') }}</Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>{{ $t('Crear tenant') }}</DialogTitle>
+                <DialogTitle>{{ $t('Crear agencia') }}</DialogTitle>
                 <DialogDescription>
                     {{
                         $t(
@@ -146,8 +106,8 @@ function submit(): void {
                         :placeholder="$t('Eco Adventures')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.name" class="text-xs text-destructive">
-                        {{ errors.name }}
+                    <p v-if="form.errors.name" class="text-xs text-destructive">
+                        {{ form.errors.name }}
                     </p>
                 </div>
 
@@ -168,8 +128,8 @@ function submit(): void {
                         <span class="font-mono">{{ form.slug || 'slug' }}</span
                         >.montree.app
                     </p>
-                    <p v-if="errors.slug" class="text-xs text-destructive">
-                        {{ errors.slug }}
+                    <p v-if="form.errors.slug" class="text-xs text-destructive">
+                        {{ form.errors.slug }}
                     </p>
                 </div>
 
@@ -193,8 +153,8 @@ function submit(): void {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p v-if="errors.plan" class="text-xs text-destructive">
-                        {{ errors.plan }}
+                    <p v-if="form.errors.plan" class="text-xs text-destructive">
+                        {{ form.errors.plan }}
                     </p>
                 </div>
 
@@ -210,10 +170,10 @@ function submit(): void {
                             autocomplete="off"
                         />
                         <p
-                            v-if="errors.admin_name"
+                            v-if="form.errors.admin_name"
                             class="text-xs text-destructive"
                         >
-                            {{ errors.admin_name }}
+                            {{ form.errors.admin_name }}
                         </p>
                     </div>
                     <div class="space-y-2">
@@ -228,10 +188,10 @@ function submit(): void {
                             autocomplete="off"
                         />
                         <p
-                            v-if="errors.admin_email"
+                            v-if="form.errors.admin_email"
                             class="text-xs text-destructive"
                         >
-                            {{ errors.admin_email }}
+                            {{ form.errors.admin_email }}
                         </p>
                     </div>
                 </div>
@@ -240,13 +200,13 @@ function submit(): void {
                     <Button
                         type="button"
                         variant="outline"
-                        :disabled="processing"
+                        :disabled="form.processing"
                         @click="open = false"
                     >
                         {{ $t('Cancelar') }}
                     </Button>
-                    <Button type="submit" :disabled="processing">
-                        {{ processing ? $t('Creando…') : $t('Crear tenant') }}
+                    <Button type="submit" :disabled="form.processing">
+                        {{ form.processing ? $t('Creando…') : $t('Crear agencia') }}
                     </Button>
                 </DialogFooter>
             </form>

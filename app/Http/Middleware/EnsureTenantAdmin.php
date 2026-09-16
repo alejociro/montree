@@ -15,6 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
  * de `admin/*` la resuelve `can:<permiso>`. Lo que sigue siendo suyo es la membresía:
  * un miembro suspendido conserva sus filas en `model_has_roles`, así que sin este
  * chequeo seguiría pasando el `can:` después de que el equipo lo suspendiera.
+ *
+ * La excepción es el super admin: entra al panel de cualquier agencia desde la
+ * tabla de la plataforma sin estar en `tenant_user`, y su autorización la
+ * resuelve el `Gate::before` de `AppServiceProvider`.
  */
 final class EnsureTenantAdmin
 {
@@ -31,6 +35,10 @@ final class EnsureTenantAdmin
 
         if ($tenant === null) {
             abort(403);
+        }
+
+        if ($user->isSuperAdmin()) {
+            return $next($request);
         }
 
         if (! $user->isActiveMemberOf($tenant)) {

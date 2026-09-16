@@ -83,6 +83,10 @@ final class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // WHY: la tabla de agencias entra al panel de un tenant con un `<form>`
+            // nativo (POST a otro host, `target="_blank"`), y un formulario nativo
+            // necesita el token en un input, no en la cabecera que arma Inertia.
+            'csrfToken' => $request->session()->token(),
         ];
     }
 }

@@ -2,33 +2,32 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Api\V1\SuperAdmin;
+namespace App\Http\Controllers\SuperAdmin;
 
 use App\Actions\Tenant\StoreBrandingAssetsAction;
 use App\Data\BrandingAssetsData;
 use App\Data\TenantConfigurationData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\UpdateTenantConfigurationRequest;
-use App\Http\Resources\TenantConfigurationResource;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 
-final class TenantConfigurationController extends Controller
+final class UpdateTenantConfigurationController extends Controller
 {
-    public function update(
+    public function __invoke(
         UpdateTenantConfigurationRequest $request,
         Tenant $tenant,
         StoreBrandingAssetsAction $storeAssets,
-    ): JsonResponse {
+    ): RedirectResponse {
         $configuration = TenantConfiguration::query()->firstOrCreate(['tenant_id' => $tenant->id]);
 
         $configuration->fill(TenantConfigurationData::fromRequest($request)->attributes)->save();
 
         $storeAssets->execute($configuration, BrandingAssetsData::fromRequest($request));
 
-        return new JsonResponse([
-            'data' => (new TenantConfigurationResource($configuration->refresh()))->resolve(),
-        ]);
+        return redirect()
+            ->route('super-admin.tenants.show', $tenant)
+            ->with('success', __('Configuración actualizada correctamente.'));
     }
 }

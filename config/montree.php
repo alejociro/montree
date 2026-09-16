@@ -26,6 +26,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Platform currency
+    |--------------------------------------------------------------------------
+    |
+    | Moneda con la que el panel de plataforma presenta ingresos y ganancias.
+    | Los cargos se guardan en la moneda de cada agencia y no se convierten:
+    | esta es la etiqueta del agregado, no una tasa de cambio.
+    |
+    */
+
+    'platform_currency' => env('MONTREE_PLATFORM_CURRENCY', 'USD'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Reserved hosts
     |--------------------------------------------------------------------------
     |

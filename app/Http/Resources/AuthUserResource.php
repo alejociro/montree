@@ -6,9 +6,9 @@ namespace App\Http\Resources;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Rbac\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Spatie\Permission\Models\Permission;
 
 /**
  * @mixin User
@@ -65,7 +65,7 @@ class AuthUserResource extends JsonResource
     private function resolvePermissions(bool $isSuperAdmin): array
     {
         if ($isSuperAdmin) {
-            return Permission::query()->orderBy('name')->pluck('name')->all();
+            return app(PermissionCatalog::class)->slugs();
         }
 
         if ($this->tenant === null) {

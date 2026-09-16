@@ -38,12 +38,6 @@ use App\Http\Controllers\Api\V1\Promotion\PromotionValidationController;
 use App\Http\Controllers\Api\V1\PublicReviewController;
 use App\Http\Controllers\Api\V1\PublicTourController;
 use App\Http\Controllers\Api\V1\ReviewController;
-use App\Http\Controllers\Api\V1\SuperAdmin\DashboardController as SuperAdminDashboardApiController;
-use App\Http\Controllers\Api\V1\SuperAdmin\TenantConfigurationController as SuperAdminTenantConfigurationController;
-use App\Http\Controllers\Api\V1\SuperAdmin\TenantController as SuperAdminTenantApiController;
-use App\Http\Controllers\Api\V1\SuperAdmin\TenantPlanController as SuperAdminTenantPlanController;
-use App\Http\Controllers\Api\V1\SuperAdmin\TenantStatusController as SuperAdminTenantStatusController;
-use App\Http\Controllers\Api\V1\SuperAdmin\TenantUserController as SuperAdminTenantUserController;
 use App\Http\Controllers\Api\V1\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -169,22 +163,3 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
         ->names('roles')
         ->middleware('can:team.role.update');
 });
-
-// WHY: super-admin API routes intentionally do NOT use Route::domain().
-// The super_admin.only middleware enforces the role; pinning to a specific
-// host would force Wayfinder to emit absolute URLs with that host (which
-// breaks ports in dev). The Inertia /super-admin pages in routes/web.php
-// remain Route::domain-gated so the URLs the user navigates to stay correct.
-Route::middleware(['auth', 'super_admin.only'])
-    ->prefix('super-admin')
-    ->name('api.v1.super-admin.')
-    ->group(function (): void {
-        Route::get('dashboard', [SuperAdminDashboardApiController::class, 'show'])->name('dashboard.show');
-        Route::get('tenants', [SuperAdminTenantApiController::class, 'index'])->name('tenants.index');
-        Route::post('tenants', [SuperAdminTenantApiController::class, 'store'])->name('tenants.store');
-        Route::get('tenants/{tenant}', [SuperAdminTenantApiController::class, 'show'])->name('tenants.show');
-        Route::post('tenants/{tenant}/users', [SuperAdminTenantUserController::class, 'store'])->name('tenants.users.store');
-        Route::patch('tenants/{tenant}/status', [SuperAdminTenantStatusController::class, 'update'])->name('tenants.status.update');
-        Route::patch('tenants/{tenant}/plan', [SuperAdminTenantPlanController::class, 'update'])->name('tenants.plan.update');
-        Route::post('tenants/{tenant}/configuration', [SuperAdminTenantConfigurationController::class, 'update'])->name('tenants.configuration.update');
-    });

@@ -1,51 +1,25 @@
 <script setup lang="ts">
-import { Head, useHttp } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue';
-import { toast } from 'vue-sonner';
-import { show as dashboardShow } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/DashboardController';
+import { Head } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
+import EarningsChart from '@/components/organisms/EarningsChart.vue';
 import PlatformStats from '@/components/organisms/PlatformStats.vue';
-import { useTranslations } from '@/composables/useTranslations';
-import type { PlatformMetrics, TenantPlan } from '@/types';
+import RevenueByTenantChart from '@/components/organisms/RevenueByTenantChart.vue';
+import TenantsPerMonthChart from '@/components/organisms/TenantsPerMonthChart.vue';
+import { planLabel } from '@/lib/plans';
+import type {
+    PlatformCharts,
+    PlatformMetricsGrowth,
+    PlatformMetricsTotals,
+    TenantPlan,
+} from '@/types';
 
-const { t } = useTranslations();
-
-const http = useHttp();
-
-const metrics = ref<PlatformMetrics | null>(null);
-const loading = ref(true);
-
-async function loadMetrics(): Promise<void> {
-    loading.value = true;
-
-    try {
-        const response = (await http.submit(dashboardShow())) as {
-            data: PlatformMetrics;
-        };
-        metrics.value = response.data;
-    } catch {
-        toast.error(t('No se pudieron cargar las métricas de la plataforma.'));
-    } finally {
-        loading.value = false;
-    }
-}
-
-onMounted(() => {
-    void loadMetrics();
-});
-
-function planLabel(plan: TenantPlan): string {
-    switch (plan) {
-        case 'basic':
-            return 'Basic';
-        case 'professional':
-            return 'Professional';
-        case 'enterprise':
-            return 'Enterprise';
-        default:
-            return plan;
-    }
-}
+defineProps<{
+    totals: PlatformMetricsTotals;
+    growth: PlatformMetricsGrowth;
+    plan_distribution: Record<TenantPlan, number>;
+    charts: PlatformCharts;
+    currency: string;
+}>();
 </script>
 
 <template>
@@ -56,26 +30,25 @@ function planLabel(plan: TenantPlan): string {
             :title="$t('Panel de plataforma')"
             :description="
                 $t(
-                    'Métricas agregadas de todos los tenants y la plataforma MONTREE.',
+                    'Métricas agregadas de todas las agencias y de la plataforma MONTREE.',
                 )
             "
         />
 
-        <PlatformStats :metrics="metrics" />
+        <PlatformStats
+            :totals="totals"
+            :growth="growth"
+            :currency="currency"
+        />
 
         <section class="rounded-lg border border-border bg-card p-6 shadow-sm">
-            <header class="mb-4 flex items-center justify-between">
-                <h2 class="text-base font-semibold text-foreground">
-                    {{ $t('Distribución por plan') }}
-                </h2>
-                <span v-if="loading" class="text-xs text-muted-foreground">{{
-                    $t('Cargando...')
-                }}</span>
-            </header>
+            <h2 class="mb-4 text-base font-semibold text-foreground">
+                {{ $t('Distribución por plan') }}
+            </h2>
 
-            <div v-if="metrics" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div
-                    v-for="(count, plan) in metrics.plan_distribution"
+                    v-for="(count, plan) in plan_distribution"
                     :key="plan"
                     class="flex items-center justify-between rounded-md border border-border bg-muted px-4 py-3"
                 >
@@ -87,17 +60,23 @@ function planLabel(plan: TenantPlan): string {
                     </span>
                 </div>
             </div>
-
-            <div
-                v-else-if="loading"
-                class="grid grid-cols-1 gap-4 sm:grid-cols-3"
-            >
-                <div
-                    v-for="i in 3"
-                    :key="i"
-                    class="h-14 animate-pulse rounded-md bg-muted"
-                />
-            </div>
         </section>
+
+        <TenantsPerMonthChart
+            :points="charts.tenants_per_month.points"
+            :average="charts.tenants_per_month.average"
+        />
+
+        <RevenueByTenantChart
+            :months="charts.revenue_per_tenant.months"
+            :series="charts.revenue_per_tenant.series"
+            :currency="currency"
+        />
+
+        <EarningsChart
+            :points="charts.earnings_per_month.points"
+            :total="charts.earnings_per_month.total"
+            :currency="currency"
+        />
     </div>
 </template>

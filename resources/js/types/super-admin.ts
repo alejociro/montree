@@ -1,4 +1,28 @@
+import type { CommissionType } from './enums.generated';
+
+export type { CommissionType };
+import type { PaginatedResponse } from './pagination';
 import type { TenantConfiguration, TenantPlan, TenantStatus } from './tenant';
+
+export type MonthPoint = {
+    month: string;
+    label: string;
+    value: number | string;
+};
+
+export type TenantCommission = {
+    type: CommissionType | null;
+    value: string | null;
+    currency: string;
+};
+
+export type TenantStats = {
+    users_count: number;
+    tours_count: number;
+    bookings_count_30d: number;
+    revenue_30d: string;
+    charges_30d: string;
+};
 
 export type SuperAdminTenantSummary = {
     id: number;
@@ -11,12 +35,19 @@ export type SuperAdminTenantSummary = {
     suspended_at: string | null;
     contact_email: string | null;
     contact_phone: string | null;
-    users_count: number | null;
-    tours_count: number | null;
-    bookings_count_30d: number | null;
-    revenue_30d: string | null;
     created_at: string | null;
+    can_enter: boolean;
+    commission: TenantCommission;
+    stats: TenantStats;
     configuration?: TenantConfiguration | null;
+};
+
+export type TenantsListFilters = {
+    search: string | null;
+    status: TenantStatus | null;
+    plan: TenantPlan | null;
+    sort: 'created_at' | 'name';
+    direction: 'asc' | 'desc';
 };
 
 export type PlatformMetricsTotals = {
@@ -25,7 +56,7 @@ export type PlatformMetricsTotals = {
     users: number;
     bookings_this_month: number;
     revenue_this_month: string;
-    platform_commission_this_month: string;
+    earnings_this_month: string;
 };
 
 export type PlatformMetricsGrowth = {
@@ -33,35 +64,59 @@ export type PlatformMetricsGrowth = {
     bookings_growth_pct: number;
 };
 
-export type PlatformMetrics = {
-    totals: PlatformMetricsTotals;
-    growth: PlatformMetricsGrowth;
-    plan_distribution: Record<TenantPlan, number>;
-};
-
-export type TenantsListPaginated = {
-    data: SuperAdminTenantSummary[];
-    meta: {
-        current_page: number;
-        from: number | null;
-        last_page: number;
-        per_page: number;
-        to: number | null;
-        total: number;
+export type PlatformCharts = {
+    tenants_per_month: {
+        points: MonthPoint[];
+        average: number;
     };
-    links: {
-        first: string | null;
-        last: string | null;
-        prev: string | null;
-        next: string | null;
+    revenue_per_tenant: {
+        months: string[];
+        series: { tenant: string; values: string[] }[];
+    };
+    earnings_per_month: {
+        points: MonthPoint[];
+        total: string;
     };
 };
 
-export type TenantsListFilters = {
-    search: string;
-    status: TenantStatus | '';
-    plan: TenantPlan | '';
-    sort: 'created_at' | 'name';
-    direction: 'asc' | 'desc';
-    per_page: number;
+export type PlatformChargeRow = {
+    id: number;
+    charged_at: string;
+    booking: {
+        id: number;
+        booking_number: string;
+        total_amount: string;
+        currency: string;
+    } | null;
+    base_amount: string;
+    type: CommissionType;
+    applied_value: string;
+    amount: string;
+    currency: string;
 };
+
+export type PlatformChargeTotals = {
+    amount: string;
+    count: number;
+    currency: string;
+};
+
+export type TenantChargesSummary = {
+    total_amount: string;
+    total_count: number;
+    currency: string;
+};
+
+export type PlatformChargeFilters = {
+    from: string | null;
+    to: string | null;
+};
+
+export type TenantMonthlySeries = {
+    bookings: MonthPoint[];
+    charges: MonthPoint[];
+};
+
+export type TenantsListPaginated = PaginatedResponse<SuperAdminTenantSummary>;
+
+export type PlatformChargesPaginated = PaginatedResponse<PlatformChargeRow>;

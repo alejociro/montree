@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { store as storeTenantUser } from '@/actions/App/Http/Controllers/Api/V1/SuperAdmin/TenantUserController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,67 +21,52 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { store as storeTenantUser } from '@/routes/super-admin/tenants/users';
 
 const { t } = useTranslations();
 
 const props = defineProps<{
     tenantId: number;
+    roles: string[];
 }>();
 
-const emit = defineEmits<{
-    created: [];
-}>();
-
-const api = useApi();
+const ROLE_LABELS: Record<string, string> = {
+    admin: t('Admin'),
+    sales: t('Vendedor'),
+    operator: t('Operador'),
+    guide: t('Guía'),
+};
 
 const open = ref(false);
-const processing = ref(false);
-const errors = ref<ApiErrors>({});
 
-const form = reactive({
+const form = useForm({
     name: '',
     email: '',
-    role: 'guide' as 'admin' | 'sales' | 'operator' | 'guide',
+    role: props.roles[0] ?? 'guide',
 });
-
-function reset(): void {
-    form.name = '';
-    form.email = '';
-    form.role = 'guide';
-    errors.value = {};
-}
 
 watch(open, (isOpen) => {
     if (!isOpen) {
-        reset();
+        form.reset();
+        form.clearErrors();
     }
 });
 
-function submit(): void {
-    processing.value = true;
-    errors.value = {};
+function roleLabel(role: string): string {
+    return ROLE_LABELS[role] ?? role;
+}
 
-    void api.post(
-        storeTenantUser(props.tenantId).url,
-        { name: form.name, email: form.email, role: form.role },
-        {
-            onSuccess: () => {
-                toast.success(t('Usuario agregado. Se envió la invitación.'));
-                open.value = false;
-                emit('created');
-            },
-            onError: (e) => {
-                errors.value = e;
-                toast.error(e._global ?? t('No se pudo agregar el usuario.'));
-            },
-            onFinish: () => {
-                processing.value = false;
-            },
+function submit(): void {
+    form.post(storeTenantUser.url(props.tenantId), {
+        preserveScroll: true,
+        onSuccess: () => {
+            open.value = false;
         },
-    );
+        onError: () => {
+            toast.error(t('No se pudo agregar el usuario.'));
+        },
+    });
 }
 </script>
 
@@ -113,8 +98,8 @@ function submit(): void {
                         :placeholder="$t('Carlos Díaz')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.name" class="text-xs text-destructive">
-                        {{ errors.name }}
+                    <p v-if="form.errors.name" class="text-xs text-destructive">
+                        {{ form.errors.name }}
                     </p>
                 </div>
 
@@ -127,8 +112,8 @@ function submit(): void {
                         :placeholder="$t('carlos@agencia.com')"
                         autocomplete="off"
                     />
-                    <p v-if="errors.email" class="text-xs text-destructive">
-                        {{ errors.email }}
+                    <p v-if="form.errors.email" class="text-xs text-destructive">
+                        {{ form.errors.email }}
                     </p>
                 </div>
 
@@ -139,22 +124,17 @@ function submit(): void {
                             <SelectValue :placeholder="$t('Seleccionar rol')" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="admin">{{
-                                $t('Admin')
-                            }}</SelectItem>
-                            <SelectItem value="sales">{{
-                                $t('Vendedor')
-                            }}</SelectItem>
-                            <SelectItem value="operator">{{
-                                $t('Operador')
-                            }}</SelectItem>
-                            <SelectItem value="guide">{{
-                                $t('Guía')
-                            }}</SelectItem>
+                            <SelectItem
+                                v-for="role in roles"
+                                :key="role"
+                                :value="role"
+                            >
+                                {{ roleLabel(role) }}
+                            </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p v-if="errors.role" class="text-xs text-destructive">
-                        {{ errors.role }}
+                    <p v-if="form.errors.role" class="text-xs text-destructive">
+                        {{ form.errors.role }}
                     </p>
                 </div>
 
@@ -162,14 +142,14 @@ function submit(): void {
                     <Button
                         type="button"
                         variant="outline"
-                        :disabled="processing"
+                        :disabled="form.processing"
                         @click="open = false"
                     >
                         {{ $t('Cancelar') }}
                     </Button>
-                    <Button type="submit" :disabled="processing">
+                    <Button type="submit" :disabled="form.processing">
                         {{
-                            processing
+                            form.processing
                                 ? $t('Agregando…')
                                 : $t('Agregar usuario')
                         }}

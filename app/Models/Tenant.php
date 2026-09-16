@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CommissionType;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
+use App\Models\Builders\TenantBuilder;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -26,6 +28,8 @@ use Spatie\Multitenancy\Models\Tenant as BaseTenant;
  * @property Carbon|null $trial_ends_at
  * @property Carbon|null $suspended_at
  * @property array<string, mixed>|null $plan_limits
+ * @property CommissionType|null $commission_type
+ * @property string|null $commission_value
  */
 class Tenant extends BaseTenant
 {
@@ -43,6 +47,8 @@ class Tenant extends BaseTenant
         'trial_ends_at',
         'suspended_at',
         'plan_limits',
+        'commission_type',
+        'commission_value',
     ];
 
     protected function casts(): array
@@ -53,7 +59,14 @@ class Tenant extends BaseTenant
             'trial_ends_at' => 'datetime',
             'suspended_at' => 'datetime',
             'plan_limits' => 'array',
+            'commission_type' => CommissionType::class,
+            'commission_value' => 'decimal:2',
         ];
+    }
+
+    public function newEloquentBuilder($query): TenantBuilder
+    {
+        return new TenantBuilder($query);
     }
 
     public function configuration(): HasOne
@@ -82,5 +95,10 @@ class Tenant extends BaseTenant
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function platformCharges(): HasMany
+    {
+        return $this->hasMany(PlatformCharge::class);
     }
 }

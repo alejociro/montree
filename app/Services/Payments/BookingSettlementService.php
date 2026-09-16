@@ -6,6 +6,7 @@ namespace App\Services\Payments;
 
 use App\Data\SettlementResult;
 use App\Enums\BookingStatus;
+use App\Events\BookingConfirmed;
 use App\Models\Booking;
 use App\Models\Payment;
 
@@ -38,6 +39,12 @@ final class BookingSettlementService
             'expires_at' => $securesSeat ? null : $booking->expires_at,
         ]);
 
-        return new SettlementResult($booking->refresh(), $wasJustConfirmed);
+        $booking->refresh();
+
+        if ($wasJustConfirmed) {
+            BookingConfirmed::dispatch($booking, $payment);
+        }
+
+        return new SettlementResult($booking, $wasJustConfirmed);
     }
 }

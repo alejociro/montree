@@ -69,11 +69,20 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    /*
+      Ocho ranuras categóricas para las gráficas del panel de plataforma. Se
+      asignan SIEMPRE en este orden y nunca se ciclan: la serie novena entra en
+      «Otros». Los valores se derivan de `--primary` y `--secondary`, así que una
+      agencia con la marca en terracota lee sus gráficas en terracota.
+    */
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
+    --color-chart-6: var(--chart-6);
+    --color-chart-7: var(--chart-7);
+    --color-chart-8: var(--chart-8);
 
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -205,11 +214,14 @@
     --border: var(--brand-line);
     --input: var(--brand-line);
     --ring: var(--brand-green-600);
-    --chart-1: var(--brand-green);
-    --chart-2: var(--brand-green-600);
-    --chart-3: var(--brand-site);
-    --chart-4: var(--brand-drop);
-    --chart-5: var(--brand-muted);
+    --chart-1: var(--primary);
+    --chart-2: var(--secondary);
+    --chart-3: color-mix(in oklab, var(--primary) 62%, var(--brand-ink));
+    --chart-4: color-mix(in oklab, var(--secondary) 45%, var(--brand-cream));
+    --chart-5: color-mix(in oklab, var(--primary) 45%, var(--brand-cream));
+    --chart-6: color-mix(in oklab, var(--secondary) 62%, var(--brand-ink));
+    --chart-7: color-mix(in oklab, var(--primary) 55%, var(--brand-tan));
+    --chart-8: color-mix(in oklab, var(--secondary) 55%, var(--brand-drop));
     --radius: 0.75rem; /* 12px: cards internas del handoff */
 
     /*
@@ -298,11 +310,14 @@
     --border: var(--brand-ink-line);
     --input: var(--brand-ink-line);
     --ring: var(--brand-green-600);
-    --chart-1: var(--brand-green-600);
-    --chart-2: var(--brand-site);
-    --chart-3: var(--brand-green-100);
-    --chart-4: var(--brand-drop);
-    --chart-5: var(--brand-on-ink);
+    --chart-1: var(--primary);
+    --chart-2: var(--secondary);
+    --chart-3: color-mix(in oklab, var(--primary) 62%, var(--brand-cream));
+    --chart-4: color-mix(in oklab, var(--secondary) 45%, var(--brand-ink));
+    --chart-5: color-mix(in oklab, var(--primary) 45%, var(--brand-ink));
+    --chart-6: color-mix(in oklab, var(--secondary) 62%, var(--brand-cream));
+    --chart-7: color-mix(in oklab, var(--primary) 55%, var(--brand-tan));
+    --chart-8: color-mix(in oklab, var(--secondary) 55%, var(--brand-drop));
     /*
       Las derivaciones de marca son las mismas de `:root` —mezclan contra
       `--background`, que aquí ya es tinta—, así que no se repiten. Solo

@@ -195,3 +195,32 @@ Lecturas auxiliares que se conservan como API porque las consume un buscador as�
   `snapshot.permissions.can_export_reports` del dashboard del tenant (§6 solo listaba las
   rutas). `DashboardResource` deja de recibir el flag y `DashboardPolicy::exportReports`
   se elimina.
+- `2026-09-15` (B2) — `POST /super-admin/tenants/{tenant}/users` deja de responder 409
+  `TEAM_ALREADY_MEMBER`: al pasar a ruta web, un 409 JSON rompe el `useForm` del
+  diálogo. El controller captura `TeamException` y vuelve con
+  `back()->withErrors(['email' => ...])`, que es lo que el §1 pide para reglas de
+  negocio. El 409 sigue siendo el del entrar al tenant (`TENANT_NOT_ACTIVE`), que
+  el navegador ve como página de error Inertia porque abre en pestaña nueva.
+- `2026-09-15` (B2) — `GET /super-admin/tenants` valida `sort` contra
+  `name|created_at` y `direction` contra `asc|desc`: un valor fuera de la lista
+  ahora es 422, no un silencioso `created_at`. El `per_page` del endpoint API
+  desaparece con él (la página pagina de a 15).
+- `2026-09-15` (B2) — el dashboard suma la prop `currency`
+  (`config('montree.platform_currency')`, `USD` por defecto). El §2 no la listaba
+  y el front no tiene de dónde sacar la moneda del agregado: los cargos se guardan
+  en la moneda de cada agencia y no se convierten, así que esto es la etiqueta del
+  total, no una conversión.
+- `2026-09-15` (B2) — `charts.revenue_per_tenant.months` viaja como etiquetas ya
+  formateadas (`sep 2026`), no como claves `YYYY-MM`. Es el texto del eje y la
+  localización del mes ya se resuelve en el servidor para `MonthPoint.label`.
+- `2026-09-15` (B2) — `TenantRow.stats` incluye `users_count` y `tours_count`
+  dentro de `stats` (el §1 los listaba ahí, pero el shape viejo los tenía sueltos
+  en la raíz). `GET /super-admin/tenants/{tenant}` devuelve `charges_summary` con
+  `total_amount`/`total_count`, mientras que `/charges` devuelve `totals` con
+  `amount`/`count`: son dos shapes distintos y el front los tipa por separado.
+- `2026-09-15` (B2) — `RecordPlatformChargeAction::execute()` acepta un segundo
+  parámetro opcional `?Payment $payment = null` para poblar `platform_charges.payment_id`,
+  que el plan §4 pedía en el schema pero no en la firma.
+- `2026-09-15` (B2) — se comparte la prop Inertia `csrfToken`. El «entrar al
+  tenant» es un `<form method="post" target="_blank">` nativo y necesita el token
+  en un input; Inertia solo lo pone en la cabecera de sus propias visitas.

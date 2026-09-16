@@ -40,6 +40,14 @@ export const CANCELLATION_POLICY_VALUES = [
 
 export type CancellationPolicy = (typeof CANCELLATION_POLICY_VALUES)[number];
 
+/** `App\Enums\CommissionType` */
+export const COMMISSION_TYPE_VALUES = [
+    'percentage',
+    'fixed',
+] as const;
+
+export type CommissionType = (typeof COMMISSION_TYPE_VALUES)[number];
+
 /** `App\Enums\DepartureScope` */
 export const DEPARTURE_SCOPE_VALUES = [
     'upcoming',

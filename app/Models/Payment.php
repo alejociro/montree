@@ -9,6 +9,7 @@ use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\TransactionSearchField;
+use App\Models\Builders\PaymentBuilder;
 use Carbon\CarbonInterface;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -88,6 +89,11 @@ class Payment extends Model
             'processed_at' => 'datetime',
             'session_expires_at' => 'datetime',
         ];
+    }
+
+    public function newEloquentBuilder($query): PaymentBuilder
+    {
+        return new PaymentBuilder($query);
     }
 
     public function booking(): BelongsTo

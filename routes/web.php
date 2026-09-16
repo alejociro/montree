@@ -24,8 +24,16 @@ use App\Http\Controllers\PolicyPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\QueryTransactionController;
 use App\Http\Controllers\RoleHomeRedirectController;
+use App\Http\Controllers\SuperAdmin\EnterTenantController;
+use App\Http\Controllers\SuperAdmin\PlatformChargePageController;
+use App\Http\Controllers\SuperAdmin\StoreTenantController;
+use App\Http\Controllers\SuperAdmin\StoreTenantUserController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
+use App\Http\Controllers\SuperAdmin\UpdateTenantCommissionController;
+use App\Http\Controllers\SuperAdmin\UpdateTenantConfigurationController;
+use App\Http\Controllers\SuperAdmin\UpdateTenantPlanController;
+use App\Http\Controllers\SuperAdmin\UpdateTenantStatusController;
 use App\Http\Controllers\TransactionPagesController;
 use Illuminate\Support\Facades\Route;
 
@@ -138,7 +146,15 @@ Route::domain((string) config('montree.platform_host'))
     ->group(function (): void {
         Route::get('dashboard', SuperAdminDashboardController::class)->name('dashboard');
         Route::get('tenants', [SuperAdminTenantPageController::class, 'index'])->name('tenants.index');
+        Route::post('tenants', StoreTenantController::class)->name('tenants.store');
         Route::get('tenants/{tenant}', [SuperAdminTenantPageController::class, 'show'])->name('tenants.show');
+        Route::post('tenants/{tenant}/enter', EnterTenantController::class)->name('tenants.enter');
+        Route::post('tenants/{tenant}/users', StoreTenantUserController::class)->name('tenants.users.store');
+        Route::patch('tenants/{tenant}/status', UpdateTenantStatusController::class)->name('tenants.status.update');
+        Route::patch('tenants/{tenant}/plan', UpdateTenantPlanController::class)->name('tenants.plan.update');
+        Route::post('tenants/{tenant}/configuration', UpdateTenantConfigurationController::class)->name('tenants.configuration.update');
+        Route::put('tenants/{tenant}/commission', UpdateTenantCommissionController::class)->name('tenants.commission.update');
+        Route::get('tenants/{tenant}/charges', [PlatformChargePageController::class, 'index'])->name('tenants.charges.index');
     });
 
 require __DIR__.'/settings.php';

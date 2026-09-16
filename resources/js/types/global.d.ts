@@ -28,6 +28,7 @@ declare module '@inertiajs/core' {
             locales: LocaleOption[];
             translations: Record<string, string>;
             sidebarOpen: boolean;
+            csrfToken: string;
             tenant: Tenant | null;
             tenantConfiguration: TenantConfiguration | null;
             flash: {
