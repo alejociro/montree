@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\SuperAdmin;
 
-use App\Enums\TenantStatus;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -40,7 +39,7 @@ class SuperAdminTenantResource extends JsonResource
             'contact_email' => $this->contact_email,
             'contact_phone' => $this->contact_phone,
             'created_at' => $this->created_at?->toIso8601String(),
-            'can_enter' => $this->status === TenantStatus::Active,
+            'can_enter' => $this->resource->canBeEntered(),
             'commission' => [
                 'type' => $this->commission_type?->value,
                 'value' => $this->commission_value === null ? null : (string) $this->commission_value,

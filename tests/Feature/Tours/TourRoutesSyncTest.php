@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tours;
 
+use App\Enums\TourDateStatus;
 use App\Enums\UserRole;
 use App\Models\Route;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -160,6 +162,63 @@ final class TourRoutesSyncTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('route_tour', ['tour_id' => $tour->id, 'route_id' => $route->id]);
+    }
+
+    /**
+     * Desasociar una ruta del producto dejaba salidas apuntando a una ruta que el
+     * producto ya no ofrece. Solo se limpian las que todavía se pueden operar: la
+     * salida pasada o cancelada guarda la ruta con la que se hizo (spec, edge cases).
+     */
+    public function test_detaching_a_route_clears_it_only_from_future_open_departures(): void
+    {
+        $admin = $this->admin();
+        $tour = Tour::factory()->create();
+        $kept = Route::factory()->create();
+        $dropped = Route::factory()->create();
+        $tour->routes()->attach([
+            $kept->id => ['is_default' => true, 'position' => 1],
+            $dropped->id => ['is_default' => false, 'position' => 2],
+        ]);
+
+        $future = $this->departure($tour, $dropped, now()->addWeek(), TourDateStatus::Open);
+        $cancelled = $this->departure($tour, $dropped, now()->addWeek(), TourDateStatus::Cancelled);
+        $past = $this->departure($tour, $dropped, now()->subWeek(), TourDateStatus::Open);
+        $untouched = $this->departure($tour, $kept, now()->addWeek(), TourDateStatus::Open);
+
+        $this->actingAs($admin)
+            ->put('http://demo.montree.test/admin/tours/'.$tour->id, [
+                'routes' => [['id' => $kept->id, 'is_default' => true]],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($future->fresh()?->route_id);
+        $this->assertSame($dropped->id, $cancelled->fresh()?->route_id);
+        $this->assertSame($dropped->id, $past->fresh()?->route_id);
+        $this->assertSame($kept->id, $untouched->fresh()?->route_id);
+    }
+
+    public function test_detaching_every_route_clears_the_future_departures(): void
+    {
+        $admin = $this->admin();
+        $tour = Tour::factory()->create();
+        $route = Route::factory()->create();
+        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $future = $this->departure($tour, $route, now()->addWeek(), TourDateStatus::Open);
+
+        $this->actingAs($admin)
+            ->put('http://demo.montree.test/admin/tours/'.$tour->id, ['routes' => []])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($future->fresh()?->route_id);
+    }
+
+    private function departure(Tour $tour, Route $route, \DateTimeInterface $startsAt, TourDateStatus $status): TourDate
+    {
+        return TourDate::factory()->for($tour)->create([
+            'route_id' => $route->id,
+            'starts_at' => $startsAt,
+            'status' => $status,
+        ]);
     }
 
     private function admin(): User

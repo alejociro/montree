@@ -46,12 +46,13 @@ export function useNavigation(): UseNavigationReturn {
     const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     const page = usePage();
 
-    // WHY: el `super_admin` aprueba cualquier `can()` (`Gate::before`) pero no es
-    // miembro de ninguna agencia, asi que `admin/*` le responde 403. Sin este dato
-    // el menu le ofrecia el panel entero de una agencia que no existe.
+    // WHY: `hasTenant` sale del host, no del usuario: es lo unico que distingue
+    // al super admin parado en la plataforma del mismo super admin que entro al
+    // panel de una agencia. Ver `isOnPlatform` en `@/config/navigation`.
     const context = computed<NavContext>(() => ({
         can,
         isSuperAdmin: page.props.auth?.user?.isSuperAdmin ?? false,
+        hasTenant: page.props.tenant !== null,
     }));
 
     const sections = computed(() => buildNavSections(context.value));

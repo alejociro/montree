@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Logistics\DeleteHotelAction;
 use App\Actions\Logistics\SaveHotelAction;
+use App\Exceptions\LogisticsRecordInUseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Logistics\StoreHotelRequest;
 use App\Http\Requests\Admin\Logistics\UpdateHotelRequest;
 use App\Models\Hotel;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 final class HotelController extends Controller
 {
@@ -28,21 +29,13 @@ final class HotelController extends Controller
         return back()->with('success', __('Hotel actualizado.'));
     }
 
-    public function destroy(Hotel $hotel): RedirectResponse
+    public function destroy(Hotel $hotel, DeleteHotelAction $deleteHotel): RedirectResponse
     {
-        Gate::authorize('logistics.manage');
-
-        $usage = $hotel->tourDates()->count();
-
-        if ($usage > 0) {
-            return back()->withErrors(['hotel' => trans_choice(
-                '{1}No se puede eliminar: el hotel está en uso por :count salida.|[2,*]No se puede eliminar: el hotel está en uso por :count salidas.',
-                $usage,
-                ['count' => $usage],
-            )]);
+        try {
+            $deleteHotel->execute($hotel);
+        } catch (LogisticsRecordInUseException $inUse) {
+            return back()->withErrors(['hotel' => $inUse->getMessage()]);
         }
-
-        $hotel->delete();
 
         return back()->with('success', __('Hotel eliminado.'));
     }

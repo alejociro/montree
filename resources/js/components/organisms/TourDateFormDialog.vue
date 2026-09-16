@@ -219,6 +219,10 @@ function resetFromEditing(): void {
     form.hotel_ids = date.hotels.map((hotel) => hotel.id);
 }
 
+// WHY: `immediate`. El tablero de salidas monta este dialogo con `v-if` y `open`
+// ya en `true` (la primera edicion crea el componente), asi que sin esto el watch
+// no corria nunca en esa apertura y el formulario salia vacio: guardarlo borraba
+// guia, ruta, proveedor, hoteles y notas de la salida.
 watch(
     () => props.open,
     (isOpen) => {
@@ -226,6 +230,7 @@ watch(
             resetFromEditing();
         }
     },
+    { immediate: true },
 );
 
 function close(): void {

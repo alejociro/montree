@@ -111,4 +111,10 @@ class Tenant extends BaseTenant
     {
         return $this->hasMany(PlatformCharge::class);
     }
+
+    /** Una agencia suspendida o pendiente no recibe visitas: su panel no abre. */
+    public function canBeEntered(): bool
+    {
+        return $this->status === TenantStatus::Active;
+    }
 }

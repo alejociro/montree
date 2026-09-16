@@ -7,10 +7,14 @@ namespace Tests\Feature\SuperAdmin;
 use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Enums\CommissionType;
 use App\Enums\PaymentGateway;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\PlatformCharge;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
+use Tests\Support\FakeCheckout;
 
 class RecordPlatformChargeTest extends SuperAdminTestCase
 {
@@ -75,9 +79,72 @@ class RecordPlatformChargeTest extends SuperAdminTestCase
         $this->assertSame('10.00', $charge->applied_value);
     }
 
-    private function tenantCharging(CommissionType $type, string $value): Tenant
+    /**
+     * El cobro no puede depender de por dónde entró la plata: el pago manual y la
+     * pasarela liquidan por el mismo `BookingSettlementService`, y desde que el
+     * listener es `ShouldQueue` + `afterCommit` ese camino pasa por la cola.
+     */
+    public function test_a_gateway_payment_records_the_charge_too(): void
+    {
+        config([
+            'placetopay.login' => 'platform-login',
+            'placetopay.tran_key' => 'platform-tran-key',
+            'placetopay.url' => 'https://checkout.test',
+            'placetopay.retry.attempts' => 1,
+        ]);
+        $checkout = FakeCheckout::fake();
+
+        $tenant = $this->tenantCharging(CommissionType::Percentage, '10', [
+            'slug' => 'demo',
+            'domain' => 'demo.montree.test',
+        ]);
+        $booking = $this->pendingBooking($tenant, '250.00');
+        $payment = $this->gatewayPayment($tenant, $booking);
+
+        $checkout->queryApproved('250.00');
+
+        $this->postJson('http://demo.montree.test/payments/notification', [
+            'requestId' => '12345',
+            'reference' => 'MTR-1',
+            'signature' => sha1('12345APPROVED'.FakeCheckout::TRANSACTION_DATE.'platform-tran-key'),
+            'status' => [
+                'status' => 'APPROVED',
+                'reason' => '00',
+                'message' => 'Aprobada',
+                'date' => FakeCheckout::TRANSACTION_DATE,
+            ],
+        ])->assertOk();
+
+        $charge = PlatformCharge::query()->sole();
+        $this->assertSame('25.00', $charge->amount);
+        $this->assertSame($booking->id, $charge->booking_id);
+        $this->assertSame($payment->id, $charge->payment_id);
+        $this->assertSame('COP', $charge->currency);
+    }
+
+    private function gatewayPayment(Tenant $tenant, Booking $booking): Payment
+    {
+        return Payment::query()->create([
+            'tenant_id' => $tenant->id,
+            'booking_id' => $booking->id,
+            'gateway' => PaymentGateway::PlaceToPay,
+            'request_id' => '12345',
+            'amount' => '250.00',
+            'currency' => 'COP',
+            'type' => PaymentType::Full,
+            'status' => PaymentStatus::Processing,
+            'reference' => 'MTR-1',
+            'process_url' => 'https://checkout.test/session/12345/xyz',
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function tenantCharging(CommissionType $type, string $value, array $attributes = []): Tenant
     {
         $tenant = Tenant::factory()->create([
+            ...$attributes,
             'commission_type' => $type,
             'commission_value' => $value,
         ]);

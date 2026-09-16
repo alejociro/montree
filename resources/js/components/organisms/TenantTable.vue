@@ -41,6 +41,22 @@ function enterTitle(tenant: SuperAdminTenantSummary): string {
         ? t('Entrar al panel de :name', { name: tenant.name })
         : t('Solo se puede entrar al panel de una agencia activa.');
 }
+
+/**
+ * Toda la fila entra al panel (contracts §1). No hay estado que levantar: se
+ * envia el mismo `<form>` nativo que ya vive en la celda, porque es el unico que
+ * puede hacer POST a otro host y abrirlo en pestana nueva. Una agencia que no
+ * esta activa no responde al clic.
+ */
+function enterFromRow(event: Event, tenant: SuperAdminTenantSummary): void {
+    if (!tenant.can_enter) {
+        return;
+    }
+
+    (event.currentTarget as HTMLElement)
+        .querySelector('form')
+        ?.requestSubmit();
+}
 </script>
 
 <template>
@@ -106,6 +122,10 @@ function enterTitle(tenant: SuperAdminTenantSummary): string {
                     v-else
                     :key="tenant.id"
                     class="hover:bg-muted"
+                    :class="tenant.can_enter ? 'cursor-pointer' : ''"
+                    :title="enterTitle(tenant)"
+                    :aria-disabled="tenant.can_enter ? undefined : 'true'"
+                    @click="enterFromRow($event, tenant)"
                 >
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-3">
@@ -124,6 +144,7 @@ function enterTitle(tenant: SuperAdminTenantSummary): string {
                                     class="inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                                     :disabled="!tenant.can_enter"
                                     :title="enterTitle(tenant)"
+                                    @click.stop
                                 >
                                     <LogIn class="size-4" />
                                     <span class="sr-only">{{
@@ -135,6 +156,7 @@ function enterTitle(tenant: SuperAdminTenantSummary): string {
                                 <Link
                                     :href="tenantShow.url(tenant.id)"
                                     class="font-medium text-foreground underline-offset-4 hover:underline"
+                                    @click.stop
                                 >
                                     {{ tenant.name }}
                                 </Link>

@@ -10,6 +10,7 @@ use App\Exceptions\FeatureRequiresEnterpriseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Tenant\UpdateTenantConfigurationRequest;
 use App\Models\Tenant;
+use App\Models\TenantConfiguration;
 use App\Services\Tenant\TermsRenderer;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -28,11 +29,7 @@ final class TenantConfigurationPagesController extends Controller
 
     public function index(): Response
     {
-        $configuration = $this->currentTenant()->configuration;
-
-        if ($configuration === null) {
-            throw new NotFoundHttpException(__('No tenant for this host.'));
-        }
+        $configuration = $this->currentConfiguration();
 
         return Inertia::render('Admin/Tenant/Configuration', [
             'terms' => [
@@ -53,16 +50,23 @@ final class TenantConfigurationPagesController extends Controller
         try {
             $updateConfiguration->execute($configuration, $request->configuration());
         } catch (FeatureRequiresEnterpriseException) {
-            return back()->withErrors([
-                'custom_css' => __('El CSS personalizado solo está disponible en el plan Enterprise.'),
-            ]);
+            return back()->withErrors(['custom_css' => __('El CSS personalizado solo está disponible en el plan Enterprise.')]);
         }
 
         $storeAssets->execute($configuration, $request->brandingAssets());
 
-        return redirect()
-            ->route('admin.tenant.configuration')
-            ->with('success', __('Configuración guardada.'));
+        return redirect()->route('admin.tenant.configuration')->with('success', __('Configuración guardada.'));
+    }
+
+    private function currentConfiguration(): TenantConfiguration
+    {
+        $configuration = $this->currentTenant()->configuration;
+
+        if ($configuration === null) {
+            throw new NotFoundHttpException(__('No tenant for this host.'));
+        }
+
+        return $configuration;
     }
 
     private function currentTenant(): Tenant

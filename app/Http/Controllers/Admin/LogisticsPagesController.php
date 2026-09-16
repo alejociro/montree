@@ -28,9 +28,17 @@ final class LogisticsPagesController extends Controller
 
     public function index(LogisticsIndexRequest $request): Response
     {
+        return Inertia::render('Admin/Logistics/Index', $this->props($request));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function props(LogisticsIndexRequest $request): array
+    {
         $search = $request->search();
 
-        return Inertia::render('Admin/Logistics/Index', [
+        return [
             'routes' => $this->paginate(
                 Route::query()->with('stops')->withCount(['tourDates', 'tours'])->matching($search),
                 RouteResource::class,
@@ -47,7 +55,7 @@ final class LogisticsPagesController extends Controller
                 'hotels_page',
             ),
             'filters' => $request->filters(),
-        ]);
+        ];
     }
 
     /**

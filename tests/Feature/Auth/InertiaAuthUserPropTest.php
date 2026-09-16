@@ -70,6 +70,11 @@ class InertiaAuthUserPropTest extends TestCase
         );
     }
 
+    /**
+     * El sidebar del panel lee `auth.permissions`, no `auth.user.permissions`:
+     * cuando el super admin entra al panel de una agencia por el host del tenant
+     * tiene que llegarle el catálogo completo por esa prop.
+     */
     public function test_super_admin_props_carry_the_whole_permission_catalog(): void
     {
         $superAdmin = User::factory()->create();
@@ -82,6 +87,11 @@ class InertiaAuthUserPropTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.isSuperAdmin', true)
             ->has('auth.user.permissions', PermissionCatalogSeederTest::CATALOG_SIZE)
+            ->has('auth.permissions', PermissionCatalogSeederTest::CATALOG_SIZE)
+            ->where('auth.permissions', fn (Collection $permissions): bool => $permissions->contains('dashboard.view'))
+            // El host resuelve el tenant: es lo que el menú usa para saber que
+            // está dentro de una agencia y no en la plataforma.
+            ->where('tenant.slug', 'demo')
         );
     }
 

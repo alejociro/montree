@@ -174,3 +174,114 @@
 - `TourIndexQueryCountTest` compara ahora 3 vs 9 productos (la página es de 9, ya no
   hay `per_page`); el invariante sigue siendo el mismo número de consultas, y la cota
   absoluta subió de 10 a 20 porque la página también trae categorías y KPIs.
+
+## Correcciones post-review
+
+Hallazgos del review de la rama sobre `a42441b`. Uno por punto, con el test que lo cubre.
+
+### P0-1 — El cargo de plataforma corría dentro de la transacción del pago
+`RecordPlatformChargeOnBookingConfirmed` pasa a `implements ShouldQueue` con
+`$afterCommit = true` y `$tries = 3`. `BookingSettlementService` se ejecuta con la
+reserva bloqueada dentro del `DB::transaction()` de quien liquida, así que un fallo
+del cargo revertía el pago entero: el dinero ya había entrado y la reserva se
+quedaba en `pending_payment`.
+
+`SyncQueue::push()` honra `afterCommit` (delega en `db.transactions`) y
+`RefreshDatabase` registra su propio `DatabaseTransactionsManager`, así que el
+diferido también aplica con `QUEUE_CONNECTION=sync` en la suite: no hizo falta
+`DB::afterCommit()` manual.
+
+- `PlatformChargeFailureDoesNotBlockSettlementTest` (nuevo): rompe el cargo por
+  donde se rompe de verdad —se elimina la tabla `platform_charges`, el `INSERT`
+  revienta— y verifica que el pago queda `completed` y la reserva `confirmed`.
+  **Verificado que falla sin el fix**: con el listener síncrono la reserva vuelve a
+  `pending_payment`.
+- `RecordPlatformChargeTest::test_a_gateway_payment_records_the_charge_too` (nuevo):
+  el caso pasarela, que faltaba —solo había pago manual—, vía la notificación de
+  PlacetoPay con `FakeCheckout`.
+
+### P1-1 — Regla "recurso en uso" fuera de los controllers
+Nuevas `DeleteRouteAction`, `DeleteHotelAction`, `DeleteProviderAction` en
+`app/Actions/Logistics/`, que lanzan `LogisticsRecordInUseException` (409, con
+constructores nombrados que llevan el detalle: qué productos o cuántas salidas).
+Los `destroy` quedan en `try/catch → back()->withErrors()`, el mismo patrón de
+`TourPagesController::destroy` con `TourHasActiveBookingsException`.
+Cubren: `RouteInUseDeletionTest`, `DeleteRouteTest`, `DeleteHotelTest`,
+`DeleteProviderTest` (sin cambios: la redacción de los mensajes se conservó literal).
+
+### P1-2 — Métodos de controller sobre 10 líneas
+Props extraídas a un método privado `props(...)` (y `editProps`/`paginated` donde
+hacía falta) en `DeparturePagesController`, `LogisticsPagesController`,
+`TenantConfigurationPagesController`, `PlatformChargePageController` y
+`TourPagesController`. Los tres `destroy` de logística se resolvieron con P1-1.
+Sin cambio de contrato: los tests de props existentes quedan verdes.
+
+### P1-3 — `Gate::authorize('logistics.manage')` duplicado
+Eliminado de `RouteController`, `HotelController` y `ProviderController`. Verificado
+en `routes/web.php:144` que los nueve endpoints de logística viven dentro del grupo
+`Route::middleware('can:logistics.manage')`. Cubren los casos de rol ya existentes
+(`test_an_operator_without_the_logistics_permission_cannot_delete`,
+`test_a_sales_member_cannot_delete_a_route`).
+
+### P1-4 + B2 — Fila del tenant clicable
+`TenantTable.vue`: la fila envía el `<form method="post" target="_blank">` de
+"Entrar" con `requestSubmit()` (respeta el `target`), solo si `can_enter`;
+`cursor-pointer` y `title` condicionados, `aria-disabled` cuando no se puede entrar.
+El `<Link>` del nombre y el botón llevan `@click.stop`. Sin test automatizado: no
+hay runner de JS en el proyecto y no se agregan dependencias.
+
+### B1 — Panel del tenant sin menú para el super admin
+**La causa real no era el backend.** `AuthUserResource` ya le manda el catálogo
+completo al super admin y `HandleInertiaRequests` ya lo expone en `auth.permissions`
+(`InertiaAuthUserPropTest` lo probaba). El bug estaba entero en
+`resources/js/config/navigation.ts:447`: el filtro de secciones era un XOR **por rol**
+
+```ts
+.filter((section) => (section.superAdminOnly === true) === isSuperAdmin)
+```
+
+así que un super admin se quedaba solo con la sección "Plataforma" y el grupo
+"Administración" se caía **antes** de evaluar ningún permiso. El mismo flag hacía
+que `resolveHomeUrl()` devolviera `PLATFORM_HOME` (`/super-admin/dashboard`,
+host-relativo y atado a `Route::domain(platform_host)`) como destino del brand.
+
+La autorización del backend es **por host**, no por rol: `EnsureTenantAdmin:40` deja
+pasar al super admin en `admin/*` cuando hay tenant resuelto. `NavContext` no tenía
+cómo expresarlo. Se le agrega `hasTenant` (de `page.props.tenant !== null`) y un
+`isOnPlatform()` que reemplaza a `isSuperAdmin` en el filtro de secciones, en
+`resolveHomeUrl()` y en `resolveWorkspaceLink()`. Comentarios obsoletos corregidos
+(decían que `admin/*` le responde 403 al super admin; ya no).
+
+- `InertiaAuthUserPropTest::test_super_admin_props_carry_the_whole_permission_catalog`
+  reforzado: ahora asevera también `auth.permissions` (la prop que el sidebar lee de
+  verdad) y que el host resuelve el tenant.
+- `test_authenticated_user_inertia_props_include_the_permissions_of_their_roles` ya
+  cubría que un miembro normal recibe solo los suyos (13, sin `team.view`).
+
+### B3 — "Editar salida" abría vacío la primera vez
+`TourDateFormDialog.vue`: el `watch(() => props.open, …)` pasa a `{ immediate: true }`.
+El tablero monta el diálogo con `v-if="selectedTour"` y `open` ya en `true`, así que
+en esa primera apertura el watch no corría nunca y guardar borraba guía, ruta,
+proveedor, hoteles y notas.
+
+### P2-1 — `CrossHostLoginHandoff::consume()` no atómico
+`Cache::get()` + `Cache::forget()` → `Cache::pull()`. Cubre `RememberMeSurvivesHandoffTest`
+y los tests de un solo uso del handoff.
+
+### P2-3 — `PlatformChargePageController::index` armaba la query tres veces
+El builder se resuelve una vez en `props()`. Se le pasa un `clone()` a `paginated()`
+porque paginar le pega `limit`/`offset` al builder y los totales son sobre toda la
+selección; `totalAmount()` y `count()` no mutan.
+
+### P2-5 — Salidas con `route_id` huérfano
+`SyncTourRoutesAction` pone `route_id = null` en las salidas **futuras y no
+canceladas** del producto cuya ruta dejó de estar asociada. Las pasadas y las
+canceladas conservan la ruta: ahí el dato es histórico. Edge case agregado a
+`spec.md` con su entrada de Changelog.
+
+- `TourRoutesSyncTest::test_detaching_a_route_clears_it_only_from_future_open_departures`
+- `TourRoutesSyncTest::test_detaching_every_route_clears_the_future_departures`
+
+### P2-7 — `can_enter` duplicado
+Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
+`EnterTenantController`. Cubren `EnterTenantTest` y los tests del listado.

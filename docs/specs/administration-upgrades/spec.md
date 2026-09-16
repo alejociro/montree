@@ -82,6 +82,10 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - Ruta predeterminada eliminada del producto: la próxima salida se crea sin ruta preseleccionada.
 - Producto sin rutas: el selector de ruta de la salida solo ofrece "Sin ruta".
 - Super admin que además es miembro del tenant: entra como super admin igual.
+- Ruta desasociada de un producto que ya tiene salidas creadas con ella: al guardar
+  las rutas del producto, las salidas **futuras y no canceladas** quedan con
+  `route_id = null` (vuelven a "Sin ruta"); las pasadas y las canceladas conservan
+  la ruta con la que se operaron, porque ahí el dato es histórico.
 
 ## Dependencias
 
@@ -97,3 +101,7 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 ## Changelog
 
 - `2026-09-15` — Creación a partir del pedido de ajustes de administración y del diagnóstico del código actual.
+- `2026-09-15` — Edge case nuevo: desasociar una ruta del producto limpia `route_id`
+  en las salidas futuras y no canceladas. Razón: el review post-implementación (P2-5)
+  encontró que `SyncTourRoutesAction` dejaba salidas apuntando a una ruta que el
+  producto ya no ofrece, y la spec no decía qué debía pasar.

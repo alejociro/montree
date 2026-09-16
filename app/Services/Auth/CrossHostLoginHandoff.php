@@ -43,21 +43,18 @@ final class CrossHostLoginHandoff
     }
 
     /**
-     * Consume a token. Single use: a valid token is deleted before returning so it
-     * cannot be replayed.
+     * Consume a token. Single use: `pull` lee y borra en una sola operación, de
+     * modo que dos peticiones simultáneas con el mismo token no puedan resolverlo
+     * las dos (un `get` + `forget` sí deja esa ventana abierta).
      */
     public function consume(string $token): ?HandoffPayload
     {
-        $key = self::PREFIX.$token;
-
         /** @var array{user_id: int, redirect_to: string, remember?: bool}|null $payload */
-        $payload = Cache::get($key);
+        $payload = Cache::pull(self::PREFIX.$token);
 
         if ($payload === null) {
             return null;
         }
-
-        Cache::forget($key);
 
         return HandoffPayload::fromArray($payload);
     }

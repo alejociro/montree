@@ -30,27 +30,44 @@ final class DeparturePagesController extends Controller
 
     public function index(DepartureIndexRequest $request, DepartureOptionsQuery $options): Response
     {
+        return Inertia::render('Admin/Departures/Index', $this->props($request, $options));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function props(DepartureIndexRequest $request, DepartureOptionsQuery $options): array
+    {
         $filtered = $this->filtered($request);
 
         // WHY: los totales del pie salen del MISMO corte que la tabla pero de
         // toda la selección, así que se calculan antes de paginar.
         $totals = $this->board->totalsFor($filtered);
 
-        $departures = (clone $filtered)
-            ->with(self::RELATIONS)
-            ->orderBy('starts_at', $request->sortDirection())
-            ->paginate(self::PER_PAGE)
-            ->withQueryString();
-
-        return Inertia::render('Admin/Departures/Index', [
-            'departures' => TourDateDetailResource::collection($departures)->response()->getData(assoc: true),
+        return [
+            'departures' => $this->paginated($filtered, $request),
             'filters' => $request->filters(),
             'stats' => $this->board->stats(),
             'counts' => $this->board->counts($request->searchTerm(), $request->tourId()),
             'totals' => $totals,
             'tours' => $this->tours(),
             'departureOptions' => $options->all(),
-        ]);
+        ];
+    }
+
+    /**
+     * @param  Builder<TourDate>  $filtered
+     * @return array<string, mixed>
+     */
+    private function paginated(Builder $filtered, DepartureIndexRequest $request): array
+    {
+        $departures = (clone $filtered)
+            ->with(self::RELATIONS)
+            ->orderBy('starts_at', $request->sortDirection())
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        return TourDateDetailResource::collection($departures)->response()->getData(assoc: true);
     }
 
     /**

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Logistics\DeleteProviderAction;
 use App\Actions\Logistics\SaveProviderAction;
+use App\Exceptions\LogisticsRecordInUseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Logistics\StoreProviderRequest;
 use App\Http\Requests\Admin\Logistics\UpdateProviderRequest;
 use App\Models\Provider;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 final class ProviderController extends Controller
 {
@@ -28,21 +29,13 @@ final class ProviderController extends Controller
         return back()->with('success', __('Proveedor actualizado.'));
     }
 
-    public function destroy(Provider $provider): RedirectResponse
+    public function destroy(Provider $provider, DeleteProviderAction $deleteProvider): RedirectResponse
     {
-        Gate::authorize('logistics.manage');
-
-        $usage = $provider->tourDates()->count();
-
-        if ($usage > 0) {
-            return back()->withErrors(['provider' => trans_choice(
-                '{1}No se puede eliminar: el proveedor está en uso por :count salida.|[2,*]No se puede eliminar: el proveedor está en uso por :count salidas.',
-                $usage,
-                ['count' => $usage],
-            )]);
+        try {
+            $deleteProvider->execute($provider);
+        } catch (LogisticsRecordInUseException $inUse) {
+            return back()->withErrors(['provider' => $inUse->getMessage()]);
         }
-
-        $provider->delete();
 
         return back()->with('success', __('Proveedor eliminado.'));
     }

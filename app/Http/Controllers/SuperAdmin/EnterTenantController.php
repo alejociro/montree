@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\SuperAdmin;
 
-use App\Enums\TenantStatus;
 use App\Exceptions\TenantException;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
@@ -24,7 +23,7 @@ final class EnterTenantController extends Controller
 {
     public function __invoke(Request $request, Tenant $tenant, CrossHostLoginHandoff $handoff): RedirectResponse
     {
-        if ($tenant->status !== TenantStatus::Active) {
+        if (! $tenant->canBeEntered()) {
             throw TenantException::notActive();
         }
 

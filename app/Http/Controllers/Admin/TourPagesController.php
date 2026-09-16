@@ -85,16 +85,7 @@ final class TourPagesController extends Controller
     {
         Gate::authorize('update', $tour);
 
-        $tour->load(self::DETAIL_RELATIONS)->load($this->routesRelation());
-
-        return Inertia::render('Admin/Tour/Edit', [
-            'tour' => (new TourResource($tour))->resolve(),
-            'categories' => $this->categories(),
-            'availableRoutes' => $this->availableRoutes(),
-            'departures' => $this->departures($tour),
-            'departureOptions' => $options->all(),
-            'departureDefaults' => DepartureDefaults::fromTour($tour, Tenant::current()?->configuration)->toArray(),
-        ]);
+        return Inertia::render('Admin/Tour/Edit', $this->editProps($tour, $options));
     }
 
     public function store(StoreTourRequest $request, CreateTourAction $createTour): RedirectResponse
@@ -110,9 +101,7 @@ final class TourPagesController extends Controller
             return back()->withErrors(['plan' => $limit->getMessage()])->withInput();
         }
 
-        return redirect()
-            ->route('admin.tours.edit', $tour)
-            ->with('success', __('Tour creado.'));
+        return redirect()->route('admin.tours.edit', $tour)->with('success', __('Tour creado.'));
     }
 
     public function update(UpdateTourRequest $request, Tour $tour, UpdateTourAction $updateTour): RedirectResponse
@@ -132,9 +121,24 @@ final class TourPagesController extends Controller
             return back()->withErrors(['tour' => $blocked->getMessage()]);
         }
 
-        return redirect()
-            ->route('admin.tours.index')
-            ->with('success', __('Tour eliminado.'));
+        return redirect()->route('admin.tours.index')->with('success', __('Tour eliminado.'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function editProps(Tour $tour, DepartureOptionsQuery $options): array
+    {
+        $tour->load(self::DETAIL_RELATIONS)->load($this->routesRelation());
+
+        return [
+            'tour' => (new TourResource($tour))->resolve(),
+            'categories' => $this->categories(),
+            'availableRoutes' => $this->availableRoutes(),
+            'departures' => $this->departures($tour),
+            'departureOptions' => $options->all(),
+            'departureDefaults' => DepartureDefaults::fromTour($tour, Tenant::current()?->configuration)->toArray(),
+        ];
     }
 
     /**

@@ -21,28 +21,41 @@ final class PlatformChargePageController extends Controller
     {
         $tenant->loadMissing('configuration');
 
-        return Inertia::render('SuperAdmin/Tenant/Charges', [
-            'tenant' => [
-                'id' => $tenant->id,
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-            ],
-            'charges' => $this->charges($request, $tenant),
-            'filters' => $request->filters(),
-            'totals' => [
-                'amount' => $this->query($request, $tenant)->totalAmount(),
-                'count' => $this->query($request, $tenant)->count(),
-                'currency' => $tenant->configuration?->currency ?? 'USD',
-            ],
-        ]);
+        return Inertia::render('SuperAdmin/Tenant/Charges', $this->props($request, $tenant));
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function charges(PlatformChargeIndexRequest $request, Tenant $tenant): array
+    private function props(PlatformChargeIndexRequest $request, Tenant $tenant): array
     {
-        $paginator = $this->query($request, $tenant)
+        $charges = $this->query($request, $tenant);
+
+        return [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+            ],
+            'charges' => $this->paginated($charges->clone()),
+            'filters' => $request->filters(),
+            'totals' => [
+                'amount' => $charges->totalAmount(),
+                'count' => $charges->count(),
+                'currency' => $tenant->configuration?->currency ?? 'USD',
+            ],
+        ];
+    }
+
+    /**
+     * @param  PlatformChargeBuilder  $charges  Recibe una copia: paginar le pega
+     *                                          `limit`/`offset` al builder y los
+     *                                          totales son sobre toda la selección.
+     * @return array<string, mixed>
+     */
+    private function paginated(PlatformChargeBuilder $charges): array
+    {
+        $paginator = $charges
             ->with('booking')
             ->orderByDesc('charged_at')
             ->orderByDesc('id')

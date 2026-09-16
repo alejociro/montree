@@ -75,11 +75,10 @@ export const ROLE_HOME = {
 } as const;
 
 /**
- * Casa del `super_admin`. No es un rol de agencia: vive en el host de plataforma
- * (`Route::domain` + `super_admin.only`) y NO es miembro de ningun tenant, asi
- * que `EnsureTenantAdmin` le responde 403 en todo `admin/*` aunque `Gate::before`
- * le apruebe cualquier permiso. Su menu se resuelve por esta constante, no por
- * la matriz de permisos.
+ * Casa del `super_admin` EN EL HOST DE PLATAFORMA. Las rutas `super-admin/*`
+ * estan atadas a `Route::domain(platform_host)`, asi que esta constante es
+ * host-relativa y solo vale ahi: dentro de un tenant apunta a una ruta que no
+ * existe. Quien decide si aplica es `isOnPlatform()`.
  */
 export const PLATFORM_HOME = '/super-admin/dashboard';
 
@@ -93,15 +92,23 @@ export type PermissionGate = {
 export type NavItemDefinition = NavItem & PermissionGate;
 
 /**
- * Con que se decide el menu. `can` no alcanza: `Gate::before` le aprueba al
- * `super_admin` los 38 permisos, pero su puesto no es el panel de una agencia
- * (ver `PLATFORM_HOME`). El backend distingue los dos casos con middlewares
- * distintos y este menu tiene que reflejar esa misma distincion.
+ * Con que se decide el menu. El rol solo no alcanza: la autorizacion del backend
+ * es por HOST, no por rol. `EnsureTenantAdmin` deja pasar al `super_admin` en
+ * `admin/*` cuando hay un tenant resuelto, y le niega `super-admin/*` fuera del
+ * host de plataforma. `hasTenant` es lo que distingue los dos casos: sin el, un
+ * super admin que entra al panel de una agencia se quedaba sin menu.
  */
 export type NavContext = {
     can: PermissionCheck;
     isSuperAdmin: boolean;
+    /** Hay un tenant resuelto para el host actual (`page.props.tenant !== null`). */
+    hasTenant: boolean;
 };
+
+/** Esta parado en el host de plataforma, no dentro de una agencia. */
+export function isOnPlatform({ isSuperAdmin, hasTenant }: NavContext): boolean {
+    return isSuperAdmin && !hasTenant;
+}
 
 export type NavSectionDefinition = {
     id: string;
@@ -315,8 +322,10 @@ export const homeNavItem: NavItem = {
  * `RoleHomeResolver::homeFor()` — el orden importa: `admin` tiene los 38
  * permisos, incluido el de guia, y su casa es el panel.
  */
-export function resolveHomeUrl({ can, isSuperAdmin }: NavContext): string {
-    if (isSuperAdmin) {
+export function resolveHomeUrl(context: NavContext): string {
+    const { can } = context;
+
+    if (isOnPlatform(context)) {
         return PLATFORM_HOME;
     }
 
@@ -345,11 +354,12 @@ export function isStaff(context: NavContext): boolean {
  * fuera del panel (`/settings/*` o el sitio publico). `null` para el cliente,
  * que no tiene otro puesto que el que ya esta viendo.
  */
-export function resolveWorkspaceLink({
-    can,
-    isSuperAdmin,
-}: NavContext): WorkspaceLink | null {
-    if (isSuperAdmin) {
+export function resolveWorkspaceLink(
+    context: NavContext,
+): WorkspaceLink | null {
+    const { can } = context;
+
+    if (isOnPlatform(context)) {
         return {
             href: PLATFORM_HOME,
             label: 'Panel de plataforma',
@@ -435,16 +445,18 @@ export function buildNavSections(
     context: NavContext,
     withHome: boolean = true,
 ): NavSection[] {
-    const { can, isSuperAdmin } = context;
+    const { can } = context;
     const home: NavItem = { ...homeNavItem, href: resolveHomeUrl(context) };
     const staff = isStaff(context);
+    const onPlatform = isOnPlatform(context);
 
     const sections = navigationSections
-        // El `super_admin` no es miembro de ninguna agencia: darle el panel o la
-        // zona de viajero seria ofrecerle enlaces que responden 403 (bug real
-        // reportado en pruebas). Solo ve la seccion de plataforma; el resto solo
-        // la ve quien NO es super_admin.
-        .filter((section) => (section.superAdminOnly === true) === isSuperAdmin)
+        // La zona de plataforma y las de agencia se excluyen, pero el corte es
+        // por HOST: en `montree.test` el super admin solo ve plataforma; cuando
+        // entra a una agencia (`demo.montree.test`) ve el panel de esa agencia,
+        // que es justo lo que `EnsureTenantAdmin` le autoriza. Cortar por rol
+        // dejaba el grupo "Administracion" vacio al entrar.
+        .filter((section) => (section.superAdminOnly === true) === onPlatform)
         .filter((section) => !(section.travelerOnly === true && staff))
         .map(
             (section): NavSection => ({

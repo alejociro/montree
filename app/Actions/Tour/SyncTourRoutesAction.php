@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Tour;
 
 use App\Data\Tour\TourRoutesData;
+use App\Enums\TourDateStatus;
 use App\Models\Tour;
 
 /**
@@ -31,7 +32,26 @@ final class SyncTourRoutesAction
         }
 
         $tour->routes()->sync($payload);
+        $this->clearOrphanedDepartureRoutes($tour, array_keys($payload));
         $tour->unsetRelation('routes');
+    }
+
+    /**
+     * Desasociar una ruta del producto dejaba `route_id` apuntando a una ruta que
+     * el producto ya no ofrece. Se limpia solo en las salidas que todavía se
+     * pueden operar: una salida pasada o cancelada es historia y su ruta es el
+     * dato de lo que se hizo (spec, edge cases).
+     *
+     * @param  array<int, int>  $keptRouteIds
+     */
+    private function clearOrphanedDepartureRoutes(Tour $tour, array $keptRouteIds): void
+    {
+        $tour->dates()
+            ->whereNotNull('route_id')
+            ->whereNotIn('route_id', $keptRouteIds)
+            ->where('starts_at', '>', now())
+            ->where('status', '!=', TourDateStatus::Cancelled)
+            ->update(['route_id' => null]);
     }
 
     private function defaultRouteId(TourRoutesData $routes): ?int
