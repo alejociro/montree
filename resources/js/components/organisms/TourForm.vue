@@ -9,7 +9,6 @@ import DifficultySelector from '@/components/molecules/DifficultySelector.vue';
 import PriceInput from '@/components/molecules/PriceInput.vue';
 import type { MeetingDraft } from '@/components/organisms/TourItineraryPlanner.vue';
 import TourItineraryPlanner from '@/components/organisms/TourItineraryPlanner.vue';
-import TourRoutesSelector from '@/components/organisms/TourRoutesSelector.vue';
 import {
     Card,
     CardContent,
@@ -30,15 +29,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useTenantGuides } from '@/composables/useTenantGuides';
 import { categoryLabel } from '@/lib/categories';
-import type { RouteOption } from '@/types/logistics';
 import { TOUR_FORM_STEP_IDS } from '@/types/tour';
 import type {
-    SupportedCurrency,
     TourCategory,
     TourFormPayload,
     TourFormStepId,
     TourItineraryDraft,
-    TourRouteSelection,
     TourStopDraft,
 } from '@/types/tour';
 
@@ -48,8 +44,6 @@ type Props = {
     modelValue: TourFormPayload;
     errors: Errors;
     categories: TourCategory[];
-    /** Catálogo de rutas de logística del tenant, para la sección «Rutas». */
-    availableRoutes: RouteOption[];
     /**
      * Bloques a renderizar. Por defecto, todos —así lo usa «crear»—. «Editar»
      * reparte los mismos bloques entre dos pestañas montando dos instancias
@@ -126,10 +120,6 @@ function handleItinerary(steps: TourItineraryDraft[]): void {
 
 function handleStops(stops: TourStopDraft[]): void {
     update('stops', stops);
-}
-
-function handleRoutes(routes: TourRouteSelection[]): void {
-    update('routes', routes);
 }
 
 const meetingValue = computed(() => ({
@@ -313,11 +303,8 @@ const meetingValue = computed(() => ({
                             id="base_price"
                             :label="$t('Precio por persona')"
                             :model-value="value.base_price"
-                            :currency="value.currency as SupportedCurrency"
                             :price-error="errors.base_price"
-                            :currency-error="errors.currency"
                             @update:model-value="(v) => update('base_price', v)"
-                            @update:currency="(v) => update('currency', v)"
                         />
 
                         <CapacityInput
@@ -458,38 +445,6 @@ const meetingValue = computed(() => ({
                         @update:meeting="handleMeetingPoint"
                         @update:steps="handleItinerary"
                         @update:stops="handleStops"
-                    />
-                </CardContent>
-            </Card>
-        </section>
-
-        <section
-            v-if="shows('routes')"
-            id="tour-block-routes"
-            class="scroll-mt-24"
-        >
-            <Card>
-                <CardHeader>
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <CardTitle>{{ $t('Rutas del producto') }}</CardTitle>
-                            <CardDescription>{{
-                                $t(
-                                    'Las rutas de logística con las que se puede operar este producto. Cada salida elige una de ellas.',
-                                )
-                            }}</CardDescription>
-                        </div>
-                        <MonoLabel class="shrink-0 pt-1">{{
-                            $t('Paso :number', { number: 5 })
-                        }}</MonoLabel>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <TourRoutesSelector
-                        :model-value="value.routes"
-                        :available-routes="availableRoutes"
-                        :error="errors.routes"
-                        @update:model-value="handleRoutes"
                     />
                 </CardContent>
             </Card>

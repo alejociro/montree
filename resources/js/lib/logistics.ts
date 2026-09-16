@@ -1,5 +1,7 @@
+import { currentTenantCurrency } from '@/composables/useTenant';
 import { translate } from '@/composables/useTranslations';
 import { formatCurrency } from '@/lib/format';
+import { CURRENCY_VALUES } from '@/types/enums.generated';
 import type {
     AccommodationType,
     CancellationPolicy,
@@ -180,9 +182,7 @@ export function starRatingOptions(): SelectOption[] {
 }
 
 export function currencyOptions(): SelectOption[] {
-    return ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'].map(
-        (code) => ({ value: code, label: code }),
-    );
+    return CURRENCY_VALUES.map((code) => ({ value: code, label: code }));
 }
 
 export const routeKindOptions = (): SelectOption[] =>
@@ -212,7 +212,7 @@ function money(amount: string | null, currency: string | null): string | null {
         return null;
     }
 
-    return formatCurrency(amount, currency ?? 'USD');
+    return formatCurrency(amount, currency ?? currentTenantCurrency());
 }
 
 function shortDate(iso: string | null): string | null {
@@ -331,7 +331,10 @@ function hotelFacts(hotel: HotelResource): LogisticsFact[] {
             cheapest === null
                 ? null
                 : translate('desde :amount', {
-                      amount: formatCurrency(cheapest, hotel.currency ?? 'USD'),
+                      amount: formatCurrency(
+                          cheapest,
+                          hotel.currency ?? currentTenantCurrency(),
+                      ),
                   }),
         ),
         fact(translate('Check-in'), hotel.check_in),

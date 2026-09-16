@@ -117,8 +117,7 @@ final class DeparturesIndexPageTest extends TestCase
     public function test_the_board_does_not_grow_its_query_count_with_more_departures(): void
     {
         $tour = Tour::factory()->create();
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $route = Route::factory()->for($tour)->create(['is_default' => true]);
         TourDate::factory()->for($tour)->create(['starts_at' => now()->addDays(5), 'route_id' => $route->id]);
 
         // La primera visita calienta la caché de permisos de Spatie; medirla

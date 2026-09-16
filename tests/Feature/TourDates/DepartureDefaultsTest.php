@@ -54,8 +54,7 @@ final class DepartureDefaultsTest extends TestCase
             'base_price' => '250000.00',
             'currency' => 'COP',
         ]);
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $route = Route::factory()->for($tour)->create(['is_default' => true]);
 
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
@@ -66,7 +65,6 @@ final class DepartureDefaultsTest extends TestCase
                 ->where('departureDefaults.route_id', $route->id)
                 ->where('departureDefaults.base_price', '250000.00')
                 ->where('departureDefaults.min_payment_pct', 45)
-                ->where('departureDefaults.currency', 'COP')
             );
     }
 
@@ -89,8 +87,7 @@ final class DepartureDefaultsTest extends TestCase
     public function test_routes_without_an_explicit_default_inherit_no_route(): void
     {
         $tour = Tour::factory()->create();
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => false, 'position' => 1]);
+        Route::factory()->for($tour)->create();
 
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
@@ -103,8 +100,7 @@ final class DepartureDefaultsTest extends TestCase
     public function test_the_departure_board_carries_the_defaults_of_every_product(): void
     {
         $tour = Tour::factory()->create(['default_capacity' => 9]);
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $route = Route::factory()->for($tour)->create(['is_default' => true]);
 
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant).'/admin/departures')

@@ -24,6 +24,7 @@ class StoreTenantTest extends SuperAdminTestCase
                 'name' => 'Eco Adventures',
                 'slug' => 'eco-adventures',
                 'plan' => 'professional',
+                'currency' => 'COP',
                 'admin_name' => 'Jane Owner',
                 'admin_email' => 'jane@eco.test',
             ])
@@ -32,7 +33,7 @@ class StoreTenantTest extends SuperAdminTestCase
         $tenant = Tenant::query()->where('slug', 'eco-adventures')->firstOrFail();
         $this->assertSame(TenantStatus::Active, $tenant->status);
         $this->assertSame('jane@eco.test', $tenant->contact_email);
-        $this->assertDatabaseHas('tenant_configurations', ['tenant_id' => $tenant->id]);
+        $this->assertDatabaseHas('tenant_configurations', ['tenant_id' => $tenant->id, 'currency' => 'COP']);
 
         $admin = User::query()->where('email', 'jane@eco.test')->firstOrFail();
         $this->assertTrue($tenant->users()->where('users.id', $admin->id)->exists());
@@ -56,6 +57,7 @@ class StoreTenantTest extends SuperAdminTestCase
                 'name' => 'Eco Adventures',
                 'slug' => 'ECO-Adventures',
                 'plan' => 'professional',
+                'currency' => 'COP',
                 'admin_name' => 'Jane Owner',
                 'admin_email' => 'Jane@ECO.test',
             ])
@@ -64,6 +66,24 @@ class StoreTenantTest extends SuperAdminTestCase
         $tenant = Tenant::query()->where('slug', 'eco-adventures')->firstOrFail();
         $this->assertSame('eco-adventures.montree.test', $tenant->domain);
         $this->assertSame('jane@eco.test', User::query()->whereKeyNot($superAdmin->id)->sole()->email);
+    }
+
+    public function test_creating_a_tenant_requires_a_supported_currency(): void
+    {
+        Role::findOrCreate(UserRole::Admin->value, 'web');
+
+        $this->actingAs($this->superAdmin())
+            ->post($this->platformUrl('/super-admin/tenants'), [
+                'name' => 'Eco Adventures',
+                'slug' => 'eco-adventures',
+                'plan' => 'professional',
+                'currency' => 'XXX',
+                'admin_name' => 'Jane Owner',
+                'admin_email' => 'jane@eco.test',
+            ])
+            ->assertSessionHasErrors('currency');
+
+        $this->assertDatabaseMissing('tenants', ['slug' => 'eco-adventures']);
     }
 
     public function test_a_duplicate_slug_is_rejected(): void

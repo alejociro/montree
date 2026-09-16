@@ -15,7 +15,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { useTenant } from '@/composables/useTenant';
+import { useTenant, useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { index as catalogIndex } from '@/routes/catalog';
@@ -39,8 +39,8 @@ type Props = {
 
 const props = defineProps<Props>();
 
-const { displayName, currency } = useTenant();
-const fallbackCurrency = computed(() => currency.value ?? 'USD');
+const { displayName } = useTenant();
+const fallbackCurrency = useTenantCurrency();
 
 type LocalFilters = {
     search: string;

@@ -37,6 +37,7 @@ use App\Models\TourStop;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -126,71 +127,6 @@ class DemoTenantSeeder extends Seeder
                 'is_active' => true,
             ],
         ));
-
-        $routes = collect([
-            [
-                'name' => 'Ruta El Mirador',
-                'distance_km' => 12.50,
-                'duration_hours' => 5.0,
-                'kind' => RouteKind::Hiking,
-                'difficulty' => TourDifficulty::Moderate,
-                'max_altitude_m' => 2860,
-                'elevation_gain_m' => 640,
-                'stops' => [
-                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Pickup, 'time_label' => '6:30 a. m.'],
-                    ['name' => 'Alto de la Cruz', 'kind' => TourStopKind::Site, 'time_label' => '9:00 a. m.'],
-                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Drop, 'time_label' => '4:00 p. m.'],
-                ],
-            ],
-            [
-                'name' => 'Ruta Cascadas',
-                'distance_km' => 8.20,
-                'duration_hours' => 3.5,
-                'kind' => RouteKind::Mixed,
-                'difficulty' => TourDifficulty::Easy,
-                'max_altitude_m' => 2100,
-                'elevation_gain_m' => 320,
-                'stops' => [
-                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Pickup, 'time_label' => '7:00 a. m.'],
-                    ['name' => 'Cascada La Honda', 'kind' => TourStopKind::Site, 'time_label' => '9:30 a. m.'],
-                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Drop, 'time_label' => '3:00 p. m.'],
-                ],
-            ],
-        ])->map(function (array $payload) use ($tenant) {
-            $route = Route::query()->updateOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => $payload['name']],
-                [
-                    'description' => 'Ruta demo precargada para desarrollo local.',
-                    'distance_km' => $payload['distance_km'],
-                    'duration_hours' => $payload['duration_hours'],
-                    'kind' => $payload['kind'],
-                    'difficulty' => $payload['difficulty'],
-                    'start_point' => 'Salento, Quindío, Colombia',
-                    'city' => 'Salento',
-                    'state' => 'Quindío',
-                    'country' => 'Colombia',
-                    'max_altitude_m' => $payload['max_altitude_m'],
-                    'elevation_gain_m' => $payload['elevation_gain_m'],
-                    'group_capacity' => 20,
-                    'seasons' => [RouteSeason::AllYear->value],
-                    'required_gear' => ['Calzado de trekking', 'Impermeable', 'Hidratación 2 L'],
-                    'emergency_contact' => 'Bomberos Salento · +57 300 000 0000',
-                ],
-            );
-
-            $route->stops()->delete();
-
-            foreach (array_values($payload['stops']) as $index => $stop) {
-                $route->stops()->create([
-                    'position' => $index + 1,
-                    'name' => $stop['name'],
-                    'kind' => $stop['kind'],
-                    'time_label' => $stop['time_label'],
-                ]);
-            }
-
-            return $route;
-        });
 
         $providers = collect([
             [
@@ -311,7 +247,7 @@ class DemoTenantSeeder extends Seeder
             // the route/provider/hotel relations end-to-end.
             $firstDate = $dates->first();
             $firstDate->update([
-                'route_id' => $routes->random()->id,
+                'route_id' => $this->seedRoutesForTour($tour)->first()->id,
                 'provider_id' => $providers->random()->id,
             ]);
             $firstDate->hotels()->sync([$hotels->random()->id]);
@@ -322,6 +258,81 @@ class DemoTenantSeeder extends Seeder
         $this->seedManifestBookings($cocora, $customer);
 
         Tenant::forgetCurrent();
+    }
+
+    /**
+     * Rutas demo del producto. Una ruta pertenece a un solo producto (spec §I),
+     * así que cada tour recibe su propio par y la primera queda predeterminada.
+     *
+     * @return Collection<int, Route>
+     */
+    private function seedRoutesForTour(Tour $tour): Collection
+    {
+        return collect([
+            [
+                'name' => 'Ruta El Mirador',
+                'distance_km' => 12.50,
+                'duration_hours' => 5.0,
+                'kind' => RouteKind::Hiking,
+                'difficulty' => TourDifficulty::Moderate,
+                'max_altitude_m' => 2860,
+                'elevation_gain_m' => 640,
+                'stops' => [
+                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Pickup, 'time_label' => '6:30 a. m.'],
+                    ['name' => 'Alto de la Cruz', 'kind' => TourStopKind::Site, 'time_label' => '9:00 a. m.'],
+                    ['name' => 'Plaza de Bolívar', 'kind' => TourStopKind::Drop, 'time_label' => '4:00 p. m.'],
+                ],
+            ],
+            [
+                'name' => 'Ruta Cascadas',
+                'distance_km' => 8.20,
+                'duration_hours' => 3.5,
+                'kind' => RouteKind::Mixed,
+                'difficulty' => TourDifficulty::Easy,
+                'max_altitude_m' => 2100,
+                'elevation_gain_m' => 320,
+                'stops' => [
+                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Pickup, 'time_label' => '7:00 a. m.'],
+                    ['name' => 'Cascada La Honda', 'kind' => TourStopKind::Site, 'time_label' => '9:30 a. m.'],
+                    ['name' => 'Terminal de Transportes', 'kind' => TourStopKind::Drop, 'time_label' => '3:00 p. m.'],
+                ],
+            ],
+        ])->map(function (array $payload, int $index) use ($tour) {
+            $route = Route::query()->updateOrCreate(
+                ['tenant_id' => $tour->tenant_id, 'tour_id' => $tour->id, 'name' => $payload['name']],
+                [
+                    'is_default' => $index === 0,
+                    'description' => 'Ruta demo precargada para desarrollo local.',
+                    'distance_km' => $payload['distance_km'],
+                    'duration_hours' => $payload['duration_hours'],
+                    'kind' => $payload['kind'],
+                    'difficulty' => $payload['difficulty'],
+                    'start_point' => 'Salento, Quindío, Colombia',
+                    'city' => 'Salento',
+                    'state' => 'Quindío',
+                    'country' => 'Colombia',
+                    'max_altitude_m' => $payload['max_altitude_m'],
+                    'elevation_gain_m' => $payload['elevation_gain_m'],
+                    'group_capacity' => 20,
+                    'seasons' => [RouteSeason::AllYear->value],
+                    'required_gear' => ['Calzado de trekking', 'Impermeable', 'Hidratación 2 L'],
+                    'emergency_contact' => 'Bomberos Salento · +57 300 000 0000',
+                ],
+            );
+
+            $route->stops()->delete();
+
+            foreach (array_values($payload['stops']) as $position => $stop) {
+                $route->stops()->create([
+                    'position' => $position + 1,
+                    'name' => $stop['name'],
+                    'kind' => $stop['kind'],
+                    'time_label' => $stop['time_label'],
+                ]);
+            }
+
+            return $route;
+        });
     }
 
     /**

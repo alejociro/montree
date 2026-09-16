@@ -24,6 +24,8 @@ import {
 import { useTranslations } from '@/composables/useTranslations';
 import { store as storeTenant } from '@/routes/super-admin/tenants';
 import type { TenantPlan } from '@/types';
+import { CURRENCY_VALUES } from '@/types/enums.generated';
+import type { Currency } from '@/types/enums.generated';
 
 const { t } = useTranslations();
 
@@ -34,6 +36,7 @@ const form = useForm({
     name: '',
     slug: '',
     plan: 'basic' as TenantPlan,
+    currency: 'COP' as Currency,
     admin_name: '',
     admin_email: '',
 });
@@ -155,6 +158,39 @@ function submit(): void {
                     </Select>
                     <p v-if="form.errors.plan" class="text-xs text-destructive">
                         {{ form.errors.plan }}
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <Label>{{ $t('Moneda') }}</Label>
+                    <Select v-model="form.currency">
+                        <SelectTrigger>
+                            <SelectValue
+                                :placeholder="$t('Seleccionar moneda')"
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="code in CURRENCY_VALUES"
+                                :key="code"
+                                :value="code"
+                            >
+                                {{ code }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p class="text-xs text-muted-foreground">
+                        {{
+                            $t(
+                                'Toda la agencia opera en esta moneda. Se puede cambiar después en su configuración.',
+                            )
+                        }}
+                    </p>
+                    <p
+                        v-if="form.errors.currency"
+                        class="text-xs text-destructive"
+                    >
+                        {{ form.errors.currency }}
                     </p>
                 </div>
 

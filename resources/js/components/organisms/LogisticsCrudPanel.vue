@@ -4,7 +4,6 @@ import {
     Building2,
     ChevronLeft,
     ChevronRight,
-    MapPin,
     Pencil,
     Plus,
     Trash2,
@@ -15,7 +14,6 @@ import { toast } from 'vue-sonner';
 import HotelController from '@/actions/App/Http/Controllers/Admin/HotelController';
 import { index as logisticsIndex } from '@/actions/App/Http/Controllers/Admin/LogisticsPagesController';
 import ProviderController from '@/actions/App/Http/Controllers/Admin/ProviderController';
-import RouteController from '@/actions/App/Http/Controllers/Admin/RouteController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import LogisticsRecordDialog from '@/components/organisms/LogisticsRecordDialog.vue';
@@ -24,8 +22,8 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/composables/useTranslations';
 import { factsFor, localityOf } from '@/lib/logistics';
 import type {
+    LogisticsCatalogKind,
     LogisticsRecord,
-    LogisticsResourceKind,
     PaginationMeta,
 } from '@/types/logistics';
 
@@ -40,12 +38,12 @@ type CrudRoutes = {
 };
 
 type Props = {
-    kind: LogisticsResourceKind;
-    /** La página trae los tres catálogos: el panel solo pinta el suyo. */
+    kind: LogisticsCatalogKind;
+    /** La página trae los dos catálogos: el panel solo pinta el suyo. */
     records: LogisticsRecord[];
     meta: PaginationMeta;
-    /** Página propia de este catálogo: los tres viajan juntos y paginan aparte. */
-    pageName: 'routes_page' | 'providers_page' | 'hotels_page';
+    /** Página propia de este catálogo: los dos viajan juntos y paginan aparte. */
+    pageName: 'providers_page' | 'hotels_page';
     emptyLabel: string;
 };
 
@@ -53,7 +51,6 @@ const props = defineProps<Props>();
 
 /** Icono de la ficha, por tipo de recurso. */
 const KIND_ICONS = {
-    routes: MapPin,
     providers: Truck,
     hotels: Building2,
 } as const;
@@ -68,15 +65,9 @@ const icon = computed(() => KIND_ICONS[props.kind]);
  * resuelve sin depender del genero.
  */
 const KIND_COPY: Record<
-    LogisticsResourceKind,
+    LogisticsCatalogKind,
     { new: string; created: string; updated: string; deleted: string }
 > = {
-    routes: {
-        new: 'Nueva ruta',
-        created: 'Ruta creada.',
-        updated: 'Ruta actualizada.',
-        deleted: 'Ruta eliminada.',
-    },
     providers: {
         new: 'Nuevo proveedor',
         created: 'Proveedor creado.',
@@ -95,8 +86,7 @@ const KIND_COPY: Record<
  * Una ficha en uso no se borra: el servidor vuelve con el motivo bajo esta
  * clave —quién la usa— y aquí se cuenta como aviso, no como campo en rojo.
  */
-const BLOCKED_ERROR_KEYS: Record<LogisticsResourceKind, string> = {
-    routes: 'route',
+const BLOCKED_ERROR_KEYS: Record<LogisticsCatalogKind, string> = {
     providers: 'provider',
     hotels: 'hotel',
 };
@@ -104,8 +94,7 @@ const BLOCKED_ERROR_KEYS: Record<LogisticsResourceKind, string> = {
 const copy = computed(() => KIND_COPY[props.kind]);
 const newLabel = computed(() => t(copy.value.new));
 
-const controllers: Record<LogisticsResourceKind, CrudRoutes> = {
-    routes: RouteController,
+const controllers: Record<LogisticsCatalogKind, CrudRoutes> = {
     providers: ProviderController,
     hotels: HotelController,
 };

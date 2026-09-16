@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Dashboard;
 
 use App\Data\Dashboard\RevenueBreakdown;
+use App\Enums\Currency;
 use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
@@ -16,7 +17,7 @@ final class RevenueCalculator
 {
     public function between(Tenant $tenant, Carbon $start, Carbon $end, Carbon $previousStart, Carbon $previousEnd): RevenueBreakdown
     {
-        $currency = $tenant->configuration?->currency ?? 'USD';
+        $currency = $tenant->configuration?->currency ?? Currency::FALLBACK;
 
         $gross = $this->sumGross($start, $end);
         $previousGross = $this->sumGross($previousStart, $previousEnd);

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\SuperAdmin;
 
+use App\Enums\Currency;
 use App\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateTenantConfigurationRequest extends FormRequest
 {
-    private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
-
     private const SUPPORTED_LOCALES = ['es', 'en'];
 
     public function authorize(): bool
@@ -35,7 +34,7 @@ class UpdateTenantConfigurationRequest extends FormRequest
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'tagline' => ['nullable', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'currency' => ['nullable', 'string', Rule::in(self::SUPPORTED_CURRENCIES)],
+            'currency' => ['sometimes', 'required', Rule::enum(Currency::class)],
             'timezone' => ['nullable', 'string', 'timezone:all'],
             'locale' => ['nullable', 'string', Rule::in(self::SUPPORTED_LOCALES)],
             'reviews_require_moderation' => ['sometimes', 'boolean'],

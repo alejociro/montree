@@ -11,6 +11,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from '@/composables/useTranslations';
+import { CURRENCY_VALUES } from '@/types/enums.generated';
+import type { Currency } from '@/types/enums.generated';
 
 const { t } = useTranslations();
 
@@ -32,16 +34,21 @@ type CurrencyOption = {
     label: string;
 };
 
-const currencies: CurrencyOption[] = [
-    { code: 'USD', label: t('USD — US Dollar') },
-    { code: 'COP', label: t('COP — Peso Colombiano') },
-    { code: 'EUR', label: t('EUR — Euro') },
-    { code: 'MXN', label: t('MXN — Peso Mexicano') },
-    { code: 'ARS', label: t('ARS — Peso Argentino') },
-    { code: 'PEN', label: t('PEN — Sol Peruano') },
-    { code: 'CLP', label: t('CLP — Peso Chileno') },
-    { code: 'BRL', label: t('BRL — Real Brasileño') },
-];
+const CURRENCY_LABELS: Record<Currency, string> = {
+    USD: t('USD — US Dollar'),
+    COP: t('COP — Peso Colombiano'),
+    EUR: t('EUR — Euro'),
+    MXN: t('MXN — Peso Mexicano'),
+    ARS: t('ARS — Peso Argentino'),
+    PEN: t('PEN — Sol Peruano'),
+    CLP: t('CLP — Peso Chileno'),
+    BRL: t('BRL — Real Brasileño'),
+};
+
+const currencies: CurrencyOption[] = CURRENCY_VALUES.map((code) => ({
+    code,
+    label: CURRENCY_LABELS[code],
+}));
 
 function handleChange(value: AcceptableValue): void {
     if (typeof value !== 'string') {

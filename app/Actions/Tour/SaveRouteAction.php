@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Logistics;
+namespace App\Actions\Tour;
 
+use App\Data\Tour\RouteData;
 use App\Models\Route;
+use App\Models\Tour;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Guarda una ruta y, si el formulario mandó paradas, las reescribe.
+ * Guarda una ruta del producto y, si el formulario mandó paradas, las reescribe.
  *
  * Las paradas se borran y se vuelven a crear en vez de casarlas por id: la
  * lista es corta, el orden es el dato —define el recorrido— y reordenarla a
@@ -16,19 +18,21 @@ use Illuminate\Support\Facades\DB;
  */
 final class SaveRouteAction
 {
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function execute(?Route $route, array $data): Route
+    public function __construct(private SetDefaultRouteAction $setDefault) {}
+
+    public function execute(Tour $tour, RouteData $data, ?Route $route = null): Route
     {
-        $stops = $data['stops'] ?? null;
-        unset($data['stops']);
+        return DB::transaction(function () use ($tour, $data, $route): Route {
+            $route = $route === null
+                ? $tour->routes()->create($data->attributes)
+                : tap($route)->update($data->attributes);
 
-        return DB::transaction(function () use ($route, $data, $stops): Route {
-            $route = $route === null ? Route::create($data) : tap($route)->update($data);
+            if (is_array($data->stops)) {
+                $this->syncStops($route, $data->stops);
+            }
 
-            if (is_array($stops)) {
-                $this->syncStops($route, $stops);
+            if ($data->isDefault === true) {
+                $this->setDefault->execute($route);
             }
 
             return $route->fresh(['stops']) ?? $route;

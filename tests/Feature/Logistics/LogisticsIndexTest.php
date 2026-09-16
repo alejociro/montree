@@ -8,17 +8,14 @@ use App\Enums\RateUnit;
 use App\Enums\UserRole;
 use App\Models\Hotel;
 use App\Models\Provider;
-use App\Models\Route;
 use App\Models\Tenant;
-use App\Models\Tour;
-use App\Models\TourDate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use Tests\Support\DepartureScenario;
 use Tests\TestCase;
 
 /**
- * Los tres catálogos viajan juntos en `Admin/Logistics/Index`: el buscador los
+ * Los dos catálogos viajan juntos en `Admin/Logistics/Index`: el buscador los
  * filtra a la vez y cada bandeja pagina por su cuenta.
  */
 final class LogisticsIndexTest extends TestCase
@@ -39,46 +36,6 @@ final class LogisticsIndexTest extends TestCase
         setPermissionsTeamId(0);
 
         parent::tearDown();
-    }
-
-    public function test_index_filters_routes_by_search(): void
-    {
-        $tenant = $this->makeTenant();
-        $tenant->makeCurrent();
-        Route::factory()->create(['name' => 'Ruta El Mirador']);
-        Route::factory()->create(['name' => 'Sendero del Río']);
-        $admin = $this->memberFor($tenant, UserRole::Admin);
-
-        $response = $this->actingAs($admin)->get($this->host($tenant).'/admin/logistics?search=Mirador');
-
-        $response->assertOk();
-        $response->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('Admin/Logistics/Index', false)
-            ->has('routes.data', 1)
-            ->where('routes.data.0.name', 'Ruta El Mirador')
-            ->where('routes.data.0.tour_dates_count', 0)
-            ->where('routes.data.0.tours_count', 0)
-            ->where('filters.search', 'Mirador')
-            ->where('filters.tab', 'routes')
-        );
-    }
-
-    public function test_the_route_row_counts_the_products_and_departures_that_use_it(): void
-    {
-        $tenant = $this->makeTenant();
-        $tenant->makeCurrent();
-        $route = Route::factory()->create(['name' => 'Ruta Cocora']);
-        $tour = Tour::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
-        TourDate::factory()->for($tour)->create(['route_id' => $route->id]);
-        $admin = $this->memberFor($tenant, UserRole::Admin);
-
-        $this->actingAs($admin)
-            ->get($this->host($tenant).'/admin/logistics')
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('routes.data.0.tours_count', 1)
-                ->where('routes.data.0.tour_dates_count', 1)
-            );
     }
 
     /**
@@ -162,11 +119,9 @@ final class LogisticsIndexTest extends TestCase
         $tenantB = $this->makeTenant(['slug' => 'bravo', 'domain' => 'bravo.montree.test']);
 
         $tenantA->makeCurrent();
-        Route::factory()->create(['name' => 'Ruta de Alpha']);
         $adminA = $this->memberFor($tenantA, UserRole::Admin);
 
         $tenantB->makeCurrent();
-        Route::factory()->create(['name' => 'Ruta de Bravo']);
         Hotel::factory()->create();
         Provider::factory()->create();
 
@@ -175,8 +130,6 @@ final class LogisticsIndexTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('routes.data', 1)
-            ->where('routes.data.0.name', 'Ruta de Alpha')
             ->has('hotels.data', 0)
             ->has('providers.data', 0)
         );

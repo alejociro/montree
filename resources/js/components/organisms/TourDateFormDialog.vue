@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency } from '@/lib/format';
 import type { DepartureRange } from '@/types/guide-availability';
@@ -27,10 +28,12 @@ import type {
     DepartureDefaults,
     LogisticsRef,
     TourDateAdmin,
-    TourRouteRef,
+    RouteResource,
 } from '@/types/logistics';
 
 const { t } = useTranslations();
+
+const tenantCurrency = useTenantCurrency();
 
 type Props = {
     open: boolean;
@@ -48,7 +51,7 @@ type Props = {
      */
     departureDefaults: DepartureDefaults;
     /** Solo las rutas del producto; el servidor rechaza cualquier otra. */
-    tourRoutes: TourRouteRef[];
+    tourRoutes: RouteResource[];
     guides: LogisticsRef[];
     providers: LogisticsRef[];
     hotels: LogisticsRef[];
@@ -121,7 +124,7 @@ const errors = computed<Record<string, string | undefined>>(() => ({
 const basePriceLabel = computed(() =>
     formatCurrency(
         props.departureDefaults.base_price,
-        props.departureDefaults.currency,
+        tenantCurrency.value,
     ),
 );
 

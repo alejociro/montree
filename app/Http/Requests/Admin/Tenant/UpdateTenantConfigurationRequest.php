@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Tenant;
 
 use App\Data\BrandingAssetsData;
 use App\Data\TenantConfigurationData;
+use App\Enums\Currency;
 use App\Models\Tenant;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,8 +14,6 @@ use Illuminate\Validation\Rule;
 
 final class UpdateTenantConfigurationRequest extends FormRequest
 {
-    private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
-
     private const SUPPORTED_LOCALES = ['es', 'en'];
 
     private const SOCIAL_LINK_KEYS = ['instagram', 'facebook', 'twitter', 'youtube', 'tiktok'];
@@ -38,7 +37,7 @@ final class UpdateTenantConfigurationRequest extends FormRequest
         return [
             'primary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'currency' => ['sometimes', 'nullable', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
+            'currency' => ['sometimes', 'required', Rule::enum(Currency::class)],
             'timezone' => ['sometimes', 'nullable', 'string', Rule::in(timezone_identifiers_list())],
             'locale' => ['sometimes', 'nullable', 'string', Rule::in(self::SUPPORTED_LOCALES)],
             'tagline' => ['sometimes', 'nullable', 'string', 'max:160'],

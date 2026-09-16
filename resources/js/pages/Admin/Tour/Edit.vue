@@ -36,6 +36,7 @@ import TourImpactCard from '@/components/organisms/TourImpactCard.vue';
 import TourPassengerPreview from '@/components/organisms/TourPassengerPreview.vue';
 import TourProgressRail from '@/components/organisms/TourProgressRail.vue';
 import TourPublishChecklist from '@/components/organisms/TourPublishChecklist.vue';
+import TourRoutesPanel from '@/components/organisms/TourRoutesPanel.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
 import TourStatusRailCard from '@/components/organisms/TourStatusRailCard.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -72,11 +73,9 @@ import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
 import type {
     DepartureDefaults,
     DepartureOptions,
-    RouteOption,
     TourDateAdmin,
 } from '@/types/logistics';
 import type {
-    SupportedCurrency,
     Tour,
     TourCategory,
     TourFormPayload,
@@ -91,7 +90,6 @@ const { t } = useTranslations();
 type Props = {
     tour: Tour;
     categories: TourCategory[];
-    availableRoutes: RouteOption[];
     departures: TourDateAdmin[];
     departureOptions: DepartureOptions;
     departureDefaults: DepartureDefaults;
@@ -118,7 +116,6 @@ const initialValues = computed<TourFormPayload>(() => ({
     description: props.tour.description ?? '',
     category_id: props.tour.category_id,
     base_price: props.tour.base_price,
-    currency: props.tour.currency as SupportedCurrency,
     duration_hours: props.tour.duration_hours,
     default_guide_id: props.tour.default_guide_id,
     difficulty: props.tour.difficulty,
@@ -136,10 +133,6 @@ const initialValues = computed<TourFormPayload>(() => ({
         duration_label: step.duration_label ?? '',
     })),
     stops: tourStopDraftsFrom(props.tour.stops ?? []),
-    routes: (props.tour.routes ?? []).map((route) => ({
-        id: route.id,
-        is_default: route.is_default,
-    })),
 }));
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues.value }));
@@ -184,7 +177,6 @@ const CONTENT_SECTIONS: TourFormStepId[] = [
     'general',
     'pricing',
     'detail',
-    'routes',
     'gallery',
 ];
 
@@ -635,7 +627,6 @@ const lastEdited = computed<string | null>(() =>
                             :model-value="payload"
                             :errors="formErrors"
                             :categories="props.categories"
-                            :available-routes="props.availableRoutes"
                             :sections="CONTENT_SECTIONS"
                             @update:model-value="
                                 (value) => applyFormValue(form, value)
@@ -692,7 +683,6 @@ const lastEdited = computed<string | null>(() =>
                             :model-value="payload"
                             :errors="formErrors"
                             :categories="props.categories"
-                            :available-routes="props.availableRoutes"
                             :sections="['route']"
                             @update:model-value="
                                 (value) => applyFormValue(form, value)
@@ -748,6 +738,13 @@ const lastEdited = computed<string | null>(() =>
                         </template>
                     </StickySaveBar>
                 </form>
+
+                <TourRoutesPanel
+                    v-show="activeTab === 'content'"
+                    class="mt-6"
+                    :tour-id="props.tour.id"
+                    :routes="props.tour.routes"
+                />
 
                 <section
                     v-show="activeTab === 'departures'"

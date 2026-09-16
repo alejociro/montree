@@ -45,8 +45,7 @@ final class UpdateTourDateTest extends TestCase
         $tour = Tour::factory()->create();
         $tourDate = TourDate::factory()->for($tour)->withRoute()->withHotels()->create(['capacity' => 10]);
         $admin = $this->memberFor($tenant, UserRole::Admin);
-        $newRoute = Route::factory()->create();
-        $tour->routes()->attach($newRoute->id, ['is_default' => true, 'position' => 1]);
+        $newRoute = Route::factory()->for($tour)->create();
         $newHotel = Hotel::factory()->create();
 
         $response = $this->actingAs($admin)->put(

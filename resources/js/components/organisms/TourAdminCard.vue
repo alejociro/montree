@@ -5,6 +5,7 @@ import { show as showPage } from '@/actions/App/Http/Controllers/Admin/TourPages
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { categoryLabel } from '@/lib/categories';
 import { formatCurrency, formatDate } from '@/lib/format';
@@ -14,11 +15,11 @@ const { t } = useTranslations();
 
 type Props = {
     tour: TourSummary;
-    /** Moneda del tenant, para los tours que no traen la suya. */
-    fallbackCurrency?: string;
 };
 
-const props = withDefaults(defineProps<Props>(), { fallbackCurrency: 'USD' });
+const props = defineProps<Props>();
+
+const tenantCurrency = useTenantCurrency();
 
 const showUrl = computed(() => showPage({ tour: props.tour.id }).url);
 
@@ -38,7 +39,7 @@ const subtitle = computed<string>(() => {
 const price = computed<string>(() =>
     formatCurrency(
         props.tour.base_price,
-        props.tour.currency || props.fallbackCurrency,
+        props.tour.currency || tenantCurrency.value,
     ),
 );
 

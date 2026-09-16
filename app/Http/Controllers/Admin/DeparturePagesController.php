@@ -7,8 +7,8 @@ namespace App\Http\Controllers\Admin;
 use App\Data\DepartureDefaults;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TourDate\DepartureIndexRequest;
+use App\Http\Resources\Admin\RouteResource;
 use App\Http\Resources\Admin\TourDateDetailResource;
-use App\Http\Resources\Admin\TourRouteResource;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
@@ -16,7 +16,7 @@ use App\Models\TourDate;
 use App\Queries\DepartureBoardQuery;
 use App\Queries\DepartureOptionsQuery;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -102,17 +102,16 @@ final class DeparturePagesController extends Controller
         $configuration = Tenant::current()?->configuration;
 
         return Tour::query()
-            ->with(['routes' => fn (BelongsToMany $query) => $query->withCount('stops')])
+            ->with(['routes' => fn (HasMany $query) => $query->withCount('stops')])
             ->orderBy('name')
             ->get()
             ->map(fn (Tour $tour) => [
                 'id' => $tour->id,
                 'name' => $tour->name,
-                'currency' => $tour->currency,
                 // El diálogo deriva el fin de la salida con la duración del
                 // producto; al crear desde el tablero no hay otra fuente.
                 'duration_hours' => $tour->duration_hours,
-                'routes' => TourRouteResource::collection($tour->routes)->resolve(),
+                'routes' => RouteResource::collection($tour->routes)->resolve(),
                 'departure_defaults' => $this->defaultsFor($tour, $configuration),
             ])
             ->all();

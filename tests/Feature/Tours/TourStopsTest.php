@@ -44,7 +44,6 @@ final class TourStopsTest extends TestCase
             'name' => 'Valle de Cocora',
             'description' => 'Caminata entre palmas de cera.',
             'base_price' => '150000.00',
-            'currency' => 'COP',
             'duration_hours' => 10,
             'difficulty' => 'moderate',
             'default_capacity' => 12,

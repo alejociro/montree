@@ -40,7 +40,6 @@ final class CreateTourTest extends TestCase
             'description' => 'Recorrido por el valle del Cocora.',
             'category_id' => $category->id,
             'base_price' => '150000.00',
-            'currency' => 'COP',
             'duration_hours' => 6,
             'difficulty' => 'moderate',
             'default_capacity' => 12,
@@ -80,12 +79,11 @@ final class CreateTourTest extends TestCase
 
         $response = $this->actingAs($admin)->post($this->host($tenant).'/admin/tours', [
             'name' => '',
-            'currency' => 'INVALID',
             'base_price' => -10,
             'difficulty' => 'lunar',
         ]);
 
-        $response->assertSessionHasErrors(['name', 'description', 'currency', 'difficulty', 'duration_hours', 'default_capacity', 'base_price']);
+        $response->assertSessionHasErrors(['name', 'description', 'difficulty', 'duration_hours', 'default_capacity', 'base_price']);
     }
 
     public function test_store_requires_meeting_point_destination_and_return(): void
@@ -187,7 +185,6 @@ final class CreateTourTest extends TestCase
             'name' => 'Tour Demo',
             'description' => 'Descripción demo',
             'base_price' => '100000.00',
-            'currency' => 'COP',
             'duration_hours' => 4,
             'difficulty' => 'easy',
             'default_capacity' => 10,

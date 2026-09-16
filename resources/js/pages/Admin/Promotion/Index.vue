@@ -35,7 +35,7 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
-import { useTenant } from '@/composables/useTenant';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import {
     formatCurrency,
@@ -47,7 +47,7 @@ import {
 const { t } = useTranslations();
 
 const api = useApi();
-const { currency } = useTenant();
+const currency = useTenantCurrency();
 
 type Promotion = {
     id: number;
@@ -266,7 +266,7 @@ async function copyCode(promotion: Promotion): Promise<void> {
 function discountLabel(promotion: Promotion): string {
     return promotion.type === 'percentage'
         ? `${Number(promotion.value)}%`
-        : formatCurrency(promotion.value, currency.value ?? 'USD');
+        : formatCurrency(promotion.value, currency.value);
 }
 
 function typeLabel(promotion: Promotion): string {

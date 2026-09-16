@@ -67,13 +67,12 @@ class StoreTourDateRequest extends FormRequest
     }
 
     /**
-     * La salida solo puede operar una de las rutas del producto (spec §G). Un
-     * producto sin rutas asociadas deja el pivote vacío y cualquier `route_id`
-     * es rechazado: solo queda «Sin ruta».
+     * La salida solo puede operar una de las rutas del producto (spec §I). Un
+     * producto sin rutas rechaza cualquier `route_id`: solo queda «Sin ruta».
      */
     protected function routeRule(): Exists
     {
-        return Rule::exists('route_tour', 'route_id')->where('tour_id', $this->tourIdForRoute());
+        return Rule::exists('routes', 'id')->where('tour_id', $this->tourIdForRoute());
     }
 
     protected function tourIdForRoute(): ?int

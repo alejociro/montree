@@ -11,27 +11,24 @@ use App\Actions\Tour\DeleteTourAction;
 use App\Actions\Tour\UpdateTourAction;
 use App\Data\DepartureDefaults;
 use App\Data\Tour\TourFilters;
-use App\Data\Tour\TourRoutesData;
 use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Tour\StoreTourRequest;
 use App\Http\Requests\Admin\Tour\TourIndexRequest;
 use App\Http\Requests\Admin\Tour\UpdateTourRequest;
-use App\Http\Resources\Admin\RouteOptionResource;
 use App\Http\Resources\Admin\TourDateDetailResource;
 use App\Http\Resources\Tour\CategoryResource;
 use App\Http\Resources\Tour\TourResource;
 use App\Http\Resources\Tour\TourSummaryResource;
 use App\Models\Booking;
 use App\Models\Category;
-use App\Models\Route;
 use App\Models\Tenant;
 use App\Models\Tour;
 use App\Queries\DepartureOptionsQuery;
 use App\Queries\TourOperationalSummaryQuery;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -77,7 +74,6 @@ final class TourPagesController extends Controller
 
         return Inertia::render('Admin/Tour/Create', [
             'categories' => $this->categories(),
-            'availableRoutes' => $this->availableRoutes(),
         ]);
     }
 
@@ -94,7 +90,7 @@ final class TourPagesController extends Controller
         abort_if($tenant === null, 404);
 
         try {
-            $tour = $createTour->execute($tenant, $request->validated(), TourRoutesData::fromRequest($request));
+            $tour = $createTour->execute($tenant, $request->validated());
         } catch (PlanLimitReachedException $limit) {
             // El 403 JSON del límite de plan sería una página de error en una
             // visita Inertia y se llevaría puesto el formulario entero.
@@ -106,7 +102,7 @@ final class TourPagesController extends Controller
 
     public function update(UpdateTourRequest $request, Tour $tour, UpdateTourAction $updateTour): RedirectResponse
     {
-        $updateTour->execute($tour, $request->validated(), TourRoutesData::fromRequest($request));
+        $updateTour->execute($tour, $request->validated());
 
         return back()->with('success', __('Tour actualizado.'));
     }
@@ -134,7 +130,6 @@ final class TourPagesController extends Controller
         return [
             'tour' => (new TourResource($tour))->resolve(),
             'categories' => $this->categories(),
-            'availableRoutes' => $this->availableRoutes(),
             'departures' => $this->departures($tour),
             'departureOptions' => $options->all(),
             'departureDefaults' => DepartureDefaults::fromTour($tour, Tenant::current()?->configuration)->toArray(),
@@ -170,7 +165,7 @@ final class TourPagesController extends Controller
      */
     private function routesRelation(): array
     {
-        return ['routes' => fn (BelongsToMany $query) => $query->withCount('stops')];
+        return ['routes' => fn (HasMany $query) => $query->with('stops')->withCount(['stops', 'tourDates'])];
     }
 
     /**
@@ -185,16 +180,6 @@ final class TourPagesController extends Controller
             ->get();
 
         return TourDateDetailResource::collection($dates)->resolve();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function availableRoutes(): array
-    {
-        return RouteOptionResource::collection(
-            Route::query()->orderBy('name')->get(['id', 'name', 'kind', 'difficulty'])
-        )->resolve();
     }
 
     /**

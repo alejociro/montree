@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\Currency;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStatus;
+use App\Models\Tenant;
 use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\TourImage;
@@ -32,7 +34,7 @@ class TourFactory extends Factory
             'duration_hours' => fake()->numberBetween(2, 72),
             'difficulty' => fake()->randomElement(TourDifficulty::cases()),
             'base_price' => fake()->randomFloat(2, 50, 1500),
-            'currency' => 'USD',
+            'currency' => Tenant::current()?->configuration?->currency ?? Currency::FALLBACK,
             'default_capacity' => fake()->numberBetween(4, 20),
             'meeting_point' => fake()->address(),
             'meeting_latitude' => fake()->latitude(),

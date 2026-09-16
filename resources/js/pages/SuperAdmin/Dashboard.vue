@@ -18,7 +18,6 @@ defineProps<{
     growth: PlatformMetricsGrowth;
     plan_distribution: Record<TenantPlan, number>;
     charts: PlatformCharts;
-    currency: string;
 }>();
 </script>
 
@@ -35,11 +34,7 @@ defineProps<{
             "
         />
 
-        <PlatformStats
-            :totals="totals"
-            :growth="growth"
-            :currency="currency"
-        />
+        <PlatformStats :totals="totals" :growth="growth" />
 
         <section class="rounded-lg border border-border bg-card p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-foreground">
@@ -70,13 +65,8 @@ defineProps<{
         <RevenueByTenantChart
             :months="charts.revenue_per_tenant.months"
             :series="charts.revenue_per_tenant.series"
-            :currency="currency"
         />
 
-        <EarningsChart
-            :points="charts.earnings_per_month.points"
-            :total="charts.earnings_per_month.total"
-            :currency="currency"
-        />
+        <EarningsChart :series="charts.earnings_per_month.series" />
     </div>
 </template>

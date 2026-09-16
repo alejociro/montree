@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Onboarding;
 
 use App\Actions\Tenant\SeedDefaultCategoriesAction;
+use App\Enums\Currency;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
@@ -50,7 +51,10 @@ final class RegisterAgencyAction
             'plan' => $this->defaultPlan(),
         ]);
 
-        TenantConfiguration::query()->create(['tenant_id' => $tenant->id]);
+        TenantConfiguration::query()->create([
+            'tenant_id' => $tenant->id,
+            'currency' => Currency::FALLBACK,
+        ]);
 
         $this->seedCategories->handle($tenant);
 

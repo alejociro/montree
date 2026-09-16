@@ -12,18 +12,16 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import type {
     HotelResource,
+    LogisticsCatalogKind,
     LogisticsPaginatedResponse,
-    LogisticsResourceKind,
     ProviderResource,
-    RouteResource,
 } from '@/types/logistics';
 
 const { t } = useTranslations();
 
-type TabKey = LogisticsResourceKind;
+type TabKey = LogisticsCatalogKind;
 
 type Props = {
-    routes: LogisticsPaginatedResponse<RouteResource>;
     providers: LogisticsPaginatedResponse<ProviderResource>;
     hotels: LogisticsPaginatedResponse<HotelResource>;
     filters: { search: string | null; tab: TabKey };
@@ -35,18 +33,16 @@ const activeTab = ref<TabKey>(props.filters.tab);
 const search = ref(props.filters.search ?? '');
 
 /**
- * Los tres catálogos llegan con la página —aunque solo uno esté visible— para
+ * Los dos catálogos llegan con la página —aunque solo uno esté visible— para
  * que la pestaña lleve su conteo: un contador que solo aparece al abrir la
  * bandeja no sirve para decidir a cuál ir.
  */
 const counts = computed<Record<TabKey, number>>(() => ({
-    routes: props.routes.meta.total,
     providers: props.providers.meta.total,
     hotels: props.hotels.meta.total,
 }));
 
 const TAB_LABELS: Record<TabKey, string> = {
-    routes: t('Rutas'),
     providers: t('Proveedores'),
     hotels: t('Hoteles'),
 };
@@ -60,7 +56,6 @@ const tabs = computed<CountTab[]>(() =>
 );
 
 const NEW_LABELS: Record<TabKey, string> = {
-    routes: t('Nueva ruta'),
     providers: t('Nuevo proveedor'),
     hotels: t('Nuevo hotel'),
 };
@@ -76,10 +71,10 @@ const VISIT_OPTIONS = {
     preserveState: true,
     preserveScroll: true,
     replace: true,
-    only: ['routes', 'providers', 'hotels', 'filters'],
+    only: ['providers', 'hotels', 'filters'],
 };
 
-/** Un término nuevo empieza en la primera página de los tres catálogos. */
+/** Un término nuevo empieza en la primera página de los dos catálogos. */
 const applySearch = useDebounceFn(() => {
     const term = search.value.trim();
 
@@ -102,7 +97,6 @@ watch(activeTab, (tab) => {
 });
 
 const panels = {
-    routes: ref<InstanceType<typeof LogisticsCrudPanel> | null>(null),
     providers: ref<InstanceType<typeof LogisticsCrudPanel> | null>(null),
     hotels: ref<InstanceType<typeof LogisticsCrudPanel> | null>(null),
 };
@@ -121,7 +115,7 @@ function createInActiveTab(): void {
                 :title="$t('Logística')"
                 :description="
                     $t(
-                        'Rutas, proveedores y hoteles que reutilizas al armar cada salida.',
+                        'Proveedores y hoteles que reutilizas al armar cada salida.',
                     )
                 "
             />
@@ -147,15 +141,6 @@ function createInActiveTab(): void {
         />
 
         <div class="mt-5">
-            <LogisticsCrudPanel
-                v-show="activeTab === 'routes'"
-                :ref="panels.routes"
-                kind="routes"
-                :records="props.routes.data"
-                :meta="props.routes.meta"
-                page-name="routes_page"
-                :empty-label="$t('Aún no tienes rutas')"
-            />
             <LogisticsCrudPanel
                 v-show="activeTab === 'providers'"
                 :ref="panels.providers"

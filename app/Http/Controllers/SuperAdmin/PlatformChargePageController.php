@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Enums\Currency;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\PlatformChargeIndexRequest;
 use App\Http\Resources\SuperAdmin\PlatformChargeResource;
@@ -42,7 +43,7 @@ final class PlatformChargePageController extends Controller
             'totals' => [
                 'amount' => $charges->totalAmount(),
                 'count' => $charges->count(),
-                'currency' => $tenant->configuration?->currency ?? 'USD',
+                'currency' => $tenant->configuration?->currency ?? Currency::FALLBACK,
             ],
         ];
     }

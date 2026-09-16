@@ -122,25 +122,6 @@ export interface TourDatesGlobalResponse {
 }
 
 /** Ruta del catálogo tal como la ve el producto que la opera. */
-export interface TourRouteRef {
-    id: number;
-    name: string;
-    is_default: boolean;
-    kind: RouteKind | null;
-    difficulty: TourDifficulty | null;
-    distance_km: string | null;
-    duration_hours: string | null;
-    stops_count: number;
-}
-
-/** Fila del catálogo de rutas en el selector del formulario de producto. */
-export interface RouteOption {
-    id: number;
-    name: string;
-    kind: RouteKind | null;
-    difficulty: TourDifficulty | null;
-}
-
 /**
  * Lo que una salida nueva hereda del producto y de la agencia. `base_price` es
  * referencia visible: la salida solo guarda `price_override` si se aparta.
@@ -151,16 +132,14 @@ export interface DepartureDefaults {
     route_id: number | null;
     base_price: string;
     min_payment_pct: number;
-    currency: string;
 }
 
 /** Producto del selector del tablero de salidas, con lo que hereda el diálogo. */
 export interface DepartureTourOption {
     id: number;
     name: string;
-    currency: string;
     duration_hours: number;
-    routes: TourRouteRef[];
+    routes: RouteResource[];
     departure_defaults: DepartureDefaults;
 }
 
@@ -202,6 +181,8 @@ export interface RouteStopRecord {
 
 export interface RouteResource {
     id: number;
+    tour_id: number;
+    is_default: boolean;
     name: string;
     description: string | null;
     kind: RouteKind | null;
@@ -226,9 +207,8 @@ export interface RouteResource {
     permits: string | null;
     emergency_contact: string | null;
     stops: RouteStopRecord[];
+    stops_count: number;
     tour_dates_count: number;
-    /** Productos que la operan: también bloquean el borrado. */
-    tours_count: number;
 }
 
 export interface ProviderRateRecord {
@@ -322,6 +302,9 @@ export interface HotelResource {
 }
 
 export type LogisticsResourceKind = 'routes' | 'providers' | 'hotels';
+
+/** Los catálogos que quedan en Logística: la ruta ahora es del producto. */
+export type LogisticsCatalogKind = Exclude<LogisticsResourceKind, 'routes'>;
 
 /** Cualquiera de las tres fichas, tal como vuelve del listado. */
 export type LogisticsRecord = RouteResource | ProviderResource | HotelResource;

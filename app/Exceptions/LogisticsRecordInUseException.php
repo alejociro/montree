@@ -29,16 +29,6 @@ final class LogisticsRecordInUseException extends RuntimeException implements Ht
         return [];
     }
 
-    /**
-     * @param  array<int, string>  $tourNames
-     */
-    public static function routeUsedByTours(array $tourNames): self
-    {
-        return new self(__('No se puede eliminar: la ruta está asociada a :tours.', [
-            'tours' => implode(', ', $tourNames),
-        ]));
-    }
-
     public static function routeUsedByDepartures(int $count): self
     {
         return new self(trans_choice(

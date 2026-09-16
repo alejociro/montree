@@ -11,7 +11,6 @@ import TourAdminCard from '@/components/organisms/TourAdminCard.vue';
 import TourFilters from '@/components/organisms/TourFilters.vue';
 import TourKpiGrid from '@/components/organisms/TourKpiGrid.vue';
 import { Button } from '@/components/ui/button';
-import { useTenant } from '@/composables/useTenant';
 import { TOUR_SORT_PARAMS } from '@/types/tour';
 import type {
     PaginatedTours,
@@ -42,7 +41,6 @@ type Props = {
 };
 
 const props = defineProps<Props>();
-const { currency } = useTenant();
 
 /**
  * El selector de orden de la barra combina columna y dirección en un solo
@@ -188,7 +186,6 @@ watch(() => filters.value.sort, resetAndVisit);
                     v-for="tour in props.tours.data"
                     :key="tour.id"
                     :tour="tour"
-                    :fallback-currency="currency ?? 'USD'"
                 />
             </div>
 

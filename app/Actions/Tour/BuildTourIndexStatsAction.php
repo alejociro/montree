@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Tour;
 
 use App\Enums\BookingStatus;
+use App\Enums\Currency;
 use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
 use App\Models\Booking;
@@ -115,7 +116,7 @@ final class BuildTourIndexStatsAction
         return [
             'passengers' => (int) ($balance?->getAttribute('passengers') ?? 0),
             'amount' => number_format((float) ($balance?->getAttribute('amount') ?? 0), 2, '.', ''),
-            'currency' => (string) (Tenant::current()?->configuration?->currency ?? 'USD'),
+            'currency' => (string) (Tenant::current()?->configuration?->currency ?? Currency::FALLBACK),
         ];
     }
 

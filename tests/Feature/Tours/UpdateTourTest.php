@@ -36,7 +36,6 @@ final class UpdateTourTest extends TestCase
             'name' => 'Updated Tour',
             'description' => 'New description.',
             'base_price' => '200000.00',
-            'currency' => 'COP',
             'duration_hours' => 5,
             'difficulty' => 'easy',
             'default_capacity' => 8,

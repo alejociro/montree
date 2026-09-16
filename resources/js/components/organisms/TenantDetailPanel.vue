@@ -34,9 +34,10 @@ import type {
     TenantPlan,
     TenantStatus,
 } from '@/types';
+import { CURRENCY_VALUES } from '@/types/enums.generated';
 import type { TenantConfiguration } from '@/types/tenant';
 
-const CURRENCIES = ['COP', 'USD', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
+const CURRENCIES: readonly string[] = CURRENCY_VALUES;
 
 const TIMEZONES = [
     'America/Bogota',

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\AssignGuideController;
 use App\Http\Controllers\Admin\CancelTourDateController;
+use App\Http\Controllers\Admin\DefaultRouteController;
 use App\Http\Controllers\Admin\DeparturePagesController;
 use App\Http\Controllers\Admin\HotelController;
 use App\Http\Controllers\Admin\LogisticsPagesController;
@@ -10,12 +11,12 @@ use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\RestoreTourDateController;
 use App\Http\Controllers\Admin\ReviewPagesController;
-use App\Http\Controllers\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Admin\TeamPagesController;
 use App\Http\Controllers\Admin\TenantConfigurationPagesController;
 use App\Http\Controllers\Admin\TourDatePagesController;
 use App\Http\Controllers\Admin\TourImageController;
 use App\Http\Controllers\Admin\TourPagesController;
+use App\Http\Controllers\Admin\TourRouteController;
 use App\Http\Controllers\Admin\TourStatusController;
 use App\Http\Controllers\Auth\CrossHostLoginController;
 use App\Http\Controllers\BookingPagesController;
@@ -141,10 +142,14 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
 
     Route::get('logistics', [LogisticsPagesController::class, 'index'])->middleware('can:logistics.view')->name('logistics.index');
 
+    Route::middleware('can:tours.update')->group(function (): void {
+        Route::post('tours/{tour}/routes', [TourRouteController::class, 'store'])->name('tours.routes.store');
+        Route::put('routes/{route}', [TourRouteController::class, 'update'])->name('routes.update');
+        Route::delete('routes/{route}', [TourRouteController::class, 'destroy'])->name('routes.destroy');
+        Route::patch('routes/{route}/default', DefaultRouteController::class)->name('routes.default');
+    });
+
     Route::middleware('can:logistics.manage')->group(function (): void {
-        Route::post('routes', [AdminRouteController::class, 'store'])->name('routes.store');
-        Route::put('routes/{route}', [AdminRouteController::class, 'update'])->name('routes.update');
-        Route::delete('routes/{route}', [AdminRouteController::class, 'destroy'])->name('routes.destroy');
         Route::post('providers', [ProviderController::class, 'store'])->name('providers.store');
         Route::put('providers/{provider}', [ProviderController::class, 'update'])->name('providers.update');
         Route::delete('providers/{provider}', [ProviderController::class, 'destroy'])->name('providers.destroy');

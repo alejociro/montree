@@ -1,45 +1,26 @@
 <script setup lang="ts">
-import type { AcceptableValue } from 'reka-ui';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { SUPPORTED_CURRENCIES } from '@/types/tour';
-import type { SupportedCurrency } from '@/types/tour';
+import { useTenantCurrency } from '@/composables/useTenant';
 
 type Props = {
     id: string;
     label: string;
     modelValue: string;
-    currency: SupportedCurrency;
     priceError?: string;
-    currencyError?: string;
 };
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: string): void;
-    (e: 'update:currency', value: SupportedCurrency): void;
 }>();
+
+const currency = useTenantCurrency();
 
 function handlePrice(value: string | number): void {
     emit('update:modelValue', String(value));
-}
-
-function handleCurrency(value: AcceptableValue): void {
-    if (typeof value !== 'string') {
-        return;
-    }
-
-    emit('update:currency', value as SupportedCurrency);
 }
 </script>
 
@@ -56,27 +37,13 @@ function handleCurrency(value: AcceptableValue): void {
                 class="flex-1"
                 @update:model-value="handlePrice"
             />
-            <Select
-                :model-value="props.currency"
-                @update:model-value="handleCurrency"
+            <span
+                class="flex w-20 items-center justify-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground"
+                :title="$t('La moneda es la de la agencia y se cambia en su configuración.')"
             >
-                <SelectTrigger class="w-32">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectGroup>
-                        <SelectItem
-                            v-for="code in SUPPORTED_CURRENCIES"
-                            :key="code"
-                            :value="code"
-                        >
-                            {{ code }}
-                        </SelectItem>
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
+                {{ currency }}
+            </span>
         </div>
         <InputError :message="priceError" />
-        <InputError :message="currencyError" />
     </div>
 </template>

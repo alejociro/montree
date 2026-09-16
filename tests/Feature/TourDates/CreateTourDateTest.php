@@ -45,8 +45,7 @@ final class CreateTourDateTest extends TestCase
         $tour = Tour::factory()->create();
         $admin = $this->memberFor($tenant, UserRole::Admin);
         $guide = $this->guideFor($tenant);
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $route = Route::factory()->for($tour)->create(['is_default' => true]);
         $provider = Provider::factory()->create();
         $hotel = Hotel::factory()->create();
 

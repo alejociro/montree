@@ -45,38 +45,29 @@ final class TourCreateUpdatePageTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_the_create_page_offers_the_route_catalog(): void
+    /**
+     * El alta no ofrece rutas: se crean desde la ficha del producto, que todavía
+     * no existe (spec §I).
+     */
+    public function test_the_create_page_announces_that_routes_come_after_saving(): void
     {
-        $route = Route::factory()->create(['name' => 'Sendero alto']);
-
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant).'/admin/tours/create')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Tour/Create')
-                ->has('availableRoutes', 1)
-                ->where('availableRoutes.0.id', $route->id)
-                ->where('availableRoutes.0.name', 'Sendero alto')
+                ->missing('availableRoutes')
             );
     }
 
-    public function test_storing_a_tour_with_routes_redirects_to_its_edition(): void
+    public function test_storing_a_tour_redirects_to_its_edition(): void
     {
-        $route = Route::factory()->create();
-
         $response = $this->actingAs($this->admin)
-            ->post($this->host($this->tenant).'/admin/tours', $this->payload([
-                'routes' => [['id' => $route->id, 'is_default' => true]],
-            ]));
+            ->post($this->host($this->tenant).'/admin/tours', $this->payload());
 
         $response->assertSessionHasNoErrors();
         $tour = Tour::query()->firstOrFail();
         $response->assertRedirect($this->host($this->tenant)."/admin/tours/{$tour->id}/edit");
-        $this->assertDatabaseHas('route_tour', [
-            'tour_id' => $tour->id,
-            'route_id' => $route->id,
-            'is_default' => true,
-        ]);
     }
 
     public function test_storing_a_tour_without_the_required_stops_is_rejected(): void
@@ -91,8 +82,7 @@ final class TourCreateUpdatePageTest extends TestCase
     public function test_the_edit_page_carries_the_routes_of_the_product(): void
     {
         $tour = Tour::factory()->create();
-        $route = Route::factory()->create(['name' => 'Ruta larga']);
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        Route::factory()->for($tour)->create(['name' => 'Ruta larga', 'is_default' => true]);
 
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
@@ -109,8 +99,7 @@ final class TourCreateUpdatePageTest extends TestCase
     public function test_the_show_page_lists_the_routes_of_the_product(): void
     {
         $tour = Tour::factory()->create();
-        $route = Route::factory()->create(['name' => 'Ruta corta']);
-        $tour->routes()->attach($route->id, ['is_default' => false, 'position' => 1]);
+        Route::factory()->for($tour)->create(['name' => 'Ruta corta']);
 
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}")
@@ -133,18 +122,19 @@ final class TourCreateUpdatePageTest extends TestCase
         $this->assertDatabaseCount('tours', 0);
     }
 
-    public function test_the_create_page_never_offers_routes_of_another_tenant(): void
+    public function test_the_edit_page_never_carries_routes_of_another_tenant(): void
     {
-        Route::factory()->create();
+        $tour = Tour::factory()->create();
+        Route::factory()->for($tour)->create();
 
         $other = $this->makeTenant(['slug' => 'other', 'domain' => 'other.montree.test']);
         $other->makeCurrent();
-        Route::factory()->count(3)->create();
+        Route::factory()->count(3)->for(Tour::factory())->create();
         $this->tenant->makeCurrent();
 
         $this->actingAs($this->admin)
-            ->get($this->host($this->tenant).'/admin/tours/create')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('availableRoutes', 1));
+            ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('tour.routes', 1));
     }
 
     /**
@@ -157,7 +147,6 @@ final class TourCreateUpdatePageTest extends TestCase
             'name' => 'Caminata al valle',
             'description' => 'Una caminata de un día por el valle.',
             'base_price' => '120000',
-            'currency' => 'COP',
             'duration_hours' => 8,
             'difficulty' => 'moderate',
             'default_capacity' => 12,

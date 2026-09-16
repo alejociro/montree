@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\SuperAdmin;
 
 use App\Concerns\LowercasesInput;
+use App\Enums\Currency;
 use App\Enums\TenantPlan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,7 @@ class StoreTenantRequest extends FormRequest
                 'unique:tenants,slug',
             ],
             'plan' => ['required', 'string', Rule::in(array_column(TenantPlan::cases(), 'value'))],
+            'currency' => ['required', 'string', Rule::enum(Currency::class)],
             'admin_name' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email', 'max:255'],
         ];

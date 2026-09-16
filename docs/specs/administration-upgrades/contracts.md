@@ -194,6 +194,32 @@ Lecturas auxiliares que se conservan como API porque las consume un buscador as�
 
 ## Cambios al contrato
 
+- `2026-09-16` (B4) — `departureDefaults` **pierde** `currency`, y `tours[]` del
+  tablero de salidas pierde `currency` y gana nada: la moneda del tenant ya viaja
+  una vez por visita en `tenantConfiguration`, repetirla por producto era el mismo
+  dato en cada fila. El front la lee con `useTenantCurrency()`.
+- `2026-09-16` (B4) — `charts.earnings_per_month` pasa de
+  `{points, total}` a `{series: [{currency, points, total}]}` y
+  `charts.revenue_per_tenant.series[]` suma `currency`. El §7 pedía «`currency` por
+  serie»; con una serie por moneda la gráfica puede formatear su propio eje, que es
+  lo que una sola `format-value` global no podía hacer.
+- `2026-09-16` (B4) — `tour.routes` viaja con el shape completo de `RouteResource`
+  —`stops` incluidas— también en `Admin/Tour/Show`, no «resumido»: eran dos Resources
+  sobre el mismo array y el diálogo de edición necesita la ficha entera.
+  `RouteResource` pierde `tours_count` y gana `tour_id`, `is_default` y `stops_count`;
+  `TourRouteResource` y `RouteOptionResource` se eliminan.
+- `2026-09-16` (B4) — `PATCH /admin/routes/{route}/default` lo sirve
+  `DefaultRouteController` de acción única, no un quinto método de
+  `TourRouteController`: la constitución §3.2 limita el controller RESTful a
+  `index/show/store/update/destroy`. Los nombres de ruta del §7 no cambian.
+- `2026-09-16` (B4) — `StoreRouteRequest`/`UpdateRouteRequest` viven en
+  `App\Http\Requests\Admin\Tour` con sus reglas propias; `LogisticsRules::route()`
+  desaparece en vez de mudarse, porque era el único consumidor.
+- `2026-09-16` (B4) — `GET /admin/logistics` deja de aceptar `routes_page` y su `tab`
+  por defecto pasa de `routes` a `providers`; `routes` deja de ser un valor válido.
+- `2026-09-16` (B4) — la moneda de `UpdateTenantConfigurationRequest` (los dos
+  paneles) pasa de `nullable` a `sometimes|required`: la columna es NOT NULL, así que
+  un `null` explícito solo podía terminar en error de base.
 - `2026-09-15` — Creación.
 - `2026-09-15` (B1) — `CrossHostLoginHandoff::issue()` queda
   `issue(User $user, string $redirectTo, bool $remember = false, ?int $ttlSeconds = null)`.

@@ -24,7 +24,7 @@ final class CreateTenantAction
      * Provision a new tenant plus its initial admin user. The tenant is created
      * active and its admin receives an email invitation to set their password.
      *
-     * @param  array{name:string, slug:string, plan:string, admin_name:string, admin_email:string}  $data
+     * @param  array{name:string, slug:string, plan:string, currency:string, admin_name:string, admin_email:string}  $data
      */
     public function handle(array $data): Tenant
     {
@@ -38,7 +38,10 @@ final class CreateTenantAction
                 'plan' => TenantPlan::from($data['plan']),
             ]);
 
-            TenantConfiguration::query()->create(['tenant_id' => $tenant->id]);
+            TenantConfiguration::query()->create([
+                'tenant_id' => $tenant->id,
+                'currency' => $data['currency'],
+            ]);
 
             $this->seedCategories->handle($tenant);
 

@@ -20,6 +20,8 @@ final class RouteResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'tour_id' => $this->tour_id,
+            'is_default' => $this->is_default,
             'name' => $this->name,
             'description' => $this->description,
             'kind' => $this->kind?->value,
@@ -44,8 +46,8 @@ final class RouteResource extends JsonResource
             'permits' => $this->permits,
             'emergency_contact' => $this->emergency_contact,
             'stops' => RouteStopResource::collection($this->whenLoaded('stops', fn () => $this->stops, collect()))->resolve(),
+            'stops_count' => (int) ($this->stops_count ?? $this->stops->count()),
             'tour_dates_count' => (int) ($this->tour_dates_count ?? 0),
-            'tours_count' => (int) ($this->tours_count ?? 0),
         ];
     }
 }

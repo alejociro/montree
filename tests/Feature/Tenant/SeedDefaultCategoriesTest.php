@@ -147,6 +147,7 @@ class SeedDefaultCategoriesTest extends TestCase
             'name' => 'Eco Adventures',
             'slug' => 'eco-adventures',
             'plan' => TenantPlan::Professional->value,
+            'currency' => 'COP',
             'admin_name' => 'Ada Admin',
             'admin_email' => 'ada@eco-adventures.test',
         ]);

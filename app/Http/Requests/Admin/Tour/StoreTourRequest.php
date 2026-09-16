@@ -7,7 +7,6 @@ namespace App\Http\Requests\Admin\Tour;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStopKind;
 use App\Http\Requests\Concerns\ValidatesTenantGuide;
-use App\Http\Requests\Concerns\ValidatesTourRoutes;
 use App\Models\Category;
 use App\Models\Tour;
 use Illuminate\Contracts\Validation\Validator;
@@ -16,9 +15,7 @@ use Illuminate\Validation\Rule;
 
 class StoreTourRequest extends FormRequest
 {
-    use ValidatesTenantGuide, ValidatesTourRoutes;
-
-    private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
+    use ValidatesTenantGuide;
 
     public function authorize(): bool
     {
@@ -40,7 +37,6 @@ class StoreTourRequest extends FormRequest
                 Rule::exists((new Category)->getTable(), 'id'),
             ],
             'base_price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
-            'currency' => ['required', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
             'duration_hours' => ['required', 'integer', 'min:1', 'max:240'],
             'default_guide_id' => ['nullable', 'integer', $this->guideRule()],
             'difficulty' => ['required', 'string', Rule::in(array_column(TourDifficulty::cases(), 'value'))],
@@ -72,7 +68,6 @@ class StoreTourRequest extends FormRequest
             'stops.*.latitude' => ['required', 'numeric', 'between:-90,90'],
             'stops.*.longitude' => ['required', 'numeric', 'between:-180,180'],
             'stops.*.itinerary_step' => ['nullable', 'integer', 'min:1'],
-            ...$this->tourRouteRules(),
         ];
     }
 
@@ -92,7 +87,6 @@ class StoreTourRequest extends FormRequest
     public function after(): array
     {
         return [
-            fn (Validator $validator) => $this->validateSingleDefaultRoute($validator),
             function (Validator $validator): void {
                 $kinds = array_column((array) $this->input('stops', []), 'kind');
 

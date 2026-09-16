@@ -50,13 +50,23 @@ export type TenantsListFilters = {
     direction: 'asc' | 'desc';
 };
 
+/**
+ * Un importe agregado de plataforma. Va siempre con su moneda: los cargos se
+ * guardan en la de cada agencia y no se convierten, así que dos monedas son
+ * dos números, nunca una suma.
+ */
+export type CurrencyAmount = {
+    currency: string;
+    amount: string;
+};
+
 export type PlatformMetricsTotals = {
     tenants: number;
     active_tenants: number;
     users: number;
     bookings_this_month: number;
-    revenue_this_month: string;
-    earnings_this_month: string;
+    revenue_this_month: CurrencyAmount[];
+    earnings_this_month: CurrencyAmount[];
 };
 
 export type PlatformMetricsGrowth = {
@@ -71,11 +81,10 @@ export type PlatformCharts = {
     };
     revenue_per_tenant: {
         months: string[];
-        series: { tenant: string; values: string[] }[];
+        series: { tenant: string; currency: string; values: string[] }[];
     };
     earnings_per_month: {
-        points: MonthPoint[];
-        total: string;
+        series: { currency: string; points: MonthPoint[]; total: string }[];
     };
 };
 

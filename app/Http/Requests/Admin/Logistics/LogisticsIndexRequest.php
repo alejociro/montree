@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 final class LogisticsIndexRequest extends FormRequest
 {
-    private const TABS = ['routes', 'providers', 'hotels'];
+    private const TABS = ['providers', 'hotels'];
 
     public function authorize(): bool
     {
@@ -24,7 +24,6 @@ final class LogisticsIndexRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:120'],
             'tab' => ['nullable', 'string', Rule::in(self::TABS)],
-            'routes_page' => ['nullable', 'integer', 'min:1'],
             'providers_page' => ['nullable', 'integer', 'min:1'],
             'hotels_page' => ['nullable', 'integer', 'min:1'],
         ];
@@ -39,7 +38,7 @@ final class LogisticsIndexRequest extends FormRequest
 
     public function tab(): string
     {
-        return $this->validated('tab') ?? 'routes';
+        return $this->validated('tab') ?? 'providers';
     }
 
     /**

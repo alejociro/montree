@@ -287,16 +287,80 @@ Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
 `EnterTenantController`. Cubren `EnterTenantTest` y los tests del listado.
 
 ## B4 — Moneda única por tenant + rutas dentro del producto (2026-09-16)
-- [ ] Migración de tours: sin cambio de columna; quitar `currency` del form/request de producto; actions fijan la del tenant; factory usa la del tenant actual
-- [ ] `StoreTenantRequest` + `CreateTenantAction` con `currency`; `CreateTenantDialog.vue` con selector de moneda
-- [ ] Front: `formatCurrency` siempre con `tenantConfiguration.currency` (catálogo, home, detalle, booking, salidas, transacciones, dashboard, logística); sin fallback `'USD'`
-- [ ] Proveedores/hoteles: moneda por defecto = la del tenant
-- [ ] Plataforma: totales y gráficas agrupados por moneda; eliminar `montree.platform_currency`
-- [ ] Reescribir `2026_09_15_200000_create_route_tour_table` → `add_tour_to_routes_table` (`tour_id`, `is_default`); `Route::tour()`, `Tour::routes()` HasMany, `Tour::defaultRoute()`
-- [ ] `SaveRouteAction` recibe `Tour`; `SetDefaultRouteAction`; `DeleteRouteAction` bloquea por salidas futuras no canceladas y desasocia pasadas/canceladas
-- [ ] Controllers web `TourRouteController` (store/update/destroy/default) bajo `can:tours.update`; borrar rutas y UI de rutas de Logística (`LogisticsCrudPanel` solo providers/hotels), `TourRoutesSelector.vue`, `SyncTourRoutesAction`
-- [ ] `Admin/Tour/Edit.vue`: panel "Rutas del producto" con diálogo crear/editar (reusar el schema de ruta de `logistics-form.ts` + editor de paradas con coordenadas), marcar predeterminada, eliminar; `Create.vue` muestra aviso; `Show.vue` lista rutas
-- [ ] `TourDateFormDialog` y salidas: `route_id` validado contra `routes.tour_id`
-- [ ] Seeder demo: rutas colgando de productos; `php artisan migrate:fresh --seed` en local
-- [ ] Tests: `TourCurrencyFollowsTenantTest`, `TenantCurrencyConfigurationTest` (admin y super admin), `PlatformTotalsByCurrencyTest`, `TourRouteCrudTest` (happy/422/aislamiento/otro producto), `DefaultRouteTest`, `DeleteRouteWithDeparturesTest`; migrar `TourRoutesSyncTest`, `RouteInUseDeletionTest`, `DeleteRouteTest`, `LogisticsIndexPageTest`, `TourDateRouteValidationTest`
-- [ ] Commit `feat(admin): tenant-wide currency and product-owned routes`
+- [x] Migración de tours: sin cambio de columna; quitar `currency` del form/request de producto; actions fijan la del tenant; factory usa la del tenant actual
+- [x] `StoreTenantRequest` + `CreateTenantAction` con `currency`; `CreateTenantDialog.vue` con selector de moneda
+- [x] Front: `formatCurrency` siempre con `tenantConfiguration.currency` (catálogo, home, detalle, booking, salidas, transacciones, dashboard, logística); sin fallback `'USD'`
+- [x] Proveedores/hoteles: moneda por defecto = la del tenant
+- [x] Plataforma: totales y gráficas agrupados por moneda; eliminar `montree.platform_currency`
+- [x] Reescribir `2026_09_15_200000_create_route_tour_table` → `add_tour_to_routes_table` (`tour_id`, `is_default`); `Route::tour()`, `Tour::routes()` HasMany, `Tour::defaultRoute()`
+- [x] `SaveRouteAction` recibe `Tour`; `SetDefaultRouteAction`; `DeleteRouteAction` bloquea por salidas futuras no canceladas y desasocia pasadas/canceladas
+- [x] Controllers web `TourRouteController` (store/update/destroy/default) bajo `can:tours.update`; borrar rutas y UI de rutas de Logística (`LogisticsCrudPanel` solo providers/hotels), `TourRoutesSelector.vue`, `SyncTourRoutesAction`
+- [x] `Admin/Tour/Edit.vue`: panel "Rutas del producto" con diálogo crear/editar (reusar el schema de ruta de `logistics-form.ts` + editor de paradas con coordenadas), marcar predeterminada, eliminar; `Create.vue` muestra aviso; `Show.vue` lista rutas
+- [x] `TourDateFormDialog` y salidas: `route_id` validado contra `routes.tour_id`
+- [x] Seeder demo: rutas colgando de productos; `php artisan migrate:fresh --seed` en local
+- [x] Tests: `TourCurrencyFollowsTenantTest`, `TenantCurrencyConfigurationTest` (admin y super admin), `PlatformTotalsByCurrencyTest`, `TourRouteCrudTest` (happy/422/aislamiento/otro producto), `DefaultRouteTest`, `DeleteRouteWithDeparturesTest`; migrar `TourRoutesSyncTest`, `RouteInUseDeletionTest`, `DeleteRouteTest`, `LogisticsIndexPageTest`, `TourDateRouteValidationTest`
+- [x] Commit `feat(admin): tenant-wide currency and product-owned routes`
+
+### B4 — 2026-09-16
+
+- `App\Enums\Currency` es la lista soportada única: la consumen `StoreTenantRequest`,
+  los dos `UpdateTenantConfigurationRequest` y `LogisticsRules`, que antes repetían
+  el array literal tres veces. El espejo TS (`CURRENCY_VALUES`) alimenta los
+  selectores del front, así que agregar una moneda es una línea en un solo sitio.
+  `Currency::FALLBACK` (`COP`) reemplaza a todos los `?? 'USD'` del servidor.
+- `tours.currency` se conserva como columna —la escriben `CreateTourAction` y
+  `UpdateTourAction` desde `tenant_configurations.currency`— pero deja de ser un
+  campo del formulario: editar un producto lo realinea con la moneda vigente de la
+  agencia, así que cambiarla arrastra todo el catálogo sin tocar importes.
+- `DepartureDefaults` **pierde** `currency` (el §5 lo listaba). El diálogo de salida
+  lo lee de la prop compartida con `useTenantCurrency()`; mandarlo por producto era
+  repetir en cada fila del tablero un dato que ya viaja una vez por visita. Por lo
+  mismo desaparece `tours[].currency` del tablero de salidas.
+- `useTenant.ts` expone `useTenantCurrency()` (composable) y `currentTenantCurrency()`
+  (función llana). La segunda existe porque `lib/logistics.ts` y `lib/logistics-form.ts`
+  formatean importes fuera de un `setup()`; `usePage()` es un accessor de módulo, así
+  que las dos leen la misma prop. La ficha nueva de proveedor u hotel arranca con esa
+  moneda y `LogisticsFormRequest::prepareForValidation()` la completa en el servidor.
+- `montree.platform_currency` se elimina. `totals.revenue_this_month` y
+  `totals.earnings_this_month` son `{currency, amount}[]`; `charts.earnings_per_month`
+  pasa de `{points, total}` a `{series: [{currency, points, total}]}` y
+  `revenue_per_tenant.series[]` suma `currency`. El front dibuja **una gráfica por
+  moneda** en vez de una leyenda mezclada: apilar agencias en monedas distintas
+  dibujaba una torre cuya altura no significaba nada.
+- Rutas: `2026_09_15_200000_*` se reescribió a `add_tour_to_routes_table`
+  (`tour_id` FK cascade NOT NULL, `is_default`, índice `(tenant_id, tour_id)`); no
+  hay pivote. `Route::tour()` BelongsTo, `Tour::routes()` HasMany ordenado por
+  `is_default desc, name`. La exclusión de la predeterminada la resuelve
+  `SetDefaultRouteAction`, no la base: el índice parcial que la expresaría no es
+  portable entre MySQL y SQLite.
+- `DeleteRouteAction` bloquea por salidas **futuras y no canceladas** y suelta
+  `route_id` en las pasadas o canceladas, que es donde el dato es histórico.
+  `LogisticsRecordInUseException::routeUsedByTours()` se borra: ya no hay productos
+  que nombrar, la ruta es de uno solo.
+- El `default` no cabe en un controller RESTful, así que va en
+  `DefaultRouteController` de acción única (constitución §3.2) en vez de como quinto
+  método de `TourRouteController`, que es lo que pedía la tarea.
+- `tour.routes` viaja con el **shape completo** (`RouteResource`, con `stops`) también
+  en `Admin/Tour/Show`: el §7 lo pedía «resumido», pero eran dos Resources para el
+  mismo array y el diálogo de ruta necesita la ficha entera. `TourRouteResource` y
+  `RouteOptionResource` se borran.
+- El diálogo de ruta **es** `LogisticsRecordDialog` con `kind="routes"`: ya era
+  genérico sobre el esquema de `logistics-form.ts`, así que el organism nuevo
+  (`TourRoutesPanel.vue`) solo aporta la lista, la marca de predeterminada y las
+  acciones. No se extrajo un `RouteFormDialog.vue`: habría sido una capa que reenvía
+  props.
+- Logística pierde la pestaña de rutas (`LogisticsCatalogKind` = proveedores +
+  hoteles), su paginador `routes_page` y el tab por defecto pasa a `providers`.
+- `RegisterAgencyAction` (alta self-serve) pasa a nombrar la moneda
+  (`Currency::FALLBACK`) en vez de dejarla en el default de la columna: las tres vías
+  de aprovisionamiento ahora la deciden explícitamente.
+- Tests: `tests/Feature/Logistics/{Create,Update,Delete}RouteTest` y
+  `RouteInUseDeletionTest` se refunden en `tests/Feature/Tours/TourRouteCrudTest`,
+  `DefaultRouteTest` y `DeleteRouteWithDeparturesTest`; `TourRoutesSyncTest`
+  desaparece con la action que probaba. `CurrentAdminAccessMatrixTest` mueve las tres
+  filas de rutas del grupo de logística al de productos.
+- `lang/en.json`: +20 claves nuevas, -7 huérfanas. Verificado contra un worktree de
+  `9e8f486` que `TranslationCatalogTest` sigue exactamente en las mismas 188 faltantes
+  y 122 huérfanas del landing, preexistentes a esta rama.
+- `TeamRequestMessagesTest` (×3) sigue rojo por `APP_LOCALE=en` en el `.env` local.
+  Preexistente y de entorno: no se tocó.

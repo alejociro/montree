@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -123,21 +122,19 @@ class Tour extends Model
     }
 
     /**
-     * Rutas logísticas que este producto puede operar. Una salida solo puede
-     * elegir entre estas.
+     * Rutas del producto, con la predeterminada al frente. Una salida solo
+     * puede operar una de estas.
      */
-    public function routes(): BelongsToMany
+    public function routes(): HasMany
     {
-        return $this->belongsToMany(Route::class)
-            ->withPivot(['is_default', 'position'])
-            ->withTimestamps()
-            ->orderBy('route_tour.position')
-            ->orderBy('routes.name');
+        return $this->hasMany(Route::class)
+            ->orderByDesc('is_default')
+            ->orderBy('name');
     }
 
     public function defaultRoute(): ?Route
     {
-        return $this->routes->first(fn (Route $route) => (bool) $route->pivot->is_default);
+        return $this->routes->first(fn (Route $route) => $route->is_default);
     }
 
     public function dates(): HasMany

@@ -3,7 +3,7 @@ import {
     TOUR_STATUS_VALUES,
 } from '@/types/enums.generated';
 import type { TourDifficulty, TourStatus } from '@/types/enums.generated';
-import type { TourRouteRef } from '@/types/logistics';
+import type { RouteResource } from '@/types/logistics';
 
 // WHY: los valores salen de `enums.generated.ts` (`php artisan enums:typescript`),
 // no de un espejo escrito a mano que se desincroniza en silencio.
@@ -96,7 +96,7 @@ export type Tour = {
     itinerary: TourItineraryStep[];
     stops: TourStop[];
     /** Rutas del catálogo de logística que este producto puede operar. */
-    routes: TourRouteRef[];
+    routes: RouteResource[];
     /**
      * Checklist «Para publicar» calculado por el servidor, que es quien rechaza
      * la activación. La pantalla puede recalcular `done` sobre lo que hay en el
@@ -158,7 +158,6 @@ export type TourFormPayload = {
     description: string;
     category_id: number | null;
     base_price: string;
-    currency: string;
     duration_hours: number;
     difficulty: TourDifficulty;
     default_capacity: number;
@@ -170,13 +169,6 @@ export type TourFormPayload = {
     requirements: string[];
     itinerary: TourItineraryDraft[];
     stops: TourStopDraft[];
-    routes: TourRouteSelection[];
-};
-
-/** Fila de la sección «Rutas» del formulario de producto. */
-export type TourRouteSelection = {
-    id: number;
-    is_default: boolean;
 };
 
 /**
@@ -319,26 +311,12 @@ export type PaginatedTours = {
 
 export const TOUR_STATUSES: TourStatus[] = [...TOUR_STATUS_VALUES];
 export const TOUR_DIFFICULTIES: TourDifficulty[] = [...TOUR_DIFFICULTY_VALUES];
-export const SUPPORTED_CURRENCIES = [
-    'USD',
-    'COP',
-    'EUR',
-    'MXN',
-    'ARS',
-    'PEN',
-    'CLP',
-    'BRL',
-] as const;
-
-export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
-
 /** Bloques del formulario del tour, en el orden en que se editan. */
 export const TOUR_FORM_STEP_IDS = [
     'general',
     'pricing',
     'detail',
     'route',
-    'routes',
     'gallery',
 ] as const;
 

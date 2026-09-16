@@ -52,7 +52,7 @@ class PlatformMetricsAggregatorTest extends TestCase
 
         $this->assertSame(2, $metrics->totalTenants);
         $this->assertSame(4, $metrics->bookingsThisMonth);
-        $this->assertSame('200.00', $metrics->revenueThisMonth);
+        $this->assertSame([['currency' => 'USD', 'amount' => '200.00']], $metrics->revenueThisMonth);
         $this->assertSame(1, $metrics->planDistribution['basic']);
         $this->assertSame(1, $metrics->planDistribution['professional']);
     }
@@ -76,7 +76,7 @@ class PlatformMetricsAggregatorTest extends TestCase
 
         $metrics = app(PlatformMetricsAggregator::class)->collect(CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now()->endOfMonth());
 
-        $this->assertSame('50.00', $metrics->revenueThisMonth);
+        $this->assertSame([['currency' => 'USD', 'amount' => '50.00']], $metrics->revenueThisMonth);
     }
 
     public function test_stats_for_tenant_returns_isolated_counts(): void

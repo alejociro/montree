@@ -11,12 +11,14 @@ use App\Models\Builders\RouteBuilder;
 use Database\Factories\RouteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
  * @property int $tenant_id
+ * @property int $tour_id
+ * @property bool $is_default
  * @property string $name
  * @property string|null $description
  * @property RouteKind|null $kind
@@ -48,6 +50,8 @@ final class Route extends Model
 
     protected $fillable = [
         'tenant_id',
+        'tour_id',
+        'is_default',
         'name',
         'description',
         'kind',
@@ -81,6 +85,7 @@ final class Route extends Model
     protected function casts(): array
     {
         return [
+            'is_default' => 'boolean',
             'distance_km' => 'decimal:2',
             'duration_hours' => 'decimal:1',
             'kind' => RouteKind::class,
@@ -97,9 +102,9 @@ final class Route extends Model
         ];
     }
 
-    public function tours(): BelongsToMany
+    public function tour(): BelongsTo
     {
-        return $this->belongsToMany(Tour::class)->withPivot(['is_default', 'position'])->withTimestamps();
+        return $this->belongsTo(Tour::class);
     }
 
     public function tourDates(): HasMany

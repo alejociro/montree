@@ -6,6 +6,7 @@ namespace App\Services\SuperAdmin;
 
 use App\Data\SuperAdmin\PlatformMetrics;
 use App\Enums\BookingStatus;
+use App\Enums\Currency;
 use App\Enums\PaymentStatus;
 use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
@@ -43,14 +44,10 @@ final class PlatformMetricsAggregator
             activeTenants: Tenant::query()->where('status', TenantStatus::Active->value)->count(),
             totalUsers: User::query()->count(),
             bookingsThisMonth: $bookingsThisMonth,
-            revenueThisMonth: $this->decimal(
-                Payment::query()
-                    ->withoutGlobalScope(Tenant::SCOPE)
-                    ->completed()
-                    ->whereBetween('processed_at', [$from, $to])
-                    ->sum('amount'),
+            revenueThisMonth: $this->revenueByCurrency($from, $to),
+            earningsThisMonth: $this->amountsByCurrency(
+                PlatformCharge::query()->chargedBetween($from, $to)->totalsByCurrency(),
             ),
-            earningsThisMonth: PlatformCharge::query()->chargedBetween($from, $to)->totalAmount(),
             tenantsNewThisMonth: Tenant::query()->whereBetween('created_at', [$from, $to])->count(),
             bookingsGrowthPct: $this->growthPercentage($bookingsPreviousMonth, $bookingsThisMonth),
             planDistribution: $this->planDistribution(),
@@ -142,6 +139,43 @@ final class PlatformMetricsAggregator
     }
 
     /**
+     * Ingresos cobrados del período, una entrada por moneda. Nunca se suman
+     * entre sí: los pagos se registran en la moneda de cada agencia y aquí no
+     * hay conversión (spec §H).
+     *
+     * @return list<array{currency: string, amount: string}>
+     */
+    private function revenueByCurrency(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $totals = Payment::query()
+            ->withoutGlobalScope(Tenant::SCOPE)
+            ->completed()
+            ->whereBetween('processed_at', [$from, $to])
+            ->selectRaw('currency, SUM(amount) as aggregate')
+            ->groupBy('currency')
+            ->orderBy('currency')
+            ->pluck('aggregate', 'currency')
+            ->all();
+
+        return $this->amountsByCurrency(array_map($this->decimal(...), $totals));
+    }
+
+    /**
+     * @param  array<string, string>  $totals
+     * @return list<array{currency: string, amount: string}>
+     */
+    private function amountsByCurrency(array $totals): array
+    {
+        $amounts = [];
+
+        foreach ($totals as $currency => $amount) {
+            $amounts[] = ['currency' => (string) $currency, 'amount' => $amount];
+        }
+
+        return $amounts;
+    }
+
+    /**
      * @return array{total_amount: string, total_count: int, currency: string}
      */
     public function chargesSummaryForTenant(Tenant $tenant): array
@@ -153,15 +187,15 @@ final class PlatformMetricsAggregator
         return [
             'total_amount' => $charges->clone()->totalAmount(),
             'total_count' => $charges->clone()->count(),
-            'currency' => $tenant->configuration?->currency ?? 'USD',
+            'currency' => $tenant->configuration?->currency ?? Currency::FALLBACK,
         ];
     }
 
     /**
      * @return array{
      *     tenants_per_month: array{points: list<array{month: string, label: string, value: int|string}>, average: float},
-     *     revenue_per_tenant: array{months: list<string>, series: list<array{tenant: string, values: list<string>}>},
-     *     earnings_per_month: array{points: list<array{month: string, label: string, value: int|string}>, total: string}
+     *     revenue_per_tenant: array{months: list<string>, series: list<array{tenant: string, currency: string, values: list<string>}>},
+     *     earnings_per_month: array{series: list<array{currency: string, points: list<array{month: string, label: string, value: int|string}>, total: string}>}
      * }
      */
     private function charts(CarbonInterface $to): array
@@ -170,7 +204,6 @@ final class PlatformMetricsAggregator
         $months = MonthlySeries::months($from, $end);
 
         $registered = MonthlySeries::points($months, Tenant::query()->registeredPerMonth($from, $end));
-        $earnings = PlatformCharge::query()->monthlyTotals($from, $end);
 
         return [
             'tenants_per_month' => [
@@ -178,19 +211,35 @@ final class PlatformMetricsAggregator
                 'average' => round(array_sum(array_column($registered, 'value')) / max(count($months), 1), 1),
             ],
             'revenue_per_tenant' => $this->revenuePerTenant($end),
-            'earnings_per_month' => [
-                'points' => MonthlySeries::points($months, $earnings, '0.00'),
-                'total' => array_reduce(
-                    array_values($earnings),
-                    static fn (string $carry, string $amount): string => bcadd($carry, $amount, 2),
-                    '0.00',
-                ),
-            ],
+            'earnings_per_month' => ['series' => $this->earningsSeries($months, $from, $end)],
         ];
     }
 
     /**
-     * @return array{months: list<string>, series: list<array{tenant: string, values: list<string>}>}
+     * @param  list<string>  $months
+     * @return list<array{currency: string, points: list<array{month: string, label: string, value: int|string}>, total: string}>
+     */
+    private function earningsSeries(array $months, CarbonInterface $from, CarbonInterface $to): array
+    {
+        $series = [];
+
+        foreach (PlatformCharge::query()->monthlyTotalsByCurrency($from, $to) as $currency => $totals) {
+            $series[] = [
+                'currency' => $currency,
+                'points' => MonthlySeries::points($months, $totals, '0.00'),
+                'total' => array_reduce(
+                    array_values($totals),
+                    static fn (string $carry, string $amount): string => bcadd($carry, $amount, 2),
+                    '0.00',
+                ),
+            ];
+        }
+
+        return $series;
+    }
+
+    /**
+     * @return array{months: list<string>, series: list<array{tenant: string, currency: string, values: list<string>}>}
      */
     private function revenuePerTenant(CarbonInterface $to): array
     {
@@ -201,9 +250,11 @@ final class PlatformMetricsAggregator
             ->withoutGlobalScope(Tenant::SCOPE)
             ->monthlyRevenueByTenant($from, $end);
 
-        $names = Tenant::query()
+        $tenants = Tenant::query()
+            ->with('configuration')
             ->whereIn('id', array_keys($byTenant))
-            ->pluck('name', 'id');
+            ->get()
+            ->keyBy('id');
 
         $totals = array_map(
             static fn (array $series): float => array_sum(array_map('floatval', $series)),
@@ -215,7 +266,8 @@ final class PlatformMetricsAggregator
 
         foreach (array_slice(array_keys($totals), 0, self::REVENUE_CHART_TENANTS) as $tenantId) {
             $series[] = [
-                'tenant' => (string) ($names[$tenantId] ?? $tenantId),
+                'tenant' => (string) ($tenants[$tenantId]?->name ?? $tenantId),
+                'currency' => $tenants[$tenantId]?->configuration?->currency ?? Currency::FALLBACK,
                 'values' => array_map(
                     static fn (string $month): string => $byTenant[$tenantId][$month] ?? '0.00',
                     $months,

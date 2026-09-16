@@ -22,12 +22,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { useTenant } from '@/composables/useTenant';
 import { useTourCompletion } from '@/composables/useTourCompletion';
 import { useTranslations } from '@/composables/useTranslations';
 import { applyFormValue } from '@/lib/form-errors';
 import { tourStopsPayload } from '@/lib/tour-stops';
-import type { RouteOption } from '@/types/logistics';
 import type {
     TourCategory,
     TourFormPayload,
@@ -40,11 +38,9 @@ const { t } = useTranslations();
 
 type Props = {
     categories: TourCategory[];
-    availableRoutes: RouteOption[];
 };
 
 const props = defineProps<Props>();
-const { currency: tenantCurrency } = useTenant();
 
 const initialValues: TourFormPayload = {
     name: '',
@@ -52,7 +48,6 @@ const initialValues: TourFormPayload = {
     description: '',
     category_id: null,
     base_price: '0',
-    currency: (tenantCurrency.value ?? 'USD') as TourFormPayload['currency'],
     duration_hours: 4,
     default_guide_id: null,
     difficulty: 'easy',
@@ -65,7 +60,6 @@ const initialValues: TourFormPayload = {
     requirements: [],
     itinerary: [],
     stops: [],
-    routes: [],
 };
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues }));
@@ -215,7 +209,6 @@ function submit(): void {
                     :model-value="payload"
                     :errors="formErrors"
                     :categories="props.categories"
-                    :available-routes="props.availableRoutes"
                     @update:model-value="(value) => applyFormValue(form, value)"
                 >
                     <template #gallery>
@@ -265,6 +258,15 @@ function submit(): void {
                         </Card>
                     </template>
                 </TourForm>
+
+                <Card class="mt-6">
+                    <CardHeader>
+                        <CardTitle>{{ $t('Rutas del producto') }}</CardTitle>
+                        <CardDescription>{{
+                            $t('Guarda el producto para agregar rutas.')
+                        }}</CardDescription>
+                    </CardHeader>
+                </Card>
 
                 <StickySaveBar>
                     <template #note>

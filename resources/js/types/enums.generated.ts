@@ -48,6 +48,20 @@ export const COMMISSION_TYPE_VALUES = [
 
 export type CommissionType = (typeof COMMISSION_TYPE_VALUES)[number];
 
+/** `App\Enums\Currency` */
+export const CURRENCY_VALUES = [
+    'USD',
+    'COP',
+    'EUR',
+    'MXN',
+    'ARS',
+    'PEN',
+    'CLP',
+    'BRL',
+] as const;
+
+export type Currency = (typeof CURRENCY_VALUES)[number];
+
 /** `App\Enums\DepartureScope` */
 export const DEPARTURE_SCOPE_VALUES = [
     'upcoming',

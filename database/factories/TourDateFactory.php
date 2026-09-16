@@ -78,10 +78,16 @@ class TourDateFactory extends Factory
         ]);
     }
 
+    /**
+     * La ruta de una salida es siempre una del mismo producto (spec §I): crearla
+     * suelta dejaría datos que el formulario rechaza.
+     */
     public function withRoute(): self
     {
-        return $this->state(fn () => [
-            'route_id' => Route::factory(),
+        return $this->state(fn (array $attributes) => [
+            'route_id' => Route::factory()->state([
+                'tour_id' => $attributes['tour_id'] ?? Tour::factory(),
+            ]),
         ]);
     }
 

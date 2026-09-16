@@ -22,7 +22,6 @@ final readonly class DepartureDefaults
         public ?int $routeId,
         public string $basePrice,
         public int $minPaymentPct,
-        public string $currency,
     ) {}
 
     public static function fromTour(Tour $tour, ?TenantConfiguration $configuration): self
@@ -35,7 +34,6 @@ final readonly class DepartureDefaults
             routeId: $tour->defaultRoute()?->getKey(),
             basePrice: (string) $tour->base_price,
             minPaymentPct: $configuration?->min_partial_payment_pct ?? Booking::DEFAULT_MIN_PAYMENT_PCT,
-            currency: $tour->currency,
         );
     }
 
@@ -50,7 +48,6 @@ final readonly class DepartureDefaults
             'route_id' => $this->routeId,
             'base_price' => $this->basePrice,
             'min_payment_pct' => $this->minPaymentPct,
-            'currency' => $this->currency,
         ];
     }
 }

@@ -19,9 +19,6 @@ final class SuperAdminDashboardController extends Controller
 
         $metrics = $aggregator->collect($now->startOfMonth(), $now->endOfMonth());
 
-        return Inertia::render('SuperAdmin/Dashboard', [
-            ...(new PlatformMetricsResource($metrics))->resolve(),
-            'currency' => (string) config('montree.platform_currency'),
-        ]);
+        return Inertia::render('SuperAdmin/Dashboard', (new PlatformMetricsResource($metrics))->resolve());
     }
 }

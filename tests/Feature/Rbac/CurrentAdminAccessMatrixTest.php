@@ -132,6 +132,11 @@ final class CurrentAdminAccessMatrixTest extends TestCase
             'tours.images.store' => ['tours.images.store', 'POST', ['tour'], [], self::PASSES, self::FORBIDDEN],
             'tours.images.update' => ['tours.images.update', 'PATCH', ['tour', 'image'], [], self::PASSES, self::FORBIDDEN],
             'tours.images.destroy' => ['tours.images.destroy', 'DELETE', ['tour', 'image'], [], self::PASSES, self::FORBIDDEN],
+            // Las rutas son del producto: las protege `tours.update`, no `logistics.manage`.
+            'tours.routes.store' => ['tours.routes.store', 'POST', ['tour'], [], self::PASSES, self::FORBIDDEN],
+            'routes.update' => ['routes.update', 'PUT', ['route'], [], self::PASSES, self::FORBIDDEN],
+            'routes.default' => ['routes.default', 'PATCH', ['route'], [], self::PASSES, self::FORBIDDEN],
+            'routes.destroy' => ['routes.destroy', 'DELETE', ['route'], [], self::PASSES, self::FORBIDDEN],
         ];
     }
 
@@ -157,9 +162,6 @@ final class CurrentAdminAccessMatrixTest extends TestCase
     {
         return [
             'logistics.index' => ['logistics.index', 'GET', [], [], self::PASSES, self::FORBIDDEN],
-            'routes.store' => ['routes.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
-            'routes.update' => ['routes.update', 'PUT', ['route'], [], self::PASSES, self::FORBIDDEN],
-            'routes.destroy' => ['routes.destroy', 'DELETE', ['route'], [], self::PASSES, self::FORBIDDEN],
             'providers.store' => ['providers.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
             'providers.update' => ['providers.update', 'PUT', ['provider'], [], self::PASSES, self::FORBIDDEN],
             'providers.destroy' => ['providers.destroy', 'DELETE', ['provider'], [], self::PASSES, self::FORBIDDEN],
@@ -383,7 +385,7 @@ final class CurrentAdminAccessMatrixTest extends TestCase
             'review' => Review::factory()->create(),
             'promotion' => Promotion::factory()->create(),
             'hotel' => Hotel::factory()->create(),
-            'route' => Route::factory()->create(),
+            'route' => Route::factory()->for(Tour::factory())->create(),
             'provider' => Provider::factory()->create(),
             'payment' => Payment::factory()->completed()->create(),
         };

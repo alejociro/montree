@@ -57,7 +57,10 @@ class DashboardPageTest extends SuperAdminTestCase
         $this->actingAs($this->superAdmin())
             ->get($this->platformUrl('/super-admin/dashboard'))
             ->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('totals.earnings_this_month', '12.34'));
+            ->assertInertia(fn (AssertableInertia $page) => $page->where(
+                'totals.earnings_this_month',
+                [['currency' => 'USD', 'amount' => '12.34']],
+            ));
     }
 
     public function test_the_charts_cover_twelve_months_and_split_revenue_per_tenant(): void
@@ -75,11 +78,11 @@ class DashboardPageTest extends SuperAdminTestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('charts.tenants_per_month.points', 12)
-                ->has('charts.earnings_per_month.points', 12)
-                ->where('charts.earnings_per_month.total', '0.00')
+                ->has('charts.earnings_per_month.series', 0)
                 ->has('charts.revenue_per_tenant.months', 6)
                 ->has('charts.revenue_per_tenant.series', 2)
                 ->where('charts.revenue_per_tenant.series.0.tenant', 'Eco Dos')
+                ->where('charts.revenue_per_tenant.series.0.currency', 'COP')
                 ->has('charts.revenue_per_tenant.series.0.values', 6)
                 ->etc());
     }

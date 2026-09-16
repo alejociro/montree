@@ -8,17 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Logistics\LogisticsIndexRequest;
 use App\Http\Resources\Admin\HotelResource;
 use App\Http\Resources\Admin\ProviderResource;
-use App\Http\Resources\Admin\RouteResource;
 use App\Models\Hotel;
 use App\Models\Provider;
-use App\Models\Route;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Los tres catálogos viajan juntos aunque solo uno esté visible: la pestaña
+ * Los dos catálogos viajan juntos aunque solo uno esté visible: la pestaña
  * lleva su conteo, y un contador que solo aparece al abrir la bandeja no sirve
  * para decidir a cuál ir.
  */
@@ -39,11 +37,6 @@ final class LogisticsPagesController extends Controller
         $search = $request->search();
 
         return [
-            'routes' => $this->paginate(
-                Route::query()->with('stops')->withCount(['tourDates', 'tours'])->matching($search),
-                RouteResource::class,
-                'routes_page',
-            ),
             'providers' => $this->paginate(
                 Provider::query()->with(['rates', 'documents'])->withCount('tourDates')->matching($search),
                 ProviderResource::class,

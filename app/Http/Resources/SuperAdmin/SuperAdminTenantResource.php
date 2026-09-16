@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\SuperAdmin;
 
+use App\Enums\Currency;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class SuperAdminTenantResource extends JsonResource
             'commission' => [
                 'type' => $this->commission_type?->value,
                 'value' => $this->commission_value === null ? null : (string) $this->commission_value,
-                'currency' => $this->resource->configuration?->currency ?? 'USD',
+                'currency' => $this->resource->configuration?->currency ?? Currency::FALLBACK,
             ],
             'stats' => [
                 'users_count' => (int) ($this->users_count ?? 0),

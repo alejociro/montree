@@ -7,7 +7,6 @@ namespace App\Http\Requests\Admin\Tour;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStopKind;
 use App\Http\Requests\Concerns\ValidatesTenantGuide;
-use App\Http\Requests\Concerns\ValidatesTourRoutes;
 use App\Models\Category;
 use App\Models\Tour;
 use App\Queries\GuideAvailabilityQuery;
@@ -17,9 +16,7 @@ use Illuminate\Validation\Rule;
 
 class UpdateTourRequest extends FormRequest
 {
-    use ValidatesTenantGuide, ValidatesTourRoutes;
-
-    private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
+    use ValidatesTenantGuide;
 
     public function authorize(): bool
     {
@@ -44,7 +41,6 @@ class UpdateTourRequest extends FormRequest
                 Rule::exists((new Category)->getTable(), 'id'),
             ],
             'base_price' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999.99'],
-            'currency' => ['sometimes', 'required', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
             'duration_hours' => ['sometimes', 'required', 'integer', 'min:1', 'max:240'],
             'default_guide_id' => ['sometimes', 'nullable', 'integer', $this->guideRule()],
             'difficulty' => ['sometimes', 'required', 'string', Rule::in(array_column(TourDifficulty::cases(), 'value'))],
@@ -72,7 +68,6 @@ class UpdateTourRequest extends FormRequest
             'stops.*.latitude' => ['required_with:stops', 'numeric', 'between:-90,90'],
             'stops.*.longitude' => ['required_with:stops', 'numeric', 'between:-180,180'],
             'stops.*.itinerary_step' => ['nullable', 'integer', 'min:1'],
-            ...$this->tourRouteRules(),
         ];
     }
 
@@ -83,7 +78,6 @@ class UpdateTourRequest extends FormRequest
     {
         return [
             fn (Validator $validator) => $this->validateDurationChange($validator),
-            fn (Validator $validator) => $this->validateSingleDefaultRoute($validator),
             function (Validator $validator): void {
                 $kinds = array_column((array) $this->input('stops', []), 'kind');
 

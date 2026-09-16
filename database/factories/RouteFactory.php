@@ -8,6 +8,7 @@ use App\Enums\RouteKind;
 use App\Enums\RouteSeason;
 use App\Enums\TourDifficulty;
 use App\Models\Route;
+use App\Models\Tour;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,6 +24,8 @@ class RouteFactory extends Factory
     public function definition(): array
     {
         return [
+            'tour_id' => Tour::factory(),
+            'is_default' => false,
             'name' => 'Ruta '.fake()->unique()->streetName(),
             'description' => fake()->optional()->sentence(),
             'kind' => fake()->randomElement(RouteKind::cases()),

@@ -50,8 +50,7 @@ final class TourDateRouteValidationTest extends TestCase
     public function test_a_route_of_the_product_is_accepted(): void
     {
         $tour = Tour::factory()->create();
-        $route = Route::factory()->create();
-        $tour->routes()->attach($route->id, ['is_default' => true, 'position' => 1]);
+        $route = Route::factory()->for($tour)->create(['is_default' => true]);
 
         $this->actingAs($this->admin)
             ->post($this->host($this->tenant)."/admin/tours/{$tour->id}/dates", $this->payload(['route_id' => $route->id]))
@@ -60,10 +59,10 @@ final class TourDateRouteValidationTest extends TestCase
         $this->assertDatabaseHas('tour_dates', ['tour_id' => $tour->id, 'route_id' => $route->id]);
     }
 
-    public function test_a_route_not_attached_to_the_product_is_rejected(): void
+    public function test_a_route_of_another_product_is_rejected(): void
     {
         $tour = Tour::factory()->create();
-        $strayRoute = Route::factory()->create();
+        $strayRoute = Route::factory()->for(Tour::factory())->create();
 
         $this->actingAs($this->admin)
             ->post($this->host($this->tenant)."/admin/tours/{$tour->id}/dates", $this->payload(['route_id' => $strayRoute->id]))
@@ -86,12 +85,8 @@ final class TourDateRouteValidationTest extends TestCase
     public function test_editing_swaps_the_route_between_the_ones_of_the_product(): void
     {
         $tour = Tour::factory()->create();
-        $first = Route::factory()->create();
-        $second = Route::factory()->create();
-        $tour->routes()->attach([
-            $first->id => ['is_default' => true, 'position' => 1],
-            $second->id => ['is_default' => false, 'position' => 2],
-        ]);
+        $first = Route::factory()->for($tour)->create(['is_default' => true]);
+        $second = Route::factory()->for($tour)->create();
         $departure = TourDate::factory()->for($tour)->create([
             'guide_id' => $this->guide->id,
             'route_id' => $first->id,
@@ -110,9 +105,7 @@ final class TourDateRouteValidationTest extends TestCase
 
         $other = $this->makeTenant(['slug' => 'other', 'domain' => 'other.montree.test']);
         $other->makeCurrent();
-        $foreignTour = Tour::factory()->create();
-        $foreignRoute = Route::factory()->create();
-        $foreignTour->routes()->attach($foreignRoute->id, ['is_default' => true, 'position' => 1]);
+        $foreignRoute = Route::factory()->for(Tour::factory())->create(['is_default' => true]);
         $this->tenant->makeCurrent();
 
         $this->actingAs($this->admin)

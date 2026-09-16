@@ -1,5 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, unref } from 'vue';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatNumber } from '@/lib/format';
 import type {
@@ -64,6 +65,7 @@ export function useTourCompletion(
     options: UseTourCompletionOptions,
 ): UseTourCompletionReturn {
     const { t } = useTranslations();
+    const currency = useTenantCurrency();
 
     const images = computed<number>(() => unref(options.imagesCount));
 
@@ -156,7 +158,7 @@ export function useTourCompletion(
                 ? t(':price · :capacity pers.', {
                       price: formatCurrency(
                           payload.value.base_price,
-                          payload.value.currency,
+                          currency.value,
                       ),
                       capacity: formatNumber(payload.value.default_capacity),
                   })

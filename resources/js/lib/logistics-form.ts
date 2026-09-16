@@ -1,3 +1,4 @@
+import { currentTenantCurrency } from '@/composables/useTenant';
 import { translate } from '@/composables/useTranslations';
 import {
     accommodationTypeOptions,
@@ -952,6 +953,12 @@ function hiddenPointKeys(kind: LogisticsResourceKind): string[] {
 }
 
 function blankValue(field: LogisticsFieldDef): LogisticsFieldValue {
+    // La ficha nueva arranca con la moneda de la agencia: es la única que la
+    // agencia opera (spec §H).
+    if (field.key === 'currency') {
+        return currentTenantCurrency();
+    }
+
     if (field.type === 'repeat') {
         return [];
     }
