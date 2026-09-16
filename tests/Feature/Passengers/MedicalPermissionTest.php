@@ -70,20 +70,6 @@ final class MedicalPermissionTest extends TestCase
             ->assertJsonPath('error_code', 'INSUFFICIENT_PERMISSION');
     }
 
-    public function test_the_csv_of_sales_omits_the_two_medical_columns(): void
-    {
-        [$tenant, $tour] = $this->manifest();
-        $sales = $this->memberOf($tenant, UserRole::Sales);
-        Tenant::forgetCurrent();
-
-        $response = $this->actingAs($sales)->get($this->host($tenant)."/api/v1/admin/tours/{$tour->id}/passengers/export");
-
-        $csv = $response->assertOk()->streamedContent();
-        $this->assertStringNotContainsString('EPS', $csv);
-        $this->assertStringNotContainsString('Observaciones', $csv);
-        $this->assertStringNotContainsString('Alergia a la penicilina.', $csv);
-    }
-
     public function test_sales_cannot_write_the_health_fields(): void
     {
         [$tenant, $tour, $passenger] = $this->manifest();
@@ -136,21 +122,6 @@ final class MedicalPermissionTest extends TestCase
             ->assertJsonPath('data.0.eps_other', 'Compensar')
             ->assertJsonPath('data.0.medical_notes', 'Alergia a la penicilina.')
             ->assertJsonPath('meta.summary.with_notes', 1);
-    }
-
-    public function test_the_csv_of_admin_carries_the_two_medical_columns(): void
-    {
-        [$tenant, $tour] = $this->manifest();
-        $admin = $this->memberOf($tenant, UserRole::Admin);
-        Tenant::forgetCurrent();
-
-        $csv = $this->actingAs($admin)
-            ->get($this->host($tenant)."/api/v1/admin/tours/{$tour->id}/passengers/export")
-            ->assertOk()
-            ->streamedContent();
-
-        $this->assertStringContainsString('EPS,Observaciones', $csv);
-        $this->assertStringContainsString('Alergia a la penicilina.', $csv);
     }
 
     public function test_the_guide_receives_the_health_fields_of_their_own_departure(): void

@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import SuperAdminSidebar from '@/components/SuperAdminSidebar.vue';
 import { Toaster } from '@/components/ui/sonner';
+import { useTenantBranding } from '@/composables/useTenantBranding';
 import type { BreadcrumbItem } from '@/types';
 
 type Props = {
@@ -13,6 +14,11 @@ type Props = {
 withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
 });
+
+// WHY: el host de plataforma no resuelve tenant, así que esto restaura los
+// tokens de marca de MONTREE. Sin la llamada, los colores que dejó escritos en
+// `:root` la última página de un tenant sobrevivían al cambio de host.
+useTenantBranding();
 </script>
 
 <template>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Mail, MapPin, Phone } from 'lucide-vue-next';
+import { Mail, MapPin, MessageCircle, Phone } from 'lucide-vue-next';
 import { computed } from 'vue';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -25,6 +25,12 @@ useTenantBranding();
 // `switch` por rol propio de este layout. `isStaffMember` esconde los enlaces
 // de viajero a quien `traveler.only` devolveria a su home de rol.
 const { workspace, isStaffMember } = useNavigation();
+
+const hasContactInfo = computed(() =>
+    Object.values(configuration.value?.contact_info ?? {}).some((value) =>
+        Boolean(value),
+    ),
+);
 
 const hasSocialLinks = computed(() => {
     const links = configuration.value?.social_links;
@@ -50,16 +56,7 @@ const hasSocialLinks = computed(() => {
                     class="flex items-center gap-2"
                     :aria-label="displayName"
                 >
-                    <span
-                        class="flex aspect-square size-9 items-center justify-center rounded-md bg-primary text-primary-foreground"
-                    >
-                        <AppLogoIcon class="size-5 fill-current" />
-                    </span>
-                    <span
-                        class="hidden text-base font-semibold tracking-tight sm:inline"
-                    >
-                        {{ displayName }}
-                    </span>
+                    <TenantBrandedLogo size="sm" />
                 </Link>
                 <nav class="flex items-center gap-1">
                     <div class="hidden items-center gap-5 sm:flex">
@@ -124,42 +121,58 @@ const hasSocialLinks = computed(() => {
         <main class="flex-1">
             <slot />
         </main>
-        <footer class="bg-brand-ink text-brand-on-ink">
+        <footer class="bg-primary-ink text-primary-ink-foreground">
             <div
                 class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8"
             >
                 <div class="space-y-4">
+                    <TenantBrandedLogo
+                        size="sm"
+                        class="rounded-md bg-white/90 px-3 py-2"
+                    />
+                </div>
+
+                <div v-if="hasContactInfo" class="space-y-4">
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
                         {{ $t('Información de Contacto') }}
                     </h3>
-                    <ul class="space-y-3 text-sm text-brand-on-ink">
-                        <li class="flex items-start gap-2">
+                    <ul class="space-y-3 text-sm">
+                        <li
+                            v-if="configuration?.contact_info?.address"
+                            class="flex items-start gap-2"
+                        >
                             <MapPin class="mt-0.5 size-4 shrink-0" />
-                            <span>{{
-                                configuration?.contact_info?.address ??
-                                'Calle 123, Siempre Viva'
-                            }}</span>
+                            <span>{{ configuration.contact_info.address }}</span>
                         </li>
-                        <li class="flex items-center gap-2">
+                        <li
+                            v-if="configuration?.contact_info?.phone"
+                            class="flex items-center gap-2"
+                        >
                             <Phone class="size-4 shrink-0" />
+                            <span>{{ configuration.contact_info.phone }}</span>
+                        </li>
+                        <li
+                            v-if="configuration?.contact_info?.whatsapp"
+                            class="flex items-center gap-2"
+                        >
+                            <MessageCircle class="size-4 shrink-0" />
                             <span>{{
-                                configuration?.contact_info?.phone ??
-                                '+57 3009910019'
+                                configuration.contact_info.whatsapp
                             }}</span>
                         </li>
-                        <li class="flex items-center gap-2">
+                        <li
+                            v-if="configuration?.contact_info?.email"
+                            class="flex items-center gap-2"
+                        >
                             <Mail class="size-4 shrink-0" />
-                            <span>{{
-                                configuration?.contact_info?.email ??
-                                'contacto@ecotravel.com'
-                            }}</span>
+                            <span>{{ configuration.contact_info.email }}</span>
                         </li>
                     </ul>
                 </div>
 
                 <div
                     v-if="hasSocialLinks"
-                    class="space-y-4 sm:col-start-2 lg:col-start-3"
+                    class="space-y-4 lg:col-start-3"
                 >
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
                         {{ $t('Síguenos en Redes Sociales') }}
@@ -171,7 +184,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Facebook')"
-                            class="text-brand-on-ink transition hover:text-brand-cream"
+                            class="transition hover:text-white"
                         >
                             <svg
                                 class="size-5"
@@ -190,7 +203,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Instagram')"
-                            class="text-brand-on-ink transition hover:text-brand-cream"
+                            class="transition hover:text-white"
                         >
                             <svg
                                 class="size-5"
@@ -209,7 +222,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('Twitter')"
-                            class="text-brand-on-ink transition hover:text-brand-cream"
+                            class="transition hover:text-white"
                         >
                             <svg
                                 class="size-5"
@@ -228,7 +241,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('YouTube')"
-                            class="text-brand-on-ink transition hover:text-brand-cream"
+                            class="transition hover:text-white"
                         >
                             <svg
                                 class="size-5"
@@ -247,7 +260,7 @@ const hasSocialLinks = computed(() => {
                             target="_blank"
                             rel="noopener"
                             :aria-label="$t('TikTok')"
-                            class="text-brand-on-ink transition hover:text-brand-cream"
+                            class="transition hover:text-white"
                         >
                             <svg
                                 class="size-5"
@@ -264,9 +277,9 @@ const hasSocialLinks = computed(() => {
                 </div>
             </div>
 
-            <div class="border-t border-brand-ink-line">
+            <div class="border-t border-primary-ink-line">
                 <div
-                    class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-4 text-xs text-brand-on-ink/70 sm:px-6 lg:px-8"
+                    class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-4 text-xs text-primary-ink-foreground/70 sm:px-6 lg:px-8"
                 >
                     <span
                         >&copy; {{ new Date().getFullYear() }}

@@ -180,3 +180,18 @@ Lecturas auxiliares que se conservan como API porque las consume un buscador as�
 ## Cambios al contrato
 
 - `2026-09-15` — Creación.
+- `2026-09-15` (B1) — `CrossHostLoginHandoff::issue()` queda
+  `issue(User $user, string $redirectTo, bool $remember = false, ?int $ttlSeconds = null)`.
+  El §4 omitía el `$ttlSeconds` que ya existía y usa el enlace de acceso a la reserva
+  (30 min, `Api\V1\BookingController`); se conserva como cuarto parámetro con nombre.
+  `consume()` devuelve `App\Data\HandoffPayload` (readonly: `userId`, `redirectTo`,
+  `remember`) en lugar de un array.
+- `2026-09-15` (B1) — `GET /admin/tenant/configuration` pasa de controlador invocable a
+  `TenantConfigurationPagesController@index`: la misma clase sirve la página y el `POST`
+  de §3. El nombre de ruta (`admin.tenant.configuration`) no cambia.
+- `2026-09-15` (B1) — `contact_info.email` se valida como `email` (el §3 decía solo
+  `string`); `contact_info.phone` y `contact_info.whatsapp` topan en 40 caracteres.
+- `2026-09-15` (B1) — con la exportación desaparece también la prop
+  `snapshot.permissions.can_export_reports` del dashboard del tenant (§6 solo listaba las
+  rutas). `DashboardResource` deja de recibir el flag y `DashboardPolicy::exportReports`
+  se elimina.

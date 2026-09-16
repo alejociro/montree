@@ -2,7 +2,6 @@
 import { Link } from '@inertiajs/vue3';
 import {
     AlertTriangle,
-    Download,
     Printer,
     Receipt,
     RefreshCw,
@@ -52,7 +51,6 @@ const {
     lastPage,
     total,
     printRows,
-    exportUrl,
     reload,
 } = usePassengerManifest(props.source);
 
@@ -139,12 +137,6 @@ function print(): void {
                     <Printer class="size-4" />
                     {{ $t('Imprimir') }}
                 </Button>
-                <a :href="exportUrl" download>
-                    <Button variant="outline" size="sm">
-                        <Download class="size-4" />
-                        {{ $t('Exportar CSV') }}
-                    </Button>
-                </a>
             </div>
         </header>
 

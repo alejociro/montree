@@ -22,10 +22,10 @@ export type TenantSocialLinks = {
 };
 
 export type TenantContactInfo = {
+    address?: string;
     email?: string;
     phone?: string;
-    address?: string;
-    [key: string]: string | undefined;
+    whatsapp?: string;
 };
 
 export type TenantConfiguration = {

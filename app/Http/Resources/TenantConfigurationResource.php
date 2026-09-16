@@ -62,6 +62,6 @@ class TenantConfigurationResource extends JsonResource
             return $path;
         }
 
-        return Storage::disk(config('filesystems.default'))->url($path);
+        return Storage::disk('public')->url($path);
     }
 }

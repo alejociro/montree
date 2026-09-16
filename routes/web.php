@@ -111,7 +111,8 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::get('transactions', [TransactionPagesController::class, 'index'])->middleware('can:payments.view')->name('transactions.index');
     Route::get('transactions/{payment}', [TransactionPagesController::class, 'show'])->middleware('can:payments.view')->name('transactions.show');
     Route::post('transactions/{payment}/query', QueryTransactionController::class)->middleware('can:payments.query')->name('transactions.query');
-    Route::get('tenant/configuration', TenantConfigurationPagesController::class)->middleware('can:tenant.view')->name('tenant.configuration');
+    Route::get('tenant/configuration', [TenantConfigurationPagesController::class, 'index'])->middleware('can:tenant.view')->name('tenant.configuration');
+    Route::post('tenant/configuration', [TenantConfigurationPagesController::class, 'update'])->middleware('can:tenant.settings.update')->name('tenant.configuration.update');
 });
 
 Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->name('guide.')->group(function () {

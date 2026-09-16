@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Tenant;
 
+use App\Data\BrandingAssetsData;
+use App\Data\TenantConfigurationData;
 use App\Models\Tenant;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateTenantConfigurationRequest extends FormRequest
+final class UpdateTenantConfigurationRequest extends FormRequest
 {
     private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
 
@@ -34,24 +36,43 @@ class UpdateTenantConfigurationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'currency' => ['nullable', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
-            'timezone' => ['nullable', 'string', Rule::in(timezone_identifiers_list())],
-            'locale' => ['nullable', 'string', Rule::in(self::SUPPORTED_LOCALES)],
-            'tagline' => ['nullable', 'string', 'max:160'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'social_links' => ['nullable', 'array'],
+            'primary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'currency' => ['sometimes', 'nullable', 'string', 'size:3', Rule::in(self::SUPPORTED_CURRENCIES)],
+            'timezone' => ['sometimes', 'nullable', 'string', Rule::in(timezone_identifiers_list())],
+            'locale' => ['sometimes', 'nullable', 'string', Rule::in(self::SUPPORTED_LOCALES)],
+            'tagline' => ['sometimes', 'nullable', 'string', 'max:160'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'social_links' => ['sometimes', 'nullable', 'array'],
             'social_links.*' => ['nullable', 'url', 'max:255'],
-            'contact_info' => ['nullable', 'array'],
-            'reviews_require_moderation' => ['nullable', 'boolean'],
-            'require_traveler_details' => ['nullable', 'boolean'],
-            'custom_css' => ['nullable', 'string', 'max:10000'],
-            'terms_body' => ['nullable', 'string', 'max:20000'],
-            'placetopay_login' => ['nullable', 'string', 'max:60'],
-            'placetopay_tran_key' => ['nullable', 'string', 'max:120'],
-            'placetopay_url' => ['nullable', 'url', 'max:255', 'starts_with:https://'],
+            'contact_info' => ['sometimes', 'nullable', 'array'],
+            'contact_info.address' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'contact_info.email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'contact_info.phone' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'contact_info.whatsapp' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'reviews_require_moderation' => ['sometimes', 'boolean'],
+            'require_traveler_details' => ['sometimes', 'boolean'],
+            'custom_css' => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'terms_body' => ['sometimes', 'nullable', 'string', 'max:20000'],
+            'placetopay_login' => ['sometimes', 'nullable', 'string', 'max:60'],
+            'placetopay_tran_key' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'placetopay_url' => ['sometimes', 'nullable', 'url', 'max:255', 'starts_with:https://'],
+            'logo' => ['sometimes', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'favicon' => ['sometimes', 'image', 'mimes:png,ico,svg', 'max:1024'],
+            'hero_image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_logo' => ['sometimes', 'boolean'],
+            'remove_hero_image' => ['sometimes', 'boolean'],
         ];
+    }
+
+    public function brandingAssets(): BrandingAssetsData
+    {
+        return BrandingAssetsData::fromRequest($this);
+    }
+
+    public function configuration(): TenantConfigurationData
+    {
+        return TenantConfigurationData::fromRequest($this);
     }
 
     /**

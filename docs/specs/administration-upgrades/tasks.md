@@ -5,16 +5,16 @@
 > `php artisan test --compact`. Nunca `git checkout/restore/stash`.
 
 ## B1 — Base, branding, auth, limpieza
-- [ ] `storage:link` local; `TenantConfigurationResource` usa disco `public`
-- [ ] `StoreBrandingAssetsAction` + `BrandingAssetsData` (logo/favicon/hero, remove_*), reusada por admin y super admin; borrar `UpdateTenantBrandingAction`
-- [ ] `POST /admin/tenant/configuration` web (`TenantConfigurationPagesController@update`), request ampliado (`sometimes`, archivos, contact_info), `UpdateTenantConfigurationAction::execute(…, TenantConfigurationData)`
-- [ ] Eliminar `Api\V1\Admin\TenantConfigurationController`, `Api\V1\Admin\TenantController`, rutas, wayfinder
-- [ ] `Configuration.vue`: `useForm` multipart, uploads con preview, contacto, colores sin defaults ni envío si no cambian
-- [ ] `TenantBrandedLogo` fallback `@error`; `PublicLayout` header con logo; footer con tokens derivados de `--primary`; `Home.vue` logo
-- [ ] `SuperAdminLayout` invoca `useTenantBranding()`
-- [ ] Remember me a través del handoff (`HandoffPayload`, `issue(..., $remember)`, `login($user, $remember)`)
-- [ ] Quitar exportaciones (backend, frontend, permiso `reports.export`, migración, lang, tests)
-- [ ] Tests: `TenantConfigurationUpdateTest` (happy, 422, archivo inválido, remove_logo, sin permiso, aislamiento), `BrandingUrlsTest`, `RememberMeSurvivesHandoffTest`, `PermissionCatalogSeederTest` actualizado
+- [x] `storage:link` local; `TenantConfigurationResource` usa disco `public`
+- [x] `StoreBrandingAssetsAction` + `BrandingAssetsData` (logo/favicon/hero, remove_*), reusada por admin y super admin; borrar `UpdateTenantBrandingAction`
+- [x] `POST /admin/tenant/configuration` web (`TenantConfigurationPagesController@update`), request ampliado (`sometimes`, archivos, contact_info), `UpdateTenantConfigurationAction::execute(…, TenantConfigurationData)`
+- [x] Eliminar `Api\V1\Admin\TenantConfigurationController`, `Api\V1\Admin\TenantController`, rutas, wayfinder
+- [x] `Configuration.vue`: `useForm` multipart, uploads con preview, contacto, colores sin defaults ni envío si no cambian
+- [x] `TenantBrandedLogo` fallback `@error`; `PublicLayout` header con logo; footer con tokens derivados de `--primary`; `Home.vue` logo
+- [x] `SuperAdminLayout` invoca `useTenantBranding()`
+- [x] Remember me a través del handoff (`HandoffPayload`, `issue(..., $remember)`, `login($user, $remember)`)
+- [x] Quitar exportaciones (backend, frontend, permiso `reports.export`, migración, lang, tests)
+- [x] Tests: `TenantConfigurationUpdateTest` (happy, 422, archivo inválido, remove_logo, sin permiso, aislamiento), `BrandingUrlsTest`, `RememberMeSurvivesHandoffTest`, `PermissionCatalogSeederTest` actualizado
 - [ ] Commit `feat(admin): branding uploads via Inertia, remember-me handoff, drop CSV exports`
 
 ## B2 — Super admin
@@ -44,3 +44,31 @@
 - [ ] Commit `feat(tours): product routes, departure inheritance, Inertia admin pages`
 
 ## Notas durante implementación
+
+### B1 — 2026-09-15
+
+- `php artisan storage:link` corrido en local; `TenantConfigurationResource` resuelve las
+  tres URLs con `Storage::disk('public')`.
+- `UpdateTenantConfigurationAction::execute(TenantConfiguration, TenantConfigurationData)`
+  toma el tenant de `$configuration->tenant` para el límite de plan del `custom_css`.
+  `TenantConfigurationData` transporta un mapa disperso (`array<string, mixed>`) porque las
+  reglas son `sometimes`: una propiedad por columna convertiría «ausente» en «null».
+- `UpdateTenantAction` y `Admin\Tenant\UpdateTenantRequest` se borran con
+  `Api\V1\Admin\TenantController`: nadie más los usaba.
+- `CurrentAdminAccessMatrixTest` pierde el proveedor `tenantSettingsRoutes`: la matriz
+  resuelve rutas con el prefijo `api.v1.admin.` y esos dos endpoints ya no son API. El
+  límite de permiso lo cubre `TenantConfigurationUpdateTest`.
+- El permiso `reports.export` baja `CATALOG_SIZE` de 40 a 39; la migración
+  `2026_09_15_090000_remove_reports_export_permission` borra la fila y sus pivotes, y es
+  idempotente (sale temprano si el permiso ya no está).
+- `lang/en.json`: +11 claves nuevas, -23 huérfanas por la exportación. Verificado contra un
+  worktree de HEAD que el feature no agrega deriva (`TranslationCatalogTest` sigue rojo por
+  188 claves y 122 huérfanas del landing, todas preexistentes a esta rama).
+- `TeamRequestMessagesTest` falla en local porque el `.env` tiene `APP_LOCALE=en` (el
+  proyecto asume `es`). Preexistente y de entorno: no se tocó.
+- Tokens nuevos de pie de página en `app.css`: `--primary-ink`, `--primary-ink-foreground`
+  y `--primary-ink-line`, mezclados con `color-mix()` desde `--primary` y `--brand-ink`.
+  Sin tenant, `--primary` es el verde de marca y el pie queda como estaba.
+- El pie deja de pintar los datos de contacto de ejemplo («Calle 123, Siempre Viva»): ahora
+  que el admin los edita, cada línea aparece solo si tiene valor. Esos tres literales
+  salen también de `NON_COPY_LITERALS` en `TranslationCatalogTest`.

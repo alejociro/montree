@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Tenant\StoreBrandingAssetsAction;
+use App\Actions\Tenant\UpdateTenantConfigurationAction;
+use App\Exceptions\FeatureRequiresEnterpriseException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Tenant\UpdateTenantConfigurationRequest;
 use App\Models\Tenant;
 use App\Services\Tenant\TermsRenderer;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -21,9 +26,9 @@ final class TenantConfigurationPagesController extends Controller
 {
     public function __construct(private TermsRenderer $terms) {}
 
-    public function __invoke(): Response
+    public function index(): Response
     {
-        $configuration = Tenant::current()?->configuration;
+        $configuration = $this->currentTenant()->configuration;
 
         if ($configuration === null) {
             throw new NotFoundHttpException(__('No tenant for this host.'));
@@ -35,5 +40,39 @@ final class TenantConfigurationPagesController extends Controller
                 'is_default' => $this->terms->isDefault($configuration),
             ],
         ]);
+    }
+
+    public function update(
+        UpdateTenantConfigurationRequest $request,
+        StoreBrandingAssetsAction $storeAssets,
+        UpdateTenantConfigurationAction $updateConfiguration,
+    ): RedirectResponse {
+        $tenant = $this->currentTenant();
+        $configuration = $tenant->configuration()->firstOrCreate(['tenant_id' => $tenant->id]);
+
+        try {
+            $updateConfiguration->execute($configuration, $request->configuration());
+        } catch (FeatureRequiresEnterpriseException) {
+            return back()->withErrors([
+                'custom_css' => __('El CSS personalizado solo está disponible en el plan Enterprise.'),
+            ]);
+        }
+
+        $storeAssets->execute($configuration, $request->brandingAssets());
+
+        return redirect()
+            ->route('admin.tenant.configuration')
+            ->with('success', __('Configuración guardada.'));
+    }
+
+    private function currentTenant(): Tenant
+    {
+        $tenant = Tenant::current();
+
+        if ($tenant === null) {
+            throw new NotFoundHttpException(__('No tenant for this host.'));
+        }
+
+        return $tenant;
     }
 }

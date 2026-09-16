@@ -17,9 +17,4 @@ final class DashboardPolicy
     {
         return $user->can('reports.view');
     }
-
-    public function exportReports(User $user): bool
-    {
-        return $user->can('reports.export');
-    }
 }

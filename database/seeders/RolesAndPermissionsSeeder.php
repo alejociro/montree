@@ -22,7 +22,7 @@ class RolesAndPermissionsSeeder extends Seeder
      * @var array<string, array<int, string>>
      */
     public const PERMISSIONS = [
-        'dashboard' => ['dashboard.view', 'reports.view', 'reports.export'],
+        'dashboard' => ['dashboard.view', 'reports.view'],
         'tours' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'departures' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'logistics' => ['logistics.view', 'logistics.manage'],

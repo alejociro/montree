@@ -1,9 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, ref, watch } from 'vue';
 import { index as adminManifest } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourPassengerController';
-import adminManifestExport from '@/actions/App/Http/Controllers/Api/V1/Admin/TourPassengerExportController';
 import { index as guideManifest } from '@/actions/App/Http/Controllers/Api/V1/Guide/TourDatePassengerController';
-import guideManifestExport from '@/actions/App/Http/Controllers/Api/V1/Guide/TourDatePassengerExportController';
 import { translate } from '@/composables/useTranslations';
 import type {
     DepartureOption,
@@ -42,7 +40,6 @@ export type UsePassengerManifestReturn = {
      * la hoja `@media print`.
      */
     printRows: ComputedRef<Passenger[]>;
-    exportUrl: ComputedRef<string>;
     reload: () => Promise<void>;
     goToPage: (value: number) => void;
 };
@@ -126,25 +123,6 @@ export function usePassengerManifest(
     const printRows = computed<Passenger[]>(() =>
         overflowRows.value.length > 0 ? overflowRows.value : passengers.value,
     );
-
-    const exportUrl = computed(() => {
-        const query = buildQuery(
-            source,
-            segment.value,
-            search.value,
-            tourDateId.value,
-            1,
-            MAX_PER_PAGE,
-        );
-
-        // El export ignora `per_page` y `page`: exporta todo el filtrado.
-        delete query.per_page;
-        delete query.page;
-
-        return source.kind === 'tour'
-            ? adminManifestExport.url(source.tourId, { query })
-            : guideManifestExport.url(source.tourDateId, { query });
-    });
 
     async function fetchPage(
         target: number,
@@ -265,7 +243,6 @@ export function usePassengerManifest(
         lastPage,
         total,
         printRows,
-        exportUrl,
         reload,
         goToPage,
     };

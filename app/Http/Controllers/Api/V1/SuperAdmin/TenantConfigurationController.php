@@ -4,29 +4,31 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
-use App\Actions\SuperAdmin\UpdateTenantBrandingAction;
+use App\Actions\Tenant\StoreBrandingAssetsAction;
+use App\Data\BrandingAssetsData;
+use App\Data\TenantConfigurationData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\UpdateTenantConfigurationRequest;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Models\Tenant;
+use App\Models\TenantConfiguration;
 use Illuminate\Http\JsonResponse;
 
 final class TenantConfigurationController extends Controller
 {
-    public function __construct(private UpdateTenantBrandingAction $action) {}
+    public function update(
+        UpdateTenantConfigurationRequest $request,
+        Tenant $tenant,
+        StoreBrandingAssetsAction $storeAssets,
+    ): JsonResponse {
+        $configuration = TenantConfiguration::query()->firstOrCreate(['tenant_id' => $tenant->id]);
 
-    public function update(UpdateTenantConfigurationRequest $request, Tenant $tenant): JsonResponse
-    {
-        $configuration = $this->action->handle(
-            $tenant,
-            $request->safe()->except(['logo', 'favicon', 'hero_image']),
-            $request->file('logo'),
-            $request->file('favicon'),
-            $request->file('hero_image'),
-        );
+        $configuration->fill(TenantConfigurationData::fromRequest($request)->attributes)->save();
+
+        $storeAssets->execute($configuration, BrandingAssetsData::fromRequest($request));
 
         return new JsonResponse([
-            'data' => (new TenantConfigurationResource($configuration))->resolve(),
+            'data' => (new TenantConfigurationResource($configuration->refresh()))->resolve(),
         ]);
     }
 }

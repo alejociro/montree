@@ -124,7 +124,6 @@ final class DashboardPageTest extends TestCase
                 ->where('snapshot.bookings.pending_payment', 1)
                 ->where('snapshot.rating.average', '5.00')
                 ->where('snapshot.pending_reviews_count', 1)
-                ->where('snapshot.permissions.can_export_reports', true)
                 ->where('snapshot.top_tours.0.name', 'Senderismo Cocora')
                 ->where('snapshot.upcoming_dates.0.tour_name', 'Senderismo Cocora')
                 ->has('periods', 6)
@@ -132,21 +131,6 @@ final class DashboardPageTest extends TestCase
             );
 
         Carbon::setTestNow();
-    }
-
-    public function test_the_operator_cannot_export_reports(): void
-    {
-        $tenant = Tenant::factory()->create(['slug' => 'op-demo', 'domain' => 'op-demo.montree.test']);
-        TenantConfiguration::factory()->for($tenant)->create();
-        $operator = $this->memberFor($tenant, UserRole::Operator);
-
-        $this->actingAs($operator)
-            ->get('http://op-demo.montree.test/admin/dashboard')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->where('snapshot.permissions.can_export_reports', false)
-                ->where('filters.period', 'last_30_days')
-            );
     }
 
     public function test_an_invalid_period_is_rejected(): void

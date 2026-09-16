@@ -25,13 +25,16 @@ console.log('post-login url:', page.url());
 
 async function shoot(url, filename, opts = {}) {
     await page.goto(`${baseURL}${url}`, { waitUntil: 'networkidle' });
+
     if (opts.waitFor) {
         await page.waitForSelector(opts.waitFor, { timeout: 10000 }).catch(() => {});
     }
+
     if (opts.click) {
         await page.click(opts.click).catch(() => {});
         await page.waitForTimeout(600);
     }
+
     await page.waitForTimeout(400);
     const target = opts.locator ? page.locator(opts.locator).first() : page;
     const path = join(outDir, filename);

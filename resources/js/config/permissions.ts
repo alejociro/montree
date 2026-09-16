@@ -38,7 +38,6 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
     dashboard: [
         ['dashboard.view', 'Ver el panel'],
         ['reports.view', 'Ver reportes'],
-        ['reports.export', 'Exportar reportes a CSV'],
     ],
     tours: [
         ['tours.view', 'Ver productos'],

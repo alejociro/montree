@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { AlertCircle } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { toast } from 'vue-sonner';
-import { update as updateConfigAction } from '@/actions/App/Http/Controllers/Api/V1/Admin/TenantConfigurationController';
+import { update as updateConfiguration } from '@/actions/App/Http/Controllers/Admin/TenantConfigurationPagesController';
 import Heading from '@/components/Heading.vue';
 import PreviewPanel from '@/components/molecules/PreviewPanel.vue';
+import BrandingAssetsEditor from '@/components/organisms/BrandingAssetsEditor.vue';
 import BrandingEditor from '@/components/organisms/BrandingEditor.vue';
+import ContactInfoEditor from '@/components/organisms/ContactInfoEditor.vue';
 import OperationalSettingsForm from '@/components/organisms/OperationalSettingsForm.vue';
 import PaymentGatewayForm from '@/components/organisms/PaymentGatewayForm.vue';
 import SocialLinksEditor from '@/components/organisms/SocialLinksEditor.vue';
 import TermsEditor from '@/components/organisms/TermsEditor.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { terms as termsRoute } from '@/routes/policies';
 import type {
-    TenantConfigurationPayload,
+    TenantContactInfo,
     TenantLocale,
     TenantSocialLinks,
     TenantTerms,
@@ -43,38 +44,32 @@ type ConfigurationForm = {
     reviews_require_moderation: boolean;
     require_traveler_details: boolean;
     social_links: TenantSocialLinks;
+    contact_info: TenantContactInfo;
     custom_css: string;
     placetopay_login: string;
     placetopay_tran_key: string;
     placetopay_url: string;
     terms_body: string;
-};
-
-type UpdateConfigurationResponse = {
-    data: {
-        configuration: {
-            terms_body: string | null;
-            terms_is_default: boolean;
-        };
-    };
+    logo: File | null;
+    favicon: File | null;
+    hero_image: File | null;
+    remove_logo: boolean;
+    remove_hero_image: boolean;
 };
 
 const { tenant, configuration } = useTenant();
-const api = useApi();
-
-const enterpriseOnlyError = ref<string | null>(null);
-const saving = ref(false);
-const recentlySaved = ref(false);
-// WHY: el cuerpo de los terminos no viaja en la prop compartida
-// `tenantConfiguration` (pesa hasta 20.000 caracteres); llega como prop de esta
-// pagina y la respuesta del PUT devuelve el estado actualizado.
-const termsIsDefault = ref(props.terms.is_default);
+const page = usePage();
 
 const isEnterprise = computed(() => tenant.value?.plan === 'enterprise');
 
-const initialValues: ConfigurationForm = {
-    primary_color: configuration.value?.primary_color ?? '#16a34a',
-    secondary_color: configuration.value?.secondary_color ?? '#0f766e',
+/**
+ * WHY: sin color configurado el campo arranca vacío, no en el verde de MONTREE.
+ * Precargar un default hacía que el primer guardado —aunque no se tocara la
+ * paleta— escribiera ese color como si la agencia lo hubiera elegido.
+ */
+const form = useForm<ConfigurationForm>(() => ({
+    primary_color: configuration.value?.primary_color ?? '',
+    secondary_color: configuration.value?.secondary_color ?? '',
     tagline: configuration.value?.tagline ?? '',
     description: configuration.value?.description ?? '',
     currency: configuration.value?.currency ?? 'COP',
@@ -85,15 +80,19 @@ const initialValues: ConfigurationForm = {
     require_traveler_details:
         configuration.value?.require_traveler_details ?? true,
     social_links: { ...(configuration.value?.social_links ?? {}) },
+    contact_info: { ...(configuration.value?.contact_info ?? {}) },
     custom_css: configuration.value?.custom_css ?? '',
     placetopay_login: configuration.value?.placetopay?.login ?? '',
     // Nunca se precarga: el servidor no devuelve el tranKey guardado.
     placetopay_tran_key: '',
     placetopay_url: configuration.value?.placetopay?.url ?? '',
     terms_body: props.terms.body ?? '',
-};
-
-const form = useForm<ConfigurationForm>(() => ({ ...initialValues }));
+    logo: null,
+    favicon: null,
+    hero_image: null,
+    remove_logo: false,
+    remove_hero_image: false,
+}));
 
 const brandingValues = computed({
     get: () => ({
@@ -147,26 +146,44 @@ const socialValues = computed({
     },
 });
 
-function buildPayload(data: ConfigurationForm): TenantConfigurationPayload {
-    const payload: TenantConfigurationPayload = {
-        primary_color: data.primary_color || null,
-        secondary_color: data.secondary_color || null,
-        currency: data.currency || null,
-        timezone: data.timezone || null,
+const contactValues = computed({
+    get: () => form.contact_info,
+    set: (value) => {
+        form.contact_info = { ...value };
+    },
+});
+
+/**
+ * Las reglas del servidor son `sometimes`: una clave ausente significa «no
+ * tocar». Por eso los colores, el tranKey y los archivos solo viajan cuando
+ * tienen valor — mandarlos vacíos borraría lo guardado.
+ */
+function buildPayload(data: ConfigurationForm): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
+        tagline: data.tagline,
+        description: data.description,
+        currency: data.currency,
+        timezone: data.timezone,
         locale: data.locale,
-        tagline: data.tagline || null,
-        description: data.description || null,
-        social_links: Object.keys(data.social_links).length
-            ? data.social_links
-            : null,
         reviews_require_moderation: data.reviews_require_moderation,
         require_traveler_details: data.require_traveler_details,
-        placetopay_login: data.placetopay_login || null,
-        placetopay_url: data.placetopay_url || null,
-        terms_body: data.terms_body.trim() ? data.terms_body : null,
+        social_links: data.social_links,
+        contact_info: data.contact_info,
+        placetopay_login: data.placetopay_login,
+        placetopay_url: data.placetopay_url,
+        terms_body: data.terms_body,
+        remove_logo: data.remove_logo,
+        remove_hero_image: data.remove_hero_image,
     };
 
-    // Solo viaja cuando el admin escribió uno nuevo: mandarlo vacío borraria el guardado.
+    if (data.primary_color) {
+        payload.primary_color = data.primary_color;
+    }
+
+    if (data.secondary_color) {
+        payload.secondary_color = data.secondary_color;
+    }
+
     if (data.placetopay_tran_key) {
         payload.placetopay_tran_key = data.placetopay_tran_key;
     }
@@ -175,61 +192,47 @@ function buildPayload(data: ConfigurationForm): TenantConfigurationPayload {
         payload.custom_css = data.custom_css;
     }
 
+    if (data.logo) {
+        payload.logo = data.logo;
+    }
+
+    if (data.favicon) {
+        payload.favicon = data.favicon;
+    }
+
+    if (data.hero_image) {
+        payload.hero_image = data.hero_image;
+    }
+
     return payload;
 }
 
 function submit(): void {
-    enterpriseOnlyError.value = null;
-    recentlySaved.value = false;
-    form.clearErrors();
-    saving.value = true;
-
-    void api.put<UpdateConfigurationResponse>(
-        updateConfigAction().url,
-        buildPayload(form.data()),
-        {
-            onSuccess: (response) => {
-                toast.success(t('Configuración guardada.'));
-                recentlySaved.value = true;
-                termsIsDefault.value =
-                    response?.data.configuration.terms_is_default ??
-                    termsIsDefault.value;
-                // WHY: la marca del tenant sale de `tenantConfiguration`, no de
-                // `tenant`. Recargar solo `tenant` dejaba los colores viejos en las
-                // variables CSS hasta el siguiente refresco completo.
-                router.reload({ only: ['tenant', 'tenantConfiguration'] });
-            },
-            onError: (errors) => {
-                const cssError = errors.custom_css ?? errors.error_code ?? '';
-
-                if (cssError.toLowerCase().includes('enterprise')) {
-                    enterpriseOnlyError.value = t(
-                        'El CSS personalizado solo está disponible en el plan Enterprise.',
-                    );
-
-                    return;
-                }
-
-                form.setError(errors);
-                toast.error(
-                    t(
-                        'No se pudieron guardar los cambios. Revisa los campos marcados.',
-                    ),
-                );
-            },
-            onFinish: () => {
-                saving.value = false;
-            },
+    form.transform(buildPayload).post(updateConfiguration.url(), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(
+                page.props.flash.success ?? t('Configuración guardada.'),
+            );
+            form.reset();
         },
-    );
+        onError: () => {
+            toast.error(
+                t(
+                    'No se pudieron guardar los cambios. Revisa los campos marcados.',
+                ),
+            );
+        },
+    });
 }
 
 function resetForm(): void {
     form.reset();
-    enterpriseOnlyError.value = null;
-    recentlySaved.value = false;
+    form.clearErrors();
 }
 </script>
+
 
 <template>
     <Head :title="$t('Configuración del tenant')" />
@@ -260,22 +263,11 @@ function resetForm(): void {
 
         <div v-else class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
             <form class="space-y-10" @submit.prevent="submit">
-                <Alert
-                    v-if="recentlySaved"
-                    class="border-primary/30 bg-primary/5 text-primary-readable"
-                >
-                    <CheckCircle2 class="size-4" />
-                    <AlertTitle>{{ $t('Cambios guardados') }}</AlertTitle>
-                    <AlertDescription>
-                        {{ $t('Tu nueva configuración ya está activa.') }}
-                    </AlertDescription>
-                </Alert>
-
-                <Alert v-if="enterpriseOnlyError" variant="destructive">
+                <Alert v-if="form.errors.custom_css" variant="destructive">
                     <AlertCircle class="size-4" />
                     <AlertTitle>{{ $t('Función Enterprise') }}</AlertTitle>
                     <AlertDescription>
-                        {{ enterpriseOnlyError }}
+                        {{ form.errors.custom_css }}
                     </AlertDescription>
                 </Alert>
 
@@ -286,6 +278,32 @@ function resetForm(): void {
                         secondary_color: form.errors.secondary_color,
                         tagline: form.errors.tagline,
                         description: form.errors.description,
+                    }"
+                />
+
+                <BrandingAssetsEditor
+                    v-model:logo="form.logo"
+                    v-model:favicon="form.favicon"
+                    v-model:hero-image="form.hero_image"
+                    v-model:remove-logo="form.remove_logo"
+                    v-model:remove-hero-image="form.remove_hero_image"
+                    :logo-url="configuration?.logo_url ?? null"
+                    :favicon-url="configuration?.favicon_url ?? null"
+                    :hero-image-url="configuration?.hero_image_url ?? null"
+                    :errors="{
+                        logo: form.errors.logo,
+                        favicon: form.errors.favicon,
+                        hero_image: form.errors.hero_image,
+                    }"
+                />
+
+                <ContactInfoEditor
+                    v-model="contactValues"
+                    :errors="{
+                        address: form.errors['contact_info.address'],
+                        email: form.errors['contact_info.email'],
+                        phone: form.errors['contact_info.phone'],
+                        whatsapp: form.errors['contact_info.whatsapp'],
                     }"
                 />
 
@@ -312,7 +330,7 @@ function resetForm(): void {
 
                 <TermsEditor
                     v-model="form.terms_body"
-                    :is-default="termsIsDefault"
+                    :is-default="props.terms.is_default"
                     :public-url="termsRoute.url()"
                     :error="form.errors.terms_body"
                 />
@@ -331,23 +349,27 @@ function resetForm(): void {
                 <div class="flex items-center gap-3 border-t border-input pt-6">
                     <Button
                         type="submit"
-                        :disabled="saving"
+                        :disabled="form.processing"
                         data-test="save-tenant-configuration"
                     >
-                        {{ saving ? $t('Guardando…') : $t('Guardar cambios') }}
+                        {{
+                            form.processing
+                                ? $t('Guardando…')
+                                : $t('Guardar cambios')
+                        }}
                     </Button>
 
                     <Button
                         type="button"
                         variant="ghost"
-                        :disabled="saving || !form.isDirty"
+                        :disabled="form.processing || !form.isDirty"
                         @click="resetForm"
                     >
                         {{ $t('Descartar') }}
                     </Button>
 
                     <span
-                        v-if="form.isDirty && !saving"
+                        v-if="form.isDirty && !form.processing"
                         class="text-xs text-muted-foreground"
                     >
                         {{ $t('Tienes cambios sin guardar.') }}

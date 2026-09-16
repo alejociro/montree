@@ -26,13 +26,13 @@ final class PermissionCatalogSeederTest extends TestCase
      * dos documentos y quedó anotado en `tasks.md` para `montree-spec-updater`.
      * El módulo `payments` (transacciones en el panel) sumó dos y lo dejó en 40.
      */
-    public const CATALOG_SIZE = 40;
+    public const CATALOG_SIZE = 39;
 
     /**
      * @var array<string, array<int, string>>
      */
     private const CATALOG = [
-        'Dashboard' => ['dashboard.view', 'reports.view', 'reports.export'],
+        'Dashboard' => ['dashboard.view', 'reports.view'],
         'Productos' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'Salidas' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'Logistica' => ['logistics.view', 'logistics.manage'],

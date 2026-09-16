@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth;
 
+use App\Data\HandoffPayload;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -30,14 +31,13 @@ final class CrossHostLoginHandoff
      */
     public const EMAIL_TTL_SECONDS = 1800;
 
-    public function issue(User $user, string $redirectTo, ?int $ttlSeconds = null): string
+    public function issue(User $user, string $redirectTo, bool $remember = false, ?int $ttlSeconds = null): string
     {
         $token = Str::random(64);
 
-        Cache::put(self::PREFIX.$token, [
-            'user_id' => $user->getKey(),
-            'redirect_to' => $redirectTo,
-        ], $ttlSeconds ?? self::TTL_SECONDS);
+        $payload = new HandoffPayload((int) $user->getKey(), $redirectTo, $remember);
+
+        Cache::put(self::PREFIX.$token, $payload->toArray(), $ttlSeconds ?? self::TTL_SECONDS);
 
         return $token;
     }
@@ -45,14 +45,12 @@ final class CrossHostLoginHandoff
     /**
      * Consume a token. Single use: a valid token is deleted before returning so it
      * cannot be replayed.
-     *
-     * @return array{user_id: int, redirect_to: string}|null
      */
-    public function consume(string $token): ?array
+    public function consume(string $token): ?HandoffPayload
     {
         $key = self::PREFIX.$token;
 
-        /** @var array{user_id: int, redirect_to: string}|null $payload */
+        /** @var array{user_id: int, redirect_to: string, remember?: bool}|null $payload */
         $payload = Cache::get($key);
 
         if ($payload === null) {
@@ -61,6 +59,6 @@ final class CrossHostLoginHandoff
 
         Cache::forget($key);
 
-        return $payload;
+        return HandoffPayload::fromArray($payload);
     }
 }

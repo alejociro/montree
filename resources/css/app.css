@@ -47,6 +47,15 @@
     --color-secondary-soft-foreground: var(--secondary-soft-foreground);
     --color-secondary-readable: var(--secondary-readable);
 
+    /*
+      Superficie «tinta» de la marca: el fondo oscuro del pie de página. Sigue a
+      `--primary`, así que una agencia con el principal en terracota tiene el
+      pie en terracota oscuro, y sin tenant cae en el verde tinta del handoff.
+    */
+    --color-primary-ink: var(--primary-ink);
+    --color-primary-ink-foreground: var(--primary-ink-foreground);
+    --color-primary-ink-line: var(--primary-ink-line);
+
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
 
@@ -227,6 +236,9 @@
     );
     --secondary-soft-foreground: var(--foreground);
     --secondary-readable: var(--secondary);
+    --primary-ink: color-mix(in oklab, var(--primary) 55%, var(--brand-ink));
+    --primary-ink-foreground: color-mix(in oklab, var(--primary-ink) 16%, #fff);
+    --primary-ink-line: color-mix(in oklab, var(--primary-ink) 82%, #fff);
 
     --sidebar-background: color-mix(
         in oklab,

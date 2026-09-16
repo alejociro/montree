@@ -15,19 +15,15 @@ use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerContr
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
 use App\Http\Controllers\Api\V1\Admin\RestoreTourDateController as AdminRestoreTourDateController;
-use App\Http\Controllers\Api\V1\Admin\RevenueReportController as AdminRevenueReportController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
-use App\Http\Controllers\Api\V1\Admin\TenantConfigurationController as AdminTenantConfigurationController;
-use App\Http\Controllers\Api\V1\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Api\V1\Admin\TourDateController as AdminTourDateController;
 use App\Http\Controllers\Api\V1\Admin\TourDateIndexController as AdminTourDateIndexController;
 use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourPassengerController as AdminTourPassengerController;
-use App\Http\Controllers\Api\V1\Admin\TourPassengerExportController as AdminTourPassengerExportController;
 use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
@@ -35,7 +31,6 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\Guide\GuideTourController;
 use App\Http\Controllers\Api\V1\Guide\TourDatePassengerController;
-use App\Http\Controllers\Api\V1\Guide\TourDatePassengerExportController;
 use App\Http\Controllers\Api\V1\GuideController;
 use App\Http\Controllers\Api\V1\NewsletterController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -94,7 +89,6 @@ Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
 Route::middleware(['auth', 'tenant_guide.only'])->group(function (): void {
     Route::get('guide/schedule', [GuideController::class, 'schedule'])->middleware('can:guide.schedule.view')->name('api.v1.guide.schedule');
     Route::get('guide/tour-dates/{tourDate}/passengers', [TourDatePassengerController::class, 'index'])->middleware('can:guide.travelers.view')->name('api.v1.guide.tour-dates.passengers.index');
-    Route::get('guide/tour-dates/{tourDate}/passengers/export', TourDatePassengerExportController::class)->middleware('can:guide.travelers.view')->name('api.v1.guide.tour-dates.passengers.export');
     Route::get('guide/tours/{tour}', [GuideTourController::class, 'show'])->name('api.v1.guide.tours.show');
 });
 
@@ -102,13 +96,9 @@ Route::middleware(['auth', 'tenant_guide.only'])->group(function (): void {
 // el guía (F018 spec.md §matriz). Sin ella el guía entraría a las pantallas de producto
 // por sus permisos `tours.view`/`departures.view`, que existen para SUS salidas.
 Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('admin')->name('api.v1.admin.')->group(function (): void {
-    Route::put('tenant', [AdminTenantController::class, 'update'])->middleware('can:tenant.update')->name('tenant.update');
-    Route::put('tenant/configuration', [AdminTenantConfigurationController::class, 'update'])->middleware('can:tenant.settings.update')->name('tenant.configuration.update');
 
-    Route::get('reports/revenue', AdminRevenueReportController::class)->middleware('can:reports.view')->name('reports.revenue');
     Route::get('bookings', [AdminBookingController::class, 'index'])->middleware('can:bookings.view')->name('bookings.index');
     Route::get('tours/{tour}/passengers', [AdminTourPassengerController::class, 'index'])->middleware('can:bookings.view')->name('tours.passengers.index');
-    Route::get('tours/{tour}/passengers/export', AdminTourPassengerExportController::class)->middleware('can:bookings.view')->name('tours.passengers.export');
     Route::post('bookings/{booking}/passengers', [AdminPassengerController::class, 'store'])->middleware('can:bookings.update')->name('bookings.passengers.store');
     Route::put('passengers/{traveler}', [AdminPassengerController::class, 'update'])->middleware('can:bookings.update')->name('passengers.update');
     Route::post('bookings/{booking}/payments', [AdminBookingPaymentController::class, 'store'])->middleware('can:bookings.update')->name('bookings.payments.store');

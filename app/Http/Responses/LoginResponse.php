@@ -158,7 +158,7 @@ final class LoginResponse implements LoginResponseContract
      */
     private function crossHostHandoff(User $user, Request $request, string $host, string $path): Response
     {
-        $token = $this->handoff->issue($user, $path);
+        $token = $this->handoff->issue($user, $path, $request->boolean('remember'));
         $url = $this->hostUrl($request, $host)."/auth/handoff/{$token}";
 
         Auth::guard('web')->logout();

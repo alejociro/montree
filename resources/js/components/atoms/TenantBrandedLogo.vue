@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { HTMLAttributes } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { useTenant } from '@/composables/useTenant';
@@ -54,13 +54,24 @@ const nameSizeClass = computed(() => {
     }
 });
 
+const logoUrl = computed(() => configuration.value?.logo_url ?? null);
+
+/**
+ * WHY: un logo borrado del disco (o una URL vieja en caché) dejaba el header
+ * vacío, sin nombre de agencia ni icono. El `@error` del `<img>` degrada al
+ * nombre en vez de a un hueco.
+ */
+const logoFailed = ref(false);
+
+watch(logoUrl, () => {
+    logoFailed.value = false;
+});
+
 const hasLogo = computed(
-    () => isResolved.value && Boolean(configuration.value?.logo_url),
+    () => isResolved.value && logoUrl.value !== null && !logoFailed.value,
 );
 
-const showNameFallback = computed(
-    () => isResolved.value && !configuration.value?.logo_url,
-);
+const showNameFallback = computed(() => isResolved.value && !hasLogo.value);
 </script>
 
 <template>
@@ -71,9 +82,10 @@ const showNameFallback = computed(
     >
         <img
             v-if="hasLogo"
-            :src="configuration?.logo_url ?? undefined"
+            :src="logoUrl ?? undefined"
             :alt="displayName"
             :class="cn('w-auto object-contain', imageSizeClass)"
+            @error="logoFailed = true"
         />
         <span
             v-else-if="showNameFallback"

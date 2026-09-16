@@ -92,7 +92,6 @@ class TranslationCatalogTest extends TestCase
     private const NON_COPY_LITERALS = [
         '', ' ', ' *', ', ', '+', '9+', '—', '★', '☆', 'USD',
         'approved', 'expired', 'past', 'pending', 'percentage', 'slug', 'upcoming',
-        'Calle 123, Siempre Viva', '+57 3009910019', 'contacto@ecotravel.com',
     ];
 
     /**

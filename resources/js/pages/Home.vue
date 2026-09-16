@@ -18,6 +18,7 @@ import type { Component } from 'vue';
 import { computed, ref } from 'vue';
 import { create as bookingCreate } from '@/actions/App/Http/Controllers/BookingPagesController';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
+import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
@@ -121,6 +122,11 @@ function departureDateLabel(departure: UpcomingDeparture): string {
             <div
                 class="relative z-10 mx-auto flex min-h-[70vh] w-full max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6 lg:px-8"
             >
+                <TenantBrandedLogo
+                    v-if="configuration?.logo_url"
+                    size="lg"
+                    class="mb-6 rounded-xl bg-white/90 px-4 py-3"
+                />
                 <h1
                     class="max-w-3xl text-4xl font-bold tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl"
                 >

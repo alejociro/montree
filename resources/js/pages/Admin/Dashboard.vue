@@ -3,7 +3,6 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { Inbox } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
-import ExportRevenueButton from '@/components/molecules/ExportRevenueButton.vue';
 import PeriodSelector from '@/components/molecules/PeriodSelector.vue';
 import DashboardStatGrid from '@/components/organisms/DashboardStatGrid.vue';
 import RevenueByMethod from '@/components/organisms/RevenueByMethod.vue';
@@ -112,9 +111,6 @@ function changePeriod(period: DashboardPeriodKey): void {
                     :model-value="props.filters.period"
                     :periods="props.periods"
                     @update:model-value="changePeriod"
-                />
-                <ExportRevenueButton
-                    v-if="props.snapshot.permissions.can_export_reports"
                 />
             </div>
         </div>

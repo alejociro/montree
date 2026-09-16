@@ -86,10 +86,6 @@ export type DashboardUpcomingDate = {
     guide_name: string | null;
 };
 
-export type DashboardPermissions = {
-    can_export_reports: boolean;
-};
-
 export type DashboardSnapshot = {
     period: DashboardPeriod;
     revenue: DashboardRevenue;
@@ -99,7 +95,6 @@ export type DashboardSnapshot = {
     top_tours: DashboardTopTour[];
     upcoming_dates: DashboardUpcomingDate[];
     pending_reviews_count: number;
-    permissions: DashboardPermissions;
 };
 
 export type DashboardPeriodOption = {

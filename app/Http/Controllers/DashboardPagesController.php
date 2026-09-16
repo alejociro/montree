@@ -7,7 +7,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Admin\Dashboard\DashboardRequest;
 use App\Http\Resources\Admin\DashboardResource;
 use App\Models\Tenant;
-use App\Policies\DashboardPolicy;
 use App\Services\Dashboard\DashboardMetricsAggregator;
 use App\Services\Dashboard\PeriodFilter;
 use Inertia\Inertia;
@@ -44,8 +43,6 @@ final class DashboardPagesController extends Controller
      */
     private function snapshot(DashboardRequest $request, Tenant $tenant, PeriodFilter $period): array
     {
-        $canExport = (new DashboardPolicy)->exportReports($request->user());
-
-        return (new DashboardResource($this->aggregator->for($tenant, $period), $canExport))->resolve();
+        return (new DashboardResource($this->aggregator->for($tenant, $period)))->resolve();
     }
 }

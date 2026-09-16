@@ -40,7 +40,6 @@ final class PermissionCatalog
     private const LABELS = [
         'dashboard.view' => 'Ver el panel',
         'reports.view' => 'Ver reportes',
-        'reports.export' => 'Exportar reportes',
         'tours.view' => 'Ver tours',
         'tours.create' => 'Crear tours',
         'tours.update' => 'Editar tours',

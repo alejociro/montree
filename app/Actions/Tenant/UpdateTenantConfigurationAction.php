@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Tenant;
 
+use App\Data\TenantConfigurationData;
 use App\Exceptions\FeatureRequiresEnterpriseException;
-use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Services\Tenant\CustomCssSanitizer;
 use Illuminate\Support\Arr;
@@ -14,28 +14,34 @@ final class UpdateTenantConfigurationAction
 {
     public function __construct(private CustomCssSanitizer $sanitizer) {}
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function handle(Tenant $tenant, array $data): TenantConfiguration
+    public function execute(TenantConfiguration $configuration, TenantConfigurationData $data): TenantConfiguration
     {
-        $configuration = $tenant->configuration()->firstOrCreate(['tenant_id' => $tenant->id]);
+        $attributes = $this->resolveCustomCss($configuration, $data->attributes);
+        $attributes = $this->resolveCheckoutCredentials($configuration, $attributes);
 
-        if (Arr::has($data, 'custom_css') && $data['custom_css'] !== null && $data['custom_css'] !== '') {
-            if (! $tenant->plan->limits()['allows_custom_css']) {
-                throw new FeatureRequiresEnterpriseException('custom_css');
-            }
-
-            $sanitized = $this->sanitizer->sanitize((string) $data['custom_css']);
-            $data['custom_css'] = $sanitized['css'];
-        }
-
-        $data = $this->resolveCheckoutCredentials($configuration, $data);
-
-        $configuration->fill($data);
+        $configuration->fill($attributes);
         $configuration->save();
 
-        return $configuration->fresh() ?? $configuration;
+        return $configuration;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function resolveCustomCss(TenantConfiguration $configuration, array $attributes): array
+    {
+        if (blank($attributes['custom_css'] ?? null)) {
+            return $attributes;
+        }
+
+        if (! $configuration->tenant->plan->limits()['allows_custom_css']) {
+            throw new FeatureRequiresEnterpriseException('custom_css');
+        }
+
+        $attributes['custom_css'] = $this->sanitizer->sanitize((string) $attributes['custom_css'])['css'];
+
+        return $attributes;
     }
 
     /**
@@ -43,27 +49,27 @@ final class UpdateTenantConfigurationAction
      * plataforma). Mandar login sin tranKey conserva el guardado: el panel nunca
      * recibe el tranKey de vuelta, así que no puede reenviarlo.
      *
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $attributes
      * @return array<string, mixed>
      */
-    private function resolveCheckoutCredentials(TenantConfiguration $configuration, array $data): array
+    private function resolveCheckoutCredentials(TenantConfiguration $configuration, array $attributes): array
     {
-        if (! Arr::hasAny($data, ['placetopay_login', 'placetopay_tran_key', 'placetopay_url'])) {
-            return $data;
+        if (! Arr::hasAny($attributes, ['placetopay_login', 'placetopay_tran_key', 'placetopay_url'])) {
+            return $attributes;
         }
 
-        if (blank($data['placetopay_login'] ?? null)) {
-            return array_merge($data, [
+        if (blank($attributes['placetopay_login'] ?? null)) {
+            return array_merge($attributes, [
                 'placetopay_login' => null,
                 'placetopay_tran_key' => null,
                 'placetopay_url' => null,
             ]);
         }
 
-        if (blank($data['placetopay_tran_key'] ?? null)) {
-            $data['placetopay_tran_key'] = $configuration->placetopay_tran_key;
+        if (blank($attributes['placetopay_tran_key'] ?? null)) {
+            $attributes['placetopay_tran_key'] = $configuration->placetopay_tran_key;
         }
 
-        return $data;
+        return $attributes;
     }
 }

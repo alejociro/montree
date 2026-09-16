@@ -41,8 +41,9 @@ use Tests\TestCase;
  * When a later feature intentionally changes a boundary, update the expectation in the
  * matching data provider in the same commit.
  *
- * Out of scope on purpose: `dashboard.show` and `reports.revenue`, already covered by
- * DashboardControllerTest and RevenueReportControllerTest.
+ * Out of scope on purpose: `dashboard.show`, ya cubierto por DashboardPageTest, y la
+ * configuración del tenant, que desde administration-upgrades vive en una ruta web
+ * (`TenantConfigurationUpdateTest`).
  */
 final class CurrentAdminAccessMatrixTest extends TestCase
 {
@@ -96,17 +97,6 @@ final class CurrentAdminAccessMatrixTest extends TestCase
         setPermissionsTeamId(0);
 
         parent::tearDown();
-    }
-
-    /**
-     * @return array<string, array{0: string, 1: string, 2: array<int, string>, 3: array<string, mixed>, 4: bool, 5: bool}>
-     */
-    public static function tenantSettingsRoutes(): array
-    {
-        return [
-            'tenant.update' => ['tenant.update', 'PUT', [], [], self::FORBIDDEN, self::FORBIDDEN],
-            'tenant.configuration.update' => ['tenant.configuration.update', 'PUT', [], [], self::FORBIDDEN, self::FORBIDDEN],
-        ];
     }
 
     /**
@@ -221,16 +211,6 @@ final class CurrentAdminAccessMatrixTest extends TestCase
             'users.suspend' => ['users.suspend', 'PATCH', ['member'], [], self::FORBIDDEN, self::FORBIDDEN],
             'users.reactivate' => ['users.reactivate', 'PATCH', ['member'], [], self::FORBIDDEN, self::FORBIDDEN],
         ];
-    }
-
-    /**
-     * @param  array<int, string>  $parameters
-     * @param  array<string, mixed>  $payload
-     */
-    #[DataProvider('tenantSettingsRoutes')]
-    public function test_tenant_settings_routes_keep_their_current_access(string $route, string $method, array $parameters, array $payload, bool $operatorPasses, bool $salesPasses): void
-    {
-        $this->assertCurrentAccessMatrix($route, $method, $parameters, $payload, $operatorPasses, $salesPasses);
     }
 
     /**

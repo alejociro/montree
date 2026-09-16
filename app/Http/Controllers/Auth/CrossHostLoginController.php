@@ -26,18 +26,18 @@ final class CrossHostLoginController extends Controller
             ]);
         }
 
-        $user = User::find($payload['user_id']);
+        $user = User::find($payload->userId);
 
         if ($user === null) {
             return redirect()->route('login');
         }
 
-        Auth::guard('web')->login($user);
+        Auth::guard('web')->login($user, $payload->remember);
         $request->session()->regenerate();
 
         // WHY: redirect_to is always set internally at issuance; guard against open
         // redirect just in case by forcing a relative path.
-        $target = Str::startsWith($payload['redirect_to'], '/') ? $payload['redirect_to'] : '/';
+        $target = Str::startsWith($payload->redirectTo, '/') ? $payload->redirectTo : '/';
 
         return redirect()->to($target);
     }

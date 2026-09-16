@@ -141,7 +141,7 @@ final class BookingController extends Controller
         $token = $this->handoff->issue(
             $user,
             '/bookings/'.$booking->booking_number,
-            CrossHostLoginHandoff::EMAIL_TTL_SECONDS,
+            ttlSeconds: CrossHostLoginHandoff::EMAIL_TTL_SECONDS,
         );
 
         $user->notify(new BookingAccessLinkNotification(

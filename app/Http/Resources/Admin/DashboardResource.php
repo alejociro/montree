@@ -13,11 +13,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class DashboardResource extends JsonResource
 {
-    public function __construct(DashboardSnapshot $snapshot, private readonly bool $canExportReports)
-    {
-        parent::__construct($snapshot);
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -64,9 +59,6 @@ class DashboardResource extends JsonResource
             'top_tours' => $snapshot->topTours->all(),
             'upcoming_dates' => $snapshot->upcomingDates->all(),
             'pending_reviews_count' => $snapshot->pendingReviewsCount,
-            'permissions' => [
-                'can_export_reports' => $this->canExportReports,
-            ],
         ];
     }
 }
