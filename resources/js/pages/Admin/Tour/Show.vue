@@ -33,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/composables/usePermissions';
-import { useTenant } from '@/composables/useTenant';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
 import { useTranslations } from '@/composables/useTranslations';
 import { categoryLabel } from '@/lib/categories';
@@ -54,11 +54,7 @@ type Props = {
 
 const props = defineProps<Props>();
 
-const { currency: tenantCurrency } = useTenant();
-
-const currency = computed(
-    () => props.tour.currency || tenantCurrency.value || 'USD',
-);
+const currency = useTenantCurrency();
 
 const difficultyLabels: Record<TourDifficulty, string> = {
     easy: t('Fácil'),
@@ -187,10 +183,7 @@ const kpis = computed<ShowKpi[]>(() => {
         {
             key: 'revenue',
             label: t('Ingresos cobrados'),
-            value: formatCurrency(
-                props.stats.revenue_total,
-                props.stats.currency,
-            ),
+            value: formatCurrency(props.stats.revenue_total, currency.value),
             detail: t('Pagos completados'),
         },
     ];
@@ -538,7 +531,6 @@ const manifestSource = computed(
                         <div class="mt-5">
                             <TourUpcomingDatesList
                                 :dates="props.departures"
-                                :currency="currency"
                                 :can-view-passengers="canViewPassengers"
                                 @view-passengers="activeTab = 'passengers'"
                             />

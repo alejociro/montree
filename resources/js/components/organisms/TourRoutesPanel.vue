@@ -16,6 +16,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/composables/useTranslations';
 import { factsFor, localityOf } from '@/lib/logistics';
@@ -38,6 +46,7 @@ const props = defineProps<Props>();
 
 const dialogOpen = ref(false);
 const editing = ref<RouteResource | null>(null);
+const removing = ref<RouteResource | null>(null);
 
 const RELOAD_ROUTES = {
     preserveScroll: true,
@@ -80,14 +89,24 @@ function makeDefault(route: RouteResource): void {
     router.patch(DefaultRouteController.url(route.id), {}, RELOAD_ROUTES);
 }
 
-function remove(route: RouteResource): void {
-    if (!confirm(t('¿Eliminar ":name"?', { name: route.name }))) {
+function askRemove(route: RouteResource): void {
+    removing.value = route;
+}
+
+function confirmRemove(): void {
+    const route = removing.value;
+
+    if (route === null) {
         return;
     }
 
     router.delete(TourRouteController.destroy(route.id).url, {
         ...RELOAD_ROUTES,
+        onSuccess: () => {
+            removing.value = null;
+        },
         onError: (errors) => {
+            removing.value = null;
             toast.error(errors.route || t('No se pudo eliminar.'));
         },
     });
@@ -166,7 +185,7 @@ function remove(route: RouteResource): void {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     variant="destructive"
-                                    @select="remove(route)"
+                                    @select="askRemove(route)"
                                 >
                                     <Trash2 class="size-4" />
                                     {{ $t('Eliminar') }}
@@ -200,5 +219,33 @@ function remove(route: RouteResource): void {
             :action="dialogAction()"
             @saved="onSaved"
         />
+
+        <Dialog
+            :open="removing !== null"
+            @update:open="(open) => !open && (removing = null)"
+        >
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ $t('Eliminar ruta') }}</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            $t(
+                                '":name" dejará de estar disponible para las salidas de este producto.',
+                                { name: removing?.name ?? '' },
+                            )
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="removing = null">
+                        {{ $t('Volver') }}
+                    </Button>
+                    <Button variant="destructive" @click="confirmRemove">
+                        {{ $t('Eliminar ruta') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

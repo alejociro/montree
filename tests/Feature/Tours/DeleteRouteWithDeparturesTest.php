@@ -62,7 +62,7 @@ final class DeleteRouteWithDeparturesTest extends TestCase
     {
         $tour = Tour::factory()->create();
         $route = Route::factory()->for($tour)->create();
-        TourDate::factory()->for($tour)->create([
+        $departure = TourDate::factory()->for($tour)->create([
             'guide_id' => $this->guideFor($this->tenant)->id,
             'route_id' => $route->id,
             'starts_at' => now()->addWeek(),
@@ -70,7 +70,42 @@ final class DeleteRouteWithDeparturesTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete($this->host($this->tenant)."/admin/routes/{$route->id}")
-            ->assertSessionHasErrors('route');
+            ->assertSessionHasErrors([
+                'route' => sprintf(
+                    'No se puede eliminar: la ruta está en uso por 1 salida (%s).',
+                    $departure->starts_at->format('d/m/Y H:i'),
+                ),
+            ]);
+
+        $this->assertDatabaseHas('routes', ['id' => $route->id]);
+    }
+
+    /**
+     * Criterio I: el rechazo nombra las salidas. Con más de tres se listan las
+     * tres primeras y el resto se resume, para que el mensaje siga siendo legible.
+     */
+    public function test_the_rejection_lists_the_first_three_departures_and_counts_the_rest(): void
+    {
+        $tour = Tour::factory()->create();
+        $route = Route::factory()->for($tour)->create();
+        $guide = $this->guideFor($this->tenant);
+
+        $departures = collect(range(1, 4))->map(fn (int $week) => TourDate::factory()->for($tour)->create([
+            'guide_id' => $guide->id,
+            'route_id' => $route->id,
+            'starts_at' => now()->addWeeks($week),
+        ]));
+
+        $expected = sprintf(
+            'No se puede eliminar: la ruta está en uso por 4 salidas (%s y 1 más).',
+            $departures->take(3)
+                ->map(fn (TourDate $departure): string => $departure->starts_at->format('d/m/Y H:i'))
+                ->implode(', '),
+        );
+
+        $this->actingAs($this->admin)
+            ->delete($this->host($this->tenant)."/admin/routes/{$route->id}")
+            ->assertSessionHasErrors(['route' => $expected]);
 
         $this->assertDatabaseHas('routes', ['id' => $route->id]);
     }

@@ -27,7 +27,6 @@ class TourSummaryResource extends JsonResource
             'short_description' => $this->short_description,
             'status' => $this->status->value,
             'base_price' => $this->base_price,
-            'currency' => $this->currency,
             'duration_hours' => $this->duration_hours,
             'difficulty' => $this->difficulty->value,
             'default_capacity' => $this->default_capacity,

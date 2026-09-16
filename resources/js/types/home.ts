@@ -16,7 +16,6 @@ export type UpcomingDeparture = {
     tour: {
         name: string;
         slug: string;
-        currency: string;
         cover_image_url: string | null;
     };
 };

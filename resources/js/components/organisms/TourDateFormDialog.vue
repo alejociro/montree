@@ -46,11 +46,15 @@ type Props = {
     durationHours?: number | null;
     /**
      * Lo que la salida nueva hereda del producto y de la agencia (spec §G):
-     * guía, capacidad, ruta predeterminada, precio base de referencia y mínimo
-     * de abono. Todo es propuesta: se puede cambiar antes de guardar.
+     * guía, capacidad, precio base de referencia y mínimo de abono. Todo es
+     * propuesta: se puede cambiar antes de guardar.
      */
     departureDefaults: DepartureDefaults;
-    /** Solo las rutas del producto; el servidor rechaza cualquier otra. */
+    /**
+      * Solo las rutas del producto; el servidor rechaza cualquier otra. De aquí
+      * sale también la predeterminada que propone la salida nueva: si viajara
+      * aparte se quedaría vieja al marcar otra sin recargar la página.
+      */
     tourRoutes: RouteResource[];
     guides: LogisticsRef[];
     providers: LogisticsRef[];
@@ -132,6 +136,10 @@ const agencyMinPaymentPct = computed(
     () => props.departureDefaults.min_payment_pct,
 );
 
+const defaultRouteId = computed<number | null>(
+    () => props.tourRoutes.find((route) => route.is_default)?.id ?? null,
+);
+
 /**
  * WHY (D9): el fin ya no se escribe, se deriva. Cuando el tour no viaja en las
  * props —la lista global de salidas solo edita— se recupera de la salida que se
@@ -203,7 +211,7 @@ function resetFromEditing(): void {
         form.min_payment_pct = '';
         form.notes = '';
         form.guide_id = props.departureDefaults.guide_id;
-        form.route_id = props.departureDefaults.route_id;
+        form.route_id = defaultRouteId.value;
         form.provider_id = null;
         form.hotel_ids = [];
 

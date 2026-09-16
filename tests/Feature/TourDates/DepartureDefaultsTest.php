@@ -45,7 +45,7 @@ final class DepartureDefaultsTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_the_edit_page_inherits_guide_capacity_route_price_and_agency_percentage(): void
+    public function test_the_edit_page_inherits_guide_capacity_default_route_price_and_agency_percentage(): void
     {
         $guide = $this->guideFor($this->tenant);
         $tour = Tour::factory()->create([
@@ -62,7 +62,8 @@ final class DepartureDefaultsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('departureDefaults.guide_id', $guide->id)
                 ->where('departureDefaults.capacity', 17)
-                ->where('departureDefaults.route_id', $route->id)
+                ->where('tour.routes.0.id', $route->id)
+                ->where('tour.routes.0.is_default', true)
                 ->where('departureDefaults.base_price', '250000.00')
                 ->where('departureDefaults.min_payment_pct', 45)
             );
@@ -75,7 +76,6 @@ final class DepartureDefaultsTest extends TestCase
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('departureDefaults.route_id', null)
                 ->where('tour.routes', [])
             );
     }
@@ -92,8 +92,8 @@ final class DepartureDefaultsTest extends TestCase
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('departureDefaults.route_id', null)
                 ->has('tour.routes', 1)
+                ->where('tour.routes.0.is_default', false)
             );
     }
 
@@ -108,7 +108,7 @@ final class DepartureDefaultsTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('tours', 1)
                 ->where('tours.0.departure_defaults.capacity', 9)
-                ->where('tours.0.departure_defaults.route_id', $route->id)
+                ->where('tours.0.routes.0.id', $route->id)
                 ->where('tours.0.routes.0.is_default', true)
             );
     }

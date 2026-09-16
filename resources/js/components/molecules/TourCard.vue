@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Heart } from 'lucide-vue-next';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { formatCurrency } from '@/lib/format';
 import type { CatalogTour } from '@/types/catalog';
 
@@ -8,6 +9,8 @@ type Props = {
 };
 
 defineProps<Props>();
+
+const currency = useTenantCurrency();
 </script>
 
 <template>
@@ -81,7 +84,7 @@ defineProps<Props>();
             </p>
 
             <p class="mt-auto pt-2 text-sm font-semibold text-foreground">
-                {{ formatCurrency(tour.base_price, tour.currency) }}
+                {{ formatCurrency(tour.base_price, currency) }}
                 <span class="text-xs font-normal text-muted-foreground">
                     {{ $t('/persona') }}
                 </span>

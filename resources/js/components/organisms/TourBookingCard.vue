@@ -2,11 +2,13 @@
 import { Link } from '@inertiajs/vue3';
 import { CalendarOff, MapPinned, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { TourDetail, TourDetailDate } from '@/types/tour-detail';
 
 const { t } = useTranslations();
+const currency = useTenantCurrency();
 
 const props = defineProps<{
     tour: TourDetail;
@@ -28,7 +30,7 @@ const selectedDate = computed<TourDetailDate | null>(
 const price = computed(() =>
     formatCurrency(
         selectedDate.value?.effective_price ?? props.tour.base_price,
-        props.tour.currency,
+        currency.value,
     ),
 );
 
@@ -45,7 +47,7 @@ function dateOptionLabel(date: TourDetailDate): string {
             withTime: true,
         }),
         seats: date.available_seats,
-        price: formatCurrency(date.effective_price, props.tour.currency),
+        price: formatCurrency(date.effective_price, currency.value),
     };
 
     return date.route === null

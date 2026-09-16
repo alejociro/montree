@@ -40,7 +40,6 @@ final class BookingPagesController extends Controller
                 'price_override' => $tourDate->price_override,
                 'effective_price' => $tourDate->price_override ?? $tourDate->tour->base_price,
                 'available_seats' => max(0, $tourDate->capacity - $tourDate->booked_count),
-                'currency' => $tourDate->tour->currency,
                 // El formulario muestra con esto cuánto es el abono que asegura
                 // la plaza. El monto exacto lo devuelve la reserva ya creada.
                 'min_payment_pct' => $tourDate->minPaymentPercentage(),

@@ -4,6 +4,7 @@ import { Sparkles, Star } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { categoryLabel } from '@/lib/categories';
 import { formatCurrency } from '@/lib/format';
 import type { CatalogTour } from '@/types/catalog';
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const href = computed(() => tourShow.url(props.tour.slug));
 const hasRating = computed(() => props.tour.rating_count > 0);
+const currency = useTenantCurrency();
 </script>
 
 <template>
@@ -103,7 +105,7 @@ const hasRating = computed(() => props.tour.rating_count > 0);
             <p class="mt-auto pt-2 text-sm text-muted-foreground">
                 {{ $t('Desde') }}
                 <span class="text-base font-bold text-foreground">
-                    {{ formatCurrency(tour.base_price, tour.currency) }}
+                    {{ formatCurrency(tour.base_price, currency) }}
                 </span>
                 <span class="text-xs">{{ $t('/persona') }}</span>
             </p>

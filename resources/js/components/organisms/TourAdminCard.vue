@@ -37,10 +37,7 @@ const subtitle = computed<string>(() => {
 });
 
 const price = computed<string>(() =>
-    formatCurrency(
-        props.tour.base_price,
-        props.tour.currency || tenantCurrency.value,
-    ),
+    formatCurrency(props.tour.base_price, tenantCurrency.value),
 );
 
 /**

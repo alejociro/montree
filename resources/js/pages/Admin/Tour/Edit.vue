@@ -755,7 +755,6 @@ const lastEdited = computed<string | null>(() =>
                 >
                     <TourDeparturesTable
                         :departures="departures"
-                        :currency="props.tour.currency"
                         :duration-hours="props.tour.duration_hours"
                         :fallback-guides="props.departureOptions.guides"
                         :can-view-passengers="canViewPassengers"

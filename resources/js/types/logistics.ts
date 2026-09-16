@@ -28,7 +28,6 @@ export interface TourRef {
     id: number;
     name: string;
     slug: string;
-    currency: string;
 }
 
 export interface LogisticsRef {
@@ -129,7 +128,6 @@ export interface TourDatesGlobalResponse {
 export interface DepartureDefaults {
     guide_id: number | null;
     capacity: number;
-    route_id: number | null;
     base_price: string;
     min_payment_pct: number;
 }

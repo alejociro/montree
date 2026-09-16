@@ -1,4 +1,7 @@
 {
+    "\":name\" dejará de estar disponible para las salidas de este producto.": "\":name\" dejará de estar disponible para las salidas de este producto.",
+    ":list y :count más": ":list y :count más",
+    "Eliminar ruta": "Eliminar ruta",
     "The provided password was incorrect.": "La contraseña no es correcta.",
     "The provided two factor authentication code was invalid.": "El código de verificación no es válido.",
     "The provided two factor recovery code was invalid.": "El código de recuperación no es válido.",
@@ -6,5 +9,5 @@
     "{1}No se puede eliminar: :resource en uso por :count salida.|[2,*]No se puede eliminar: :resource en uso por :count salidas.": "{1}No se puede eliminar: :resource en uso por :count salida.|[2,*]No se puede eliminar: :resource en uso por :count salidas.",
     "{1}No se puede eliminar: el hotel está en uso por :count salida.|[2,*]No se puede eliminar: el hotel está en uso por :count salidas.": "{1}No se puede eliminar: el hotel está en uso por :count salida.|[2,*]No se puede eliminar: el hotel está en uso por :count salidas.",
     "{1}No se puede eliminar: el proveedor está en uso por :count salida.|[2,*]No se puede eliminar: el proveedor está en uso por :count salidas.": "{1}No se puede eliminar: el proveedor está en uso por :count salida.|[2,*]No se puede eliminar: el proveedor está en uso por :count salidas.",
-    "{1}No se puede eliminar: la ruta está en uso por :count salida.|[2,*]No se puede eliminar: la ruta está en uso por :count salidas.": "{1}No se puede eliminar: la ruta está en uso por :count salida.|[2,*]No se puede eliminar: la ruta está en uso por :count salidas."
+    "{1}No se puede eliminar: la ruta está en uso por :count salida (:departures).|[2,*]No se puede eliminar: la ruta está en uso por :count salidas (:departures).": "{1}No se puede eliminar: la ruta está en uso por :count salida (:departures).|[2,*]No se puede eliminar: la ruta está en uso por :count salidas (:departures)."
 }

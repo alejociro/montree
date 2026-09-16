@@ -50,7 +50,7 @@ final class TourShowPageTest extends TestCase
     public function test_admin_sees_the_show_page_with_tour_and_stats_props(): void
     {
         $admin = $this->memberWithRole(UserRole::Admin);
-        $tour = Tour::factory()->create(['currency' => 'USD']);
+        $tour = Tour::factory()->create();
 
         $date = TourDate::factory()->for($tour)->create([
             'capacity' => 10,
@@ -81,7 +81,6 @@ final class TourShowPageTest extends TestCase
             ->where('stats.bookings.pending_payment', 1)
             ->where('stats.travelers_total', 3)
             ->where('stats.revenue_total', '300.00')
-            ->where('stats.currency', 'USD')
             ->where('stats.occupancy_upcoming.booked_total', 4)
             ->where('stats.occupancy_upcoming.capacity_total', 10)
             ->where('stats.occupancy_upcoming.rate', 40)

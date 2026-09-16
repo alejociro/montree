@@ -12,6 +12,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type {
@@ -29,6 +30,7 @@ import type {
  * «Ver detalle».
  */
 const { t } = useTranslations();
+const currency = useTenantCurrency();
 
 type Props = {
     open: boolean;
@@ -141,7 +143,7 @@ const conditions = computed(() => {
                             {{
                                 formatCurrency(
                                     departure.effective_price,
-                                    departure.tour.currency,
+                                    currency,
                                 )
                             }}
                         </p>

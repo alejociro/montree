@@ -8,15 +8,17 @@ import {
 } from 'lucide-vue-next';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { TourDateAdmin } from '@/types/logistics';
 
 type Props = {
     dates: TourDateAdmin[];
-    currency: string;
     /** Sin `bookings.view` no se ofrece el atajo a la planilla (F018). */
     canViewPassengers?: boolean;
 };
+
+const currency = useTenantCurrency();
 
 const props = withDefaults(defineProps<Props>(), {
     canViewPassengers: false,
@@ -115,7 +117,7 @@ const emit = defineEmits<{
                             {{
                                 formatCurrency(
                                     date.effective_price,
-                                    props.currency,
+                                    currency,
                                 )
                             }}
                         </span>

@@ -364,3 +364,35 @@ Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
   y 122 huérfanas del landing, preexistentes a esta rama.
 - `TeamRequestMessagesTest` (×3) sigue rojo por `APP_LOCALE=en` en el `.env` local.
   Preexistente y de entorno: no se tocó.
+
+## Correcciones post-review (smoke B4)
+
+- **P1 — Los precios de producto no seguían la moneda del tenant.** El `currency`
+  del producto dejó de emitirse: `CatalogTourResource`, `PublicTourResource`,
+  `Catalog\UpcomingDepartureResource`, `Admin\TourDateDetailResource`,
+  `Tour\TourResource`, `Tour\TourSummaryResource`, `BuildTourShowStatsAction`,
+  las favoritas de `Api\V1\AccountController` y el `tourDate` de
+  `BookingPagesController`. El front formatea con `useTenantCurrency()` en
+  `HomeTourCard`, `TourCard`, `Home`, `TourBookingCard`, `DepartureBoardTable`,
+  `DepartureDetailSheet`, `TourAdminCard`, `TourUpcomingDatesList`,
+  `TourDeparturesTable`, `Admin/Tour/Show`, `Account/Favorites` y `Booking/Create`;
+  los tipos TS (`catalog`, `tour`, `tour-detail`, `home`, `logistics.TourRef`)
+  perdieron el campo, igual que el prop `currency` de las dos tablas de salidas.
+  Cae también el fallback `'USD'` de `Admin/Tour/Show`. Reservas, pagos,
+  transacciones, cargos de plataforma y tarifas de proveedor/hotel conservan la
+  suya. Test: `tests/Feature/Catalog/TenantCurrencyDrivesPricesTest`.
+- **P2 — Marcar ruta predeterminada no refrescaba `departureDefaults.route_id`.**
+  Se eligió eliminar la duplicación: `DepartureDefaults` ya no lleva `route_id` y
+  `TourDateFormDialog` deriva la predeterminada de `tourRoutes` (`find(is_default)`),
+  que es el mismo array que `TourRoutesPanel` recarga con `only: ['tour']`. Test:
+  `DepartureDefaultsTest` pasa a aseverar sobre `tour.routes[].is_default`.
+- **P2 — `window.confirm()` al eliminar rutas.** `TourRoutesPanel` usa el `Dialog`
+  destructivo del panel (el mismo patrón que «Cancelar salida» en `Admin/Tour/Edit`).
+- **Mensaje de ruta en uso (criterio I).**
+  `LogisticsRecordInUseException::routeUsedByDepartures()` recibe las fechas de las
+  salidas (`d/m/Y H:i`, las 3 primeras y «y N más») en vez de solo contarlas. Test:
+  `DeleteRouteWithDeparturesTest` cubre 1 salida y el resumen con 4.
+- `lang/{en,es}.json`: la clave del rechazo cambia de forma (`:departures`) y entran
+  `:list y :count más`, `Eliminar ruta` y el texto del diálogo. `TranslationCatalogTest`
+  sigue en las mismas 188/122 preexistentes del landing, y `TeamRequestMessagesTest`
+  (×3) en su fallo de entorno.

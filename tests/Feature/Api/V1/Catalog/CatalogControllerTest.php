@@ -52,7 +52,7 @@ class CatalogControllerTest extends TestCase
         $response->assertJsonPath('data.0.has_future_dates', true);
         $response->assertJsonPath('data.0.is_favorite', false);
         $response->assertJsonStructure([
-            'data' => [['id', 'slug', 'name', 'base_price', 'currency', 'rating_average', 'next_date_starts_at']],
+            'data' => [['id', 'slug', 'name', 'base_price', 'rating_average', 'next_date_starts_at']],
             'meta' => ['current_page', 'per_page', 'total'],
             'links',
         ]);

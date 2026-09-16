@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApi } from '@/composables/useApi';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { formatTourDate, formatCurrency as money } from '@/lib/format';
@@ -21,6 +22,7 @@ import { terms as termsRoute } from '@/routes/policies';
 import type { TourDifficulty } from '@/types/tour';
 
 const { t } = useTranslations();
+const currency = useTenantCurrency();
 
 defineOptions({ layout: PublicLayout });
 
@@ -42,7 +44,6 @@ type TourDate = {
     ends_at: string | null;
     effective_price: string;
     available_seats: number;
-    currency: string;
     min_payment_pct: number;
 };
 
@@ -168,7 +169,7 @@ const balanceAfterPayment = computed(() =>
 );
 
 function formatMoney(amount: number): string {
-    return money(amount, props.tourDate.currency);
+    return money(amount, currency.value);
 }
 
 const difficultyLabel = computed(() => {

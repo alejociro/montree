@@ -7,6 +7,7 @@ namespace App\Actions\Tour;
 use App\Enums\TourDateStatus;
 use App\Exceptions\LogisticsRecordInUseException;
 use App\Models\Route;
+use App\Models\TourDate;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,9 +22,12 @@ final class DeleteRouteAction
         $operating = $route->tourDates()
             ->where('starts_at', '>', now())
             ->where('status', '!=', TourDateStatus::Cancelled)
-            ->count();
+            ->orderBy('starts_at')
+            ->get(['id', 'starts_at'])
+            ->map(fn (TourDate $departure): string => $departure->starts_at->format('d/m/Y H:i'))
+            ->all();
 
-        if ($operating > 0) {
+        if ($operating !== []) {
             throw LogisticsRecordInUseException::routeUsedByDepartures($operating);
         }
 

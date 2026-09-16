@@ -19,12 +19,14 @@ import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { DepartureRange } from '@/types/guide-availability';
 import type { LogisticsRef, TourDateAdmin } from '@/types/logistics';
 
 const { t } = useTranslations();
+const currency = useTenantCurrency();
 
 /**
  * Las salidas del tour dentro de su pantalla de edición: cuándo, cuánta
@@ -37,7 +39,6 @@ const { t } = useTranslations();
  */
 type Props = {
     departures: TourDateAdmin[];
-    currency: string;
     durationHours: number | null;
     /** Se ofrecen mientras la agenda no responde; el servidor sigue validando. */
     fallbackGuides?: LogisticsRef[];
@@ -165,7 +166,7 @@ function assignGuide(departure: TourDateAdmin, guideId: number | null): void {
 }
 
 function priceLabel(departure: TourDateAdmin): string {
-    return formatCurrency(departure.effective_price, props.currency);
+    return formatCurrency(departure.effective_price, currency.value);
 }
 </script>
 

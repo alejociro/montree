@@ -16,6 +16,8 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
  */
 final class LogisticsRecordInUseException extends RuntimeException implements HttpExceptionInterface
 {
+    private const MAX_LISTED_DEPARTURES = 3;
+
     public function getStatusCode(): int
     {
         return 409;
@@ -29,13 +31,31 @@ final class LogisticsRecordInUseException extends RuntimeException implements Ht
         return [];
     }
 
-    public static function routeUsedByDepartures(int $count): self
+    /**
+     * @param  list<string>  $departures  fechas de las salidas que la retienen
+     */
+    public static function routeUsedByDepartures(array $departures): self
     {
         return new self(trans_choice(
-            '{1}No se puede eliminar: la ruta está en uso por :count salida.|[2,*]No se puede eliminar: la ruta está en uso por :count salidas.',
-            $count,
-            ['count' => $count],
+            '{1}No se puede eliminar: la ruta está en uso por :count salida (:departures).|[2,*]No se puede eliminar: la ruta está en uso por :count salidas (:departures).',
+            count($departures),
+            ['count' => count($departures), 'departures' => self::summarize($departures)],
         ));
+    }
+
+    /**
+     * @param  list<string>  $departures
+     */
+    private static function summarize(array $departures): string
+    {
+        $listed = array_slice($departures, 0, self::MAX_LISTED_DEPARTURES);
+        $rest = count($departures) - count($listed);
+
+        if ($rest === 0) {
+            return implode(', ', $listed);
+        }
+
+        return __(':list y :count más', ['list' => implode(', ', $listed), 'count' => $rest]);
     }
 
     public static function hotelUsedByDepartures(int $count): self

@@ -40,7 +40,6 @@ final class TourDateDetailResource extends JsonResource
                 'id' => $this->tour->id,
                 'name' => $this->tour->name,
                 'slug' => $this->tour->slug,
-                'currency' => $this->tour->currency,
             ]),
             'guide' => $this->whenLoaded('guide', fn () => $this->guide
                 ? ['id' => $this->guide->id, 'name' => $this->guide->name]

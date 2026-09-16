@@ -70,7 +70,6 @@ export type TourDetail = {
     short_description: string | null;
     description: string;
     base_price: string;
-    currency: string;
     duration_hours: number;
     difficulty: 'easy' | 'moderate' | 'hard' | 'extreme';
     default_capacity: number;

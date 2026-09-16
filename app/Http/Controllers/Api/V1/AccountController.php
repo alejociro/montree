@@ -82,7 +82,6 @@ final class AccountController extends Controller
                         'slug' => $f->tour->slug,
                         'name' => $f->tour->name,
                         'base_price' => $f->tour->base_price,
-                        'currency' => $f->tour->currency,
                         'rating_average' => $f->tour->rating_average,
                         'cover_image_url' => $cover?->path,
                         'is_available' => $f->tour->status->value === 'active',

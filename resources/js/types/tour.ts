@@ -54,7 +54,6 @@ export type TourSummary = {
     short_description: string | null;
     status: TourStatus;
     base_price: string;
-    currency: string;
     duration_hours: number;
     difficulty: TourDifficulty;
     default_capacity: number;
@@ -80,7 +79,6 @@ export type Tour = {
     category: TourCategory | null;
     default_guide_id: number | null;
     base_price: string;
-    currency: string;
     duration_hours: number;
     difficulty: TourDifficulty;
     default_capacity: number;
@@ -200,7 +198,6 @@ export type TourShowStats = {
     };
     travelers_total: number;
     revenue_total: string;
-    currency: string;
     occupancy_upcoming: {
         booked_total: number;
         capacity_total: number;

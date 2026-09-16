@@ -13,6 +13,7 @@ import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import {
     formatCurrency,
@@ -31,6 +32,7 @@ import type {
  * que es quien tiene los formularios.
  */
 const { t } = useTranslations();
+const currency = useTenantCurrency();
 
 type Props = {
     departures: TourDateGlobalAdmin[];
@@ -86,7 +88,7 @@ function subtitleFor(date: TourDateGlobalAdmin): string {
 }
 
 function priceLabel(date: TourDateGlobalAdmin): string {
-    return formatCurrency(date.effective_price, date.tour.currency);
+    return formatCurrency(date.effective_price, currency.value);
 }
 
 function occupancyPercent(date: TourDateGlobalAdmin): number {

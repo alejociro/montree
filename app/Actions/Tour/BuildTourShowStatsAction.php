@@ -20,7 +20,6 @@ final class BuildTourShowStatsAction
      *     bookings: array{total: int, confirmed: int, pending_payment: int, cancelled: int},
      *     travelers_total: int,
      *     revenue_total: string,
-     *     currency: string,
      *     occupancy_upcoming: array{booked_total: int, capacity_total: int, rate: int},
      *     upcoming_dates_count: int,
      *     next_date_starts_at: string|null,
@@ -68,7 +67,6 @@ final class BuildTourShowStatsAction
             ],
             'travelers_total' => (int) $travelersTotal,
             'revenue_total' => number_format((float) $revenue, 2, '.', ''),
-            'currency' => $tour->currency,
             'occupancy_upcoming' => [
                 'booked_total' => $bookedTotal,
                 'capacity_total' => $capacityTotal,

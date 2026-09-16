@@ -224,7 +224,6 @@ class HomePageTest extends TestCase
         $this->assertCount(2, $response->json('props.upcomingDepartures'));
         $response->assertJsonPath('props.upcomingDepartures.0.tour.name', 'Cañón Amanecer');
         $response->assertJsonPath('props.upcomingDepartures.0.tour.slug', 'canon-amanecer');
-        $response->assertJsonPath('props.upcomingDepartures.0.tour.currency', 'USD');
         $response->assertJsonPath('props.upcomingDepartures.0.available_seats', 8);
         $response->assertJsonPath('props.upcomingDepartures.0.effective_price', '950.00');
         $response->assertJsonPath('props.upcomingDepartures.1.tour.name', 'Selva Nocturna');
@@ -235,7 +234,7 @@ class HomePageTest extends TestCase
             array_keys($item),
         );
         $this->assertEqualsCanonicalizing(
-            ['name', 'slug', 'currency', 'cover_image_url'],
+            ['name', 'slug', 'cover_image_url'],
             array_keys($item['tour']),
         );
         $this->assertArrayNotHasKey('notes', $item);

@@ -27,7 +27,6 @@ final class UpcomingDepartureResource extends JsonResource
             'tour' => [
                 'name' => $this->tour->name,
                 'slug' => $this->tour->slug,
-                'currency' => $this->tour->currency,
                 'cover_image_url' => $this->tour->coverImage?->url,
             ],
         ];

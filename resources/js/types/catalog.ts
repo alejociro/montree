@@ -14,7 +14,6 @@ export type CatalogTour = {
     name: string;
     short_description: string | null;
     base_price: string;
-    currency: string;
     duration_hours: number;
     difficulty: TourDifficulty;
     default_capacity: number;

@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useTenantCurrency } from '@/composables/useTenant';
 import { intlLocale } from '@/lib/format';
 
 type FavoriteItem = {
@@ -12,13 +13,13 @@ type FavoriteItem = {
         slug: string;
         name: string;
         base_price: string;
-        currency: string;
         rating_average: string;
         cover_image_url: string | null;
         is_available: boolean;
     };
 };
 
+const currency = useTenantCurrency();
 const items = ref<FavoriteItem[]>([]);
 const loading = ref(true);
 
@@ -35,10 +36,10 @@ onMounted(async () => {
     }
 });
 
-function formatPrice(amount: string, currency: string) {
+function formatPrice(amount: string) {
     return new Intl.NumberFormat(intlLocale(), {
         style: 'currency',
-        currency,
+        currency: currency.value,
         maximumFractionDigits: 0,
     }).format(Number(amount));
 }
@@ -115,7 +116,7 @@ function formatPrice(amount: string, currency: string) {
                         }}</Badge>
                     </div>
                     <p class="text-sm font-semibold text-primary-readable">
-                        {{ formatPrice(f.tour.base_price, f.tour.currency) }}
+                        {{ formatPrice(f.tour.base_price) }}
                     </p>
                     <p class="text-xs text-muted-foreground">
                         {{ f.tour.rating_average }} ★
