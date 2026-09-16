@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $position
  * @property string $name
  * @property TourStopKind $kind
+ * @property string|null $latitude
+ * @property string|null $longitude
  * @property string|null $time_label
  */
 final class RouteStop extends Model
@@ -28,6 +30,8 @@ final class RouteStop extends Model
         'position',
         'name',
         'kind',
+        'latitude',
+        'longitude',
         'time_label',
     ];
 
@@ -36,6 +40,8 @@ final class RouteStop extends Model
         return [
             'position' => 'integer',
             'kind' => TourStopKind::class,
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 

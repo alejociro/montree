@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\Tour\TourStopResource;
+use App\Models\Route;
+use App\Models\RouteStop;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\TourImage;
 use App\Services\Catalog\RatingDistribution;
 use Illuminate\Http\Request;
@@ -74,8 +77,40 @@ final class PublicTourResource extends JsonResource
                 'available_seats' => max(0, $d->capacity - $d->booked_count),
                 'is_full' => $d->booked_count >= $d->capacity,
                 'status' => $d->status->value,
+                'route' => $this->routeOf($d),
+                'guide' => $d->guide === null ? null : ['name' => $d->guide->name],
             ])->values(),
             'is_favorite' => (bool) ($this->is_favorite ?? false),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function routeOf(TourDate $departure): ?array
+    {
+        $route = $departure->route;
+
+        if (! $route instanceof Route) {
+            return null;
+        }
+
+        return [
+            'id' => $route->id,
+            'name' => $route->name,
+            'kind' => $route->kind?->value,
+            'difficulty' => $route->difficulty?->value,
+            'distance_km' => $route->distance_km,
+            'duration_hours' => $route->duration_hours,
+            'description' => $route->description,
+            'stops' => $route->stops->map(fn (RouteStop $stop) => [
+                'position' => $stop->position,
+                'name' => $stop->name,
+                'kind' => $stop->kind->value,
+                'time_label' => $stop->time_label,
+                'latitude' => $stop->latitude,
+                'longitude' => $stop->longitude,
+            ])->values(),
         ];
     }
 }

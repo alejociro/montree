@@ -3,6 +3,7 @@ import {
     TOUR_STATUS_VALUES,
 } from '@/types/enums.generated';
 import type { TourDifficulty, TourStatus } from '@/types/enums.generated';
+import type { TourRouteRef } from '@/types/logistics';
 
 // WHY: los valores salen de `enums.generated.ts` (`php artisan enums:typescript`),
 // no de un espejo escrito a mano que se desincroniza en silencio.
@@ -94,6 +95,8 @@ export type Tour = {
     images: TourImage[];
     itinerary: TourItineraryStep[];
     stops: TourStop[];
+    /** Rutas del catálogo de logística que este producto puede operar. */
+    routes: TourRouteRef[];
     /**
      * Checklist «Para publicar» calculado por el servidor, que es quien rechaza
      * la activación. La pantalla puede recalcular `done` sobre lo que hay en el
@@ -167,6 +170,13 @@ export type TourFormPayload = {
     requirements: string[];
     itinerary: TourItineraryDraft[];
     stops: TourStopDraft[];
+    routes: TourRouteSelection[];
+};
+
+/** Fila de la sección «Rutas» del formulario de producto. */
+export type TourRouteSelection = {
+    id: number;
+    is_default: boolean;
 };
 
 /**
@@ -328,6 +338,7 @@ export const TOUR_FORM_STEP_IDS = [
     'pricing',
     'detail',
     'route',
+    'routes',
     'gallery',
 ] as const;
 

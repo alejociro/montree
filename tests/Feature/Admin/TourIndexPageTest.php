@@ -9,17 +9,20 @@ use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
 use App\Enums\UserRole;
 use App\Models\Booking;
+use App\Models\Category;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * KPIs del listado del panel. El dinero de los pasajeros —`pending_balance`— es
+ * Props de `Admin/Tour/Index`: el listado y sus filtros ya salen del servidor,
+ * y los KPIs lo acompañan. El dinero de los pasajeros —`pending_balance`— es
  * el único bloque con permiso propio: sin `bookings.view` no viaja, y no viaja
  * en cero.
  */
@@ -49,6 +52,33 @@ final class TourIndexPageTest extends TestCase
         setPermissionsTeamId(0);
 
         parent::tearDown();
+    }
+
+    /**
+     * El listado dejó de pedirse por XHR: la página nace con el paginador, los
+     * filtros normalizados y el catálogo de categorías.
+     */
+    public function test_the_index_page_carries_the_paginated_tours_filters_and_categories(): void
+    {
+        $admin = $this->memberWithRole(UserRole::Admin);
+        $category = Category::factory()->create(['name' => 'Senderismo']);
+        Tour::factory()->count(2)->create(['category_id' => $category->id]);
+
+        $response = $this->actingAs($admin)->get('http://demo.montree.test/admin/tours');
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Admin/Tour/Index', false)
+            ->has('tours.data', 2)
+            ->has('tours.meta')
+            ->has('tours.links')
+            ->has('categories', 1)
+            ->where('filters.status', null)
+            ->where('filters.category_id', null)
+            ->where('filters.search', null)
+            ->where('filters.sort', 'created_at')
+            ->where('filters.direction', 'desc')
+        );
     }
 
     public function test_admin_sees_the_index_stats_of_the_current_tenant(): void

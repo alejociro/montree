@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Tour;
 
+use App\Data\Tour\TourRoutesData;
 use App\Models\Tour;
 use App\Services\Tour\TourSlugGenerator;
 use Illuminate\Support\Facades\DB;
@@ -14,14 +15,15 @@ final class UpdateTourAction
         private TourSlugGenerator $slugGenerator,
         private SyncTourItineraryAction $syncItinerary,
         private SyncTourStopsAction $syncStops,
+        private SyncTourRoutesAction $syncRoutes,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(Tour $tour, array $data): Tour
+    public function execute(Tour $tour, array $data, ?TourRoutesData $routes = null): Tour
     {
-        return DB::transaction(function () use ($tour, $data): Tour {
+        return DB::transaction(function () use ($tour, $data, $routes): Tour {
             $payload = $this->withoutRelations($data);
 
             if (isset($payload['name']) && $payload['name'] !== $tour->name) {
@@ -39,6 +41,10 @@ final class UpdateTourAction
                 $this->syncStops->handle($tour, $data['stops']);
             }
 
+            if ($routes !== null) {
+                $this->syncRoutes->execute($tour, $routes);
+            }
+
             return $tour->fresh(['category', 'images', 'itineraries', 'stops']) ?? $tour;
         });
     }
@@ -49,7 +55,7 @@ final class UpdateTourAction
      */
     private function withoutRelations(array $data): array
     {
-        unset($data['itinerary'], $data['stops']);
+        unset($data['itinerary'], $data['stops'], $data['routes']);
 
         return $data;
     }

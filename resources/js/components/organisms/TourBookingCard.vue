@@ -39,14 +39,21 @@ const bookingUrl = computed(() =>
 );
 
 function dateOptionLabel(date: TourDetailDate): string {
-    return t(':date · :seats cupos · :price', {
+    const replacements = {
         date: formatTourDate(date.starts_at, {
             withWeekday: true,
             withTime: true,
         }),
         seats: date.available_seats,
         price: formatCurrency(date.effective_price, props.tour.currency),
-    });
+    };
+
+    return date.route === null
+        ? t(':date · :seats cupos · :price', replacements)
+        : t(':date · :route · :seats cupos · :price', {
+              ...replacements,
+              route: date.route.name,
+          });
 }
 </script>
 

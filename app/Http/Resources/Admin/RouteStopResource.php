@@ -23,6 +23,8 @@ final class RouteStopResource extends JsonResource
             'position' => $this->position,
             'name' => $this->name,
             'kind' => $this->kind->value,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'time_label' => $this->time_label,
         ];
     }

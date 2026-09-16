@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { router, usePage } from '@inertiajs/vue3';
 import {
     Building2,
     ChevronLeft,
@@ -9,18 +10,17 @@ import {
     Trash2,
     Truck,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import HotelController from '@/actions/App/Http/Controllers/Api/V1/Admin/HotelController';
-import ProviderController from '@/actions/App/Http/Controllers/Api/V1/Admin/ProviderController';
-import RouteController from '@/actions/App/Http/Controllers/Api/V1/Admin/RouteController';
+import HotelController from '@/actions/App/Http/Controllers/Admin/HotelController';
+import { index as logisticsIndex } from '@/actions/App/Http/Controllers/Admin/LogisticsPagesController';
+import ProviderController from '@/actions/App/Http/Controllers/Admin/ProviderController';
+import RouteController from '@/actions/App/Http/Controllers/Admin/RouteController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import LogisticsRecordDialog from '@/components/organisms/LogisticsRecordDialog.vue';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import { factsFor, localityOf } from '@/lib/logistics';
 import type {
@@ -31,8 +31,9 @@ import type {
 
 const { t } = useTranslations();
 
-type CrudController = {
-    index: (options?: { query?: Record<string, string> }) => { url: string };
+const page = usePage();
+
+type CrudRoutes = {
     store: () => { url: string };
     update: (id: number) => { url: string };
     destroy: (id: number) => { url: string };
@@ -40,20 +41,15 @@ type CrudController = {
 
 type Props = {
     kind: LogisticsResourceKind;
+    /** La página trae los tres catálogos: el panel solo pinta el suyo. */
+    records: LogisticsRecord[];
+    meta: PaginationMeta;
+    /** Página propia de este catálogo: los tres viajan juntos y paginan aparte. */
+    pageName: 'routes_page' | 'providers_page' | 'hotels_page';
     emptyLabel: string;
-    /**
-     * El buscador vive en la barra de filtros de la página, encima de las
-     * pestañas: es uno solo para los tres catálogos, como pide el sistema de
-     * diseño. El panel solo lo consume.
-     */
-    search?: string;
 };
 
-const props = withDefaults(defineProps<Props>(), { search: '' });
-
-const emit = defineEmits<{
-    (e: 'update:count', value: number): void;
-}>();
+const props = defineProps<Props>();
 
 /** Icono de la ficha, por tipo de recurso. */
 const KIND_ICONS = {
@@ -95,12 +91,20 @@ const KIND_COPY: Record<
     },
 };
 
+/**
+ * Una ficha en uso no se borra: el servidor vuelve con el motivo bajo esta
+ * clave —quién la usa— y aquí se cuenta como aviso, no como campo en rojo.
+ */
+const BLOCKED_ERROR_KEYS: Record<LogisticsResourceKind, string> = {
+    routes: 'route',
+    providers: 'provider',
+    hotels: 'hotel',
+};
+
 const copy = computed(() => KIND_COPY[props.kind]);
 const newLabel = computed(() => t(copy.value.new));
 
-const api = useApi();
-
-const controllers: Record<LogisticsResourceKind, CrudController> = {
+const controllers: Record<LogisticsResourceKind, CrudRoutes> = {
     routes: RouteController,
     providers: ProviderController,
     hotels: HotelController,
@@ -108,118 +112,54 @@ const controllers: Record<LogisticsResourceKind, CrudController> = {
 
 const controller = controllers[props.kind];
 
-const records = ref<LogisticsRecord[]>([]);
-const meta = ref<PaginationMeta | null>(null);
-const loading = ref(true);
-const loadError = ref(false);
-const page = ref(1);
-let searchTimer: ReturnType<typeof setTimeout> | null = null;
-
 const dialogOpen = ref(false);
 const editing = ref<LogisticsRecord | null>(null);
-const processing = ref(false);
-const errors = ref<ApiErrors>({});
 
-async function load(): Promise<void> {
-    loading.value = true;
-    loadError.value = false;
+const dialogAction = computed<{ url: string; method: 'post' | 'put' }>(() => {
+    const record = editing.value;
 
-    try {
-        const query: Record<string, string> = { page: String(page.value) };
-        const term = props.search.trim();
-
-        if (term !== '') {
-            query.search = term;
-        }
-
-        const response = await fetch(controller.index({ query }).url, {
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json' },
-        });
-        const json = (await response.json()) as {
-            data: LogisticsRecord[];
-            meta: PaginationMeta;
-        };
-        records.value = json.data;
-        meta.value = json.meta;
-        emit('update:count', json.meta?.total ?? json.data.length);
-    } catch {
-        loadError.value = true;
-    } finally {
-        loading.value = false;
-    }
-}
-
-watch(
-    () => props.search,
-    () => {
-        if (searchTimer) {
-            clearTimeout(searchTimer);
-        }
-
-        searchTimer = setTimeout(() => {
-            // Un término nuevo empieza en la primera página: si no, buscar
-            // desde la página 3 devolvía una rejilla vacía.
-            page.value = 1;
-            void load();
-        }, 300);
-    },
-);
+    return record === null
+        ? { url: controller.store().url, method: 'post' }
+        : { url: controller.update(record.id).url, method: 'put' };
+});
 
 function goToPage(next: number): void {
-    if (meta.value === null || next < 1 || next > meta.value.last_page) {
+    if (next < 1 || next > props.meta.last_page) {
         return;
     }
 
-    page.value = next;
-    void load();
+    router.get(
+        logisticsIndex.url({ mergeQuery: { [props.pageName]: next } }),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: [props.kind],
+        },
+    );
 }
 
 function openCreate(): void {
     editing.value = null;
-    errors.value = {};
     dialogOpen.value = true;
 }
 
 function openEdit(record: LogisticsRecord): void {
     editing.value = record;
-    errors.value = {};
     dialogOpen.value = true;
 }
 
-function submit(payload: Record<string, unknown>): void {
-    if (processing.value) {
-        return;
-    }
+function onSaved(): void {
+    const created = editing.value === null;
 
-    processing.value = true;
-    errors.value = {};
-    const record = editing.value;
+    dialogOpen.value = false;
+    editing.value = null;
 
-    const options = {
-        onSuccess: () => {
-            toast.success(
-                record === null ? t(copy.value.created) : t(copy.value.updated),
-            );
-            dialogOpen.value = false;
-            void load();
-        },
-        onError: (received: ApiErrors) => {
-            errors.value = received;
-            toast.error(received._global ?? t('Revisa los campos marcados.'));
-        },
-        onFinish: () => {
-            processing.value = false;
-        },
-    };
-
-    if (record === null) {
-        void api.post(controller.store().url, payload, options);
-
-        return;
-    }
-
-    void api.put(controller.update(record.id).url, payload, options);
+    toast.success(
+        page.props.flash.success ??
+            t(created ? copy.value.created : copy.value.updated),
+    );
 }
 
 function remove(record: LogisticsRecord): void {
@@ -227,13 +167,17 @@ function remove(record: LogisticsRecord): void {
         return;
     }
 
-    void api.delete(controller.destroy(record.id).url, {
+    router.delete(controller.destroy(record.id).url, {
+        preserveScroll: true,
+        preserveState: true,
         onSuccess: () => {
-            toast.success(t(copy.value.deleted));
-            void load();
+            toast.success(page.props.flash.success ?? t(copy.value.deleted));
         },
-        onError: (received) => {
-            toast.error(received._global ?? t('No se pudo eliminar.'));
+        onError: (errors) => {
+            toast.error(
+                errors[BLOCKED_ERROR_KEYS[props.kind]] ||
+                    t('No se pudo eliminar.'),
+            );
         },
     });
 }
@@ -246,37 +190,15 @@ function descriptionOf(record: LogisticsRecord): string | null {
 }
 
 defineExpose({ openCreate });
-
-onMounted(load);
 </script>
 
 <template>
     <div>
-        <div v-if="loading" class="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
-            <div
-                v-for="n in 3"
-                :key="n"
-                class="h-52 animate-pulse rounded-2xl bg-muted"
-            />
-        </div>
-
-        <div
-            v-else-if="loadError"
-            class="rounded-2xl border border-destructive/40 bg-destructive/5 p-6 text-center"
-        >
-            <p class="text-sm text-destructive">
-                {{ $t('No se pudo cargar el catálogo.') }}
-            </p>
-            <Button variant="outline" size="sm" class="mt-3" @click="load">
-                {{ $t('Reintentar') }}
-            </Button>
-        </div>
-
         <!--
           Fichas en rejilla, no filas: cada una tiene que decir algo operativo
           —distancia, NIT, tarifa, vencimiento— y no solo el nombre.
         -->
-        <div v-else class="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
+        <div class="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             <article
                 v-for="record in records"
                 :key="record.id"
@@ -388,7 +310,7 @@ onMounted(load);
           fichas por página. Sin esto, la ficha 13 no existía para el usuario.
         -->
         <div
-            v-if="meta && meta.last_page > 1"
+            v-if="meta.last_page > 1"
             class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-[13px]"
         >
             <span class="text-muted-foreground">
@@ -429,9 +351,8 @@ onMounted(load);
             v-model:open="dialogOpen"
             :kind="props.kind"
             :record="editing"
-            :processing="processing"
-            :errors="errors"
-            @submit="submit"
+            :action="dialogAction"
+            @saved="onSaved"
         />
     </div>
 </template>

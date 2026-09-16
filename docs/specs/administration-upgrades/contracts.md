@@ -224,3 +224,49 @@ Lecturas auxiliares que se conservan como API porque las consume un buscador as�
 - `2026-09-15` (B2) — se comparte la prop Inertia `csrfToken`. El «entrar al
   tenant» es un `<form method="post" target="_blank">` nativo y necesita el token
   en un input; Inertia solo lo pone en la cabecera de sus propias visitas.
+- `2026-09-15` (B3) — `route_tour` no lleva `tenant_id`: el aislamiento lo ponen los
+  dos extremos (`tours` y `routes` son tenant-scoped) y una columna más sería un
+  tercer sitio donde el dato puede quedar desalineado. `routes.*.id` se valida con
+  `exists:routes,id` acotado al tenant actual.
+- `2026-09-15` (B3) — un producto puede tener rutas **sin** predeterminada. El §5
+  no lo decía y la action no elige una por descarte: es lo que hace posible el edge
+  case «ruta predeterminada eliminada del producto → la próxima salida se crea sin
+  ruta preseleccionada».
+- `2026-09-15` (B3) — `departureDefaults` viaja embebido por producto en el tablero
+  de salidas (`tours[].departure_defaults` + `tours[].routes`), y como prop suelta
+  solo en `Admin/Tour/Edit`, donde el producto es uno. Son seis escalares más la
+  lista de rutas —que el selector necesita igual—, así que resolverlos con
+  `router.reload({ only })` en cada apertura del diálogo sería un viaje por nada.
+- `2026-09-15` (B3) — el diálogo de salida recibe `tourRoutes`; en `Admin/Tour/Edit`
+  la página se lo pasa desde `tour.routes` en vez de duplicar el array en una prop
+  propia.
+- `2026-09-15` (B3) — las reglas de negocio de producto y salida dejan de responder
+  409/403 JSON y vuelven con `back()->withErrors()`, que es lo que el §1 pide: límite
+  de plan → `plan`; transición de estado inválida, falta de imagen o de guía →
+  `status`; borrar un producto con reservas activas → `tour`; salida cancelada o con
+  reservas → `tour_date`; ruta/proveedor/hotel en uso → `route`/`provider`/`hotel`.
+  `App\Exceptions\LogisticsException` se elimina: era el 409 de logística y ya no
+  lo consume nadie.
+- `2026-09-15` (B3) — `GET /admin/tours` valida `sort` contra
+  `created_at|name|base_price|status|next_departure|occupancy|revenue` y `direction`
+  contra `asc|desc`; un valor fuera de lista es 422. El `per_page` del endpoint API
+  desaparece con él: la rejilla pagina de a 9 y el tablero de salidas de a 15.
+- `2026-09-15` (B3) — `GET /admin/logistics` sirve los **tres** catálogos en la misma
+  visita, con paginadores independientes (`routes_page`, `providers_page`,
+  `hotels_page`, 12 por página) y un solo `search`. El §5 hablaba de «paginados» sin
+  decir que la pestaña necesita el conteo de las tres bandejas para ser útil.
+- `2026-09-15` (B3) — `RouteResource` suma `tours_count` (los productos también
+  bloquean el borrado) y `RouteStopResource` suma `latitude`/`longitude`.
+  `TourResource` suma `routes` (`TourRouteRef[]`) cuando la relación está cargada.
+- `2026-09-15` (B3) — `Admin/Tour/Show` suma la prop `departures` (solo futuras) y
+  `Admin/Tour/Edit` las props `departures`, `departureOptions` y `availableRoutes`:
+  al desaparecer `useTourDepartures.ts` esas listas ya no se pueden pedir desde el
+  componente.
+- `2026-09-15` (B3) — `PATCH /admin/tours/{tour}/images/{image}` conserva el verbo
+  de la API (no lleva archivo); el alta sigue siendo `POST` multipart.
+- `2026-09-15` (B3) — la clave del global scope de tenant vive en
+  `App\Models\Tenant::SCOPE` y no en el trait: PHP no deja leer una constante de
+  trait por el nombre del trait, que era la forma que pedía la tarea.
+- `2026-09-15` (B3) — `tours[].duration_hours` viaja en el tablero de salidas: el
+  diálogo deriva el fin de la salida con la duración del producto y, al crear desde
+  el tablero, no tiene otra fuente.

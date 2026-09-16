@@ -3,7 +3,6 @@
 use App\Exceptions\BookingException;
 use App\Exceptions\CrossTenantAccessException;
 use App\Exceptions\InvalidTourStatusTransitionException;
-use App\Exceptions\LogisticsException;
 use App\Exceptions\NewsletterException;
 use App\Exceptions\PaymentException;
 use App\Exceptions\PlanLimitReachedException;
@@ -120,7 +119,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (NewsletterException $e) => $e->toResponse());
         $exceptions->render(fn (TeamException $e) => $e->toResponse());
         $exceptions->render(fn (TourDateException $e) => $e->toResponse());
-        $exceptions->render(fn (LogisticsException $e) => $e->toResponse());
         $exceptions->render(fn (CrossTenantAccessException $e) => $e->toResponse());
         $exceptions->render(fn (RoleException $e) => $e->toResponse());
 

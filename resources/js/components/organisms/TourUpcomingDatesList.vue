@@ -6,16 +6,13 @@ import {
     Truck,
     UserRound,
 } from 'lucide-vue-next';
-import { onMounted, ref } from 'vue';
-import { index as datesIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
-import { Button } from '@/components/ui/button';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { TourDateAdmin } from '@/types/logistics';
 
 type Props = {
-    tourId: number;
+    dates: TourDateAdmin[];
     currency: string;
     /** Sin `bookings.view` no se ofrece el atajo a la planilla (F018). */
     canViewPassengers?: boolean;
@@ -33,63 +30,12 @@ const emit = defineEmits<{
     (e: 'view-passengers', dateId: number): void;
 }>();
 
-const dates = ref<TourDateAdmin[]>([]);
-const loading = ref(true);
-const loadError = ref(false);
-
-async function loadDates(): Promise<void> {
-    loading.value = true;
-    loadError.value = false;
-
-    try {
-        const response = await fetch(
-            datesIndex(props.tourId, { query: { scope: 'upcoming' } }).url,
-            {
-                credentials: 'same-origin',
-                headers: { Accept: 'application/json' },
-            },
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const json = (await response.json()) as { data: TourDateAdmin[] };
-        dates.value = json.data;
-    } catch {
-        loadError.value = true;
-    } finally {
-        loading.value = false;
-    }
-}
-
-onMounted(loadDates);
 </script>
 
 <template>
     <div>
-        <div v-if="loading" class="space-y-3">
-            <div
-                v-for="n in 3"
-                :key="n"
-                class="h-20 animate-pulse rounded-xl bg-muted"
-            />
-        </div>
-
         <div
-            v-else-if="loadError"
-            class="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
-        >
-            <p class="text-sm text-destructive">
-                {{ $t('No se pudieron cargar las salidas.') }}
-            </p>
-            <Button variant="outline" size="sm" class="mt-3" @click="loadDates">
-                {{ $t('Reintentar') }}
-            </Button>
-        </div>
-
-        <div
-            v-else-if="dates.length === 0"
+            v-if="dates.length === 0"
             class="rounded-xl border border-dashed border-border p-8 text-center"
         >
             <CalendarClock class="mx-auto size-8 text-muted-foreground/40" />

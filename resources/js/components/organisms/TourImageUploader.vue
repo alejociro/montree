@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { ImagePlus, Loader2, Star, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     destroy as destroyImage,
     store as storeImage,
     update as updateImage,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/TourImageController';
+} from '@/actions/App/Http/Controllers/Admin/TourImageController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +18,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 import type { TourImage } from '@/types/tour';
@@ -33,33 +32,36 @@ type Props = {
 const props = defineProps<Props>();
 
 const fileInput = ref<HTMLInputElement | null>(null);
-const isUploading = ref(false);
 const dragging = ref(false);
-const api = useApi();
+
+const uploadForm = useForm({ image: null as File | null });
+const coverForm = useForm({ is_cover: true });
+const removeForm = useForm({});
+const isUploading = computed(() => uploadForm.processing);
 
 function openFilePicker(): void {
     fileInput.value?.click();
 }
 
-async function onFileSelected(event: Event): Promise<void> {
+function onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
     if (file) {
-        await upload(file);
+        upload(file);
     }
 
     input.value = '';
 }
 
-async function onDrop(event: DragEvent): Promise<void> {
+function onDrop(event: DragEvent): void {
     event.preventDefault();
     dragging.value = false;
 
     const file = event.dataTransfer?.files?.[0];
 
     if (file) {
-        await upload(file);
+        upload(file);
     }
 }
 
@@ -72,25 +74,18 @@ function onDragLeave(): void {
     dragging.value = false;
 }
 
-async function upload(file: File): Promise<void> {
-    isUploading.value = true;
+function upload(file: File): void {
+    uploadForm.image = file;
 
-    const action = storeImage({ tour: props.tourId });
-    const formData = new FormData();
-    formData.append('image', file);
-
-    await api.post(action.url, formData, {
+    uploadForm.post(storeImage({ tour: props.tourId }).url, {
+        preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             toast.success(t('Imagen subida.'));
-            router.reload({ only: ['tour'] });
+            uploadForm.reset();
         },
         onError: (errors) => {
-            const message =
-                Object.values(errors)[0] ?? t('No se pudo subir la imagen');
-            toast.error(message);
-        },
-        onFinish: () => {
-            isUploading.value = false;
+            toast.error(errors.image ?? t('No se pudo subir la imagen'));
         },
     });
 }
@@ -100,18 +95,13 @@ function setAsCover(image: TourImage): void {
         return;
     }
 
-    const action = updateImage({ tour: props.tourId, image: image.id });
-    void api.patch(
-        action.url,
-        { is_cover: true },
-        {
-            onSuccess: () => {
-                toast.success(t('Portada actualizada.'));
-                router.reload({ only: ['tour'] });
-            },
-            onError: () => toast.error(t('No se pudo actualizar la portada.')),
+    coverForm.patch(updateImage({ tour: props.tourId, image: image.id }).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Portada actualizada.'));
         },
-    );
+        onError: () => toast.error(t('No se pudo actualizar la portada.')),
+    });
 }
 
 const deleteDialog = ref(false);
@@ -127,19 +117,18 @@ function removeImage(): void {
         return;
     }
 
-    const action = destroyImage({
-        tour: props.tourId,
-        image: imageToDelete.value.id,
-    });
-    void api.delete(action.url, {
-        onSuccess: () => {
-            toast.success(t('Imagen eliminada.'));
-            deleteDialog.value = false;
-            imageToDelete.value = null;
-            router.reload({ only: ['tour'] });
+    removeForm.delete(
+        destroyImage({ tour: props.tourId, image: imageToDelete.value.id }).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(t('Imagen eliminada.'));
+                deleteDialog.value = false;
+                imageToDelete.value = null;
+            },
+            onError: () => toast.error(t('No se pudo eliminar la imagen.')),
         },
-        onError: () => toast.error(t('No se pudo eliminar la imagen.')),
-    });
+    );
 }
 </script>
 

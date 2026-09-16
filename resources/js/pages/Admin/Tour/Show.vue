@@ -41,6 +41,7 @@ import { formatCurrency, formatNumber, formatTourDate } from '@/lib/format';
 import { routeStopsFromTour } from '@/lib/tour-route';
 import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
 import { show as publicTourShow } from '@/routes/tours';
+import type { TourDateAdmin } from '@/types/logistics';
 import type { Tour, TourDifficulty, TourShowStats } from '@/types/tour';
 
 const { t } = useTranslations();
@@ -48,6 +49,7 @@ const { t } = useTranslations();
 type Props = {
     tour: Tour;
     stats: TourShowStats;
+    departures: TourDateAdmin[];
 };
 
 const props = defineProps<Props>();
@@ -535,7 +537,7 @@ const manifestSource = computed(
 
                         <div class="mt-5">
                             <TourUpcomingDatesList
-                                :tour-id="props.tour.id"
+                                :dates="props.departures"
                                 :currency="currency"
                                 :can-view-passengers="canViewPassengers"
                                 @view-passengers="activeTab = 'passengers'"
@@ -846,6 +848,50 @@ const manifestSource = computed(
 
             <div class="mt-5">
                 <TourRouteMapSection ref="mapSection" :stops="routeStops" />
+            </div>
+
+            <div class="mt-8 border-t border-border pt-6">
+                <h3 class="font-semibold text-foreground">
+                    {{ $t('Rutas del producto') }}
+                </h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{
+                        $t(
+                            'Cada salida se opera con una de estas rutas de logística.',
+                        )
+                    }}
+                </p>
+
+                <p
+                    v-if="props.tour.routes.length === 0"
+                    class="mt-4 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+                >
+                    {{ $t('Este producto todavía no tiene rutas asociadas.') }}
+                </p>
+
+                <ul v-else class="mt-4 space-y-2">
+                    <li
+                        v-for="route in props.tour.routes"
+                        :key="route.id"
+                        class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
+                    >
+                        <div class="min-w-0">
+                            <p class="font-medium text-foreground">
+                                {{ route.name }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{
+                                    $t(':count paradas', {
+                                        count: route.stops_count,
+                                    })
+                                }}
+                            </p>
+                        </div>
+                        <Badge v-if="route.is_default" variant="secondary">
+                            {{ $t('Predeterminada') }}
+                        </Badge>
+                    </li>
+                </ul>
             </div>
         </section>
     </div>

@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\ResolvePaymentJob;
 use App\Models\Payment;
+use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Throwable;
@@ -33,7 +34,7 @@ final class CheckPendingPaymentsCommand extends Command
          * que ver los pagos de todas las agencias. Cada job activa el suyo.
          */
         $payments = Payment::query()
-            ->withoutGlobalScope('tenant')
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->unresolved()
             ->whereBetween('created_at', [$from, $to])
             ->orderBy('id')

@@ -86,6 +86,17 @@ export type DepartureScopeId =
     | 'disabled'
     | 'all';
 
+/** Filtros del tablero de salidas tal como los devuelve el servidor. */
+export interface DepartureBoardFilterState {
+    status: TourDateDisplayStatus | null;
+    scope: DepartureScopeId;
+    search: string | null;
+    tour_id: number | null;
+    from: string | null;
+    to: string | null;
+    direction: 'asc' | 'desc';
+}
+
 /** KPIs de cabecera: describen la operación completa, no el filtro activo. */
 export interface DepartureBoardStats {
     active: number;
@@ -108,6 +119,56 @@ export interface TourDatesGlobalResponse {
     stats: DepartureBoardStats;
     counts: Record<DepartureScopeId, number>;
     totals: DepartureBoardTotals;
+}
+
+/** Ruta del catálogo tal como la ve el producto que la opera. */
+export interface TourRouteRef {
+    id: number;
+    name: string;
+    is_default: boolean;
+    kind: RouteKind | null;
+    difficulty: TourDifficulty | null;
+    distance_km: string | null;
+    duration_hours: string | null;
+    stops_count: number;
+}
+
+/** Fila del catálogo de rutas en el selector del formulario de producto. */
+export interface RouteOption {
+    id: number;
+    name: string;
+    kind: RouteKind | null;
+    difficulty: TourDifficulty | null;
+}
+
+/**
+ * Lo que una salida nueva hereda del producto y de la agencia. `base_price` es
+ * referencia visible: la salida solo guarda `price_override` si se aparta.
+ */
+export interface DepartureDefaults {
+    guide_id: number | null;
+    capacity: number;
+    route_id: number | null;
+    base_price: string;
+    min_payment_pct: number;
+    currency: string;
+}
+
+/** Producto del selector del tablero de salidas, con lo que hereda el diálogo. */
+export interface DepartureTourOption {
+    id: number;
+    name: string;
+    currency: string;
+    duration_hours: number;
+    routes: TourRouteRef[];
+    departure_defaults: DepartureDefaults;
+}
+
+/** Catálogos que alimentan los selects del diálogo de salida. */
+export interface DepartureOptions {
+    guides: LogisticsRef[];
+    providers: LogisticsRef[];
+    hotels: LogisticsRef[];
 }
 
 export interface TourDateFormInput {
@@ -134,6 +195,8 @@ export interface RouteStopRecord {
     position: number;
     name: string;
     kind: TourStopKind;
+    latitude: string | null;
+    longitude: string | null;
     time_label: string | null;
 }
 
@@ -164,6 +227,8 @@ export interface RouteResource {
     emergency_contact: string | null;
     stops: RouteStopRecord[];
     tour_dates_count: number;
+    /** Productos que la operan: también bloquean el borrado. */
+    tours_count: number;
 }
 
 export interface ProviderRateRecord {

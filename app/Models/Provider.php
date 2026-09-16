@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use App\Enums\PaymentTerms;
 use App\Enums\ProviderServiceType;
 use App\Enums\TaxRegime;
+use App\Models\Builders\ProviderBuilder;
 use Carbon\CarbonImmutable;
 use Database\Factories\ProviderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -74,6 +75,11 @@ final class Provider extends Model
         'rates_valid_until',
         'notes',
     ];
+
+    public function newEloquentBuilder($query): ProviderBuilder
+    {
+        return new ProviderBuilder($query);
+    }
 
     protected function casts(): array
     {

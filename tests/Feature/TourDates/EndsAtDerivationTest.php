@@ -37,8 +37,8 @@ final class EndsAtDerivationTest extends TestCase
         [$tenant, $admin, $guide] = $this->scenario();
         $tour = Tour::factory()->create(['duration_hours' => 51]);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             [
                 'starts_at' => '2026-09-12 07:00:00',
                 'ends_at' => '2026-09-12 11:00:00',
@@ -47,7 +47,7 @@ final class EndsAtDerivationTest extends TestCase
             ],
         );
 
-        $response->assertStatus(422)->assertJsonValidationErrors('ends_at');
+        $response->assertSessionHasErrors('ends_at');
     }
 
     public function test_a_51_hour_tour_ends_two_days_later(): void
@@ -55,15 +55,15 @@ final class EndsAtDerivationTest extends TestCase
         [$tenant, $admin, $guide] = $this->scenario();
         $tour = Tour::factory()->create(['duration_hours' => 51]);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => '2026-09-12 07:00:00', 'capacity' => 10, 'guide_id' => $guide->id],
         );
 
-        $response->assertCreated();
+        $response->assertSessionHas('success');
         $this->assertSame(
             '2026-09-14 10:00:00',
-            TourDate::query()->findOrFail($response->json('data.id'))->ends_at->format('Y-m-d H:i:s'),
+            TourDate::query()->where('tour_id', $tour->id)->sole()->ends_at->format('Y-m-d H:i:s'),
         );
     }
 
@@ -76,12 +76,12 @@ final class EndsAtDerivationTest extends TestCase
             'starts_at' => '2026-09-12 07:00:00',
         ]);
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}",
             ['starts_at' => '2026-09-20 07:00:00'],
         );
 
-        $response->assertOk();
+        $response->assertSessionHas('success');
         $this->assertSame('2026-09-22 10:00:00', $departure->fresh()?->ends_at->format('Y-m-d H:i:s'));
     }
 

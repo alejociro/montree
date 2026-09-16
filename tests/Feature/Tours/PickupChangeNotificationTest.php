@@ -17,6 +17,7 @@ use App\Notifications\PickupPointChangedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia;
 use Tests\Support\DepartureScenario;
 use Tests\TestCase;
 
@@ -28,6 +29,13 @@ use Tests\TestCase;
 final class PickupChangeNotificationTest extends TestCase
 {
     use DepartureScenario, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
 
     protected function tearDown(): void
     {
@@ -46,11 +54,11 @@ final class PickupChangeNotificationTest extends TestCase
 
         Notification::fake();
 
-        $this->actingAs($admin)->putJson($this->host($tenant)."/api/v1/admin/tours/{$tour->id}", [
+        $this->actingAs($admin)->put($this->host($tenant)."/admin/tours/{$tour->id}", [
             'stops' => [
                 ['kind' => 'pickup', 'name' => 'Terminal del Café', 'latitude' => 4.5352, 'longitude' => -75.6814],
             ],
-        ])->assertOk();
+        ])->assertSessionHasNoErrors();
 
         Notification::assertSentTo(
             $traveler,
@@ -72,11 +80,11 @@ final class PickupChangeNotificationTest extends TestCase
 
         Notification::fake();
 
-        $this->actingAs($admin)->putJson($this->host($tenant)."/api/v1/admin/tours/{$tour->id}", [
+        $this->actingAs($admin)->put($this->host($tenant)."/admin/tours/{$tour->id}", [
             'stops' => [
                 ['kind' => 'pickup', 'name' => 'Plaza de Bolívar', 'place' => 'Armenia', 'time' => '8:00 a. m.', 'latitude' => 4.5350, 'longitude' => -75.6813],
             ],
-        ])->assertOk();
+        ])->assertSessionHasNoErrors();
 
         Notification::assertNothingSent();
     }
@@ -89,12 +97,12 @@ final class PickupChangeNotificationTest extends TestCase
 
         Notification::fake();
 
-        $this->actingAs($admin)->putJson($this->host($tenant)."/api/v1/admin/tours/{$tour->id}", [
+        $this->actingAs($admin)->put($this->host($tenant)."/admin/tours/{$tour->id}", [
             'stops' => [
                 ['kind' => 'pickup', 'name' => 'Plaza de Bolívar', 'place' => 'Armenia', 'time' => '8:00 a. m.', 'latitude' => 4.5350, 'longitude' => -75.6813],
                 ['kind' => 'site', 'name' => 'Bosque de palmas', 'latitude' => 4.6428, 'longitude' => -75.4790],
             ],
-        ])->assertOk();
+        ])->assertSessionHasNoErrors();
 
         Notification::assertNothingSent();
     }
@@ -107,11 +115,11 @@ final class PickupChangeNotificationTest extends TestCase
 
         Notification::fake();
 
-        $this->actingAs($admin)->putJson($this->host($tenant)."/api/v1/admin/tours/{$tour->id}", [
+        $this->actingAs($admin)->put($this->host($tenant)."/admin/tours/{$tour->id}", [
             'stops' => [
                 ['kind' => 'site', 'name' => 'Bosque de palmas', 'latitude' => 4.6428, 'longitude' => -75.4790],
             ],
-        ])->assertOk();
+        ])->assertSessionHasNoErrors();
 
         Notification::assertSentTo(
             $traveler,
@@ -129,11 +137,11 @@ final class PickupChangeNotificationTest extends TestCase
 
         Notification::fake();
 
-        $this->actingAs($admin)->putJson($this->host($tenant)."/api/v1/admin/tours/{$tour->id}", [
+        $this->actingAs($admin)->put($this->host($tenant)."/admin/tours/{$tour->id}", [
             'stops' => [
                 ['kind' => 'pickup', 'name' => 'Terminal del Café', 'latitude' => 4.5352, 'longitude' => -75.6814],
             ],
-        ])->assertOk();
+        ])->assertSessionHasNoErrors();
 
         Notification::assertNotSentTo($cancelled, PickupPointChangedNotification::class);
         Notification::assertNotSentTo($past, PickupPointChangedNotification::class);
@@ -149,13 +157,13 @@ final class PickupChangeNotificationTest extends TestCase
         $this->bookingFor($tour, BookingStatus::PendingPayment, null, 2);
         $this->bookingFor($tour, BookingStatus::Cancelled, null, 5);
 
-        $response = $this->actingAs($admin)->getJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
-        );
+        $response = $this->actingAs($admin)->get($this->host($tenant).'/admin/tours/'.$tour->id);
 
         $response->assertOk();
-        $response->assertJsonPath('data.pickup_change_impact.bookings', 2);
-        $response->assertJsonPath('data.pickup_change_impact.passengers', 5);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('tour.pickup_change_impact.bookings', 2)
+            ->where('tour.pickup_change_impact.passengers', 5)
+        );
     }
 
     /**

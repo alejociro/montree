@@ -45,6 +45,7 @@ final class RouteResource extends JsonResource
             'emergency_contact' => $this->emergency_contact,
             'stops' => RouteStopResource::collection($this->whenLoaded('stops', fn () => $this->stops, collect()))->resolve(),
             'tour_dates_count' => (int) ($this->tour_dates_count ?? 0),
+            'tours_count' => (int) ($this->tours_count ?? 0),
         ];
     }
 }

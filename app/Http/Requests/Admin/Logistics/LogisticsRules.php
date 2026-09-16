@@ -67,6 +67,8 @@ final class LogisticsRules
             'stops' => ['nullable', 'array', 'max:40'],
             'stops.*.name' => ['required', 'string', 'max:160'],
             'stops.*.kind' => ['required', Rule::enum(TourStopKind::class)],
+            'stops.*.latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'stops.*.longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'stops.*.time_label' => ['nullable', 'string', 'max:30'],
         ];
     }

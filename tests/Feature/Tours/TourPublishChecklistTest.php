@@ -13,6 +13,8 @@ use App\Models\TourImage;
 use App\Models\TourStop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
+use Inertia\Testing\AssertableInertia;
 use Tests\Support\DepartureScenario;
 use Tests\TestCase;
 
@@ -24,6 +26,13 @@ use Tests\TestCase;
 final class TourPublishChecklistTest extends TestCase
 {
     use DepartureScenario, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
 
     protected function tearDown(): void
     {
@@ -39,13 +48,7 @@ final class TourPublishChecklistTest extends TestCase
         $tour = $this->tour($guide);
         TourImage::factory()->for($tour)->cover()->create();
 
-        $response = $this->actingAs($admin)->getJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
-        );
-
-        $response->assertOk();
-
-        $checklist = collect($response->json('data.publish_checklist'))->keyBy('id');
+        $checklist = $this->checklistOf($tenant, $admin, $tour);
 
         $this->assertSame(
             ['general', 'summary', 'pricing', 'image', 'guide', 'stops'],
@@ -68,11 +71,7 @@ final class TourPublishChecklistTest extends TestCase
             'default_guide_id' => null,
         ]);
 
-        $response = $this->actingAs($admin)->getJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
-        );
-
-        $checklist = collect($response->json('data.publish_checklist'))->keyBy('id');
+        $checklist = $this->checklistOf($tenant, $admin, $tour);
 
         $this->assertFalse($checklist['summary']['done']);
         $this->assertTrue($checklist['summary']['blocking']);
@@ -86,13 +85,12 @@ final class TourPublishChecklistTest extends TestCase
         $tour = $this->tour($guide, ['short_description' => null]);
         TourImage::factory()->for($tour)->cover()->create();
 
-        $response = $this->actingAs($admin)->patchJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/status",
+        $response = $this->actingAs($admin)->patch(
+            $this->host($tenant)."/admin/tours/{$tour->id}/status",
             ['status' => 'active'],
         );
 
-        $response->assertStatus(422);
-        $response->assertJsonPath('error_code', 'TOUR_NEEDS_SUMMARY_TO_ACTIVATE');
+        $response->assertSessionHasErrors(['status' => __('Tour needs a short summary before activating.')]);
         $this->assertSame(TourStatus::Draft, $tour->fresh()?->status);
     }
 
@@ -104,12 +102,12 @@ final class TourPublishChecklistTest extends TestCase
         $tour = $this->tour($guide);
         TourImage::factory()->for($tour)->cover()->create();
 
-        $response = $this->actingAs($admin)->patchJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/status",
+        $response = $this->actingAs($admin)->patch(
+            $this->host($tenant)."/admin/tours/{$tour->id}/status",
             ['status' => 'active'],
         );
 
-        $response->assertOk();
+        $response->assertSessionHas('success');
         $this->assertSame(TourStatus::Active, $tour->fresh()?->status);
     }
 
@@ -120,13 +118,26 @@ final class TourPublishChecklistTest extends TestCase
         $this->stop($tour, TourStopKind::Pickup, 1);
         $this->stop($tour, TourStopKind::Drop, 2);
 
-        $response = $this->actingAs($admin)->getJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
-        );
-
-        $checklist = collect($response->json('data.publish_checklist'))->keyBy('id');
+        $checklist = $this->checklistOf($tenant, $admin, $tour);
 
         $this->assertTrue($checklist['stops']['done']);
+    }
+
+    /**
+     * @return Collection<string, array<string, mixed>>
+     */
+    private function checklistOf(Tenant $tenant, User $admin, Tour $tour): Collection
+    {
+        $checklist = null;
+
+        $this->actingAs($admin)
+            ->get($this->host($tenant).'/admin/tours/'.$tour->id)
+            ->assertOk()
+            ->assertInertia(function (AssertableInertia $page) use (&$checklist): void {
+                $checklist = $page->toArray()['props']['tour']['publish_checklist'];
+            });
+
+        return collect($checklist)->keyBy('id');
     }
 
     /**

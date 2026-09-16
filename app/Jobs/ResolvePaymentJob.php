@@ -39,7 +39,7 @@ final class ResolvePaymentJob implements NotTenantAware, ShouldQueue
     public function handle(ResolvePaymentAction $resolvePayment): void
     {
         $payment = Payment::query()
-            ->withoutGlobalScope('tenant')
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->with('tenant.configuration')
             ->find($this->paymentId);
 

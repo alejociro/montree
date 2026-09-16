@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Tour;
 
+use App\Http\Resources\Admin\TourRouteResource;
 use App\Models\Tour;
 use App\Queries\PickupChangeAudienceQuery;
 use App\Services\Tour\TourPublishChecklist;
@@ -60,6 +61,11 @@ class TourResource extends JsonResource
             'stops' => $this->whenLoaded(
                 'stops',
                 fn () => TourStopResource::collection($this->stops)->resolve(),
+                fn () => [],
+            ),
+            'routes' => $this->whenLoaded(
+                'routes',
+                fn () => TourRouteResource::collection($this->routes)->resolve(),
                 fn () => [],
             ),
             // D7: el checklist «Para publicar» sale del servidor, que es quien

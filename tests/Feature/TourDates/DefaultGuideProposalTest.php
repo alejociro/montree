@@ -39,13 +39,13 @@ final class DefaultGuideProposalTest extends TestCase
         [$tenant, $admin, $guide] = $this->scenario();
         $tour = $this->tour($guide);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => self::START, 'capacity' => 10],
         );
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.guide.id', $guide->id);
+        $response->assertSessionHas('success');
+        $this->assertSame($guide->id, TourDate::query()->where('tour_id', $tour->id)->sole()->guide_id);
     }
 
     public function test_an_explicit_guide_wins_over_the_default(): void
@@ -54,13 +54,13 @@ final class DefaultGuideProposalTest extends TestCase
         $chosen = $this->guideFor($tenant);
         $tour = $this->tour($guide);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => self::START, 'capacity' => 10, 'guide_id' => $chosen->id],
         );
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.guide.id', $chosen->id);
+        $response->assertSessionHas('success');
+        $this->assertSame($chosen->id, TourDate::query()->where('tour_id', $tour->id)->sole()->guide_id);
     }
 
     public function test_the_proposed_guide_still_has_to_be_available(): void
@@ -75,13 +75,13 @@ final class DefaultGuideProposalTest extends TestCase
         ]);
         $tour = $this->tour($guide);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => self::START, 'capacity' => 10],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('Valle de Cocora', (string) $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
     }
 
     public function test_a_tour_without_default_guide_still_demands_one(): void
@@ -89,13 +89,12 @@ final class DefaultGuideProposalTest extends TestCase
         [$tenant, $admin] = $this->scenario();
         $tour = Tour::factory()->create(['duration_hours' => 8, 'default_guide_id' => null]);
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => self::START, 'capacity' => 10],
         );
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors('guide_id');
+        $response->assertSessionHasErrors('guide_id');
     }
 
     public function test_editing_a_departure_never_proposes_the_default(): void
@@ -110,12 +109,12 @@ final class DefaultGuideProposalTest extends TestCase
             'starts_at' => self::START,
         ]);
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}",
             ['capacity' => 12],
         );
 
-        $response->assertOk();
+        $response->assertSessionHas('success');
         $this->assertSame($assigned->id, $departure->fresh()?->guide_id);
     }
 

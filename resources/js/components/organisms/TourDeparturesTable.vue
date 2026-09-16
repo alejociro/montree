@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useForm } from '@inertiajs/vue3';
 import {
     Ban,
     CalendarPlus,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import AssignGuideController from '@/actions/App/Http/Controllers/Api/V1/Admin/AssignGuideController';
+import AssignGuideController from '@/actions/App/Http/Controllers/Admin/AssignGuideController';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import CountTabs from '@/components/molecules/CountTabs.vue';
 import type { CountTab } from '@/components/molecules/CountTabs.vue';
@@ -18,8 +19,6 @@ import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { DepartureRange } from '@/types/guide-availability';
@@ -40,16 +39,12 @@ type Props = {
     departures: TourDateAdmin[];
     currency: string;
     durationHours: number | null;
-    loading?: boolean;
-    error?: boolean;
     /** Se ofrecen mientras la agenda no responde; el servidor sigue validando. */
     fallbackGuides?: LogisticsRef[];
     canViewPassengers?: boolean;
 };
 
 const props = withDefaults(defineProps<Props>(), {
-    loading: false,
-    error: false,
     fallbackGuides: () => [],
     canViewPassengers: false,
 });
@@ -60,11 +55,9 @@ const emit = defineEmits<{
     (e: 'cancel', departure: TourDateAdmin): void;
     (e: 'remove', departure: TourDateAdmin): void;
     (e: 'passengers', departure: TourDateAdmin): void;
-    (e: 'assigned'): void;
-    (e: 'retry'): void;
 }>();
 
-const api = useApi();
+const guideForm = useForm({ guide_id: null as number | null });
 
 type Scope = 'upcoming' | 'past' | 'cancelled';
 
@@ -154,30 +147,21 @@ function assignGuide(departure: TourDateAdmin, guideId: number | null): void {
     }
 
     savingGuideFor.value = departure.id;
+    guideForm.guide_id = guideId;
 
-    // El endpoint responde solo `{id, guide_id}`, no la salida entera: el
-    // nombre del guía y el estado recalculado los trae el recargado.
-    void api.patch(
-        AssignGuideController(departure.id).url,
-        { guide_id: guideId },
-        {
-            onSuccess: () => {
-                toast.success(t('Guía asignado.'));
-                editingGuideFor.value = null;
-                emit('assigned');
-            },
-            onError: (errors) => {
-                toast.error(
-                    errors.guide_id ??
-                        errors._global ??
-                        t('No se pudo asignar el guía.'),
-                );
-            },
-            onFinish: () => {
-                savingGuideFor.value = null;
-            },
+    guideForm.patch(AssignGuideController(departure.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Guía asignado.'));
+            editingGuideFor.value = null;
         },
-    );
+        onError: (errors) => {
+            toast.error(errors.guide_id ?? t('No se pudo asignar el guía.'));
+        },
+        onFinish: () => {
+            savingGuideFor.value = null;
+        },
+    });
 }
 
 function priceLabel(departure: TourDateAdmin): string {
@@ -218,29 +202,8 @@ function priceLabel(departure: TourDateAdmin): string {
             @update:model-value="(value) => (scope = value as Scope)"
         />
 
-        <div v-if="props.loading" class="mt-4 space-y-2">
-            <Skeleton v-for="n in 3" :key="n" class="h-24 w-full rounded-xl" />
-        </div>
-
         <div
-            v-else-if="props.error"
-            class="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
-        >
-            <p class="text-sm text-destructive">
-                {{ $t('No se pudieron cargar las salidas.') }}
-            </p>
-            <Button
-                variant="outline"
-                size="sm"
-                class="mt-3"
-                @click="emit('retry')"
-            >
-                {{ $t('Reintentar') }}
-            </Button>
-        </div>
-
-        <div
-            v-else-if="visible.length === 0"
+            v-if="visible.length === 0"
             class="mt-4 rounded-xl border border-dashed border-input p-8 text-center"
         >
             <CalendarPlus class="mx-auto size-8 text-muted-foreground/40" />

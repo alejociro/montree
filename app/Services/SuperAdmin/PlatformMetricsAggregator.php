@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\SuperAdmin;
 
-use App\Concerns\BelongsToTenant;
 use App\Data\SuperAdmin\PlatformMetrics;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
@@ -46,7 +45,7 @@ final class PlatformMetricsAggregator
             bookingsThisMonth: $bookingsThisMonth,
             revenueThisMonth: $this->decimal(
                 Payment::query()
-                    ->withoutGlobalScope(BelongsToTenant::class)
+                    ->withoutGlobalScope(Tenant::SCOPE)
                     ->completed()
                     ->whereBetween('processed_at', [$from, $to])
                     ->sum('amount'),
@@ -76,7 +75,7 @@ final class PlatformMetricsAggregator
         $since = CarbonImmutable::now()->subDays(30);
 
         $bookings = Booking::query()
-            ->withoutGlobalScope(BelongsToTenant::class)
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->whereIn('tenant_id', $tenantIds)
             ->where('created_at', '>=', $since)
             ->whereIn('status', [
@@ -89,7 +88,7 @@ final class PlatformMetricsAggregator
             ->pluck('aggregate', 'tenant_id');
 
         $revenue = Payment::query()
-            ->withoutGlobalScope(BelongsToTenant::class)
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->whereIn('tenant_id', $tenantIds)
             ->where('status', PaymentStatus::Completed->value)
             ->where('processed_at', '>=', $since)
@@ -126,7 +125,7 @@ final class PlatformMetricsAggregator
         $months = MonthlySeries::months($from, $to);
 
         $bookingDates = Booking::query()
-            ->withoutGlobalScope(BelongsToTenant::class)
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->where('tenant_id', $tenant->id)
             ->whereBetween('created_at', [$from, $to])
             ->get(['created_at'])
@@ -199,7 +198,7 @@ final class PlatformMetricsAggregator
         $months = MonthlySeries::months($from, $end);
 
         $byTenant = Payment::query()
-            ->withoutGlobalScope(BelongsToTenant::class)
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->monthlyRevenueByTenant($from, $end);
 
         $names = Tenant::query()
@@ -243,7 +242,7 @@ final class PlatformMetricsAggregator
     private function bookingsBetween(CarbonInterface $from, CarbonInterface $to): int
     {
         return Booking::query()
-            ->withoutGlobalScope(BelongsToTenant::class)
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->whereBetween('created_at', [$from, $to])
             ->count();
     }

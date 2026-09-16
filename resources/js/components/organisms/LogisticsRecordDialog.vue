@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { Check, Loader2, Plus, Trash2 } from 'lucide-vue-next';
+import { useForm } from '@inertiajs/vue3';
+import { Check, Loader2, MapPin, Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import AddressField from '@/components/molecules/AddressField.vue';
 import ChipsInput from '@/components/molecules/ChipsInput.vue';
 import OptionChips from '@/components/molecules/OptionChips.vue';
+import PlaceSearchField from '@/components/molecules/PlaceSearchField.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,13 +27,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { ApiErrors } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
+import { applyFormValue } from '@/lib/form-errors';
 import type { SelectOption } from '@/lib/logistics';
 import {
     blankRow,
     formStateFor,
     isFilled,
+    rowPlaceKeys,
     sectionsFor,
     toPayload,
 } from '@/lib/logistics-form';
@@ -38,6 +42,7 @@ import type { LogisticsFieldDef } from '@/lib/logistics-form';
 import { cn } from '@/lib/utils';
 import type { GeocodedPlace } from '@/types/geocoding';
 import type {
+    LogisticsFieldValue,
     LogisticsFormState,
     LogisticsRecord,
     LogisticsResourceKind,
@@ -59,15 +64,15 @@ type Props = {
     kind: LogisticsResourceKind;
     /** `null` crea una ficha nueva. */
     record: LogisticsRecord | null;
-    processing: boolean;
-    errors: ApiErrors;
+    /** Ruta web a la que se manda la ficha: crear o actualizar. */
+    action: { url: string; method: 'post' | 'put' };
 };
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
     (e: 'update:open', value: boolean): void;
-    (e: 'submit', payload: Record<string, unknown>): void;
+    (e: 'saved'): void;
 }>();
 
 /** Valor con el que reka-ui representa «sin elegir»: no acepta cadena vacía. */
@@ -103,7 +108,13 @@ const KIND_COPY: Record<
 const copy = computed(() => KIND_COPY[props.kind]);
 const sections = computed(() => sectionsFor(props.kind));
 
-const form = ref<LogisticsFormState>({});
+/**
+ * El juego de claves es el del tipo de ficha y no cambia mientras el diálogo
+ * vive: el formulario se crea una vez en blanco y cada apertura vuelca encima
+ * el registro que se va a editar.
+ */
+const form = useForm<LogisticsFormState>(formStateFor(props.kind, null));
+
 const activeSection = ref<string>('');
 const formEl = ref<HTMLFormElement | null>(null);
 const sectionEls = ref<Record<string, HTMLElement | null>>({});
@@ -115,33 +126,38 @@ watch(
             return;
         }
 
-        form.value = formStateFor(props.kind, props.record);
+        form.clearErrors();
+        Object.assign(form, formStateFor(props.kind, props.record));
         activeSection.value = sections.value[0]?.id ?? '';
         void nextTick(() => formEl.value?.scrollTo({ top: 0 }));
     },
     { immediate: true },
 );
 
+function valueOf(key: string): LogisticsFieldValue {
+    return form[key] ?? null;
+}
+
 function textOf(key: string): string {
-    const value = form.value[key];
+    const value = valueOf(key);
 
     return typeof value === 'string' ? value : '';
 }
 
 function listOf(key: string): string[] {
-    const value = form.value[key];
+    const value = valueOf(key);
 
     return Array.isArray(value) ? (value as string[]) : [];
 }
 
 function rowsOf(key: string): Record<string, string>[] {
-    const value = form.value[key];
+    const value = valueOf(key);
 
     return Array.isArray(value) ? (value as Record<string, string>[]) : [];
 }
 
-function set(key: string, value: LogisticsFormState[string]): void {
-    form.value = { ...form.value, [key]: value };
+function set(key: string, value: LogisticsFieldValue): void {
+    applyFormValue(form, { ...form.data(), [key]: value });
 }
 
 function setRowValue(
@@ -173,7 +189,7 @@ function removeRow(field: LogisticsFieldDef, index: number): void {
  * departamento: nadie debería teclear «Salento» dos veces.
  */
 function applyPlace(field: LogisticsFieldDef, place: GeocodedPlace): void {
-    const next: LogisticsFormState = { ...form.value };
+    const next: LogisticsFormState = form.data();
     const fills = field.fills ?? {};
 
     if (fills.latitude) {
@@ -194,13 +210,75 @@ function applyPlace(field: LogisticsFieldDef, place: GeocodedPlace): void {
         next[fills.state] = place.state;
     }
 
-    form.value = next;
+    applyFormValue(form, next);
 }
 
 function isLocated(field: LogisticsFieldDef): boolean {
     const latitude = field.fills?.latitude;
 
-    return latitude !== undefined && isFilled(form.value[latitude]);
+    return latitude !== undefined && isFilled(valueOf(latitude));
+}
+
+/** Coordenadas de una parada: las escribe el buscador, nunca el teclado. */
+function rowPlaceOf(
+    field: LogisticsFieldDef,
+    index: number,
+): { latitude: string; longitude: string } | null {
+    const place = field.rowPlace;
+
+    if (place === undefined) {
+        return null;
+    }
+
+    const row = rowsOf(field.key)[index] ?? {};
+    const latitude = row[place.latitude] ?? '';
+    const longitude = row[place.longitude] ?? '';
+
+    return latitude === '' || longitude === '' ? null : { latitude, longitude };
+}
+
+function setRowPlace(
+    field: LogisticsFieldDef,
+    index: number,
+    place: GeocodedPlace | null,
+): void {
+    const keys = field.rowPlace;
+
+    if (keys === undefined) {
+        return;
+    }
+
+    const rows = rowsOf(field.key).map((row, position) =>
+        position === index
+            ? {
+                  ...row,
+                  [keys.latitude]: place === null ? '' : String(place.latitude),
+                  [keys.longitude]:
+                      place === null ? '' : String(place.longitude),
+                  ...(place !== null && (row.name ?? '').trim() === ''
+                      ? { name: place.name }
+                      : {}),
+              }
+            : row,
+    );
+
+    set(field.key, rows);
+}
+
+/** Errores del servidor de las coordenadas de una fila, en una sola línea. */
+function rowPlaceError(
+    field: LogisticsFieldDef,
+    index: number,
+): string | undefined {
+    for (const key of rowPlaceKeys(field)) {
+        const message = form.errors[`${field.key}.${index}.${key}`];
+
+        if (message !== undefined) {
+            return message;
+        }
+    }
+
+    return undefined;
 }
 
 const requiredFields = computed<LogisticsFieldDef[]>(() =>
@@ -211,7 +289,7 @@ const requiredFields = computed<LogisticsFieldDef[]>(() =>
 
 const filledRequired = computed<number>(
     () =>
-        requiredFields.value.filter((field) => isFilled(form.value[field.key]))
+        requiredFields.value.filter((field) => isFilled(valueOf(field.key)))
             .length,
 );
 
@@ -227,7 +305,7 @@ function sectionDone(sectionId: string): boolean {
 
     return (
         required.length > 0 &&
-        required.every((field) => isFilled(form.value[field.key]))
+        required.every((field) => isFilled(valueOf(field.key)))
     );
 }
 
@@ -297,7 +375,7 @@ function onSelect(key: string, value: unknown): void {
 }
 
 function errorFor(key: string): string | undefined {
-    return props.errors[key];
+    return form.errors[key];
 }
 
 function rowErrorFor(
@@ -305,11 +383,26 @@ function rowErrorFor(
     index: number,
     column: string,
 ): string | undefined {
-    return props.errors[`${field.key}.${index}.${column}`];
+    return form.errors[`${field.key}.${index}.${column}`];
 }
 
 function submit(): void {
-    emit('submit', toPayload(props.kind, form.value));
+    form.transform((data) => toPayload(props.kind, data));
+
+    const options = {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => emit('saved'),
+        onError: () => toast.error(t('Revisa los campos marcados.')),
+    };
+
+    if (props.action.method === 'post') {
+        form.post(props.action.url, options);
+
+        return;
+    }
+
+    form.put(props.action.url, options);
 }
 </script>
 
@@ -401,13 +494,6 @@ function submit(): void {
                     @scroll="onScroll"
                     @submit.prevent="submit"
                 >
-                    <p
-                        v-if="props.errors._global"
-                        class="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                    >
-                        {{ props.errors._global }}
-                    </p>
-
                     <section
                         v-for="section in sections"
                         :key="section.id"
@@ -437,123 +523,240 @@ function submit(): void {
                                                 field.key,
                                             )"
                                             :key="index"
-                                            class="grid items-start gap-2"
-                                            :style="{
-                                                gridTemplateColumns: `${(field.columns ?? []).map((column) => column.width).join(' ')} 34px`,
-                                            }"
+                                            class="grid gap-2"
                                         >
                                             <div
-                                                v-for="column in field.columns ??
-                                                []"
-                                                :key="column.key"
-                                                class="min-w-0"
+                                                class="grid items-start gap-2"
+                                                :style="{
+                                                    gridTemplateColumns: `${(field.columns ?? []).map((column) => column.width).join(' ')} 34px`,
+                                                }"
                                             >
-                                                <Select
-                                                    v-if="
-                                                        column.type === 'select'
-                                                    "
-                                                    :model-value="
-                                                        row[column.key] ||
-                                                        undefined
-                                                    "
-                                                    @update:model-value="
-                                                        setRowValue(
-                                                            field,
-                                                            index,
-                                                            column.key,
-                                                            String($event),
-                                                        )
-                                                    "
+                                                <div
+                                                    v-for="column in field.columns ??
+                                                    []"
+                                                    :key="column.key"
+                                                    class="min-w-0"
                                                 >
-                                                    <SelectTrigger
-                                                        class="w-full"
+                                                    <Select
+                                                        v-if="
+                                                            column.type ===
+                                                            'select'
+                                                        "
+                                                        :model-value="
+                                                            row[column.key] ||
+                                                            undefined
+                                                        "
+                                                        @update:model-value="
+                                                            setRowValue(
+                                                                field,
+                                                                index,
+                                                                column.key,
+                                                                String($event),
+                                                            )
+                                                        "
+                                                    >
+                                                        <SelectTrigger
+                                                            class="w-full"
+                                                            :aria-label="
+                                                                column.label
+                                                            "
+                                                        >
+                                                            <SelectValue
+                                                                :placeholder="
+                                                                    column.label
+                                                                "
+                                                            />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectGroup>
+                                                                <SelectItem
+                                                                    v-for="option in column.options ??
+                                                                    []"
+                                                                    :key="
+                                                                        option.value
+                                                                    "
+                                                                    :value="
+                                                                        option.value
+                                                                    "
+                                                                >
+                                                                    {{
+                                                                        option.label
+                                                                    }}
+                                                                </SelectItem>
+                                                            </SelectGroup>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Input
+                                                        v-else
+                                                        :model-value="
+                                                            row[column.key] ??
+                                                            ''
+                                                        "
+                                                        :type="
+                                                            column.type ===
+                                                            'number'
+                                                                ? 'number'
+                                                                : column.type ===
+                                                                    'date'
+                                                                  ? 'date'
+                                                                  : 'text'
+                                                        "
+                                                        :placeholder="
+                                                            column.placeholder ??
+                                                            column.label
+                                                        "
                                                         :aria-label="
                                                             column.label
                                                         "
+                                                        @update:model-value="
+                                                            setRowValue(
+                                                                field,
+                                                                index,
+                                                                column.key,
+                                                                String($event),
+                                                            )
+                                                        "
+                                                    />
+                                                    <p
+                                                        v-if="
+                                                            rowErrorFor(
+                                                                field,
+                                                                index,
+                                                                column.key,
+                                                            )
+                                                        "
+                                                        class="mt-1 text-xs text-destructive"
                                                     >
-                                                        <SelectValue
-                                                            :placeholder="
-                                                                column.label
-                                                            "
-                                                        />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectGroup>
-                                                            <SelectItem
-                                                                v-for="option in column.options ??
-                                                                []"
-                                                                :key="
-                                                                    option.value
-                                                                "
-                                                                :value="
-                                                                    option.value
-                                                                "
-                                                            >
-                                                                {{
-                                                                    option.label
-                                                                }}
-                                                            </SelectItem>
-                                                        </SelectGroup>
-                                                    </SelectContent>
-                                                </Select>
-                                                <Input
+                                                        {{
+                                                            rowErrorFor(
+                                                                field,
+                                                                index,
+                                                                column.key,
+                                                            )
+                                                        }}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="grid size-9 place-items-center rounded-md border border-input text-muted-foreground transition hover:border-destructive/50 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                                    :aria-label="
+                                                        $t(
+                                                            'Quitar fila :number',
+                                                            {
+                                                                number:
+                                                                    index + 1,
+                                                            },
+                                                        )
+                                                    "
+                                                    @click="
+                                                        removeRow(field, index)
+                                                    "
+                                                >
+                                                    <Trash2 class="size-4" />
+                                                </button>
+                                            </div>
+
+                                            <!--
+                                              La parada guarda un punto, no dos
+                                              números: se busca la dirección y
+                                              las coordenadas se rellenan solas.
+                                            -->
+                                            <div v-if="field.rowPlace">
+                                                <div
+                                                    v-if="
+                                                        rowPlaceOf(field, index)
+                                                    "
+                                                    class="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary-soft px-2.5 py-1.5"
+                                                >
+                                                    <MapPin
+                                                        class="size-3.5 shrink-0 text-primary-readable"
+                                                        aria-hidden="true"
+                                                    />
+                                                    <span
+                                                        class="min-w-0 flex-1 truncate text-xs tabular-nums"
+                                                    >
+                                                        {{
+                                                            $t(
+                                                                'Punto guardado: :latitude, :longitude',
+                                                                {
+                                                                    latitude:
+                                                                        rowPlaceOf(
+                                                                            field,
+                                                                            index,
+                                                                        )
+                                                                            ?.latitude ??
+                                                                        '',
+                                                                    longitude:
+                                                                        rowPlaceOf(
+                                                                            field,
+                                                                            index,
+                                                                        )
+                                                                            ?.longitude ??
+                                                                        '',
+                                                                },
+                                                            )
+                                                        }}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        class="grid size-6 place-items-center rounded-md text-muted-foreground transition hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                                        :aria-label="
+                                                            $t(
+                                                                'Quitar el punto de la parada :number',
+                                                                {
+                                                                    number:
+                                                                        index +
+                                                                        1,
+                                                                },
+                                                            )
+                                                        "
+                                                        @click="
+                                                            setRowPlace(
+                                                                field,
+                                                                index,
+                                                                null,
+                                                            )
+                                                        "
+                                                    >
+                                                        <X class="size-3.5" />
+                                                    </button>
+                                                </div>
+                                                <PlaceSearchField
                                                     v-else
-                                                    :model-value="
-                                                        row[column.key] ?? ''
+                                                    :target-label="
+                                                        $t(
+                                                            'la parada :number',
+                                                            {
+                                                                number:
+                                                                    index + 1,
+                                                            },
+                                                        )
                                                     "
-                                                    :type="
-                                                        column.type === 'number'
-                                                            ? 'number'
-                                                            : column.type ===
-                                                                'date'
-                                                              ? 'date'
-                                                              : 'text'
-                                                    "
-                                                    :placeholder="
-                                                        column.placeholder ??
-                                                        column.label
-                                                    "
-                                                    :aria-label="column.label"
-                                                    @update:model-value="
-                                                        setRowValue(
+                                                    @select="
+                                                        setRowPlace(
                                                             field,
                                                             index,
-                                                            column.key,
-                                                            String($event),
+                                                            $event,
                                                         )
                                                     "
                                                 />
                                                 <p
                                                     v-if="
-                                                        rowErrorFor(
+                                                        rowPlaceError(
                                                             field,
                                                             index,
-                                                            column.key,
                                                         )
                                                     "
                                                     class="mt-1 text-xs text-destructive"
                                                 >
                                                     {{
-                                                        rowErrorFor(
+                                                        rowPlaceError(
                                                             field,
                                                             index,
-                                                            column.key,
                                                         )
                                                     }}
                                                 </p>
                                             </div>
-                                            <button
-                                                type="button"
-                                                class="grid size-9 place-items-center rounded-md border border-input text-muted-foreground transition hover:border-destructive/50 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                                                :aria-label="
-                                                    $t('Quitar fila :number', {
-                                                        number: index + 1,
-                                                    })
-                                                "
-                                                @click="removeRow(field, index)"
-                                            >
-                                                <Trash2 class="size-4" />
-                                            </button>
                                         </div>
 
                                         <p
@@ -755,7 +958,7 @@ function submit(): void {
                     <Button
                         type="button"
                         variant="outline"
-                        :disabled="props.processing"
+                        :disabled="form.processing"
                         @click="emit('update:open', false)"
                     >
                         {{ $t('Cancelar') }}
@@ -763,18 +966,18 @@ function submit(): void {
                     <Button
                         type="button"
                         variant="outline"
-                        :disabled="props.processing"
+                        :disabled="form.processing"
                         @click="submit"
                     >
                         {{ $t('Guardar borrador') }}
                     </Button>
                     <Button
                         type="button"
-                        :disabled="props.processing || !complete"
+                        :disabled="form.processing || !complete"
                         @click="submit"
                     >
                         <Loader2
-                            v-if="props.processing"
+                            v-if="form.processing"
                             class="size-4 animate-spin"
                         />
                         <Check v-else class="size-4" />

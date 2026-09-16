@@ -15,10 +15,11 @@ use App\Models\Tour;
 use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
-class TourShowPageTest extends TestCase
+final class TourShowPageTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -86,6 +87,28 @@ class TourShowPageTest extends TestCase
             ->where('stats.occupancy_upcoming.rate', 40)
             ->where('stats.upcoming_dates_count', 1)
             ->whereNot('stats.next_date_starts_at', null)
+        );
+    }
+
+    /**
+     * El detalle ya no pide las salidas por XHR: nacen en la página y son solo
+     * las futuras —la ficha es para operar lo que viene, no un archivo—.
+     */
+    public function test_the_show_page_carries_only_the_upcoming_departures(): void
+    {
+        $admin = $this->memberWithRole(UserRole::Admin);
+        $tour = Tour::factory()->create();
+        TourDate::factory()->for($tour)->past()->create();
+        $upcoming = TourDate::factory()->for($tour)->create(['starts_at' => now()->addDays(5)]);
+
+        $response = $this->actingAs($admin)->get('http://demo.montree.test/admin/tours/'.$tour->id);
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Admin/Tour/Show', false)
+            ->has('departures', 1)
+            ->where('departures.0.id', $upcoming->id)
+            ->has('departures.0.tour')
         );
     }
 

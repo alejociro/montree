@@ -12,17 +12,15 @@ import {
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import {
-    index as indexPage,
-    show as showPage,
-} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import CancelTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/CancelTourDateController';
+import CancelTourDateController from '@/actions/App/Http/Controllers/Admin/CancelTourDateController';
+import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Admin/TourDatePagesController';
 import {
     destroy as destroyTour,
+    index as indexPage,
+    show as showPage,
     update as updateTour,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
-import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
-import changeStatus from '@/actions/App/Http/Controllers/Api/V1/Admin/TourStatusController';
+} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
+import changeStatus from '@/actions/App/Http/Controllers/Admin/TourStatusController';
 import { show as publicTour } from '@/actions/App/Http/Controllers/PublicTourPageController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import ActionMenu from '@/components/molecules/ActionMenu.vue';
@@ -63,18 +61,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
 import { usePermissions } from '@/composables/usePermissions';
 import { useTourCompletion } from '@/composables/useTourCompletion';
-import { useTourDepartures } from '@/composables/useTourDepartures';
 import { useTourManifestSummary } from '@/composables/useTourManifestSummary';
 import { useTranslations } from '@/composables/useTranslations';
 import { applyFormValue } from '@/lib/form-errors';
 import { formatRelativeDate } from '@/lib/format';
 import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
 import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
-import type { TourDateAdmin } from '@/types/logistics';
+import type {
+    DepartureDefaults,
+    DepartureOptions,
+    RouteOption,
+    TourDateAdmin,
+} from '@/types/logistics';
 import type {
     SupportedCurrency,
     Tour,
@@ -88,11 +88,13 @@ import type {
 
 const { t } = useTranslations();
 
-const api = useApi();
-
 type Props = {
     tour: Tour;
     categories: TourCategory[];
+    availableRoutes: RouteOption[];
+    departures: TourDateAdmin[];
+    departureOptions: DepartureOptions;
+    departureDefaults: DepartureDefaults;
 };
 
 const props = defineProps<Props>();
@@ -134,15 +136,18 @@ const initialValues = computed<TourFormPayload>(() => ({
         duration_label: step.duration_label ?? '',
     })),
     stops: tourStopDraftsFrom(props.tour.stops ?? []),
+    routes: (props.tour.routes ?? []).map((route) => ({
+        id: route.id,
+        is_default: route.is_default,
+    })),
 }));
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues.value }));
 const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
-const saving = ref(false);
 const statusError = ref<string | null>(null);
-const changingStatus = ref(false);
+const saving = computed(() => form.processing);
 
 const payload = computed<TourFormPayload>(() => form.data());
 
@@ -179,6 +184,7 @@ const CONTENT_SECTIONS: TourFormStepId[] = [
     'general',
     'pricing',
     'detail',
+    'routes',
     'gallery',
 ];
 
@@ -223,16 +229,21 @@ const pickupChanged = computed<boolean>(() => {
 
 // ------------------------------------------------------------- Salidas
 
-const {
-    departures,
-    loading: departuresLoading,
-    error: departuresError,
-    options: departureOptions,
-    scheduledCount,
-    openCount,
-    load: loadDepartures,
-    loadOptions: loadDepartureOptions,
-} = useTourDepartures(props.tour.id);
+const departures = computed<TourDateAdmin[]>(() => props.departures);
+
+/** Programadas y no canceladas: es el número que va en la pestaña. */
+const scheduledCount = computed(
+    () =>
+        departures.value.filter((departure) => departure.status !== 'cancelled')
+            .length,
+);
+
+/** Salidas abiertas a la venta, para la tarjeta de impacto. */
+const openCount = computed(
+    () =>
+        departures.value.filter((departure) => departure.status === 'open')
+            .length,
+);
 
 const {
     summary: manifestSummary,
@@ -246,8 +257,9 @@ const editingDate = ref<TourDateAdmin | null>(null);
 
 const cancelOpen = ref(false);
 const cancelTarget = ref<TourDateAdmin | null>(null);
-const cancelReason = ref('');
-const cancelling = ref(false);
+const cancelForm = useForm({ reason: '' });
+const cancelling = computed(() => cancelForm.processing);
+const destroyDateForm = useForm({});
 
 function openCreateDate(): void {
     editingDate.value = null;
@@ -261,38 +273,30 @@ function openEditDate(departure: TourDateAdmin): void {
 
 function openCancelDate(departure: TourDateAdmin): void {
     cancelTarget.value = departure;
-    cancelReason.value = '';
+    cancelForm.reset();
+    cancelForm.clearErrors();
     cancelOpen.value = true;
 }
 
 function confirmCancelDate(): void {
     const target = cancelTarget.value;
 
-    if (target === null || cancelling.value) {
+    if (target === null || cancelForm.processing) {
         return;
     }
 
-    cancelling.value = true;
-
-    void api.patch(
-        CancelTourDateController(target.id).url,
-        { reason: cancelReason.value.trim() || null },
-        {
+    cancelForm
+        .transform((data) => ({ reason: data.reason.trim() || null }))
+        .patch(CancelTourDateController(target.id).url, {
+            preserveScroll: true,
             onSuccess: () => {
                 toast.success(t('Salida cancelada.'));
                 cancelOpen.value = false;
-                void loadDepartures();
             },
-            onError: (errors) => {
-                toast.error(
-                    errors._global ?? t('No se pudo cancelar la salida.'),
-                );
+            onError: () => {
+                toast.error(t('No se pudo cancelar la salida.'));
             },
-            onFinish: () => {
-                cancelling.value = false;
-            },
-        },
-    );
+        });
 }
 
 function removeDate(departure: TourDateAdmin): void {
@@ -306,13 +310,13 @@ function removeDate(departure: TourDateAdmin): void {
         return;
     }
 
-    void api.delete(destroyDate(departure.id).url, {
+    destroyDateForm.delete(destroyDate(departure.id).url, {
+        preserveScroll: true,
         onSuccess: () => {
             toast.success(t('Salida eliminada.'));
-            void loadDepartures();
         },
-        onError: (errors) => {
-            toast.error(errors._global ?? t('No se pudo eliminar la salida.'));
+        onError: () => {
+            toast.error(t('No se pudo eliminar la salida.'));
         },
     });
 }
@@ -338,9 +342,6 @@ function openFullManifest(): void {
 }
 
 onMounted(() => {
-    void loadDepartures();
-    void loadDepartureOptions();
-
     if (canViewPassengers.value) {
         void loadManifestSummary();
     }
@@ -365,22 +366,21 @@ function normalizePayload(data: TourFormPayload): TourSubmitPayload {
 }
 
 function submit(): void {
+    if (form.processing) {
+        return;
+    }
+
     form.clearErrors();
     durationConflict.value = null;
-    saving.value = true;
 
-    void api.put(
+    form.transform(normalizePayload).put(
         updateTour({ tour: props.tour.id }).url,
-        normalizePayload(form.data()),
         {
+            preserveScroll: true,
             onSuccess: () => {
                 toast.success(t('Cambios guardados.'));
-                router.reload({ only: ['tour'] });
-                void loadDepartures();
             },
             onError: (errors) => {
-                form.setError(errors);
-
                 // WHY (D9): alargar el tour puede cruzar salidas ya programadas.
                 // El 422 nombra cuáles y ese texto no puede quedar escondido en
                 // un campo de otra pestaña.
@@ -390,9 +390,6 @@ function submit(): void {
                 }
 
                 toast.error(t('Revisa los campos marcados.'));
-            },
-            onFinish: () => {
-                saving.value = false;
             },
         },
     );
@@ -441,62 +438,27 @@ function statusIcon(status: TourStatusType) {
     return STATUS_ICONS[status] ?? CircleCheck;
 }
 
-const STATUS_ERROR_MESSAGES: Record<string, string> = {
-    TOUR_NEEDS_IMAGE_TO_ACTIVATE: t(
-        'El tour necesita al menos una imagen antes de activarse.',
-    ),
-    TOUR_NEEDS_GUIDE_TO_ACTIVATE: t(
-        'El tour necesita un guía por defecto antes de activarse.',
-    ),
-    INVALID_STATUS_TRANSITION: t(
-        'Ese cambio de estado no es válido desde el estado actual del tour.',
-    ),
-    TOUR_HAS_ACTIVE_BOOKINGS: t(
-        'El tour tiene reservas activas: archívalo en lugar de cambiarlo de estado.',
-    ),
-    FEATURE_REQUIRES_ENTERPRISE: t(
-        'Esta acción solo está disponible en el plan Enterprise.',
-    ),
-};
-
-function statusErrorMessage(errors: ApiErrors): string {
-    const mapped = errors.error_code
-        ? STATUS_ERROR_MESSAGES[errors.error_code]
-        : undefined;
-
-    if (mapped) {
-        return mapped;
-    }
-
-    if (!errors.error_code && errors._global) {
-        return errors._global;
-    }
-
-    return t(
-        'No se pudo cambiar el estado del tour. Revisa que tenga al menos una imagen y que el cambio sea válido desde su estado actual.',
-    );
-}
+const statusForm = useForm({ status: '' as TourStatusType | '' });
+const deleteForm = useForm({});
+const changingStatus = computed(() => statusForm.processing);
 
 function transitionTo(next: TourStatusType): void {
     statusError.value = null;
-    changingStatus.value = true;
+    statusForm.status = next;
 
-    void api.patch(
-        changeStatus({ tour: props.tour.id }).url,
-        { status: next },
-        {
-            onSuccess: () => {
-                toast.success(t('Estado actualizado.'));
-                router.reload({ only: ['tour'] });
-            },
-            onError: (errors) => {
-                statusError.value = statusErrorMessage(errors);
-            },
-            onFinish: () => {
-                changingStatus.value = false;
-            },
+    statusForm.patch(changeStatus({ tour: props.tour.id }).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Estado actualizado.'));
         },
-    );
+        onError: (errors) => {
+            statusError.value =
+                errors.status ??
+                t(
+                    'No se pudo cambiar el estado del tour. Revisa que tenga al menos una imagen y que el cambio sea válido desde su estado actual.',
+                );
+        },
+    });
 }
 
 function deleteTour(): void {
@@ -510,23 +472,12 @@ function deleteTour(): void {
         return;
     }
 
-    void api.delete(destroyTour({ tour: props.tour.id }).url, {
+    deleteForm.delete(destroyTour({ tour: props.tour.id }).url, {
         onSuccess: () => {
             toast.success(t('Tour eliminado.'));
-            router.visit(indexPage().url);
         },
         onError: (errors) => {
-            if (errors.error_code === 'TOUR_HAS_ACTIVE_BOOKINGS') {
-                toast.error(
-                    t(
-                        'No se puede eliminar: hay reservas activas. Archivalo en su lugar.',
-                    ),
-                );
-
-                return;
-            }
-
-            toast.error(t('No se pudo eliminar el tour.'));
+            toast.error(errors.tour ?? t('No se pudo eliminar el tour.'));
         },
     });
 }
@@ -540,7 +491,7 @@ const tabs = computed<TourTabItem[]>(() => {
         {
             id: 'departures',
             label: t('Salidas'),
-            count: departuresLoading.value ? null : scheduledCount.value,
+            count: scheduledCount.value,
         },
     ];
 
@@ -684,6 +635,7 @@ const lastEdited = computed<string | null>(() =>
                             :model-value="payload"
                             :errors="formErrors"
                             :categories="props.categories"
+                            :available-routes="props.availableRoutes"
                             :sections="CONTENT_SECTIONS"
                             @update:model-value="
                                 (value) => applyFormValue(form, value)
@@ -707,7 +659,7 @@ const lastEdited = computed<string | null>(() =>
                                             </div>
                                             <MonoLabel class="shrink-0 pt-1">{{
                                                 $t('Paso :number', {
-                                                    number: 5,
+                                                    number: 6,
                                                 })
                                             }}</MonoLabel>
                                         </div>
@@ -740,6 +692,7 @@ const lastEdited = computed<string | null>(() =>
                             :model-value="payload"
                             :errors="formErrors"
                             :categories="props.categories"
+                            :available-routes="props.availableRoutes"
                             :sections="['route']"
                             @update:model-value="
                                 (value) => applyFormValue(form, value)
@@ -807,17 +760,13 @@ const lastEdited = computed<string | null>(() =>
                         :departures="departures"
                         :currency="props.tour.currency"
                         :duration-hours="props.tour.duration_hours"
-                        :loading="departuresLoading"
-                        :error="departuresError"
-                        :fallback-guides="departureOptions.guides"
+                        :fallback-guides="props.departureOptions.guides"
                         :can-view-passengers="canViewPassengers"
                         @create="openCreateDate"
                         @edit="openEditDate"
                         @cancel="openCancelDate"
                         @remove="removeDate"
                         @passengers="openPassengersOf"
-                        @assigned="loadDepartures"
-                        @retry="loadDepartures"
                     />
                 </section>
 
@@ -867,7 +816,7 @@ const lastEdited = computed<string | null>(() =>
                 <TourImpactCard
                     :summary="manifestSummary"
                     :open-departures="openCount"
-                    :loading="manifestLoading || departuresLoading"
+                    :loading="manifestLoading"
                     :can-view-passengers="canViewPassengers"
                     @view-passengers="activeTab = 'passengers'"
                 />
@@ -879,12 +828,11 @@ const lastEdited = computed<string | null>(() =>
             :tour-id="props.tour.id"
             :editing="editingDate"
             :duration-hours="props.tour.duration_hours"
-            :default-guide-id="props.tour.default_guide_id"
-            :guides="departureOptions.guides"
-            :routes="departureOptions.routes"
-            :providers="departureOptions.providers"
-            :hotels="departureOptions.hotels"
-            @saved="loadDepartures"
+            :departure-defaults="props.departureDefaults"
+            :tour-routes="props.tour.routes"
+            :guides="props.departureOptions.guides"
+            :providers="props.departureOptions.providers"
+            :hotels="props.departureOptions.hotels"
         />
 
         <Dialog v-model:open="cancelOpen">
@@ -906,7 +854,7 @@ const lastEdited = computed<string | null>(() =>
                     }}</Label>
                     <Textarea
                         id="cancel-reason"
-                        v-model="cancelReason"
+                        v-model="cancelForm.reason"
                         rows="3"
                         :placeholder="$t('Ej: clima adverso')"
                     />

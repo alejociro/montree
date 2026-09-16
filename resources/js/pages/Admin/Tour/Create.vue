@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, ImageOff } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     index as indexPage,
-    edit as editPage,
+    store as storeTour,
 } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import { store as storeTour } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import Heading from '@/components/Heading.vue';
 import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
@@ -23,14 +22,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { useApi } from '@/composables/useApi';
 import { useTenant } from '@/composables/useTenant';
 import { useTourCompletion } from '@/composables/useTourCompletion';
 import { useTranslations } from '@/composables/useTranslations';
 import { applyFormValue } from '@/lib/form-errors';
 import { tourStopsPayload } from '@/lib/tour-stops';
+import type { RouteOption } from '@/types/logistics';
 import type {
-    Tour,
     TourCategory,
     TourFormPayload,
     TourFormStep,
@@ -40,17 +38,13 @@ import type {
 
 const { t } = useTranslations();
 
-type StoreTourResponse = {
-    data?: Tour;
-};
-
 type Props = {
     categories: TourCategory[];
+    availableRoutes: RouteOption[];
 };
 
 const props = defineProps<Props>();
 const { currency: tenantCurrency } = useTenant();
-const api = useApi();
 
 const initialValues: TourFormPayload = {
     name: '',
@@ -71,14 +65,15 @@ const initialValues: TourFormPayload = {
     requirements: [],
     itinerary: [],
     stops: [],
+    routes: [],
 };
 
 const form = useForm<TourFormPayload>(() => ({ ...initialValues }));
-const planError = ref<string | null>(null);
-const saving = ref(false);
 const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
+const planError = computed(() => formErrors.value.plan ?? null);
+const saving = computed(() => form.processing);
 
 const payload = computed<TourFormPayload>(() => form.data());
 
@@ -155,44 +150,20 @@ function normalizePayload(data: TourFormPayload): TourSubmitPayload {
 }
 
 function submit(): void {
-    planError.value = null;
+    if (form.processing) {
+        return;
+    }
+
     form.clearErrors();
-    saving.value = true;
 
-    void api.post<StoreTourResponse>(
-        storeTour().url,
-        normalizePayload(form.data()),
-        {
-            onSuccess: (response) => {
-                const tour = response?.data;
-
-                toast.success(t('Tour creado en borrador.'));
-
-                if (tour) {
-                    router.visit(editPage({ tour: tour.id }).url);
-
-                    return;
-                }
-
-                router.visit(indexPage().url);
-            },
-            onError: (errors) => {
-                if (errors.error_code === 'PLAN_LIMIT_TOURS_REACHED') {
-                    planError.value = t(
-                        'Alcanzaste el límite de tours de tu plan. Actualiza tu plan para crear más.',
-                    );
-
-                    return;
-                }
-
-                form.setError(errors);
-                toast.error(t('Revisa los campos marcados.'));
-            },
-            onFinish: () => {
-                saving.value = false;
-            },
+    form.transform(normalizePayload).post(storeTour.url(), {
+        onSuccess: () => {
+            toast.success(t('Tour creado en borrador.'));
         },
-    );
+        onError: () => {
+            toast.error(t('Revisa los campos marcados.'));
+        },
+    });
 }
 </script>
 
@@ -244,6 +215,7 @@ function submit(): void {
                     :model-value="payload"
                     :errors="formErrors"
                     :categories="props.categories"
+                    :available-routes="props.availableRoutes"
                     @update:model-value="(value) => applyFormValue(form, value)"
                 >
                     <template #gallery>
@@ -263,7 +235,7 @@ function submit(): void {
                                         }}</CardDescription>
                                     </div>
                                     <MonoLabel class="shrink-0 pt-1">{{
-                                        $t('Paso :number', { number: 5 })
+                                        $t('Paso :number', { number: 6 })
                                     }}</MonoLabel>
                                 </div>
                             </CardHeader>

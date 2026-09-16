@@ -25,7 +25,7 @@ trait BelongsToTenant
 {
     public static function bootBelongsToTenant(): void
     {
-        static::addGlobalScope('tenant', static function (Builder $builder): void {
+        static::addGlobalScope(Tenant::SCOPE, static function (Builder $builder): void {
             $tenant = Tenant::current();
 
             if ($tenant === null) {

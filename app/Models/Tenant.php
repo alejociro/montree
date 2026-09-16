@@ -64,6 +64,16 @@ class Tenant extends BaseTenant
         ];
     }
 
+    /**
+     * Clave con la que `BelongsToTenant` registra su global scope, y la única
+     * que `withoutGlobalScope()` reconoce.
+     *
+     * WHY: vive acá y no en el trait porque PHP no deja leer una constante de
+     * trait por el nombre del trait, y el filtro se quedaría puesto en silencio
+     * si alguien pasara la clase.
+     */
+    public const SCOPE = 'tenant';
+
     public function newEloquentBuilder($query): TenantBuilder
     {
         return new TenantBuilder($query);

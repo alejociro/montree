@@ -1,74 +1,83 @@
 <script setup lang="ts">
-import { Head, Link, useHttp } from '@inertiajs/vue3';
-import { AlertCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next';
-import { onMounted, ref, watch } from 'vue';
-import { create as createPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import TourController from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import {
+    create as createPage,
+    index as toursIndex,
+} from '@/actions/App/Http/Controllers/Admin/TourPagesController';
 import Heading from '@/components/Heading.vue';
 import TourAdminCard from '@/components/organisms/TourAdminCard.vue';
 import TourFilters from '@/components/organisms/TourFilters.vue';
 import TourKpiGrid from '@/components/organisms/TourKpiGrid.vue';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
 import { useTenant } from '@/composables/useTenant';
-import { useTranslations } from '@/composables/useTranslations';
 import { TOUR_SORT_PARAMS } from '@/types/tour';
 import type {
     PaginatedTours,
     TourCategory,
     TourIndexFilters,
     TourIndexStats,
-    TourSummary,
+    TourSortValue,
+    TourStatus,
 } from '@/types/tour';
 
-const { t } = useTranslations();
-
-const PER_PAGE = 9;
+type ServerFilters = {
+    status: TourStatus | null;
+    category_id: number | null;
+    search: string | null;
+    sort: string;
+    direction: 'asc' | 'desc';
+};
 
 type Props = {
+    tours: PaginatedTours;
+    filters: ServerFilters;
     categories: TourCategory[];
     /**
-     * KPIs del encabezado. Opcional: el controlador todavía no los calcula, y
-     * la fila se omite en vez de mostrar ceros que no son la verdad.
+     * KPIs del encabezado. Opcional: sin `bookings.view` el servidor omite el
+     * bloque de saldos y la fila se adapta en vez de mostrar ceros.
      */
     stats?: TourIndexStats;
 };
 
 const props = defineProps<Props>();
+const { currency } = useTenant();
+
+/**
+ * El selector de orden de la barra combina columna y dirección en un solo
+ * valor; el servidor las recibe separadas. Se traduce en los dos sentidos.
+ */
+function sortValueFrom(server: ServerFilters): TourSortValue {
+    const match = (Object.keys(TOUR_SORT_PARAMS) as TourSortValue[]).find(
+        (value) =>
+            TOUR_SORT_PARAMS[value].sort === server.sort &&
+            TOUR_SORT_PARAMS[value].direction === server.direction,
+    );
+
+    return match ?? 'recent';
+}
 
 const filters = ref<TourIndexFilters>({
-    status: 'all',
-    category_id: null,
-    search: '',
-    sort: 'recent',
+    status: props.filters.status ?? 'all',
+    category_id: props.filters.category_id,
+    search: props.filters.search ?? '',
+    sort: sortValueFrom(props.filters),
 });
 
-const tours = ref<TourSummary[]>([]);
-const meta = ref<PaginatedTours['meta'] | null>(null);
-const loading = ref(false);
-const loaded = ref(false);
-const errorMessage = ref<string | null>(null);
-const page = ref(1);
-const { currency } = useTenant();
+const meta = computed(() => props.tours.meta);
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
-async function fetchTours(): Promise<void> {
-    loading.value = true;
-    errorMessage.value = null;
-
+function visit(page: number): void {
     const { sort, direction } = TOUR_SORT_PARAMS[filters.value.sort];
+    const search = filters.value.search.trim();
 
-    const query: Record<string, string> = {
-        page: String(page.value),
-        // WHY: la rejilla es de 3 columnas; 9 por página la deja siempre
-        // completa y hace que la paginación aparezca a partir del décimo tour.
-        per_page: String(PER_PAGE),
-        sort,
-        direction,
-    };
+    const query: Record<string, string> = { sort, direction };
+
+    if (page > 1) {
+        query.page = String(page);
+    }
 
     if (filters.value.status !== 'all') {
         query.status = filters.value.status;
@@ -78,43 +87,29 @@ async function fetchTours(): Promise<void> {
         query.category_id = String(filters.value.category_id);
     }
 
-    if (filters.value.search.trim() !== '') {
-        query.search = filters.value.search.trim();
+    if (search !== '') {
+        query.search = search;
     }
 
-    try {
-        const response = (await useHttp().submit(
-            TourController.index({ query }),
-        )) as PaginatedTours;
-
-        tours.value = response.data;
-        meta.value = response.meta;
-    } catch {
-        errorMessage.value = t('No se pudieron cargar los tours.');
-        tours.value = [];
-        meta.value = null;
-    } finally {
-        loading.value = false;
-        loaded.value = true;
-    }
+    router.get(
+        toursIndex.url({ query }),
+        {},
+        { preserveState: true, preserveScroll: true, replace: true },
+    );
 }
 
-// WHY: any filter change invalidates the current page — staying on page 4 of a
-// narrower result set would render an empty list.
-function resetAndFetch(): void {
-    page.value = 1;
-    void fetchTours();
+// WHY: cambiar un filtro invalida la página actual — quedarse en la 4 de un
+// resultado más corto devolvería una rejilla vacía.
+function resetAndVisit(): void {
+    visit(1);
 }
 
 function goToPage(target: number): void {
-    const lastPage = meta.value?.last_page ?? 1;
-
-    if (target < 1 || target > lastPage || target === page.value) {
+    if (target < 1 || target > meta.value.last_page) {
         return;
     }
 
-    page.value = target;
-    void fetchTours();
+    visit(target);
 }
 
 watch(
@@ -124,15 +119,13 @@ watch(
             clearTimeout(searchDebounce);
         }
 
-        searchDebounce = setTimeout(resetAndFetch, 300);
+        searchDebounce = setTimeout(resetAndVisit, 300);
     },
 );
 
-watch(() => filters.value.status, resetAndFetch);
-watch(() => filters.value.category_id, resetAndFetch);
-watch(() => filters.value.sort, resetAndFetch);
-
-onMounted(fetchTours);
+watch(() => filters.value.status, resetAndVisit);
+watch(() => filters.value.category_id, resetAndVisit);
+watch(() => filters.value.sort, resetAndVisit);
 </script>
 
 <template>
@@ -149,10 +142,6 @@ onMounted(fetchTours);
                 "
             />
             <div class="flex items-center gap-2">
-                <Spinner
-                    v-if="loading && loaded"
-                    class="text-muted-foreground"
-                />
                 <Link :href="createPage().url">
                     <Button>
                         <Plus class="size-4" />
@@ -168,38 +157,9 @@ onMounted(fetchTours);
             <TourFilters v-model="filters" :categories="props.categories" />
         </div>
 
-        <Alert v-if="errorMessage" variant="destructive" class="mt-6">
-            <AlertCircle class="size-4" />
-            <AlertTitle>{{ $t('Error') }}</AlertTitle>
-            <AlertDescription class="flex flex-col items-start gap-3">
-                {{ errorMessage }}
-                <Button size="sm" variant="outline" @click="fetchTours()">
-                    {{ $t('Reintentar') }}
-                </Button>
-            </AlertDescription>
-        </Alert>
-
-        <div v-else class="mt-5">
+        <div class="mt-5">
             <div
-                v-if="!loaded"
-                class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-            >
-                <div
-                    v-for="i in 6"
-                    :key="i"
-                    class="overflow-hidden rounded-xl border border-border"
-                >
-                    <Skeleton class="aspect-[16/9] w-full rounded-none" />
-                    <div class="space-y-2.5 p-4">
-                        <Skeleton class="h-4 w-3/4" />
-                        <Skeleton class="h-3 w-1/2" />
-                        <Skeleton class="h-2 w-full" />
-                    </div>
-                </div>
-            </div>
-
-            <div
-                v-else-if="tours.length === 0"
+                v-if="props.tours.data.length === 0"
                 class="flex flex-col items-center gap-4 rounded-xl border border-dashed border-input p-12 text-center"
             >
                 <div class="space-y-1">
@@ -225,7 +185,7 @@ onMounted(fetchTours);
                 class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
             >
                 <TourAdminCard
-                    v-for="tour in tours"
+                    v-for="tour in props.tours.data"
                     :key="tour.id"
                     :tour="tour"
                     :fallback-currency="currency ?? 'USD'"
@@ -233,7 +193,7 @@ onMounted(fetchTours);
             </div>
 
             <div
-                v-if="meta && meta.total > 0"
+                v-if="meta.total > 0"
                 class="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
                 <p class="text-xs text-muted-foreground">
@@ -250,7 +210,7 @@ onMounted(fetchTours);
                     <Button
                         size="sm"
                         variant="outline"
-                        :disabled="loading || meta.current_page <= 1"
+                        :disabled="meta.current_page <= 1"
                         @click="goToPage(meta.current_page - 1)"
                     >
                         <ChevronLeft class="size-4" />
@@ -267,9 +227,7 @@ onMounted(fetchTours);
                     <Button
                         size="sm"
                         variant="outline"
-                        :disabled="
-                            loading || meta.current_page >= meta.last_page
-                        "
+                        :disabled="meta.current_page >= meta.last_page"
                         @click="goToPage(meta.current_page + 1)"
                     >
                         {{ $t('Siguiente') }}

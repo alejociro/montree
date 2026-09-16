@@ -7,11 +7,13 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStatus;
+use App\Models\Builders\TourBuilder;
 use Database\Factories\TourFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -87,6 +89,11 @@ class Tour extends Model
         ];
     }
 
+    public function newEloquentBuilder($query): TourBuilder
+    {
+        return new TourBuilder($query);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -113,6 +120,24 @@ class Tour extends Model
     public function stops(): HasMany
     {
         return $this->hasMany(TourStop::class)->orderBy('position');
+    }
+
+    /**
+     * Rutas logísticas que este producto puede operar. Una salida solo puede
+     * elegir entre estas.
+     */
+    public function routes(): BelongsToMany
+    {
+        return $this->belongsToMany(Route::class)
+            ->withPivot(['is_default', 'position'])
+            ->withTimestamps()
+            ->orderBy('route_tour.position')
+            ->orderBy('routes.name');
+    }
+
+    public function defaultRoute(): ?Route
+    {
+        return $this->routes->first(fn (Route $route) => (bool) $route->pivot->is_default);
     }
 
     public function dates(): HasMany

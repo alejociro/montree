@@ -1,4 +1,9 @@
-import type { TourDateStatus } from '@/types/enums.generated';
+import type {
+    RouteKind,
+    TourDateStatus,
+    TourDifficulty,
+    TourStopKind,
+} from '@/types/enums.generated';
 import type { TourRouteStop } from '@/types/tour-route';
 
 export type TourDetailImage = {
@@ -22,6 +27,27 @@ export type TourFact = {
     value: string;
 };
 
+/** Parada de la ruta de una salida: las coordenadas son opcionales. */
+export type TourDepartureRouteStop = {
+    position: number;
+    name: string;
+    kind: TourStopKind;
+    time_label: string | null;
+    latitude: string | null;
+    longitude: string | null;
+};
+
+export type TourDepartureRoute = {
+    id: number;
+    name: string;
+    kind: RouteKind | null;
+    difficulty: TourDifficulty | null;
+    distance_km: string | null;
+    duration_hours: string | null;
+    description: string | null;
+    stops: TourDepartureRouteStop[];
+};
+
 export type TourDetailDate = {
     id: number;
     starts_at: string;
@@ -33,6 +59,8 @@ export type TourDetailDate = {
     available_seats: number;
     is_full: boolean;
     status: TourDateStatus;
+    route: TourDepartureRoute | null;
+    guide: { name: string } | null;
 };
 
 export type TourDetail = {

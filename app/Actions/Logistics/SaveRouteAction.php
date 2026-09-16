@@ -19,7 +19,7 @@ final class SaveRouteAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(?Route $route, array $data): Route
+    public function execute(?Route $route, array $data): Route
     {
         $stops = $data['stops'] ?? null;
         unset($data['stops']);
@@ -47,6 +47,8 @@ final class SaveRouteAction
                 'position' => $index + 1,
                 'name' => (string) $stop['name'],
                 'kind' => (string) $stop['kind'],
+                'latitude' => $stop['latitude'] ?? null,
+                'longitude' => $stop['longitude'] ?? null,
                 'time_label' => $this->trimmedOrNull($stop['time_label'] ?? null),
             ]);
         }

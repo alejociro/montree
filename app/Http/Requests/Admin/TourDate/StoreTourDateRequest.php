@@ -13,6 +13,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 class StoreTourDateRequest extends FormRequest
 {
@@ -58,11 +59,28 @@ class StoreTourDateRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:1000'],
             // WHY (D7): toda salida lleva guía. No existe «Sin asignar».
             'guide_id' => ['required', 'integer', $this->guideRule()],
-            'route_id' => ['nullable', 'integer', Rule::exists('routes', 'id')->where('tenant_id', $this->tenantId())],
+            'route_id' => ['nullable', 'integer', $this->routeRule()],
             'provider_id' => ['nullable', 'integer', Rule::exists('providers', 'id')->where('tenant_id', $this->tenantId())],
             'hotel_ids' => ['nullable', 'array'],
             'hotel_ids.*' => ['integer', 'distinct', Rule::exists('hotels', 'id')->where('tenant_id', $this->tenantId())],
         ];
+    }
+
+    /**
+     * La salida solo puede operar una de las rutas del producto (spec §G). Un
+     * producto sin rutas asociadas deja el pivote vacío y cualquier `route_id`
+     * es rechazado: solo queda «Sin ruta».
+     */
+    protected function routeRule(): Exists
+    {
+        return Rule::exists('route_tour', 'route_id')->where('tour_id', $this->tourIdForRoute());
+    }
+
+    protected function tourIdForRoute(): ?int
+    {
+        $tour = $this->route('tour');
+
+        return $tour instanceof Tour ? (int) $tour->getKey() : null;
     }
 
     /**

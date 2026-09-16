@@ -20,6 +20,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
@@ -108,7 +109,7 @@ final class CurrentAdminAccessMatrixTest extends TestCase
             // F018: `bookings.view`, `reviews.view`, `newsletter.view` y `team.view` pasan a
             // ser de admin/vendedor. El operador entraba solo por el middleware de grupo.
             'bookings.index' => ['bookings.index', 'GET', [], [], self::FORBIDDEN, self::PASSES],
-            'tour-dates.index' => ['tour-dates.index', 'GET', [], [], self::PASSES, self::PASSES],
+            'departures.index' => ['departures.index', 'GET', [], [], self::PASSES, self::PASSES],
             'reviews.index' => ['reviews.index', 'GET', [], [], self::FORBIDDEN, self::PASSES],
             'newsletter.subscribers' => ['newsletter.subscribers', 'GET', [], [], self::FORBIDDEN, self::PASSES],
             'users.index' => ['users.index', 'GET', [], [], self::FORBIDDEN, self::FORBIDDEN],
@@ -140,7 +141,6 @@ final class CurrentAdminAccessMatrixTest extends TestCase
     public static function tourDateRoutes(): array
     {
         return [
-            'tours.dates.index' => ['tours.dates.index', 'GET', ['tour'], [], self::PASSES, self::PASSES],
             'tours.dates.store' => ['tours.dates.store', 'POST', ['tour'], [], self::PASSES, self::FORBIDDEN],
             'tour-dates.update' => ['tour-dates.update', 'PUT', ['tourDate'], [], self::PASSES, self::FORBIDDEN],
             'tour-dates.cancel' => ['tour-dates.cancel', 'PATCH', ['tourDate'], [], self::PASSES, self::FORBIDDEN],
@@ -156,15 +156,13 @@ final class CurrentAdminAccessMatrixTest extends TestCase
     public static function logisticsRoutes(): array
     {
         return [
-            'routes.index' => ['routes.index', 'GET', [], [], self::PASSES, self::FORBIDDEN],
+            'logistics.index' => ['logistics.index', 'GET', [], [], self::PASSES, self::FORBIDDEN],
             'routes.store' => ['routes.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
             'routes.update' => ['routes.update', 'PUT', ['route'], [], self::PASSES, self::FORBIDDEN],
             'routes.destroy' => ['routes.destroy', 'DELETE', ['route'], [], self::PASSES, self::FORBIDDEN],
-            'providers.index' => ['providers.index', 'GET', [], [], self::PASSES, self::FORBIDDEN],
             'providers.store' => ['providers.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
             'providers.update' => ['providers.update', 'PUT', ['provider'], [], self::PASSES, self::FORBIDDEN],
             'providers.destroy' => ['providers.destroy', 'DELETE', ['provider'], [], self::PASSES, self::FORBIDDEN],
-            'hotels.index' => ['hotels.index', 'GET', [], [], self::PASSES, self::FORBIDDEN],
             'hotels.store' => ['hotels.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
             'hotels.update' => ['hotels.update', 'PUT', ['hotel'], [], self::PASSES, self::FORBIDDEN],
             'hotels.destroy' => ['hotels.destroy', 'DELETE', ['hotel'], [], self::PASSES, self::FORBIDDEN],
@@ -340,7 +338,7 @@ final class CurrentAdminAccessMatrixTest extends TestCase
         Auth::forgetGuards();
 
         $url = self::HOST.route(
-            'api.v1.admin.'.$route,
+            $this->routeName($route),
             array_map(fn (string $key): Model => $this->resource($key), $parameters),
             absolute: false,
         );
@@ -350,6 +348,17 @@ final class CurrentAdminAccessMatrixTest extends TestCase
         }
 
         return $this->json($method, $url, $payload);
+    }
+
+    /**
+     * WHY: desde administration-upgrades la mitad de la matriz vive en rutas web
+     * (`admin.*`) y la otra mitad sigue en la API (`api.v1.admin.*`). El permiso
+     * que protege cada celda no cambió al mudarse, así que la matriz resuelve el
+     * prefijo en vez de duplicar cada fila.
+     */
+    private function routeName(string $route): string
+    {
+        return RouteFacade::has('api.v1.admin.'.$route) ? 'api.v1.admin.'.$route : 'admin.'.$route;
     }
 
     private function resource(string $key): Model

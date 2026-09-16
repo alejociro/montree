@@ -42,13 +42,13 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($busyTour, $guide, self::START);
         $other = $this->tour(8, 'Salento');
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$other->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$other->id}/dates",
             ['starts_at' => self::START, 'capacity' => 10, 'guide_id' => $guide->id],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('Valle de Cocora', $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
     }
 
     public function test_a_three_day_tour_blocks_its_three_calendar_days(): void
@@ -58,13 +58,13 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($this->tour(50, 'Valle de Cocora'), $guide, self::START);
         $other = $this->tour(6, 'Salento');
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$other->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$other->id}/dates",
             ['starts_at' => '2026-09-14 06:00:00', 'capacity' => 10, 'guide_id' => $guide->id],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('12–14 sep', $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('12–14 sep', (string) session('errors')?->first('guide_id'));
     }
 
     public function test_a_cancelled_departure_frees_its_days(): void
@@ -73,12 +73,12 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($this->tour(50, 'Valle de Cocora'), $guide, self::START, TourDateStatus::Cancelled);
         $other = $this->tour(6, 'Salento');
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$other->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$other->id}/dates",
             ['starts_at' => '2026-09-13 06:00:00', 'capacity' => 10, 'guide_id' => $guide->id],
         );
 
-        $response->assertCreated();
+        $response->assertSessionHas('success');
     }
 
     public function test_a_full_departure_still_occupies_its_days(): void
@@ -88,13 +88,13 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($this->tour(50, 'Valle de Cocora'), $guide, self::START, TourDateStatus::Full);
         $other = $this->tour(6, 'Salento');
 
-        $response = $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$other->id}/dates",
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$other->id}/dates",
             ['starts_at' => '2026-09-13 06:00:00', 'capacity' => 10, 'guide_id' => $guide->id],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('Valle de Cocora', $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
     }
 
     public function test_the_availability_endpoint_reports_a_full_departure_as_busy(): void
@@ -118,12 +118,13 @@ final class GuideAvailabilityTest extends TestCase
         [$tenant, $admin, $guide] = $this->scenario();
         $departure = $this->departure($this->tour(8, 'Valle de Cocora'), $guide, self::START);
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}",
             ['capacity' => 14, 'guide_id' => $guide->id],
         );
 
-        $response->assertOk()->assertJsonPath('data.capacity', 14);
+        $response->assertSessionHas('success');
+        $this->assertSame(14, $departure->fresh()?->capacity);
     }
 
     public function test_moving_the_start_onto_a_busy_day_is_rejected_even_without_changing_the_guide(): void
@@ -132,13 +133,13 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($this->tour(8, 'Valle de Cocora'), $guide, self::START);
         $moving = $this->departure($this->tour(8, 'Salento'), $guide, '2026-09-20 07:00:00');
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$moving->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$moving->id}",
             ['starts_at' => self::START],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('Valle de Cocora', $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
     }
 
     public function test_the_patch_path_runs_the_same_rule(): void
@@ -147,13 +148,13 @@ final class GuideAvailabilityTest extends TestCase
         $this->departure($this->tour(8, 'Valle de Cocora'), $guide, self::START);
         $target = $this->departure($this->tour(8, 'Salento'), $this->guideFor($tenant), self::START);
 
-        $response = $this->actingAs($admin)->patchJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$target->id}/guide",
+        $response = $this->actingAs($admin)->patch(
+            $this->host($tenant)."/admin/tour-dates/{$target->id}/guide",
             ['guide_id' => $guide->id],
         );
 
-        $response->assertStatus(422);
-        $this->assertStringContainsString('Valle de Cocora', $response->json('errors.guide_id.0'));
+        $response->assertSessionHasErrors('guide_id');
+        $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
         $this->assertNotSame($guide->id, $target->fresh()?->guide_id);
     }
 
@@ -163,12 +164,12 @@ final class GuideAvailabilityTest extends TestCase
         $departure = $this->departure($this->tour(8, 'Salento'), $guide, self::START);
         $stranger = User::factory()->create();
 
-        $response = $this->actingAs($admin)->patchJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}/guide",
+        $response = $this->actingAs($admin)->patch(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}/guide",
             ['guide_id' => $stranger->id],
         );
 
-        $response->assertStatus(422)->assertJsonValidationErrors('guide_id');
+        $response->assertSessionHasErrors('guide_id');
     }
 
     public function test_guide_id_is_required_in_the_three_paths(): void
@@ -177,20 +178,20 @@ final class GuideAvailabilityTest extends TestCase
         $tour = $this->tour(8, 'Salento');
         $departure = $this->departure($tour, $guide, self::START);
 
-        $this->actingAs($admin)->postJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}/dates",
+        $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => '2026-10-01 07:00:00', 'capacity' => 10],
-        )->assertStatus(422)->assertJsonValidationErrors('guide_id');
+        )->assertSessionHasErrors('guide_id');
 
-        $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}",
+        $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}",
             ['guide_id' => null],
-        )->assertStatus(422)->assertJsonValidationErrors('guide_id');
+        )->assertSessionHasErrors('guide_id');
 
-        $this->actingAs($admin)->patchJson(
-            $this->host($tenant)."/api/v1/admin/tour-dates/{$departure->id}/guide",
+        $this->actingAs($admin)->patch(
+            $this->host($tenant)."/admin/tour-dates/{$departure->id}/guide",
             [],
-        )->assertStatus(422)->assertJsonValidationErrors('guide_id');
+        )->assertSessionHasErrors('guide_id');
     }
 
     public function test_the_availability_endpoint_lists_busy_blocks_and_honours_the_exclusion(): void

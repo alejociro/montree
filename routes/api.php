@@ -3,28 +3,17 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AccountController;
-use App\Http\Controllers\Api\V1\Admin\AssignGuideController as AdminAssignGuideController;
 use App\Http\Controllers\Api\V1\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Api\V1\Admin\BookingPaymentController as AdminBookingPaymentController;
-use App\Http\Controllers\Api\V1\Admin\CancelTourDateController as AdminCancelTourDateController;
 use App\Http\Controllers\Api\V1\Admin\GeocodeController as AdminGeocodeController;
 use App\Http\Controllers\Api\V1\Admin\GuideAvailabilityController as AdminGuideAvailabilityController;
-use App\Http\Controllers\Api\V1\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Api\V1\Admin\PassengerController as AdminPassengerController;
 use App\Http\Controllers\Api\V1\Admin\PromotionController as AdminPromotionController;
-use App\Http\Controllers\Api\V1\Admin\ProviderController as AdminProviderController;
-use App\Http\Controllers\Api\V1\Admin\RestoreTourDateController as AdminRestoreTourDateController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\V1\Admin\RoleController as AdminRoleController;
-use App\Http\Controllers\Api\V1\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
-use App\Http\Controllers\Api\V1\Admin\TourController as AdminTourController;
-use App\Http\Controllers\Api\V1\Admin\TourDateController as AdminTourDateController;
-use App\Http\Controllers\Api\V1\Admin\TourDateIndexController as AdminTourDateIndexController;
-use App\Http\Controllers\Api\V1\Admin\TourImageController as AdminTourImageController;
 use App\Http\Controllers\Api\V1\Admin\TourPassengerController as AdminTourPassengerController;
-use App\Http\Controllers\Api\V1\Admin\TourStatusController as AdminTourStatusController;
 use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CategoryController;
@@ -97,42 +86,10 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::put('passengers/{traveler}', [AdminPassengerController::class, 'update'])->middleware('can:bookings.update')->name('passengers.update');
     Route::post('bookings/{booking}/payments', [AdminBookingPaymentController::class, 'store'])->middleware('can:bookings.update')->name('bookings.payments.store');
 
-    Route::apiResource('tours', AdminTourController::class)
-        ->names('tours')
-        ->middlewareFor(['index', 'show'], 'can:tours.view')
-        ->middlewareFor('store', 'can:tours.create')
-        ->middlewareFor('update', 'can:tours.update')
-        ->middlewareFor('destroy', 'can:tours.delete');
-    Route::patch('tours/{tour}/status', AdminTourStatusController::class)->middleware('can:tours.publish')->name('tours.status');
-
-    Route::get('tour-dates', AdminTourDateIndexController::class)->middleware('can:departures.view')->name('tour-dates.index');
-    Route::get('tours/{tour}/dates', [AdminTourDateController::class, 'index'])->middleware('can:departures.view')->name('tours.dates.index');
-    Route::post('tours/{tour}/dates', [AdminTourDateController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
-    Route::put('tour-dates/{tourDate}', [AdminTourDateController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
-    Route::patch('tour-dates/{tourDate}/cancel', AdminCancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
-    Route::patch('tour-dates/{tourDate}/restore', AdminRestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
-    Route::delete('tour-dates/{tourDate}', [AdminTourDateController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
     Route::get('guides/availability', AdminGuideAvailabilityController::class)->middleware('can:departures.view')->name('guides.availability');
     // Buscador de direcciones: lo comparten el editor de ruta del tour y las
     // fichas de logística, de ahí el gate en vez de un permiso suelto.
     Route::get('geocode', AdminGeocodeController::class)->middleware(['can:use-geocoder', 'throttle:30,1'])->name('geocode');
-    Route::patch('tour-dates/{tourDate}/guide', AdminAssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
-
-    Route::apiResource('routes', AdminRouteController::class)->only(['index', 'store', 'update', 'destroy'])->names('routes')
-        ->middlewareFor('index', 'can:logistics.view')
-        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
-    Route::apiResource('providers', AdminProviderController::class)->only(['index', 'store', 'update', 'destroy'])->names('providers')
-        ->middlewareFor('index', 'can:logistics.view')
-        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
-    Route::apiResource('hotels', AdminHotelController::class)->only(['index', 'store', 'update', 'destroy'])->names('hotels')
-        ->middlewareFor('index', 'can:logistics.view')
-        ->middlewareFor(['store', 'update', 'destroy'], 'can:logistics.manage');
-
-    Route::middleware('can:tours.images.manage')->group(function (): void {
-        Route::post('tours/{tour}/images', [AdminTourImageController::class, 'store'])->name('tours.images.store');
-        Route::patch('tours/{tour}/images/{image}', [AdminTourImageController::class, 'update'])->name('tours.images.update');
-        Route::delete('tours/{tour}/images/{image}', [AdminTourImageController::class, 'destroy'])->name('tours.images.destroy');
-    });
 
     Route::apiResource('promotions', AdminPromotionController::class)
         ->names('promotions')

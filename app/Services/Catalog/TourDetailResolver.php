@@ -17,7 +17,11 @@ final class TourDetailResolver
                 'images',
                 'itineraries',
                 'stops',
+                // La salida elegida manda sobre el producto: su ruta y su guía
+                // alimentan el mapa y la ficha logística del detalle (spec §G).
                 'dates' => fn ($q) => $q->openFuture()->orderBy('starts_at')->limit(12),
+                'dates.route.stops',
+                'dates.guide',
             ])
             ->where('slug', $slug)
             ->first();

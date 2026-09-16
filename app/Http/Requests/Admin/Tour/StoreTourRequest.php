@@ -7,6 +7,7 @@ namespace App\Http\Requests\Admin\Tour;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStopKind;
 use App\Http\Requests\Concerns\ValidatesTenantGuide;
+use App\Http\Requests\Concerns\ValidatesTourRoutes;
 use App\Models\Category;
 use App\Models\Tour;
 use Illuminate\Contracts\Validation\Validator;
@@ -15,7 +16,7 @@ use Illuminate\Validation\Rule;
 
 class StoreTourRequest extends FormRequest
 {
-    use ValidatesTenantGuide;
+    use ValidatesTenantGuide, ValidatesTourRoutes;
 
     private const SUPPORTED_CURRENCIES = ['USD', 'COP', 'EUR', 'MXN', 'ARS', 'PEN', 'CLP', 'BRL'];
 
@@ -71,6 +72,7 @@ class StoreTourRequest extends FormRequest
             'stops.*.latitude' => ['required', 'numeric', 'between:-90,90'],
             'stops.*.longitude' => ['required', 'numeric', 'between:-180,180'],
             'stops.*.itinerary_step' => ['nullable', 'integer', 'min:1'],
+            ...$this->tourRouteRules(),
         ];
     }
 
@@ -90,6 +92,7 @@ class StoreTourRequest extends FormRequest
     public function after(): array
     {
         return [
+            fn (Validator $validator) => $this->validateSingleDefaultRoute($validator),
             function (Validator $validator): void {
                 $kinds = array_column((array) $this->input('stops', []), 'kind');
 

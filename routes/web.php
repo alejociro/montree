@@ -1,11 +1,22 @@
 <?php
 
 use App\Http\Controllers\AccountPagesController;
+use App\Http\Controllers\Admin\AssignGuideController;
+use App\Http\Controllers\Admin\CancelTourDateController;
+use App\Http\Controllers\Admin\DeparturePagesController;
+use App\Http\Controllers\Admin\HotelController;
+use App\Http\Controllers\Admin\LogisticsPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
+use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\RestoreTourDateController;
 use App\Http\Controllers\Admin\ReviewPagesController;
+use App\Http\Controllers\Admin\RouteController as AdminRouteController;
 use App\Http\Controllers\Admin\TeamPagesController;
 use App\Http\Controllers\Admin\TenantConfigurationPagesController;
+use App\Http\Controllers\Admin\TourDatePagesController;
+use App\Http\Controllers\Admin\TourImageController;
 use App\Http\Controllers\Admin\TourPagesController;
+use App\Http\Controllers\Admin\TourStatusController;
 use App\Http\Controllers\Auth\CrossHostLoginController;
 use App\Http\Controllers\BookingPagesController;
 use App\Http\Controllers\CatalogPagesController;
@@ -107,10 +118,40 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::get('dashboard', DashboardPagesController::class)->name('dashboard');
     Route::get('tours', [TourPagesController::class, 'index'])->middleware('can:tours.view')->name('tours.index');
     Route::get('tours/create', [TourPagesController::class, 'create'])->middleware('can:tours.create')->name('tours.create');
+    Route::post('tours', [TourPagesController::class, 'store'])->middleware('can:tours.create')->name('tours.store');
     Route::get('tours/{tour}/edit', [TourPagesController::class, 'edit'])->middleware('can:tours.update')->name('tours.edit');
     Route::get('tours/{tour}', [TourPagesController::class, 'show'])->middleware('can:tours.view')->name('tours.show');
-    Route::inertia('departures', 'Admin/Departures/Index')->middleware('can:departures.view')->name('departures.index');
-    Route::inertia('logistics', 'Admin/Logistics/Index')->middleware('can:logistics.view')->name('logistics.index');
+    Route::put('tours/{tour}', [TourPagesController::class, 'update'])->middleware('can:tours.update')->name('tours.update');
+    Route::delete('tours/{tour}', [TourPagesController::class, 'destroy'])->middleware('can:tours.delete')->name('tours.destroy');
+    Route::patch('tours/{tour}/status', TourStatusController::class)->middleware('can:tours.publish')->name('tours.status');
+
+    Route::middleware('can:tours.images.manage')->group(function (): void {
+        Route::post('tours/{tour}/images', [TourImageController::class, 'store'])->name('tours.images.store');
+        Route::patch('tours/{tour}/images/{image}', [TourImageController::class, 'update'])->name('tours.images.update');
+        Route::delete('tours/{tour}/images/{image}', [TourImageController::class, 'destroy'])->name('tours.images.destroy');
+    });
+
+    Route::get('departures', [DeparturePagesController::class, 'index'])->middleware('can:departures.view')->name('departures.index');
+    Route::post('tours/{tour}/dates', [TourDatePagesController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
+    Route::put('tour-dates/{tourDate}', [TourDatePagesController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
+    Route::delete('tour-dates/{tourDate}', [TourDatePagesController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
+    Route::patch('tour-dates/{tourDate}/cancel', CancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
+    Route::patch('tour-dates/{tourDate}/restore', RestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
+    Route::patch('tour-dates/{tourDate}/guide', AssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
+
+    Route::get('logistics', [LogisticsPagesController::class, 'index'])->middleware('can:logistics.view')->name('logistics.index');
+
+    Route::middleware('can:logistics.manage')->group(function (): void {
+        Route::post('routes', [AdminRouteController::class, 'store'])->name('routes.store');
+        Route::put('routes/{route}', [AdminRouteController::class, 'update'])->name('routes.update');
+        Route::delete('routes/{route}', [AdminRouteController::class, 'destroy'])->name('routes.destroy');
+        Route::post('providers', [ProviderController::class, 'store'])->name('providers.store');
+        Route::put('providers/{provider}', [ProviderController::class, 'update'])->name('providers.update');
+        Route::delete('providers/{provider}', [ProviderController::class, 'destroy'])->name('providers.destroy');
+        Route::post('hotels', [HotelController::class, 'store'])->name('hotels.store');
+        Route::put('hotels/{hotel}', [HotelController::class, 'update'])->name('hotels.update');
+        Route::delete('hotels/{hotel}', [HotelController::class, 'destroy'])->name('hotels.destroy');
+    });
     Route::get('promotions', [PromotionPagesController::class, 'index'])->middleware('can:promotions.view')->name('promotions.index');
     Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->middleware('can:newsletter.view')->name('newsletter.index');
     Route::get('reviews', [ReviewPagesController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');

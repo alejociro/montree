@@ -38,11 +38,18 @@ final class UpdateTourDateRequest extends StoreTourDateRequest
             'min_payment_pct' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'guide_id' => ['sometimes', 'required', 'integer', $this->guideRule()],
-            'route_id' => ['sometimes', 'nullable', 'integer', Rule::exists('routes', 'id')->where('tenant_id', $this->tenantId())],
+            'route_id' => ['sometimes', 'nullable', 'integer', $this->routeRule()],
             'provider_id' => ['sometimes', 'nullable', 'integer', Rule::exists('providers', 'id')->where('tenant_id', $this->tenantId())],
             'hotel_ids' => ['sometimes', 'nullable', 'array'],
             'hotel_ids.*' => ['integer', 'distinct', Rule::exists('hotels', 'id')->where('tenant_id', $this->tenantId())],
         ];
+    }
+
+    protected function tourIdForRoute(): ?int
+    {
+        $tourDate = $this->route('tourDate');
+
+        return $tourDate instanceof TourDate ? $tourDate->tour_id : null;
     }
 
     /**

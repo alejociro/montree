@@ -32,16 +32,16 @@
 - [x] Commit `feat(super-admin): enter tenant, platform charges, dashboard charts, Inertia pages`
 
 ## B3 — Productos, rutas y salidas
-- [ ] Migraciones: `route_tour`, `route_stops.latitude/longitude`
-- [ ] `Tour::routes()`, `Route::tours()`, `SyncTourRoutesAction`, reglas `routes.*` en requests de tour
-- [ ] `DepartureDefaults` DTO; `route_id` validado contra `route_tour`; `RouteController@destroy` bloquea por tours
-- [ ] Controllers web admin (tours, status, imágenes, salidas, cancel/restore/guide, departures index, logistics index, routes/providers/hotels); borrar API equivalente y `useTourDepartures.ts`
-- [ ] `TourDetailResolver` + `PublicTourResource.future_dates[].route|guide`
-- [ ] `TourForm` sección rutas; `Show` card rutas; `TourDateFormDialog` con defaults y selector limitado (`useForm`)
-- [ ] `Departures/Index`, `Logistics/Index`, `LogisticsCrudPanel`, `LogisticsRecordDialog` (lat/lng en paradas) con props + `useForm`
-- [ ] `TourDetail.vue`: ruta/mapa/logística según salida elegida
-- [ ] Tests: `TourRoutesSyncTest`, `TourDateRouteValidationTest`, `DepartureDefaultsTest`, `RouteInUseDeletionTest`, `PublicTourDepartureRouteTest`, pages tests de departures/logistics; migrar los `Api/V1/Admin/Tour*|TourDate*|Logistics*` a web
-- [ ] Commit `feat(tours): product routes, departure inheritance, Inertia admin pages`
+- [x] Migraciones: `route_tour`, `route_stops.latitude/longitude`
+- [x] `Tour::routes()`, `Route::tours()`, `SyncTourRoutesAction`, reglas `routes.*` en requests de tour
+- [x] `DepartureDefaults` DTO; `route_id` validado contra `route_tour`; `RouteController@destroy` bloquea por tours
+- [x] Controllers web admin (tours, status, imágenes, salidas, cancel/restore/guide, departures index, logistics index, routes/providers/hotels); borrar API equivalente y `useTourDepartures.ts`
+- [x] `TourDetailResolver` + `PublicTourResource.future_dates[].route|guide`
+- [x] `TourForm` sección rutas; `Show` card rutas; `TourDateFormDialog` con defaults y selector limitado (`useForm`)
+- [x] `Departures/Index`, `Logistics/Index`, `LogisticsCrudPanel`, `LogisticsRecordDialog` (lat/lng en paradas) con props + `useForm`
+- [x] `TourDetail.vue`: ruta/mapa/logística según salida elegida
+- [x] Tests: `TourRoutesSyncTest`, `TourDateRouteValidationTest`, `DepartureDefaultsTest`, `RouteInUseDeletionTest`, `PublicTourDepartureRouteTest`, pages tests de departures/logistics; migrar los `Api/V1/Admin/Tour*|TourDate*|Logistics*` a web
+- [x] Commit `feat(tours): product routes, departure inheritance, Inertia admin pages`
 
 ## Notas durante implementación
 
@@ -107,3 +107,70 @@
   huérfanas, todas del landing y preexistentes a esta rama.
 - `TeamRequestMessagesTest` (×3) sigue rojo por `APP_LOCALE=en` en el `.env` local.
   Preexistente y de entorno: no se tocó.
+
+### B3 — 2026-09-15
+
+- `route_tour` no lleva `tenant_id`: los dos extremos ya son tenant-scoped y una
+  tercera copia del dato solo añade un sitio donde desalinearse. FK a `tours` en
+  cascada (borrar el producto suelta sus rutas) y a `routes` con `restrict` (una
+  ruta en uso se borra desde logística, con su mensaje, no por efecto colateral).
+- «Un solo `is_default` por tour» se garantiza en `SyncTourRoutesAction` y se
+  rechaza en el request: ninguna de las dos bases soporta el índice parcial de
+  forma portable. **Sin marca explícita el producto queda sin predeterminada**;
+  no se elige una por descarte, que es lo que hace posible el edge case «ruta
+  predeterminada eliminada → la próxima salida se crea sin ruta preseleccionada».
+- `departureDefaults` viaja **embebido por producto** en el tablero de salidas
+  (`tours[].departure_defaults` + `tours[].routes`) y como prop suelta solo en
+  `Admin/Tour/Edit`. Son seis escalares más la lista de rutas —que el selector
+  necesita igual—, así que un `router.reload({ only })` por apertura del diálogo
+  sería un viaje por nada. `DeparturesIndexPageTest` fija el conteo de consultas.
+- Las reglas de negocio dejan de responder 409/403 JSON: sobre una visita Inertia
+  eso es una página de error que se lleva puesto el formulario. Ahora vuelven con
+  `back()->withErrors()` bajo las claves `plan`, `status`, `tour`, `tour_date`,
+  `route`, `provider` y `hotel`. `App\Exceptions\LogisticsException` se elimina.
+- `Tour`, `Route`, `Provider` y `Hotel` ganan query builder propio
+  (`applyFilters`/`matching`), siguiendo la convención del plan §2.3. El buscador
+  de los tres catálogos de logística se mudó del controller al builder.
+- `GET /admin/logistics` sirve los tres catálogos en la misma visita, con
+  paginadores independientes (`routes_page`/`providers_page`/`hotels_page`): la
+  pestaña necesita el conteo de las tres bandejas para ser útil.
+- `Admin/Tour/Index` pasa a paginación y filtros del servidor (9 por página). El
+  selector de orden de la barra combina columna y dirección en un solo valor; la
+  página lo traduce a `sort`/`direction` en los dos sentidos.
+- Deuda del B2 saldada: la clave del global scope de tenant vive en
+  `App\Models\Tenant::SCOPE`. **No pudo ir en el trait como pedía la tarea**: PHP
+  no deja leer una constante de trait por el nombre del trait
+  (`BelongsToTenant::SCOPE` es un fatal). `TenantScopeConstantTest` prueba que con
+  un tenant actual la constante sí devuelve filas de otros tenants y que pasar la
+  clase no levanta nada.
+- `useTourDepartures.ts` desaparece; `TourUpcomingDatesList` y
+  `TourDeparturesTable` reciben las salidas por props. `Admin/Departures/Index.vue`
+  bajó de 1012 a ~636 líneas partiéndose en `DepartureBoardTable` y
+  `DepartureBoardFilters`, y ahora también **crea** salidas (antes solo editaba).
+- `TourDetail.vue`: una ruta con paradas pero sin coordenadas no cae al producto
+  —la salida manda— sino que degrada a lista sin mapa (`TourRouteStopSummary`).
+  `TourRouteMapSection` lleva `:key` por ruta porque `useTourRouteMap` no observa
+  `stops`; el `watch` de fondo queda pendiente.
+- `lang/en.json`: +21 claves nuevas, -13 huérfanas; `lang/es.json` +3 identidades
+  de plural. Verificado contra un worktree de `0122050` que `TranslationCatalogTest`
+  queda exactamente en las mismas 188 faltantes y 122 huérfanas del landing,
+  preexistentes a esta rama.
+- `TeamRequestMessagesTest` (×3) sigue rojo por `APP_LOCALE=en` en el `.env` local.
+  Preexistente y de entorno: no se tocó.
+- Migración de tests API → web (B3): se borró `tests/Feature/Api/V1/Admin/{Tour,TourDate,Logistics}`
+  y su contenido se repartió en una clase por caso de uso bajo `tests/Feature/Tours`,
+  `tests/Feature/TourDates` y `tests/Feature/Logistics`. Tres casos cambiaron de
+  semántica al cambiar el contrato: **(1)** «un `sort` desconocido cae al orden por
+  defecto» pasó a `test_index_rejects_an_unknown_sort` —`TourIndexRequest` valida la
+  lista y el listado ya no puede degradarse en silencio—; **(2)** el índice por
+  producto (`GET tours/{tour}/dates?scope=`) dejó de existir: las dos bandejas se
+  verifican ahora como props (`Admin/Tour/Edit` trae todas las salidas,
+  `Admin/Tour/Show` solo las futuras); **(3)** `test_status_rejection_body_carries_error_code_at_top_level`
+  se volvió `test_a_rejected_transition_returns_to_the_same_page_with_the_reason`:
+  no hay `error_code` que comprobar, el motivo viaja en `errors.status`.
+- Los tests de rol cambiaron de actor donde el permiso ya no correspondía:
+  `operator` **sí** tiene `tours.create/update/images.manage`, así que los casos de
+  «no puede» usan `sales`. `operator` sigue sin `tours.delete` ni `departures.delete`.
+- `TourIndexQueryCountTest` compara ahora 3 vs 9 productos (la página es de 9, ya no
+  hay `per_page`); el invariante sigue siendo el mismo número de consultas, y la cota
+  absoluta subió de 10 a 20 porque la página también trae categorías y KPIs.

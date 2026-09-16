@@ -1,32 +1,49 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import { Plus } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { index as logisticsIndex } from '@/actions/App/Http/Controllers/Admin/LogisticsPagesController';
 import Heading from '@/components/Heading.vue';
 import type { CountTab } from '@/components/molecules/CountTabs.vue';
 import FilterBar from '@/components/molecules/FilterBar.vue';
 import LogisticsCrudPanel from '@/components/organisms/LogisticsCrudPanel.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
-import type { LogisticsResourceKind } from '@/types/logistics';
+import type {
+    HotelResource,
+    LogisticsPaginatedResponse,
+    LogisticsResourceKind,
+    ProviderResource,
+    RouteResource,
+} from '@/types/logistics';
 
 const { t } = useTranslations();
 
 type TabKey = LogisticsResourceKind;
 
-const activeTab = ref<TabKey>('routes');
-const search = ref('');
+type Props = {
+    routes: LogisticsPaginatedResponse<RouteResource>;
+    providers: LogisticsPaginatedResponse<ProviderResource>;
+    hotels: LogisticsPaginatedResponse<HotelResource>;
+    filters: { search: string | null; tab: TabKey };
+};
+
+const props = defineProps<Props>();
+
+const activeTab = ref<TabKey>(props.filters.tab);
+const search = ref(props.filters.search ?? '');
 
 /**
- * Los tres paneles se montan a la vez (`v-show`) para poder poner el conteo en
- * su pestaña: un contador que solo aparece al abrir la bandeja no sirve para
- * decidir a cuál ir.
+ * Los tres catálogos llegan con la página —aunque solo uno esté visible— para
+ * que la pestaña lleve su conteo: un contador que solo aparece al abrir la
+ * bandeja no sirve para decidir a cuál ir.
  */
-const counts = ref<Record<TabKey, number | null>>({
-    routes: null,
-    providers: null,
-    hotels: null,
-});
+const counts = computed<Record<TabKey, number>>(() => ({
+    routes: props.routes.meta.total,
+    providers: props.providers.meta.total,
+    hotels: props.hotels.meta.total,
+}));
 
 const TAB_LABELS: Record<TabKey, string> = {
     routes: t('Rutas'),
@@ -51,10 +68,37 @@ const NEW_LABELS: Record<TabKey, string> = {
 /** La acción principal es la del tab activo, no una lista de tres botones. */
 const newLabel = computed(() => NEW_LABELS[activeTab.value]);
 
-const resultLabel = computed<string | null>(() => {
-    const value = counts.value[activeTab.value];
+const resultLabel = computed<string>(() =>
+    t(':count fichas', { count: counts.value[activeTab.value] }),
+);
 
-    return value === null ? null : t(':count fichas', { count: value });
+const VISIT_OPTIONS = {
+    preserveState: true,
+    preserveScroll: true,
+    replace: true,
+    only: ['routes', 'providers', 'hotels', 'filters'],
+};
+
+/** Un término nuevo empieza en la primera página de los tres catálogos. */
+const applySearch = useDebounceFn(() => {
+    const term = search.value.trim();
+
+    router.get(
+        logisticsIndex.url({
+            query: {
+                search: term === '' ? null : term,
+                tab: activeTab.value,
+            },
+        }),
+        {},
+        VISIT_OPTIONS,
+    );
+}, 300);
+
+watch(search, () => void applySearch());
+
+watch(activeTab, (tab) => {
+    router.get(logisticsIndex.url({ mergeQuery: { tab } }), {}, VISIT_OPTIONS);
 });
 
 const panels = {
@@ -107,25 +151,28 @@ function createInActiveTab(): void {
                 v-show="activeTab === 'routes'"
                 :ref="panels.routes"
                 kind="routes"
-                :search="search"
+                :records="props.routes.data"
+                :meta="props.routes.meta"
+                page-name="routes_page"
                 :empty-label="$t('Aún no tienes rutas')"
-                @update:count="counts.routes = $event"
             />
             <LogisticsCrudPanel
                 v-show="activeTab === 'providers'"
                 :ref="panels.providers"
                 kind="providers"
-                :search="search"
+                :records="props.providers.data"
+                :meta="props.providers.meta"
+                page-name="providers_page"
                 :empty-label="$t('Aún no tienes proveedores')"
-                @update:count="counts.providers = $event"
             />
             <LogisticsCrudPanel
                 v-show="activeTab === 'hotels'"
                 :ref="panels.hotels"
                 kind="hotels"
-                :search="search"
+                :records="props.hotels.data"
+                :meta="props.hotels.meta"
+                page-name="hotels_page"
                 :empty-label="$t('Aún no tienes hoteles')"
-                @update:count="counts.hotels = $event"
             />
         </div>
     </div>

@@ -1,34 +1,25 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import {
-    Ban,
     CalendarClock,
-    CheckCircle2,
     ChevronLeft,
     ChevronRight,
-    Eye,
     Loader2,
-    Pencil,
+    Plus,
 } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { show as tourShowPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
-import CancelTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/CancelTourDateController';
-import { index as hotelsIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/HotelController';
-import { index as providersIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/ProviderController';
-import RestoreTourDateController from '@/actions/App/Http/Controllers/Api/V1/Admin/RestoreTourDateController';
-import { index as routesIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/RouteController';
-import { index as teamIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TeamController';
-import { index as adminToursIndex } from '@/actions/App/Http/Controllers/Api/V1/Admin/TourController';
-import TourDateIndexController from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateIndexController';
-import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
+import AssignGuideController from '@/actions/App/Http/Controllers/Admin/AssignGuideController';
+import CancelTourDateController from '@/actions/App/Http/Controllers/Admin/CancelTourDateController';
+import { index as departuresIndex } from '@/actions/App/Http/Controllers/Admin/DeparturePagesController';
+import RestoreTourDateController from '@/actions/App/Http/Controllers/Admin/RestoreTourDateController';
+import { destroy as destroyDeparture } from '@/actions/App/Http/Controllers/Admin/TourDatePagesController';
 import KpiCard from '@/components/atoms/KpiCard.vue';
-import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import Heading from '@/components/Heading.vue';
-import ActionMenu from '@/components/molecules/ActionMenu.vue';
 import type { CountTab } from '@/components/molecules/CountTabs.vue';
-import FilterBar from '@/components/molecules/FilterBar.vue';
+import DepartureBoardFilters from '@/components/organisms/DepartureBoardFilters.vue';
+import DepartureBoardTable from '@/components/organisms/DepartureBoardTable.vue';
 import DepartureDetailSheet from '@/components/organisms/DepartureDetailSheet.vue';
 import TourDateFormDialog from '@/components/organisms/TourDateFormDialog.vue';
 import { Button } from '@/components/ui/button';
@@ -40,7 +31,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -51,183 +41,92 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi } from '@/composables/useApi';
 import { useTranslations } from '@/composables/useTranslations';
-import {
-    formatCurrency,
-    formatDayDistance,
-    formatDayMonth,
-    formatNumber,
-    formatWeekdayTime,
-} from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import type {
+    DepartureBoardFilterState,
     DepartureBoardStats,
     DepartureBoardTotals,
+    DepartureOptions,
     DepartureScopeId,
-    LogisticsRef,
+    DepartureTourOption,
+    PaginationLinks,
     PaginationMeta,
     TourDateGlobalAdmin,
-    TourDatesGlobalResponse,
 } from '@/types/logistics';
-import type { TeamListResponse, TeamMemberPayload } from '@/types/team';
 
 const { t } = useTranslations();
 
-const api = useApi();
-
-// 10 filas por página: el pedido es paginar a partir del undécimo registro.
-const PER_PAGE = 10;
-const ALL_TOURS = 'all';
-
-const dates = ref<TourDateGlobalAdmin[]>([]);
-const meta = ref<PaginationMeta | null>(null);
-const stats = ref<DepartureBoardStats | null>(null);
-const counts = ref<Partial<Record<DepartureScopeId, number>>>({});
-const totals = ref<DepartureBoardTotals | null>(null);
-const currentPage = ref(1);
-const loading = ref(true);
-const loadError = ref(false);
-
-const filters = reactive({
-    scope: 'upcoming' as DepartureScopeId,
-    search: '',
-    tourId: ALL_TOURS as string,
-    direction: 'asc' as 'asc' | 'desc',
-});
-
-type TourOption = { id: number; name: string };
-
-const tourOptions = ref<TourOption[]>([]);
-
-const guides = ref<LogisticsRef[]>([]);
-const routes = ref<LogisticsRef[]>([]);
-const providers = ref<LogisticsRef[]>([]);
-const hotels = ref<LogisticsRef[]>([]);
-
-const dialogOpen = ref(false);
-const editing = ref<TourDateGlobalAdmin | null>(null);
-
-const detailOpen = ref(false);
-const detail = ref<TourDateGlobalAdmin | null>(null);
-
-const cancelOpen = ref(false);
-const cancelTarget = ref<TourDateGlobalAdmin | null>(null);
-const cancelReason = ref('');
-const cancelling = ref(false);
-const restoringId = ref<number | null>(null);
-
-async function fetchJson<T>(url: string): Promise<T> {
-    const response = await fetch(url, {
-        credentials: 'same-origin',
-        headers: { Accept: 'application/json' },
-    });
-
-    if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    return (await response.json()) as T;
-}
-
-type ListQuery = {
-    page: number;
-    per_page: number;
-    direction: 'asc' | 'desc';
-    scope: DepartureScopeId;
-    search?: string;
-    tour_id?: number;
+type Props = {
+    departures: {
+        data: TourDateGlobalAdmin[];
+        links: PaginationLinks;
+        meta: PaginationMeta;
+    };
+    filters: DepartureBoardFilterState;
+    stats: DepartureBoardStats;
+    counts: Record<DepartureScopeId, number>;
+    totals: DepartureBoardTotals;
+    tours: DepartureTourOption[];
+    departureOptions: DepartureOptions;
 };
 
-function buildQuery(): ListQuery {
-    const query: ListQuery = {
-        page: currentPage.value,
-        per_page: PER_PAGE,
-        direction: filters.direction,
-        scope: filters.scope,
+const props = defineProps<Props>();
+
+const ALL_TOURS = 'all';
+
+const search = ref(props.filters.search ?? '');
+const scope = ref<DepartureScopeId>(props.filters.scope);
+const tourId = ref(
+    props.filters.tour_id === null ? ALL_TOURS : String(props.filters.tour_id),
+);
+const direction = ref<'asc' | 'desc'>(props.filters.direction);
+const reloading = ref(false);
+
+function reload(page?: number): void {
+    const query: Record<string, string | number> = {
+        scope: scope.value,
+        direction: direction.value,
     };
 
-    if (filters.search.trim() !== '') {
-        query.search = filters.search.trim();
+    if (search.value.trim() !== '') {
+        query.search = search.value.trim();
     }
 
-    if (filters.tourId !== ALL_TOURS) {
-        query.tour_id = Number(filters.tourId);
+    if (tourId.value !== ALL_TOURS) {
+        query.tour_id = Number(tourId.value);
     }
 
-    return query;
-}
-
-async function loadDates(): Promise<void> {
-    loading.value = true;
-    loadError.value = false;
-
-    try {
-        const response = await fetchJson<TourDatesGlobalResponse>(
-            TourDateIndexController.url({ query: buildQuery() }),
-        );
-        dates.value = response.data;
-        meta.value = response.meta;
-        stats.value = response.stats;
-        counts.value = response.counts;
-        totals.value = response.totals;
-    } catch {
-        loadError.value = true;
-    } finally {
-        loading.value = false;
+    if (page !== undefined && page > 1) {
+        query.page = page;
     }
+
+    router.get(departuresIndex.url({ query }), undefined, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        onStart: () => {
+            reloading.value = true;
+        },
+        onFinish: () => {
+            reloading.value = false;
+        },
+    });
 }
 
-/**
- * Desde F018 Fase 3A un miembro tiene varios roles y cada uno viaja como objeto
- * (`RoleSummaryResource`), no como string: hay que mirar `name`.
- */
-function isGuide(member: TeamMemberPayload): boolean {
-    return (member.roles ?? []).some((role) => role.name === 'guide');
-}
+// El buscador espera a que la persona deje de escribir; el resto de filtros
+// dispara de inmediato.
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
-async function loadTours(): Promise<void> {
-    try {
-        const response = await fetchJson<{ data: TourOption[] }>(
-            adminToursIndex({ query: { per_page: 100 } }).url,
-        );
-        tourOptions.value = response.data.map((tour) => ({
-            id: tour.id,
-            name: tour.name,
-        }));
-    } catch {
-        toast.error(t('No se pudieron cargar los tours para filtrar.'));
+watch(search, () => {
+    if (searchDebounce !== null) {
+        clearTimeout(searchDebounce);
     }
-}
 
-async function loadOptions(): Promise<void> {
-    try {
-        const [teamJson, routesJson, providersJson, hotelsJson] =
-            await Promise.all([
-                fetchJson<TeamListResponse>(teamIndex().url),
-                fetchJson<{ data: LogisticsRef[] }>(routesIndex().url),
-                fetchJson<{ data: LogisticsRef[] }>(providersIndex().url),
-                fetchJson<{ data: LogisticsRef[] }>(hotelsIndex().url),
-            ]);
+    searchDebounce = setTimeout(() => reload(), 300);
+});
 
-        guides.value = teamJson.data
-            .filter(isGuide)
-            .map((member) => ({ id: member.id, name: member.name }));
-        routes.value = routesJson.data.map((route) => ({
-            id: route.id,
-            name: route.name,
-        }));
-        providers.value = providersJson.data.map((provider) => ({
-            id: provider.id,
-            name: provider.name,
-        }));
-        hotels.value = hotelsJson.data.map((hotel) => ({
-            id: hotel.id,
-            name: hotel.name,
-        }));
-    } catch {
-        toast.error(t('No se pudieron cargar las opciones de condiciones.'));
-    }
-}
+watch([scope, tourId, direction], () => reload());
 
 const SCOPES: { id: DepartureScopeId; label: string }[] = [
     { id: 'upcoming', label: t('Próximas') },
@@ -238,231 +137,241 @@ const SCOPES: { id: DepartureScopeId; label: string }[] = [
 ];
 
 const scopeTabs = computed<CountTab[]>(() =>
-    SCOPES.map((scope) => ({
-        id: scope.id,
-        label: scope.label,
-        count: counts.value[scope.id] ?? null,
+    SCOPES.map((item) => ({
+        id: item.id,
+        label: item.label,
+        count: props.counts[item.id] ?? null,
     })),
 );
 
-const resultLabel = computed<string | null>(() => {
-    if (meta.value === null) {
-        return null;
-    }
+const meta = computed(() => props.departures.meta);
 
-    const total = counts.value.all ?? meta.value.total;
-
-    return t(':shown de :total', {
+const resultLabel = computed(() =>
+    t(':shown de :total', {
         shown: formatNumber(meta.value.total),
-        total: formatNumber(total),
-    });
-});
-
-function durationLabel(date: TourDateGlobalAdmin): string {
-    if (date.ends_at === null) {
-        return '';
-    }
-
-    const start = new Date(date.starts_at);
-    const end = new Date(date.ends_at);
-    const days =
-        Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) +
-        1;
-
-    return days > 1 ? t(':count días', { count: days }) : t('1 día');
-}
-
-function subtitleFor(date: TourDateGlobalAdmin): string {
-    const parts = [date.code];
-    const duration = durationLabel(date);
-
-    if (duration !== '') {
-        parts.push(duration);
-    }
-
-    if (isDisabled(date)) {
-        parts.push(t('inhabilitada'));
-    }
-
-    return parts.join(' · ');
-}
-
-function priceLabel(date: TourDateGlobalAdmin): string {
-    return formatCurrency(date.effective_price, date.tour.currency);
-}
-
-function occupancyPercent(date: TourDateGlobalAdmin): number {
-    if (date.capacity <= 0) {
-        return 0;
-    }
-
-    return Math.min(100, Math.round((date.booked_count / date.capacity) * 100));
-}
-
-/**
- * La barra sigue al sistema de diseño: tinta cuando ya no queda cupo, línea
- * cuando no se ha vendido nada, y el color de la agencia en el medio.
- */
-function occupancyBarClass(date: TourDateGlobalAdmin): string {
-    const percent = occupancyPercent(date);
-
-    if (percent >= 100) {
-        return 'bg-brand-ink';
-    }
-
-    return percent === 0 ? 'bg-border' : 'bg-primary';
-}
-
-function isDisabled(date: TourDateGlobalAdmin): boolean {
-    return date.display_status === 'cancelled';
-}
-
-/** Una salida ya realizada no se edita ni se inhabilita: solo se consulta. */
-function canManage(date: TourDateGlobalAdmin): boolean {
-    return date.display_status !== 'finished';
-}
+        total: formatNumber(props.counts.all ?? meta.value.total),
+    }),
+);
 
 const hasActiveFilters = computed(
     () =>
-        filters.search.trim() !== '' ||
-        filters.tourId !== ALL_TOURS ||
-        filters.scope !== 'upcoming',
+        search.value.trim() !== '' ||
+        tourId.value !== ALL_TOURS ||
+        scope.value !== 'upcoming',
 );
 
-function openEdit(date: TourDateGlobalAdmin): void {
-    editing.value = date;
-    dialogOpen.value = true;
+function resetFilters(): void {
+    search.value = '';
+    tourId.value = ALL_TOURS;
+    direction.value = 'asc';
+    scope.value = 'upcoming';
 }
+
+const detailOpen = ref(false);
+const detail = ref<TourDateGlobalAdmin | null>(null);
 
 function openDetail(date: TourDateGlobalAdmin): void {
     detail.value = date;
     detailOpen.value = true;
 }
 
-function onSaved(): void {
-    void loadDates();
+const dialogOpen = ref(false);
+const editing = ref<TourDateGlobalAdmin | null>(null);
+const selectedTourId = ref<number | null>(null);
+
+const selectedTour = computed<DepartureTourOption | null>(
+    () => props.tours.find((tour) => tour.id === selectedTourId.value) ?? null,
+);
+
+const productPickerOpen = ref(false);
+const productPick = ref('');
+
+function openCreate(): void {
+    if (props.tours.length === 0) {
+        toast.error(t('Crea un producto antes de programar salidas.'));
+
+        return;
+    }
+
+    productPick.value = '';
+    productPickerOpen.value = true;
 }
+
+function handleProductPick(value: AcceptableValue): void {
+    if (typeof value === 'string') {
+        productPick.value = value;
+    }
+}
+
+function confirmProduct(): void {
+    if (productPick.value === '') {
+        return;
+    }
+
+    selectedTourId.value = Number(productPick.value);
+    editing.value = null;
+    productPickerOpen.value = false;
+    dialogOpen.value = true;
+}
+
+function openEdit(date: TourDateGlobalAdmin): void {
+    selectedTourId.value = date.tour.id;
+
+    if (selectedTour.value === null) {
+        toast.error(t('No se pudo abrir la salida para editar.'));
+
+        return;
+    }
+
+    editing.value = date;
+    dialogOpen.value = true;
+}
+
+const busyId = ref<number | null>(null);
+
+const cancelOpen = ref(false);
+const cancelTarget = ref<TourDateGlobalAdmin | null>(null);
+const cancelForm = useForm({ reason: '' });
 
 function openCancel(date: TourDateGlobalAdmin): void {
     cancelTarget.value = date;
-    cancelReason.value = '';
+    cancelForm.reset();
+    cancelForm.clearErrors();
     cancelOpen.value = true;
 }
 
 function confirmCancel(): void {
-    if (!cancelTarget.value || cancelling.value) {
+    const target = cancelTarget.value;
+
+    if (target === null || cancelForm.processing) {
         return;
     }
 
-    cancelling.value = true;
-
-    void api.patch(
-        CancelTourDateController(cancelTarget.value.id).url,
-        { reason: cancelReason.value.trim() || null },
-        {
+    cancelForm
+        .transform((data) => ({
+            reason: data.reason.trim() === '' ? null : data.reason.trim(),
+        }))
+        .patch(CancelTourDateController(target.id).url, {
+            preserveScroll: true,
             onSuccess: () => {
                 toast.success(t('Salida inhabilitada.'));
                 cancelOpen.value = false;
-                void loadDates();
             },
-            onError: (errors) => {
-                toast.error(
-                    errors._global ?? t('No se pudo inhabilitar la salida.'),
-                );
+            onError: () => {
+                toast.error(t('No se pudo inhabilitar la salida.'));
             },
-            onFinish: () => {
-                cancelling.value = false;
-            },
-        },
-    );
+        });
 }
 
+const restoreForm = useForm({});
+
 function restore(date: TourDateGlobalAdmin): void {
-    if (restoringId.value !== null) {
+    if (busyId.value !== null) {
         return;
     }
 
-    restoringId.value = date.id;
+    busyId.value = date.id;
 
-    void api.patch(
-        RestoreTourDateController(date.id).url,
-        {},
-        {
-            onSuccess: () => {
-                toast.success(t('Salida habilitada.'));
-                void loadDates();
-            },
-            onError: (errors) => {
-                toast.error(
-                    errors._global ?? t('No se pudo habilitar la salida.'),
-                );
-            },
-            onFinish: () => {
-                restoringId.value = null;
-            },
+    restoreForm.patch(RestoreTourDateController(date.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Salida habilitada.'));
         },
-    );
+        onError: () => {
+            toast.error(t('No se pudo habilitar la salida.'));
+        },
+        onFinish: () => {
+            busyId.value = null;
+        },
+    });
+}
+
+const assignOpen = ref(false);
+const assignTarget = ref<TourDateGlobalAdmin | null>(null);
+const assignForm = useForm<{ guide_id: number | null }>({ guide_id: null });
+
+function openAssign(date: TourDateGlobalAdmin): void {
+    assignTarget.value = date;
+    assignForm.clearErrors();
+    assignForm.guide_id = date.guide?.id ?? null;
+    assignOpen.value = true;
+}
+
+function handleGuidePick(value: AcceptableValue): void {
+    if (typeof value === 'string') {
+        assignForm.guide_id = value === '' ? null : Number(value);
+    }
+}
+
+function confirmAssign(): void {
+    const target = assignTarget.value;
+
+    if (target === null || assignForm.processing) {
+        return;
+    }
+
+    if (assignForm.guide_id === null) {
+        assignForm.setError('guide_id', t('Selecciona un guía.'));
+
+        return;
+    }
+
+    assignForm.patch(AssignGuideController(target.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Guía asignado.'));
+            assignOpen.value = false;
+        },
+        onError: () => {
+            toast.error(t('No se pudo asignar el guía.'));
+        },
+    });
+}
+
+const deleteOpen = ref(false);
+const deleteTarget = ref<TourDateGlobalAdmin | null>(null);
+const deleteForm = useForm({});
+
+function openDelete(date: TourDateGlobalAdmin): void {
+    deleteTarget.value = date;
+    deleteOpen.value = true;
+}
+
+function confirmDelete(): void {
+    const target = deleteTarget.value;
+
+    if (target === null || deleteForm.processing) {
+        return;
+    }
+
+    busyId.value = target.id;
+
+    deleteForm.delete(destroyDeparture(target.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(t('Salida eliminada.'));
+            deleteOpen.value = false;
+        },
+        onError: () => {
+            toast.error(t('No se pudo eliminar la salida.'));
+        },
+        onFinish: () => {
+            busyId.value = null;
+        },
+    });
 }
 
 function goToPage(page: number): void {
-    if (!meta.value || page < 1 || page > meta.value.last_page) {
+    if (page < 1 || page > meta.value.last_page) {
         return;
     }
 
-    currentPage.value = page;
-    void loadDates();
+    reload(page);
 }
 
-function resetFilters(): void {
-    filters.scope = 'upcoming';
-    filters.search = '';
-    filters.tourId = ALL_TOURS;
-    filters.direction = 'asc';
-}
-
-function handleTourChange(value: AcceptableValue): void {
-    if (typeof value === 'string') {
-        filters.tourId = value;
-    }
-}
-
-function handleDirectionChange(value: AcceptableValue): void {
-    if (typeof value === 'string') {
-        filters.direction = value === 'desc' ? 'desc' : 'asc';
-    }
-}
-
-// El buscador espera a que la persona deje de escribir; el resto de filtros
-// dispara de inmediato.
-let searchDebounce: ReturnType<typeof setTimeout> | null = null;
-
-watch(
-    () => filters.search,
-    () => {
-        if (searchDebounce) {
-            clearTimeout(searchDebounce);
-        }
-
-        searchDebounce = setTimeout(() => {
-            currentPage.value = 1;
-            void loadDates();
-        }, 300);
-    },
+const guideSelectValue = computed(() =>
+    assignForm.guide_id === null ? '' : String(assignForm.guide_id),
 );
-
-watch(
-    () => [filters.scope, filters.tourId, filters.direction],
-    () => {
-        currentPage.value = 1;
-        void loadDates();
-    },
-);
-
-onMounted(() => {
-    void loadDates();
-    void loadTours();
-    void loadOptions();
-});
 </script>
 
 <template>
@@ -470,124 +379,61 @@ onMounted(() => {
         <Head :title="$t('Salidas')" />
 
         <div class="px-4 py-6 md:px-8">
-            <Heading
-                :title="$t('Salidas')"
-                :description="
-                    $t(
-                        'Cada salida es una fecha real con su cupo, su precio y su guía.',
-                    )
-                "
-            />
+            <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+            >
+                <Heading
+                    :title="$t('Salidas')"
+                    :description="
+                        $t(
+                            'Cada salida es una fecha real con su cupo, su precio y su guía.',
+                        )
+                    "
+                />
+                <Button @click="openCreate">
+                    <Plus class="size-4" />
+                    {{ $t('Nueva salida') }}
+                </Button>
+            </div>
 
             <div class="mt-5 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
                     :label="$t('Salidas activas')"
-                    :value="formatNumber(stats?.active ?? 0)"
+                    :value="formatNumber(props.stats.active)"
                     :detail="$t('próximas y habilitadas')"
-                    :loading="stats === null"
                 />
                 <KpiCard
                     :label="$t('Cupos por vender')"
-                    :value="formatNumber(stats?.seats_left ?? 0)"
+                    :value="formatNumber(props.stats.seats_left)"
                     :detail="$t('en salidas futuras')"
-                    :loading="stats === null"
                 />
                 <KpiCard
                     :label="$t('Viajeros confirmados')"
-                    :value="formatNumber(stats?.travellers ?? 0)"
+                    :value="formatNumber(props.stats.travellers)"
                     :detail="$t('con reserva activa')"
-                    :loading="stats === null"
                 />
                 <KpiCard
                     :label="$t('Sin guía asignado')"
-                    :value="formatNumber(stats?.without_guide ?? 0)"
+                    :value="formatNumber(props.stats.without_guide)"
                     :detail="$t('requieren asignación')"
-                    :alert="(stats?.without_guide ?? 0) > 0"
-                    :loading="stats === null"
+                    :alert="props.stats.without_guide > 0"
                 />
             </div>
 
-            <FilterBar
+            <DepartureBoardFilters
+                v-model:search="search"
+                v-model:scope="scope"
+                v-model:tour-id="tourId"
+                v-model:direction="direction"
                 class="mt-5"
-                search-id="departures-search"
-                :search="filters.search"
-                :placeholder="$t('Buscar salida por tour, código o guía')"
-                :result-label="resultLabel"
                 :tabs="scopeTabs"
-                :active-tab="filters.scope"
-                :tabs-label="$t('Bandejas de salidas')"
-                @update:search="filters.search = $event"
-                @update:active-tab="filters.scope = $event as DepartureScopeId"
-            >
-                <template #selects>
-                    <div class="flex items-center gap-2">
-                        <Label
-                            for="filter-tour"
-                            class="text-[10.5px] font-semibold tracking-[0.09em] text-muted-foreground uppercase"
-                        >
-                            {{ $t('Tour') }}
-                        </Label>
-                        <Select
-                            :model-value="filters.tourId"
-                            @update:model-value="handleTourChange"
-                        >
-                            <SelectTrigger
-                                id="filter-tour"
-                                class="w-[190px] rounded-full"
-                            >
-                                <SelectValue :placeholder="$t('Todos')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem :value="ALL_TOURS">
-                                        {{ $t('Todos') }}
-                                    </SelectItem>
-                                    <SelectItem
-                                        v-for="tour in tourOptions"
-                                        :key="tour.id"
-                                        :value="String(tour.id)"
-                                    >
-                                        {{ tour.name }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <Label
-                            for="filter-direction"
-                            class="text-[10.5px] font-semibold tracking-[0.09em] text-muted-foreground uppercase"
-                        >
-                            {{ $t('Orden') }}
-                        </Label>
-                        <Select
-                            :model-value="filters.direction"
-                            @update:model-value="handleDirectionChange"
-                        >
-                            <SelectTrigger
-                                id="filter-direction"
-                                class="w-[160px] rounded-full"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="asc">
-                                        {{ $t('Más próxima') }}
-                                    </SelectItem>
-                                    <SelectItem value="desc">
-                                        {{ $t('Más lejana') }}
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </template>
-            </FilterBar>
+                :result-label="resultLabel"
+                :tours="props.tours"
+                :all-tours-value="ALL_TOURS"
+            />
 
             <div class="mt-4 rounded-2xl border border-border bg-card">
-                <div v-if="loading" class="space-y-2 p-4">
+                <div v-if="reloading" class="space-y-2 p-4">
                     <div
                         v-for="n in 6"
                         :key="n"
@@ -595,22 +441,8 @@ onMounted(() => {
                     />
                 </div>
 
-                <div v-else-if="loadError" class="p-10 text-center">
-                    <p class="text-sm text-destructive">
-                        {{ $t('No se pudieron cargar las salidas.') }}
-                    </p>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="mt-3"
-                        @click="loadDates"
-                    >
-                        {{ $t('Reintentar') }}
-                    </Button>
-                </div>
-
                 <div
-                    v-else-if="dates.length === 0"
+                    v-else-if="props.departures.data.length === 0"
                     class="m-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-input p-12 text-center"
                 >
                     <CalendarClock class="size-8 text-muted-foreground/40" />
@@ -629,7 +461,7 @@ onMounted(() => {
                                           'Prueba con otra bandeja o limpia el buscador.',
                                       )
                                     : $t(
-                                          'Programa salidas desde la pestaña Salidas del tour.',
+                                          'Programa la primera con el botón Nueva salida.',
                                       )
                             }}
                         </p>
@@ -644,260 +476,21 @@ onMounted(() => {
                     </Button>
                 </div>
 
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full min-w-[880px] text-sm">
-                        <thead>
-                            <tr class="border-b border-border text-left">
-                                <MonoLabel as="th" class="px-4 py-3">{{
-                                    $t('Tour')
-                                }}</MonoLabel>
-                                <MonoLabel as="th" class="px-4 py-3">{{
-                                    $t('Fecha')
-                                }}</MonoLabel>
-                                <MonoLabel as="th" class="px-4 py-3">{{
-                                    $t('Precio')
-                                }}</MonoLabel>
-                                <MonoLabel as="th" class="px-4 py-3">{{
-                                    $t('Guía')
-                                }}</MonoLabel>
-                                <MonoLabel as="th" class="px-4 py-3">{{
-                                    $t('Ocupación')
-                                }}</MonoLabel>
-                                <MonoLabel as="th" class="px-4 py-3 text-right">
-                                    {{ $t('Acciones') }}
-                                </MonoLabel>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="date in dates"
-                                :key="date.id"
-                                class="border-b border-brand-line-2 align-middle transition last:border-0 hover:bg-primary-soft/50"
-                                :class="isDisabled(date) ? 'opacity-[.62]' : ''"
-                            >
-                                <td class="px-4 py-3.5">
-                                    <Link
-                                        :href="tourShowPage(date.tour.id).url"
-                                        class="text-[14.5px] font-semibold text-foreground underline-offset-4 hover:underline"
-                                    >
-                                        {{ date.tour.name }}
-                                    </Link>
-                                    <MonoLabel class="mt-1">{{
-                                        subtitleFor(date)
-                                    }}</MonoLabel>
-                                </td>
-
-                                <td class="px-4 py-3.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <span
-                                            class="grid w-[46px] shrink-0 place-items-center rounded-lg border border-border bg-background py-1"
-                                        >
-                                            <span
-                                                class="text-base leading-none font-semibold tabular-nums"
-                                            >
-                                                {{
-                                                    formatDayMonth(
-                                                        date.starts_at,
-                                                    ).day
-                                                }}
-                                            </span>
-                                            <span
-                                                class="mt-0.5 text-[10px] font-semibold tracking-[0.09em] text-muted-foreground"
-                                            >
-                                                {{
-                                                    formatDayMonth(
-                                                        date.starts_at,
-                                                    ).month
-                                                }}
-                                            </span>
-                                        </span>
-                                        <span class="min-w-0">
-                                            <span
-                                                class="block text-[13px] font-medium text-foreground"
-                                            >
-                                                {{
-                                                    formatWeekdayTime(
-                                                        date.starts_at,
-                                                    )
-                                                }}
-                                            </span>
-                                            <span
-                                                class="block text-xs text-muted-foreground"
-                                            >
-                                                {{
-                                                    formatDayDistance(
-                                                        date.starts_at,
-                                                    )
-                                                }}
-                                            </span>
-                                        </span>
-                                    </div>
-                                </td>
-
-                                <td class="px-4 py-3.5 whitespace-nowrap">
-                                    <span
-                                        class="block text-[15px] font-bold tabular-nums"
-                                    >
-                                        {{ priceLabel(date) }}
-                                    </span>
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        {{ $t('por persona') }}
-                                    </span>
-                                </td>
-
-                                <td class="px-4 py-3.5">
-                                    <div
-                                        v-if="date.guide"
-                                        class="flex items-center gap-2"
-                                    >
-                                        <InitialsAvatar
-                                            :name="date.guide.name"
-                                            size="sm"
-                                        />
-                                        <span class="min-w-0">
-                                            <span
-                                                class="block text-[13px] font-medium text-foreground"
-                                            >
-                                                {{ date.guide.name }}
-                                            </span>
-                                            <span
-                                                class="block text-xs text-muted-foreground"
-                                            >
-                                                {{ $t('asignado') }}
-                                            </span>
-                                        </span>
-                                    </div>
-                                    <span
-                                        v-else
-                                        class="inline-flex items-center rounded-full bg-brand-drop-50 px-2.5 py-1 text-[11.5px] font-semibold text-brand-drop"
-                                    >
-                                        {{ $t('Sin guía') }}
-                                    </span>
-                                </td>
-
-                                <td class="px-4 py-3.5">
-                                    <div
-                                        class="flex w-[140px] items-baseline justify-between gap-2"
-                                    >
-                                        <span
-                                            class="text-[13px] font-semibold tabular-nums"
-                                        >
-                                            {{ date.booked_count }}/{{
-                                                date.capacity
-                                            }}
-                                        </span>
-                                        <span
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            {{
-                                                $t(':count libres', {
-                                                    count: date.available_seats,
-                                                })
-                                            }}
-                                        </span>
-                                    </div>
-                                    <div
-                                        class="mt-1.5 h-1.5 w-[140px] overflow-hidden rounded-full bg-brand-line-2"
-                                    >
-                                        <div
-                                            class="h-full rounded-full transition-all"
-                                            :class="occupancyBarClass(date)"
-                                            :style="{
-                                                width: `${occupancyPercent(date)}%`,
-                                            }"
-                                        />
-                                    </div>
-                                </td>
-
-                                <td class="px-4 py-3.5">
-                                    <div class="flex justify-end">
-                                        <ActionMenu
-                                            variant="ghost"
-                                            :label="
-                                                $t('Acciones de :name', {
-                                                    name: date.tour.name,
-                                                })
-                                            "
-                                        >
-                                            <DropdownMenuItem
-                                                @select="openDetail(date)"
-                                            >
-                                                <Eye class="size-4" />
-                                                {{ $t('Ver detalle') }}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                v-if="
-                                                    canManage(date) &&
-                                                    !isDisabled(date)
-                                                "
-                                                @select="openEdit(date)"
-                                            >
-                                                <Pencil class="size-4" />
-                                                {{ $t('Editar salida') }}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                v-if="isDisabled(date)"
-                                                :disabled="
-                                                    restoringId === date.id
-                                                "
-                                                @select="restore(date)"
-                                            >
-                                                <CheckCircle2 class="size-4" />
-                                                {{ $t('Habilitar') }}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                v-else-if="canManage(date)"
-                                                variant="destructive"
-                                                @select="openCancel(date)"
-                                            >
-                                                <Ban class="size-4" />
-                                                {{ $t('Inhabilitar') }}
-                                            </DropdownMenuItem>
-                                        </ActionMenu>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tfoot v-if="totals">
-                            <tr class="border-t border-border bg-background/60">
-                                <td
-                                    colspan="6"
-                                    class="px-4 py-3 text-xs text-muted-foreground"
-                                >
-                                    <!--
-                                      Tres frases con su propio plural: una sola
-                                      cadena con tres números daba «1 viajeros».
-                                    -->
-                                    {{
-                                        $tc(
-                                            ':count salida|:count salidas',
-                                            totals.departures,
-                                        )
-                                    }}
-                                    ·
-                                    {{
-                                        $tc(
-                                            ':count viajero|:count viajeros',
-                                            totals.travellers,
-                                        )
-                                    }}
-                                    ·
-                                    {{
-                                        $tc(
-                                            ':count cupo libre|:count cupos libres',
-                                            totals.seats_left,
-                                        )
-                                    }}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                <DepartureBoardTable
+                    v-else
+                    :departures="props.departures.data"
+                    :totals="props.totals"
+                    :busy-id="busyId"
+                    @detail="openDetail"
+                    @edit="openEdit"
+                    @cancel="openCancel"
+                    @restore="restore"
+                    @assign-guide="openAssign"
+                    @remove="openDelete"
+                />
 
                 <div
-                    v-if="!loading && !loadError && meta && meta.total > 0"
+                    v-if="!reloading && meta.total > 0"
                     class="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm text-muted-foreground"
                 >
                     <span>
@@ -951,15 +544,139 @@ onMounted(() => {
         />
 
         <TourDateFormDialog
+            v-if="selectedTour"
             v-model:open="dialogOpen"
-            :tour-id="editing?.tour.id ?? 0"
+            :tour-id="selectedTour.id"
             :editing="editing"
-            :guides="guides"
-            :routes="routes"
-            :providers="providers"
-            :hotels="hotels"
-            @saved="onSaved"
+            :duration-hours="selectedTour.duration_hours"
+            :departure-defaults="selectedTour.departure_defaults"
+            :tour-routes="selectedTour.routes"
+            :guides="props.departureOptions.guides"
+            :providers="props.departureOptions.providers"
+            :hotels="props.departureOptions.hotels"
         />
+
+        <Dialog v-model:open="productPickerOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ $t('Nueva salida') }}</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            $t(
+                                'Elige el producto: la salida hereda su capacidad, su precio y su ruta.',
+                            )
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-1.5">
+                    <Label for="new-departure-tour">{{ $t('Producto') }}</Label>
+                    <Select
+                        :model-value="productPick"
+                        @update:model-value="handleProductPick"
+                    >
+                        <SelectTrigger id="new-departure-tour" class="w-full">
+                            <SelectValue
+                                :placeholder="$t('Selecciona un producto')"
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem
+                                    v-for="tour in props.tours"
+                                    :key="tour.id"
+                                    :value="String(tour.id)"
+                                >
+                                    {{ tour.name }}
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        @click="productPickerOpen = false"
+                    >
+                        {{ $t('Volver') }}
+                    </Button>
+                    <Button
+                        :disabled="productPick === ''"
+                        @click="confirmProduct"
+                    >
+                        {{ $t('Continuar') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="assignOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ $t('Asignar guía') }}</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            $t(
+                                'El guía queda ocupado durante todos los días de la salida.',
+                            )
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-1.5">
+                    <Label for="assign-guide">{{ $t('Guía') }}</Label>
+                    <Select
+                        :model-value="guideSelectValue"
+                        @update:model-value="handleGuidePick"
+                    >
+                        <SelectTrigger id="assign-guide" class="w-full">
+                            <SelectValue
+                                :placeholder="$t('Selecciona un guía')"
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem
+                                    v-for="guide in props.departureOptions
+                                        .guides"
+                                    :key="guide.id"
+                                    :value="String(guide.id)"
+                                >
+                                    {{ guide.name }}
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <p
+                        v-if="assignForm.errors.guide_id"
+                        class="text-xs text-destructive"
+                    >
+                        {{ assignForm.errors.guide_id }}
+                    </p>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="assignForm.processing"
+                        @click="assignOpen = false"
+                    >
+                        {{ $t('Volver') }}
+                    </Button>
+                    <Button
+                        :disabled="assignForm.processing"
+                        @click="confirmAssign"
+                    >
+                        <Loader2
+                            v-if="assignForm.processing"
+                            class="size-4 animate-spin"
+                        />
+                        {{ $t('Asignar') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <Dialog v-model:open="cancelOpen">
             <DialogContent class="sm:max-w-md">
@@ -980,30 +697,72 @@ onMounted(() => {
                     }}</Label>
                     <Textarea
                         id="cancel-reason"
-                        v-model="cancelReason"
+                        v-model="cancelForm.reason"
                         rows="3"
                         :placeholder="$t('Ej: clima adverso')"
                     />
+                    <p
+                        v-if="cancelForm.errors.reason"
+                        class="text-xs text-destructive"
+                    >
+                        {{ cancelForm.errors.reason }}
+                    </p>
                 </div>
 
                 <DialogFooter>
                     <Button
                         variant="outline"
-                        :disabled="cancelling"
+                        :disabled="cancelForm.processing"
                         @click="cancelOpen = false"
                     >
                         {{ $t('Volver') }}
                     </Button>
                     <Button
                         variant="destructive"
-                        :disabled="cancelling"
+                        :disabled="cancelForm.processing"
                         @click="confirmCancel"
                     >
                         <Loader2
-                            v-if="cancelling"
+                            v-if="cancelForm.processing"
                             class="size-4 animate-spin"
                         />
                         {{ $t('Inhabilitar') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="deleteOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ $t('Eliminar salida') }}</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            $t(
+                                'La salida se borra definitivamente. Solo es posible mientras no tenga reservas.',
+                            )
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="deleteForm.processing"
+                        @click="deleteOpen = false"
+                    >
+                        {{ $t('Volver') }}
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        :disabled="deleteForm.processing"
+                        @click="confirmDelete"
+                    >
+                        <Loader2
+                            v-if="deleteForm.processing"
+                            class="size-4 animate-spin"
+                        />
+                        {{ $t('Eliminar') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

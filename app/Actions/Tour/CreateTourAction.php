@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Tour;
 
+use App\Data\Tour\TourRoutesData;
 use App\Enums\TourStatus;
 use App\Exceptions\PlanLimitReachedException;
 use App\Models\Tenant;
@@ -19,18 +20,19 @@ final class CreateTourAction
         private PlanLimitChecker $planLimits,
         private SyncTourItineraryAction $syncItinerary,
         private SyncTourStopsAction $syncStops,
+        private SyncTourRoutesAction $syncRoutes,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(Tenant $tenant, array $data): Tour
+    public function execute(Tenant $tenant, array $data, ?TourRoutesData $routes = null): Tour
     {
         if (! $this->planLimits->canCreateTour($tenant)) {
             throw PlanLimitReachedException::tours($this->planLimits->maxToursForTenant($tenant));
         }
 
-        return DB::transaction(function () use ($data): Tour {
+        return DB::transaction(function () use ($data, $routes): Tour {
             $tour = new Tour;
             $tour->fill($this->withoutRelations($data));
             $tour->slug = $this->slugGenerator->generate($data['name']);
@@ -45,6 +47,10 @@ final class CreateTourAction
                 $this->syncStops->handle($tour, $data['stops']);
             }
 
+            if ($routes !== null) {
+                $this->syncRoutes->execute($tour, $routes);
+            }
+
             return $tour->fresh(['category', 'images', 'itineraries', 'stops']) ?? $tour;
         });
     }
@@ -55,7 +61,7 @@ final class CreateTourAction
      */
     private function withoutRelations(array $data): array
     {
-        unset($data['itinerary'], $data['stops']);
+        unset($data['itinerary'], $data['stops'], $data['routes']);
 
         return $data;
     }

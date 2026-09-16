@@ -1,7 +1,7 @@
 import { translate } from '@/composables/useTranslations';
 import type { LatLngTuple } from '@/types/leaflet';
 import type { TourStopDraft } from '@/types/tour';
-import type { TourDetail } from '@/types/tour-detail';
+import type { TourDepartureRoute, TourDetail } from '@/types/tour-detail';
 import type { TourRouteStop, TourRouteZone } from '@/types/tour-route';
 
 /**
@@ -195,39 +195,60 @@ export function stopIndexForItineraryStep(
     return index === -1 ? null : index;
 }
 
+/** Parada con coordenadas en texto, tal como llegan del formulario o la API. */
+type UnplacedStop = Omit<TourRouteStop, 'code' | 'latitude' | 'longitude'> & {
+    latitude: string | null;
+    longitude: string | null;
+};
+
 /**
- * Paradas de la ruta a partir de los borradores que se están editando.
- *
- * WHY: el mapa de la pestaña «Ruta y mapa» tiene que reflejar lo que hay en el
- * formulario ahora, no lo último guardado. El `code` del pin se calcula con la
- * misma regla que `SyncTourStopsAction::codeFor()` —`A`, `1..n`, `B`— para que
- * la vista previa y el mapa público no digan cosas distintas. Las paradas sin
- * coordenadas válidas se omiten: no se pueden dibujar.
+ * Paradas dibujables en orden, numeradas como `SyncTourStopsAction::codeFor()`
+ * —`A`, `1..n`, `B`—, para que la vista previa, el mapa público y el panel no
+ * digan cosas distintas. Las que no tienen coordenadas válidas se omiten: no se
+ * pueden pintar, pero sí cuentan para la numeración.
  */
-export function routeStopsFromDrafts(drafts: TourStopDraft[]): TourRouteStop[] {
-    const stops: TourRouteStop[] = [];
+function placedStops(stops: UnplacedStop[]): TourRouteStop[] {
+    const placed: TourRouteStop[] = [];
     let siteNumber = 0;
 
-    for (const draft of drafts) {
-        if (draft.kind === 'site') {
+    for (const stop of stops) {
+        if (stop.kind === 'site') {
             siteNumber += 1;
         }
 
-        const latitude = Number.parseFloat(draft.latitude);
-        const longitude = Number.parseFloat(draft.longitude);
+        const latitude = Number.parseFloat(stop.latitude ?? '');
+        const longitude = Number.parseFloat(stop.longitude ?? '');
 
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
             continue;
         }
 
-        stops.push({
-            kind: draft.kind,
+        placed.push({
+            ...stop,
             code:
-                draft.kind === 'pickup'
+                stop.kind === 'pickup'
                     ? 'A'
-                    : draft.kind === 'drop'
+                    : stop.kind === 'drop'
                       ? 'B'
                       : String(siteNumber),
+            latitude,
+            longitude,
+        });
+    }
+
+    return placed;
+}
+
+/**
+ * Paradas de la ruta a partir de los borradores que se están editando.
+ *
+ * WHY: el mapa de la pestaña «Ruta y mapa» tiene que reflejar lo que hay en el
+ * formulario ahora, no lo último guardado.
+ */
+export function routeStopsFromDrafts(drafts: TourStopDraft[]): TourRouteStop[] {
+    return placedStops(
+        drafts.map((draft) => ({
+            kind: draft.kind,
             label: draft.label.trim() === '' ? null : draft.label.trim(),
             name:
                 draft.name.trim() === ''
@@ -235,14 +256,43 @@ export function routeStopsFromDrafts(drafts: TourStopDraft[]): TourRouteStop[] {
                     : draft.name.trim(),
             place: draft.place.trim() === '' ? null : draft.place.trim(),
             time: draft.time.trim() === '' ? null : draft.time.trim(),
-            latitude,
-            longitude,
+            latitude: draft.latitude,
+            longitude: draft.longitude,
             itinerary_step:
                 draft.itinerary_step === ''
                     ? null
                     : Number(draft.itinerary_step) || null,
-        });
-    }
+        })),
+    );
+}
 
-    return stops;
+/**
+ * Paradas dibujables de la ruta que la salida seleccionada usa ese día.
+ *
+ * Las paradas de ruta no traen itinerario ni etiqueta propia: la recogida y el
+ * regreso reciben la etiqueta de su rol, que es lo que el pin imprime.
+ */
+export function routeStopsFromDeparture(
+    route: TourDepartureRoute,
+): TourRouteStop[] {
+    const roleLabels: Record<TourRouteStop['kind'], string | null> = {
+        pickup: translate('Recogida'),
+        site: null,
+        drop: translate('Regreso'),
+    };
+
+    return placedStops(
+        [...route.stops]
+            .sort((one, other) => one.position - other.position)
+            .map((stop) => ({
+                kind: stop.kind,
+                label: roleLabels[stop.kind],
+                name: stop.name,
+                place: null,
+                time: stop.time_label,
+                latitude: stop.latitude,
+                longitude: stop.longitude,
+                itinerary_step: null,
+            })),
+    );
 }

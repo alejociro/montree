@@ -40,13 +40,13 @@ final class DurationChangeImpactTest extends TestCase
         TourDate::factory()->for($tour)->create(['guide_id' => $guide->id, 'starts_at' => '2026-09-12 07:00:00']);
         TourDate::factory()->for($other)->create(['guide_id' => $guide->id, 'starts_at' => '2026-09-15 07:00:00']);
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tours/{$tour->id}",
             ['duration_hours' => 96],
         );
 
-        $response->assertStatus(422)->assertJsonValidationErrors('duration_hours');
-        $this->assertStringContainsString('Salento', $response->json('errors.duration_hours.0'));
+        $response->assertSessionHasErrors('duration_hours');
+        $this->assertStringContainsString('Salento', (string) session('errors')?->first('duration_hours'));
         $this->assertSame(6, $tour->fresh()?->duration_hours);
     }
 
@@ -60,12 +60,12 @@ final class DurationChangeImpactTest extends TestCase
             'starts_at' => '2026-09-15 07:00:00',
         ]);
 
-        $response = $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
+        $response = $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tours/{$tour->id}",
             ['duration_hours' => 30],
         );
 
-        $response->assertOk();
+        $response->assertSessionHasNoErrors();
         $this->assertSame(30, $tour->fresh()?->duration_hours);
     }
 
@@ -77,10 +77,10 @@ final class DurationChangeImpactTest extends TestCase
         TourDate::factory()->for($tour)->create(['guide_id' => $guide->id, 'starts_at' => '2026-08-01 07:00:00']);
         TourDate::factory()->for($other)->create(['guide_id' => $guide->id, 'starts_at' => '2026-08-04 07:00:00']);
 
-        $this->actingAs($admin)->putJson(
-            $this->host($tenant)."/api/v1/admin/tours/{$tour->id}",
+        $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tours/{$tour->id}",
             ['duration_hours' => 96],
-        )->assertOk();
+        )->assertSessionHasNoErrors();
     }
 
     public function test_the_factory_cannot_produce_an_overlap(): void

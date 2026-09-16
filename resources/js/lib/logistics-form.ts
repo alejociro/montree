@@ -76,6 +76,14 @@ export type LogisticsFieldDef = {
         city?: string;
         state?: string;
     };
+    /**
+     * Buscador de dirección por fila de una lista repetible: la sugerencia
+     * elegida escribe estas dos claves de la fila.
+     */
+    rowPlace?: {
+        latitude: string;
+        longitude: string;
+    };
     /** Sufijo dentro del campo: km, h, m, personas. */
     unit?: string;
 };
@@ -256,6 +264,10 @@ function routeSections(): LogisticsSectionDef[] {
                     type: 'repeat',
                     width: 'full',
                     addLabel: translate('Agregar parada'),
+                    rowPlace: {
+                        latitude: 'latitude',
+                        longitude: 'longitude',
+                    },
                     columns: [
                         {
                             key: 'name',
@@ -1004,14 +1016,28 @@ function rowToStrings(
 ): Record<string, string> {
     const source = (row ?? {}) as Record<string, unknown>;
     const result: Record<string, string> = {};
+    const keys = [
+        ...(field.columns ?? []).map((column) => column.key),
+        ...rowPlaceKeys(field),
+    ];
 
-    for (const column of field.columns ?? []) {
-        const value = source[column.key];
-        result[column.key] =
+    for (const key of keys) {
+        const value = source[key];
+        result[key] =
             value === null || value === undefined ? '' : String(value);
     }
 
     return result;
+}
+
+/**
+ * Latitud y longitud de una fila: no se teclean, las escribe el buscador de
+ * direcciones, pero viajan en el payload y vuelven del servidor como las demás.
+ */
+export function rowPlaceKeys(field: LogisticsFieldDef): string[] {
+    const place = field.rowPlace;
+
+    return place === undefined ? [] : [place.latitude, place.longitude];
 }
 
 /** Fila nueva de una lista repetible: los selects arrancan en su primera opción. */
@@ -1021,6 +1047,10 @@ export function blankRow(field: LogisticsFieldDef): Record<string, string> {
     for (const column of field.columns ?? []) {
         row[column.key] =
             column.type === 'select' ? (column.options?.[0]?.value ?? '') : '';
+    }
+
+    for (const key of rowPlaceKeys(field)) {
+        row[key] = '';
     }
 
     return row;

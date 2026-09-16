@@ -9,6 +9,7 @@ use App\Enums\AccommodationType;
 use App\Enums\CancellationPolicy;
 use App\Enums\MealPlan;
 use App\Enums\PaymentTerms;
+use App\Models\Builders\HotelBuilder;
 use Carbon\CarbonImmutable;
 use Database\Factories\HotelFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -86,6 +87,11 @@ final class Hotel extends Model
         'payment_terms',
         'notes',
     ];
+
+    public function newEloquentBuilder($query): HotelBuilder
+    {
+        return new HotelBuilder($query);
+    }
 
     protected function casts(): array
     {

@@ -25,7 +25,7 @@ final class SeedDefaultCategoriesAction
             $slug = Str::slug($payload['name']);
 
             $exists = Category::query()
-                ->withoutGlobalScope('tenant')
+                ->withoutGlobalScope(Tenant::SCOPE)
                 ->where('tenant_id', $tenant->getKey())
                 ->where('slug', $slug)
                 ->exists();

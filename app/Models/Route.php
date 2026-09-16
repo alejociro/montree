@@ -7,9 +7,11 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\RouteKind;
 use App\Enums\TourDifficulty;
+use App\Models\Builders\RouteBuilder;
 use Database\Factories\RouteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -71,6 +73,11 @@ final class Route extends Model
         'emergency_contact',
     ];
 
+    public function newEloquentBuilder($query): RouteBuilder
+    {
+        return new RouteBuilder($query);
+    }
+
     protected function casts(): array
     {
         return [
@@ -88,6 +95,11 @@ final class Route extends Model
             'seasons' => 'array',
             'required_gear' => 'array',
         ];
+    }
+
+    public function tours(): BelongsToMany
+    {
+        return $this->belongsToMany(Tour::class)->withPivot(['is_default', 'position'])->withTimestamps();
     }
 
     public function tourDates(): HasMany

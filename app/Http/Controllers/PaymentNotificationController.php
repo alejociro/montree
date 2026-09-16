@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Payment\NotificationRequest;
 use App\Jobs\ResolvePaymentJob;
 use App\Models\Payment;
+use App\Models\Tenant;
 use App\Services\PlaceToPay\NotificationSignature;
 use Illuminate\Http\JsonResponse;
 
@@ -27,7 +28,7 @@ final class PaymentNotificationController extends Controller
     {
         $notification = $request->notification();
         $payment = Payment::query()
-            ->withoutGlobalScope('tenant')
+            ->withoutGlobalScope(Tenant::SCOPE)
             ->where('request_id', $notification['requestId'])
             ->where('reference', (string) $request->input('reference'))
             ->first();

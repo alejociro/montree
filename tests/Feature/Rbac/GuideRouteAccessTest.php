@@ -141,7 +141,7 @@ final class GuideRouteAccessTest extends TestCase
         Auth::forgetGuards();
 
         $this->actingAs($guide)
-            ->getJson(self::HOST.'/api/v1/admin/tours')
+            ->getJson(self::HOST.'/admin/tours')
             ->assertForbidden();
     }
 

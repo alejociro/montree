@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     store as storeDate,
     update as updateDate,
-} from '@/actions/App/Http/Controllers/Api/V1/Admin/TourDateController';
+} from '@/actions/App/Http/Controllers/Admin/TourDatePagesController';
 import GuideSelect from '@/components/molecules/GuideSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,15 +20,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi } from '@/composables/useApi';
-import type { ApiErrors } from '@/composables/useApi';
-import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
+import { formatCurrency } from '@/lib/format';
 import type { DepartureRange } from '@/types/guide-availability';
 import type {
+    DepartureDefaults,
     LogisticsRef,
     TourDateAdmin,
-    TourDateFormInput,
+    TourRouteRef,
 } from '@/types/logistics';
 
 const { t } = useTranslations();
@@ -42,60 +42,92 @@ type Props = {
      */
     durationHours?: number | null;
     /**
-     * El guía por defecto del tour. Regla 3 del handoff: se **propone** en la
-     * salida nueva, no se impone —se puede cambiar antes de guardar, y el
-     * servidor sigue validando disponibilidad—. Al editar no se toca.
+     * Lo que la salida nueva hereda del producto y de la agencia (spec §G):
+     * guía, capacidad, ruta predeterminada, precio base de referencia y mínimo
+     * de abono. Todo es propuesta: se puede cambiar antes de guardar.
      */
-    defaultGuideId?: number | null;
+    departureDefaults: DepartureDefaults;
+    /** Solo las rutas del producto; el servidor rechaza cualquier otra. */
+    tourRoutes: TourRouteRef[];
     guides: LogisticsRef[];
-    routes: LogisticsRef[];
     providers: LogisticsRef[];
     hotels: LogisticsRef[];
 };
 
 const props = withDefaults(defineProps<Props>(), {
     durationHours: null,
-    defaultGuideId: null,
 });
 
 const emit = defineEmits<{
     'update:open': [value: boolean];
-    saved: [date: TourDateAdmin];
+    saved: [];
 }>();
 
-const api = useApi();
-const { configuration } = useTenant();
+const MS_PER_HOUR = 3_600_000;
 
-/**
- * El porcentaje de la agencia, que es el que rige cuando la salida no define el
- * suyo. Llega en la prop compartida `tenantConfiguration`, así que ninguna de
- * las dos páginas que abren el diálogo necesita pasarlo.
- */
-const DEFAULT_MIN_PAYMENT_PCT = 30;
+function pad(value: number): string {
+    return String(value).padStart(2, '0');
+}
 
-const agencyMinPaymentPct = computed<number>(
-    () =>
-        configuration.value?.min_partial_payment_pct ?? DEFAULT_MIN_PAYMENT_PCT,
-);
+function toDateOnly(date: Date): string {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
-const processing = ref(false);
-const errors = ref<ApiErrors>({});
+function toDateTimeLocal(iso: string | null): string {
+    if (!iso) {
+        return '';
+    }
 
-const form = reactive<TourDateFormInput>({
+    const date = new Date(iso);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function toIso(local: string): string | null {
+    if (local === '') {
+        return null;
+    }
+
+    const date = new Date(local);
+
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+const form = useForm({
     starts_at: '',
-    capacity: 10,
+    capacity: props.departureDefaults.capacity,
     price_override: '',
-    min_payment_pct: '',
+    min_payment_pct: '' as string | number,
     notes: '',
-    guide_id: null,
-    route_id: null,
-    provider_id: null,
-    hotel_ids: [],
+    guide_id: null as number | null,
+    route_id: null as number | null,
+    provider_id: null as number | null,
+    hotel_ids: [] as number[],
 });
 
+const processing = computed(() => form.processing);
 const isEditing = computed(() => props.editing !== null);
+const localErrors = ref<Partial<Record<string, string>>>({});
 
-const MS_PER_HOUR = 3_600_000;
+const errors = computed<Record<string, string | undefined>>(() => ({
+    ...(form.errors as Record<string, string | undefined>),
+    ...localErrors.value,
+}));
+
+const basePriceLabel = computed(() =>
+    formatCurrency(
+        props.departureDefaults.base_price,
+        props.departureDefaults.currency,
+    ),
+);
+
+const agencyMinPaymentPct = computed(
+    () => props.departureDefaults.min_payment_pct,
+);
 
 /**
  * WHY (D9): el fin ya no se escribe, se deriva. Cuando el tour no viaja en las
@@ -133,10 +165,6 @@ const derivedEnd = computed<Date | null>(() => {
     return new Date(start.getTime() + durationHours.value * MS_PER_HOUR);
 });
 
-function toDateOnly(date: Date): string {
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 /** Los días calendario que la salida le ocupará al guía. */
 const guideRange = computed<DepartureRange | null>(() => {
     if (form.starts_at === '') {
@@ -160,46 +188,19 @@ const derivedEndLabel = computed(() =>
         : derivedEnd.value.toLocaleString(),
 );
 
-function pad(value: number): string {
-    return String(value).padStart(2, '0');
-}
-
-function toDateTimeLocal(iso: string | null): string {
-    if (!iso) {
-        return '';
-    }
-
-    const date = new Date(iso);
-
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function toIso(local: string): string | null {
-    if (local === '') {
-        return null;
-    }
-
-    const date = new Date(local);
-
-    return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
 function resetFromEditing(): void {
-    errors.value = {};
+    localErrors.value = {};
+    form.clearErrors();
     const date = props.editing;
 
     if (date === null) {
         form.starts_at = '';
-        form.capacity = 10;
+        form.capacity = props.departureDefaults.capacity;
         form.price_override = '';
         form.min_payment_pct = '';
         form.notes = '';
-        form.guide_id = props.defaultGuideId;
-        form.route_id = null;
+        form.guide_id = props.departureDefaults.guide_id;
+        form.route_id = props.departureDefaults.route_id;
         form.provider_id = null;
         form.hotel_ids = [];
 
@@ -261,14 +262,14 @@ function toggleHotel(hotelId: number): void {
 }
 
 function validateLocally(): boolean {
-    errors.value = {};
+    localErrors.value = {};
 
     if (form.starts_at === '') {
-        errors.value.starts_at = t('La fecha de inicio es obligatoria.');
+        localErrors.value.starts_at = t('La fecha de inicio es obligatoria.');
     }
 
     if (form.capacity < 1) {
-        errors.value.capacity = t('La capacidad debe ser al menos 1.');
+        localErrors.value.capacity = t('La capacidad debe ser al menos 1.');
     }
 
     // Espejo de `StoreTourDateRequest`: el servidor sigue siendo la fuente de
@@ -276,7 +277,7 @@ function validateLocally(): boolean {
     const minPaymentPct = minPaymentPctPayload();
 
     if (minPaymentPct !== null && (minPaymentPct < 1 || minPaymentPct > 100)) {
-        errors.value.min_payment_pct = t(
+        localErrors.value.min_payment_pct = t(
             'El mínimo de abono debe estar entre 1 y 100.',
         );
     }
@@ -284,75 +285,53 @@ function validateLocally(): boolean {
     // D7: no existe «Sin asignar». El servidor lo rechaza igual; pedirlo acá
     // evita perder el formulario entero por un campo vacío.
     if (form.guide_id === null) {
-        errors.value.guide_id = t('Elige un guía para la salida.');
+        localErrors.value.guide_id = t('Elige un guía para la salida.');
     }
 
-    return Object.keys(errors.value).length === 0;
-}
-
-function buildPayload(): Record<string, unknown> {
-    return {
-        starts_at: toIso(form.starts_at),
-        capacity: form.capacity,
-        price_override:
-            form.price_override.trim() === ''
-                ? null
-                : form.price_override.trim(),
-        min_payment_pct: minPaymentPctPayload(),
-        notes: form.notes.trim() === '' ? null : form.notes.trim(),
-        guide_id: form.guide_id,
-        route_id: form.route_id,
-        provider_id: form.provider_id,
-        hotel_ids: form.hotel_ids,
-    };
+    return Object.keys(localErrors.value).length === 0;
 }
 
 function submit(): void {
-    if (processing.value || !validateLocally()) {
+    if (form.processing || !validateLocally()) {
         return;
     }
 
-    processing.value = true;
-    const payload = buildPayload();
+    const editing = props.editing;
 
     const options = {
-        onSuccess: (response: { data: TourDateAdmin } | null) => {
-            if (!response) {
-                return;
-            }
-
+        preserveScroll: true,
+        onSuccess: () => {
             toast.success(
-                isEditing.value
-                    ? t('Salida actualizada.')
-                    : t('Salida creada.'),
+                editing === null
+                    ? t('Salida creada.')
+                    : t('Salida actualizada.'),
             );
-            emit('saved', response.data);
+            emit('saved');
             close();
         },
-        onError: (received: ApiErrors) => {
-            errors.value = received;
-            toast.error(received._global ?? t('Revisa los campos marcados.'));
-        },
-        onFinish: () => {
-            processing.value = false;
+        onError: () => {
+            toast.error(t('Revisa los campos marcados.'));
         },
     };
 
-    if (isEditing.value) {
-        void api.put<{ data: TourDateAdmin }>(
-            updateDate(props.editing!.id).url,
-            payload,
-            options,
-        );
+    const submitted = form.transform((data) => ({
+        ...data,
+        starts_at: toIso(String(data.starts_at)),
+        price_override:
+            String(data.price_override).trim() === ''
+                ? null
+                : String(data.price_override).trim(),
+        min_payment_pct: minPaymentPctPayload(),
+        notes: String(data.notes).trim() === '' ? null : String(data.notes).trim(),
+    }));
+
+    if (editing !== null) {
+        submitted.put(updateDate(editing.id).url, options);
 
         return;
     }
 
-    void api.post<{ data: TourDateAdmin }>(
-        storeDate(props.tourId).url,
-        payload,
-        options,
-    );
+    submitted.post(storeDate(props.tourId).url, options);
 }
 </script>
 
@@ -452,6 +431,13 @@ function submit(): void {
                         >
                             {{ errors.price_override }}
                         </p>
+                        <p v-else class="text-xs text-muted-foreground">
+                            {{
+                                $t('Precio base del producto: :price', {
+                                    price: basePriceLabel,
+                                })
+                            }}
+                        </p>
                     </div>
 
                     <div class="space-y-1.5 sm:col-span-2">
@@ -522,11 +508,14 @@ function submit(): void {
                         >
                             <option value="">{{ $t('Sin ruta') }}</option>
                             <option
-                                v-for="route in props.routes"
+                                v-for="route in props.tourRoutes"
                                 :key="route.id"
                                 :value="route.id"
                             >
                                 {{ route.name }}
+                                <template v-if="route.is_default">
+                                    · {{ $t('predeterminada') }}
+                                </template>
                             </option>
                         </select>
                         <p
@@ -534,6 +523,16 @@ function submit(): void {
                             class="text-xs text-destructive"
                         >
                             {{ errors.route_id }}
+                        </p>
+                        <p
+                            v-else-if="props.tourRoutes.length === 0"
+                            class="text-xs text-muted-foreground"
+                        >
+                            {{
+                                $t(
+                                    'Este producto todavía no tiene rutas asociadas.',
+                                )
+                            }}
                         </p>
                     </div>
 

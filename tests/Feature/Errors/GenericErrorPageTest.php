@@ -103,7 +103,7 @@ final class GenericErrorPageTest extends TestCase
         $guide = $this->memberFor(UserRole::Guide);
 
         $response = $this->actingAs($guide)
-            ->getJson(self::HOST.'/api/v1/admin/tours');
+            ->getJson(self::HOST.'/api/v1/admin/bookings');
 
         $response->assertForbidden();
         $response->assertJsonPath('error_code', 'INSUFFICIENT_PERMISSION');

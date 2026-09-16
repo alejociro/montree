@@ -9,6 +9,7 @@ import TourFactGrid from '@/components/molecules/TourFactGrid.vue';
 import TourInclusionList from '@/components/molecules/TourInclusionList.vue';
 import TourItineraryDay from '@/components/molecules/TourItineraryDay.vue';
 import TourLogisticsCard from '@/components/molecules/TourLogisticsCard.vue';
+import TourRouteStopSummary from '@/components/molecules/TourRouteStopSummary.vue';
 import TourBookingCard from '@/components/organisms/TourBookingCard.vue';
 import TourGallery from '@/components/organisms/TourGallery.vue';
 import TourRouteMapSection from '@/components/organisms/TourRouteMapSection.vue';
@@ -17,6 +18,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { categoryLabel } from '@/lib/categories';
 import {
+    routeStopsFromDeparture,
     routeStopsFromTour,
     stopIndexForItineraryStep,
 } from '@/lib/tour-route';
@@ -36,7 +38,44 @@ const props = defineProps<{
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
-const routeStops = computed(() => routeStopsFromTour(props.tour));
+const selectableDates = computed(() =>
+    props.tour.future_dates.filter(
+        (date) => !date.is_full && date.status === 'open',
+    ),
+);
+
+const selectedDateId = ref<number | null>(null);
+
+const selectedDate = computed(
+    () =>
+        selectableDates.value.find(
+            (date) => date.id === selectedDateId.value,
+        ) ?? null,
+);
+
+/**
+ * Ruta del día: manda sobre las paradas del producto cuando la salida
+ * seleccionada trae una. Una ruta sin paradas no describe nada, así que se
+ * trata como si la salida no tuviera ruta.
+ */
+const departureRoute = computed(() => {
+    const route = selectedDate.value?.route ?? null;
+
+    return route === null || route.stops.length === 0 ? null : route;
+});
+
+const routeStops = computed(() =>
+    departureRoute.value === null
+        ? routeStopsFromTour(props.tour)
+        : routeStopsFromDeparture(departureRoute.value),
+);
+
+/** Paradas de la ruta del día que no se pueden dibujar por falta de coordenadas. */
+const unmappedRouteStops = computed(() =>
+    departureRoute.value === null || routeStops.value.length > 0
+        ? []
+        : departureRoute.value.stops,
+);
 
 const mapSection = ref<InstanceType<typeof TourRouteMapSection> | null>(null);
 
@@ -86,13 +125,7 @@ function showStopOnMap(index: number | undefined): void {
     );
 }
 
-const routeNote = computed(() =>
-    props.tour.meeting_point === null
-        ? null
-        : t('Punto de encuentro: :place.', { place: props.tour.meeting_point }),
-);
-
-const difficultyLabel = computed(() => {
+function difficultyText(difficulty: string): string {
     const map: Record<string, string> = {
         easy: t('Fácil'),
         moderate: t('Moderado'),
@@ -100,7 +133,39 @@ const difficultyLabel = computed(() => {
         extreme: t('Extremo'),
     };
 
-    return map[props.tour.difficulty] ?? props.tour.difficulty;
+    return map[difficulty] ?? difficulty;
+}
+
+const difficultyLabel = computed(() => difficultyText(props.tour.difficulty));
+
+/** Datos de la ruta del día; sin ruta, el punto de encuentro del producto. */
+const routeNote = computed(() => {
+    const route = departureRoute.value;
+
+    if (route === null) {
+        return props.tour.meeting_point === null
+            ? null
+            : t('Punto de encuentro: :place.', {
+                  place: props.tour.meeting_point,
+              });
+    }
+
+    const meta = [
+        t('Ruta: :name', { name: route.name }),
+        route.distance_km === null
+            ? null
+            : t(':count km', { count: Number(route.distance_km) }),
+        route.duration_hours === null
+            ? null
+            : t(':count h', { count: Number(route.duration_hours) }),
+        route.difficulty === null ? null : difficultyText(route.difficulty),
+    ]
+        .filter((fact): fact is string => fact !== null)
+        .join(' · ');
+
+    return route.description === null || route.description === ''
+        ? meta
+        : `${meta} — ${route.description}`;
 });
 
 const durationLabel = computed(() =>
@@ -213,14 +278,6 @@ onMounted(() => {
         reviewsLoading.value = false;
     }
 });
-
-const selectableDates = computed(() =>
-    props.tour.future_dates.filter(
-        (date) => !date.is_full && date.status === 'open',
-    ),
-);
-
-const selectedDateId = ref<number | null>(null);
 </script>
 
 <template>
@@ -350,13 +407,43 @@ const selectedDateId = ref<number | null>(null);
                 </section>
 
                 <!-- Ruta y puntos de encuentro -->
+                <!-- WHY: el mapa se arma al montar y no vuelve a leer las paradas;
+                     cambiar de salida tiene que rehacerlo con la ruta de ese día. -->
                 <TourRouteMapSection
                     v-if="routeStops.length > 0"
+                    :key="departureRoute?.id ?? 'tour'"
                     ref="mapSection"
                     class="border-t border-border py-6"
                     :stops="routeStops"
                     :note="routeNote"
                 />
+
+                <!-- Ruta del día sin coordenadas: se listan sus paradas -->
+                <section
+                    v-else-if="unmappedRouteStops.length > 0"
+                    class="border-t border-border py-6"
+                >
+                    <h2 class="text-[26px] font-semibold tracking-tight">
+                        {{ $t('Ruta y puntos de encuentro') }}
+                    </h2>
+                    <p
+                        v-if="routeNote"
+                        class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground"
+                    >
+                        {{ routeNote }}
+                    </p>
+                    <TourRouteStopSummary
+                        :title="$t('Paradas de la ruta')"
+                        :stops="unmappedRouteStops"
+                    />
+                    <p class="mt-2 text-[13px] text-muted-foreground">
+                        {{
+                            $t(
+                                'Esta ruta todavía no tiene sus paradas ubicadas en el mapa.',
+                            )
+                        }}
+                    </p>
+                </section>
 
                 <!-- Punto de encuentro sin coordenadas: no hay mapa que dibujar -->
                 <section
@@ -511,6 +598,11 @@ const selectedDateId = ref<number | null>(null);
                         v-if="routeStops.length > 0"
                         :stops="routeStops"
                         @select="showStopOnMap($event)"
+                    />
+                    <TourRouteStopSummary
+                        v-else-if="unmappedRouteStops.length > 0"
+                        :title="$t('Logística del día')"
+                        :stops="unmappedRouteStops"
                     />
                 </template>
             </TourBookingCard>
