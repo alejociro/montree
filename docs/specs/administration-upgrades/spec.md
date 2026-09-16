@@ -74,6 +74,20 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - **Given** el detalle público del tour, **when** elijo una salida con ruta, **then** la sección de ruta/mapa y la ficha logística muestran las paradas y datos de **esa** ruta; sin ruta, muestran las paradas del producto.
 - Las pantallas de producto, salidas y logística que se toquen pasan a rutas web + Inertia.
 
+### H. Moneda única por tenant
+- **Given** la configuración del tenant (panel admin y panel super admin), **then** la moneda es un campo configurable con lista soportada; el super admin la define al crear el tenant y ambos pueden cambiarla después.
+- **Given** un producto, **then** ya no tiene moneda propia en el formulario: hereda la del tenant en cada alta/edición y todas las pantallas (catálogo, detalle, home, reservas, salidas, transacciones, panel) formatean con la moneda del tenant.
+- **Given** proveedores y hoteles con tarifas, **then** su moneda por defecto es la del tenant.
+- **Given** un cambio de moneda del tenant, **then** los productos pasan a mostrar la nueva moneda (los importes no se convierten); reservas y pagos históricos conservan la moneda con la que se registraron.
+- **Given** el dashboard de plataforma con tenants en monedas distintas, **then** ingresos y ganancias se presentan agrupados por moneda, nunca sumados entre monedas.
+
+### I. Rutas dentro del producto (reemplaza a G en lo relativo a rutas)
+- **Given** el formulario de edición de un producto, **then** tiene una sección "Rutas" donde creo, edito y elimino rutas **del producto** (nombre, descripción, tipo, dificultad, distancia, duración, notas de seguridad, equipo, paradas con hora y coordenadas) y marco una como predeterminada. Una ruta pertenece a un solo producto.
+- **Given** un producto recién creado, **then** la sección "Rutas" queda disponible al guardarlo (en el alta se muestra el aviso "guarda el producto para agregar rutas").
+- **Given** el módulo Logística, **then** ya no tiene pestaña "Rutas"; conserva proveedores y hoteles.
+- **Given** una ruta usada por salidas futuras no canceladas, **when** intento eliminarla, **then** se rechaza con el detalle de las salidas; una ruta usada solo por salidas pasadas o canceladas se puede eliminar y esas salidas quedan sin ruta.
+- **Given** una salida, **then** el selector de ruta ofrece "Sin ruta" y las rutas del producto; una ruta de otro producto es rechazada (422).
+
 ## Edge cases
 
 - Tenant con cobro `fixed` en moneda distinta a la de la reserva: el cargo se registra en la moneda del tenant (`tenant_configurations.currency`) sin conversión.
@@ -99,6 +113,8 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - Coordenadas obligatorias en paradas de ruta (se agregan como opcionales para poder pintar el mapa).
 
 ## Changelog
+
+- `2026-09-16` — Moneda única por tenant (criterio H): el producto deja de tener moneda propia; se agrupa por moneda en plataforma. Rutas dentro del producto (criterio I): `routes.tour_id` reemplaza al pivote `route_tour`; Logística pierde la pestaña de rutas. Razón: decisión del usuario tras el primer cierre — un tenant nunca combina monedas y una ruta nunca pertenece a dos productos.
 
 - `2026-09-15` — Creación a partir del pedido de ajustes de administración y del diagnóstico del código actual.
 - `2026-09-15` — Edge case nuevo: desasociar una ruta del producto limpia `route_id`

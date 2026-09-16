@@ -285,3 +285,18 @@ canceladas conservan la ruta: ahí el dato es histórico. Edge case agregado a
 ### P2-7 — `can_enter` duplicado
 Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
 `EnterTenantController`. Cubren `EnterTenantTest` y los tests del listado.
+
+## B4 — Moneda única por tenant + rutas dentro del producto (2026-09-16)
+- [ ] Migración de tours: sin cambio de columna; quitar `currency` del form/request de producto; actions fijan la del tenant; factory usa la del tenant actual
+- [ ] `StoreTenantRequest` + `CreateTenantAction` con `currency`; `CreateTenantDialog.vue` con selector de moneda
+- [ ] Front: `formatCurrency` siempre con `tenantConfiguration.currency` (catálogo, home, detalle, booking, salidas, transacciones, dashboard, logística); sin fallback `'USD'`
+- [ ] Proveedores/hoteles: moneda por defecto = la del tenant
+- [ ] Plataforma: totales y gráficas agrupados por moneda; eliminar `montree.platform_currency`
+- [ ] Reescribir `2026_09_15_200000_create_route_tour_table` → `add_tour_to_routes_table` (`tour_id`, `is_default`); `Route::tour()`, `Tour::routes()` HasMany, `Tour::defaultRoute()`
+- [ ] `SaveRouteAction` recibe `Tour`; `SetDefaultRouteAction`; `DeleteRouteAction` bloquea por salidas futuras no canceladas y desasocia pasadas/canceladas
+- [ ] Controllers web `TourRouteController` (store/update/destroy/default) bajo `can:tours.update`; borrar rutas y UI de rutas de Logística (`LogisticsCrudPanel` solo providers/hotels), `TourRoutesSelector.vue`, `SyncTourRoutesAction`
+- [ ] `Admin/Tour/Edit.vue`: panel "Rutas del producto" con diálogo crear/editar (reusar el schema de ruta de `logistics-form.ts` + editor de paradas con coordenadas), marcar predeterminada, eliminar; `Create.vue` muestra aviso; `Show.vue` lista rutas
+- [ ] `TourDateFormDialog` y salidas: `route_id` validado contra `routes.tour_id`
+- [ ] Seeder demo: rutas colgando de productos; `php artisan migrate:fresh --seed` en local
+- [ ] Tests: `TourCurrencyFollowsTenantTest`, `TenantCurrencyConfigurationTest` (admin y super admin), `PlatformTotalsByCurrencyTest`, `TourRouteCrudTest` (happy/422/aislamiento/otro producto), `DefaultRouteTest`, `DeleteRouteWithDeparturesTest`; migrar `TourRoutesSyncTest`, `RouteInUseDeletionTest`, `DeleteRouteTest`, `LogisticsIndexPageTest`, `TourDateRouteValidationTest`
+- [ ] Commit `feat(admin): tenant-wide currency and product-owned routes`

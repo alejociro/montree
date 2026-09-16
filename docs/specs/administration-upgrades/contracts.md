@@ -177,6 +177,21 @@ Rutas API que desaparecen (con controller, request, action, wayfinder y tests):
 Lecturas auxiliares que se conservan como API porque las consume un buscador asíncrono:
 `GET admin/geocode`, `GET admin/guides/availability`, `GET admin/tours/{tour}/passengers`.
 
+## 7. Ajustes 2026-09-16
+
+### Moneda
+- `StoreTourRequest`/`UpdateTourRequest`: se elimina `currency`; `CreateTourAction`/`UpdateTourAction` fijan `tours.currency = configuration.currency`.
+- `StoreTenantRequest` (super admin) suma `currency` (required, in: lista soportada, default `COP`); se crea la `TenantConfiguration` con esa moneda.
+- Prop compartida `tenantConfiguration.currency` es la fuente para `formatCurrency` en todo el front del tenant; ningún componente cae a `'USD'`.
+- Dashboard de plataforma: `totals.revenue_this_month` y `totals.earnings_this_month` pasan a `{ currency: string, amount: string }[]`; `charts.earnings_per_month` y `revenue_per_tenant` llevan `currency` por serie. `platform_currency` desaparece de la config.
+
+### Rutas del producto
+- Schema: `routes.tour_id` (FK cascade, NOT NULL, index `(tenant_id, tour_id)`), `routes.is_default` bool. Se elimina la tabla `route_tour` (se reescriben las migraciones de esta rama `2026_09_15_200000_*` en vez de agregar otra: el proyecto se levanta con `migrate:fresh --seed`).
+- `POST /admin/tours/{tour}/routes` `admin.tours.routes.store`, `PUT /admin/routes/{route}` `admin.routes.update`, `DELETE /admin/routes/{route}` `admin.routes.destroy`, `PATCH /admin/routes/{route}/default` `admin.routes.default`. Request `StoreRouteRequest`/`UpdateRouteRequest` (reglas actuales de `LogisticsRules::route()` + `is_default` boolean + `stops.*.latitude/longitude`). Permisos: `tours.update`. Redirect a `admin.tours.edit` con flash.
+- Se eliminan las reglas `routes.*` de los requests de tour, `SyncTourRoutesAction`, `TourRoutesData`, el pivote y las rutas web `admin.routes.*` que vivían bajo `logistics.manage`.
+- Props de `Admin/Tour/Edit`: `tour.routes: TourRoute[]` (shape completo con `stops`), sin `availableRoutes`. `Admin/Tour/Show`: `tour.routes` resumido. `LogisticsPagesController@index` deja de enviar `routes`.
+- `StoreTourDateRequest`/`UpdateTourDateRequest`: `route_id` → `Rule::exists('routes','id')->where('tour_id', $tourId)`.
+
 ## Cambios al contrato
 
 - `2026-09-15` — Creación.
