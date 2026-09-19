@@ -22,11 +22,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApi } from '@/composables/useApi';
 import type { ApiErrors } from '@/composables/useApi';
+import { useModules } from '@/composables/useModules';
 import { useTranslations } from '@/composables/useTranslations';
 import { PERMISSION_CATALOG } from '@/config/permissions';
 import type { PermissionSummary, RoleDetail } from '@/types/role';
 
 const { t } = useTranslations();
+const { isModuleEnabled } = useModules();
 
 type Mode = 'create' | 'edit' | 'view';
 
@@ -116,7 +118,11 @@ const subtitle = computed(() => {
  * (`config/permissions.ts`) solo respalda.
  */
 const catalog = computed(() =>
-    props.catalog.length > 0 ? props.catalog : PERMISSION_CATALOG,
+    props.catalog.length > 0
+        ? props.catalog
+        : PERMISSION_CATALOG.filter((permission) =>
+              isModuleEnabled(permission.module),
+          ),
 );
 
 const nameError = computed(() => {

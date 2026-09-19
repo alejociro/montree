@@ -32,5 +32,12 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- WHY: la suite corre con TODOS los módulos encendidos, que es el
+             producto completo. Apagar uno es el caso especial y lo declara el
+             test que lo prueba (`tests/Feature/Modules/ModuleFlagsTest`) con
+             `config()->set`; al revés, cada test de promociones o newsletter
+             tendría que encenderlo en su `setUp`. -->
+        <env name="MONTREE_MODULE_NEWSLETTER" value="true"/>
+        <env name="MONTREE_MODULE_PROMOTIONS" value="true"/>
     </php>
 </phpunit>

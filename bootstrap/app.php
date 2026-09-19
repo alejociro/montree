@@ -16,6 +16,7 @@ use App\Exceptions\TeamException;
 use App\Exceptions\TourDateException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Controllers\Errors\GenericErrorController;
+use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTenantAdmin;
 use App\Http\Middleware\EnsureTenantGuide;
@@ -101,6 +102,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'module' => EnsureModuleEnabled::class,
             'super_admin.only' => EnsureSuperAdmin::class,
             'tenant_admin.only' => EnsureTenantAdmin::class,
             'tenant_guide.only' => EnsureTenantGuide::class,

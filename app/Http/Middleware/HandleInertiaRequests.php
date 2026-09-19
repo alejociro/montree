@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Enums\Module;
 use App\Http\Resources\AuthUserResource;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Http\Resources\TenantResource;
@@ -62,6 +63,9 @@ final class HandleInertiaRequests extends Middleware
             // WHY: no es prop diferida. El primer render tiene que salir ya traducido
             // (si no, la pantalla parpadea de idioma) y el catalogo pesa pocos KB.
             'translations' => Locale::translations(app()->getLocale()),
+            // WHY: el menú, la pantalla de roles y la home tienen que saber qué
+            // módulos existen antes de pintar. No es diferida: llega en el primer render.
+            'modules' => Module::flags(),
             'auth' => [
                 'user' => $authUser,
                 'permissions' => $authUser['permissions'] ?? [],

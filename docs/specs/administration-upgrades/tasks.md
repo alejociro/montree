@@ -396,3 +396,23 @@ Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
   `:list y :count más`, `Eliminar ruta` y el texto del diálogo. `TranslationCatalogTest`
   sigue en las mismas 188/122 preexistentes del landing, y `TeamRequestMessagesTest`
   (×3) en su fallo de entorno.
+
+## B4 — Módulos desactivables (newsletter, promotions)
+
+- [x] `config/montree.php` → `modules.{newsletter,promotions}`, con
+      `MONTREE_MODULE_NEWSLETTER` / `MONTREE_MODULE_PROMOTIONS` en `.env.example` y
+      `.env` (las dos en `false`).
+- [x] `App\Enums\Module` (`isEnabled()`, `isDisabled(string)`, `flags()`) + espejo
+      TypeScript con `php artisan enums:typescript`.
+- [x] Middleware `EnsureModuleEnabled` con alias `module` en `bootstrap/app.php`;
+      aplicado a las 8 rutas de newsletter y las 7 de promociones (públicas y de panel).
+- [x] `HandleInertiaRequests` comparte `modules`; `useModules()` en el front;
+      `navigation.ts` filtra los ítems por módulo además de por permiso.
+- [x] `PermissionCatalog::all()` deja fuera los módulos apagados (`slugs()` NO se
+      filtra: es la lista de validación) y `disabledSlugs()` alimenta a
+      `UpdateTenantRoleAction`, que conserva los permisos que la pantalla no muestra.
+- [x] `HomePageController` omite la prop `promotions`; `Home.vue` no monta el
+      `<Deferred>`. `StoreBookingRequest` marca `promotion_code` como `prohibited` y
+      `CreateBookingAction` no llama a `ValidatePromotionAction`.
+- [x] `tests/Feature/Modules/ModuleFlagsTest` (37 casos); `phpunit.xml` corre la suite
+      con los dos módulos encendidos.

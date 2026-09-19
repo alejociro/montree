@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/vue3';
 import type { ComputedRef } from 'vue';
 import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useModules } from '@/composables/useModules';
 import { usePermissions } from '@/composables/usePermissions';
 import type { NavContext, WorkspaceLink } from '@/config/navigation';
 import {
@@ -43,6 +44,7 @@ function toCrumb(item: NavItem): BreadcrumbItem {
  */
 export function useNavigation(): UseNavigationReturn {
     const { can } = usePermissions();
+    const { modules } = useModules();
     const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     const page = usePage();
 
@@ -53,6 +55,7 @@ export function useNavigation(): UseNavigationReturn {
         can,
         isSuperAdmin: page.props.auth?.user?.isSuperAdmin ?? false,
         hasTenant: page.props.tenant !== null,
+        modules: modules.value,
     }));
 
     const sections = computed(() => buildNavSections(context.value));

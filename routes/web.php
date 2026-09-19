@@ -53,7 +53,7 @@ Route::get('/', HomePageController::class)->name('home');
 
 Route::get('tours', [CatalogPagesController::class, 'index'])->name('catalog.index');
 Route::get('tours/{slug}', [PublicTourPageController::class, 'show'])->name('tours.show');
-Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->name('newsletter.unsubscribe.page');
+Route::get('unsubscribe/{token}', [NewsletterPagesController::class, 'unsubscribe'])->middleware('module:newsletter')->name('newsletter.unsubscribe.page');
 
 // WHY: cross-host login handoff (isolated per-subdomain sessions, see §10). Public
 // by design — the single-use token IS the credential. Logs the user in on this host.
@@ -157,8 +157,8 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
         Route::put('hotels/{hotel}', [HotelController::class, 'update'])->name('hotels.update');
         Route::delete('hotels/{hotel}', [HotelController::class, 'destroy'])->name('hotels.destroy');
     });
-    Route::get('promotions', [PromotionPagesController::class, 'index'])->middleware('can:promotions.view')->name('promotions.index');
-    Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->middleware('can:newsletter.view')->name('newsletter.index');
+    Route::get('promotions', [PromotionPagesController::class, 'index'])->middleware(['module:promotions', 'can:promotions.view'])->name('promotions.index');
+    Route::get('newsletter', [NewsletterPagesController::class, 'admin'])->middleware(['module:newsletter', 'can:newsletter.view'])->name('newsletter.index');
     Route::get('reviews', [ReviewPagesController::class, 'index'])->middleware('can:reviews.view')->name('reviews.index');
     Route::get('team', [TeamPagesController::class, 'index'])->middleware('can:team.view')->name('team.index');
     Route::inertia('roles', 'Admin/Roles/Index')->middleware('can:team.role.update')->name('roles.index');

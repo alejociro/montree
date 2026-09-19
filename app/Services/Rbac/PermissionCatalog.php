@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Rbac;
 
+use App\Enums\Module;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 /**
@@ -88,6 +89,12 @@ final class PermissionCatalog
     }
 
     /**
+     * Catálogo visible: los permisos de un módulo apagado no se ofrecen.
+     *
+     * WHY: `slugs()` NO se filtra. Es la lista de validación, y rechazar ahí un
+     * permiso apagado convertiría cualquier guardado de rol en un borrado
+     * silencioso de lo que el rol ya tenía.
+     *
      * @return array<int, array{slug: string, module: string, module_label: string, label: string}>
      */
     public function all(): array
@@ -95,12 +102,34 @@ final class PermissionCatalog
         $catalog = [];
 
         foreach (RolesAndPermissionsSeeder::PERMISSIONS as $module => $slugs) {
+            if (Module::isDisabled($module)) {
+                continue;
+            }
+
             foreach ($slugs as $slug) {
                 $catalog[] = $this->entry($slug, $module);
             }
         }
 
         return $catalog;
+    }
+
+    /**
+     * Permisos que pertenecen a un módulo apagado: invisibles, pero intactos.
+     *
+     * @return array<int, string>
+     */
+    public function disabledSlugs(): array
+    {
+        $slugs = [];
+
+        foreach (RolesAndPermissionsSeeder::PERMISSIONS as $module => $moduleSlugs) {
+            if (Module::isDisabled($module)) {
+                $slugs = [...$slugs, ...$moduleSlugs];
+            }
+        }
+
+        return $slugs;
     }
 
     /**

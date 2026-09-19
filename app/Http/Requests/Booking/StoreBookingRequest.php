@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Booking;
 
+use App\Enums\Module;
 use App\Models\Tenant;
 use App\Models\TourDate;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,7 +35,9 @@ final class StoreBookingRequest extends FormRequest
             'tour_date_id' => ['required', 'integer', 'exists:tour_dates,id'],
             'adults_count' => ['required', 'integer', 'min:1'],
             'minors_count' => ['required', 'integer', 'min:0'],
-            'promotion_code' => ['nullable', 'string', 'max:40'],
+            'promotion_code' => Module::Promotions->isEnabled()
+                ? ['nullable', 'string', 'max:40']
+                : ['prohibited'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
 
             // Emergency contact

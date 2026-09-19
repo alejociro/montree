@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\Module;
 use App\Enums\PromotionType;
 use App\Enums\ReviewStatus;
 use App\Http\Resources\Catalog\CatalogCategoryResource;
@@ -48,7 +49,12 @@ final class HomePageController extends Controller
         return Inertia::render('Home', [
             'featuredTours' => Inertia::defer(fn () => $this->featuredTours()),
             'suggestedTours' => Inertia::defer(fn () => $this->suggestedTours()),
-            'promotions' => Inertia::defer(fn () => $this->activePromotions()),
+            // WHY: con el módulo apagado la prop no existe, no llega vacía. Un
+            // `Inertia::defer` que devuelve `[]` deja a `<Deferred>` pidiendo el
+            // parcial y mostrando su esqueleto para siempre.
+            ...(Module::Promotions->isEnabled()
+                ? ['promotions' => Inertia::defer(fn () => $this->activePromotions())]
+                : []),
             'categories' => Inertia::defer(fn () => $this->activeCategories()),
             'testimonials' => Inertia::defer(fn () => $this->topTestimonials()),
             'upcomingDepartures' => Inertia::defer(fn () => $this->upcomingDepartures()),

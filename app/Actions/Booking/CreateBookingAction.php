@@ -6,6 +6,7 @@ namespace App\Actions\Booking;
 
 use App\Actions\Promotion\ValidatePromotionAction;
 use App\Enums\BookingStatus;
+use App\Enums\Module;
 use App\Enums\PaymentType;
 use App\Enums\TourDateStatus;
 use App\Exceptions\BookingException;
@@ -53,7 +54,7 @@ final class CreateBookingAction
 
             $discount = '0.00';
             $promotionId = null;
-            if (! empty($data['promotion_code'])) {
+            if (Module::Promotions->isEnabled() && ! empty($data['promotion_code'])) {
                 $result = $this->validatePromotion->handle(
                     (string) $data['promotion_code'],
                     $tourDate,

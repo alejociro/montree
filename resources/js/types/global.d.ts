@@ -1,3 +1,4 @@
+import type { ModuleFlags } from '@/composables/useModules';
 import type { Auth } from '@/types/auth';
 import type {
     LocaleOption,
@@ -27,6 +28,7 @@ declare module '@inertiajs/core' {
             locale: string;
             locales: LocaleOption[];
             translations: Record<string, string>;
+            modules: ModuleFlags;
             sidebarOpen: boolean;
             csrfToken: string;
             tenant: Tenant | null;

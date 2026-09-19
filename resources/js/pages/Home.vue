@@ -21,6 +21,7 @@ import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageC
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
+import { useModules } from '@/composables/useModules';
 import { useTenant, useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import PublicLayout from '@/layouts/PublicLayout.vue';
@@ -50,6 +51,8 @@ type Props = {
 const LOW_SEATS_THRESHOLD = 3;
 
 defineProps<Props>();
+
+const { modules } = useModules();
 
 const { displayName, configuration } = useTenant();
 const currency = useTenantCurrency();
@@ -548,7 +551,7 @@ function departureDateLabel(departure: UpcomingDeparture): string {
         </Deferred>
 
         <!-- Promotions -->
-        <Deferred data="promotions">
+        <Deferred v-if="modules.promotions" data="promotions">
             <template #fallback>
                 <section
                     class="mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8"

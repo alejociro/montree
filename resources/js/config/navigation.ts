@@ -19,6 +19,8 @@ import {
     Users,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
+import type { ModuleFlags } from '@/composables/useModules';
+import { isModuleEnabled } from '@/composables/useModules';
 import { toUrl } from '@/lib/utils';
 import { home } from '@/routes';
 import {
@@ -40,6 +42,7 @@ import { index as transactionsIndex } from '@/routes/admin/transactions';
 import { schedule as guideSchedule } from '@/routes/guide';
 import type { NavItem, NavSection } from '@/types';
 import type { PermissionCheck } from '@/types/auth';
+import type { Module } from '@/types/enums.generated';
 
 /**
  * Fuente unica del menu de la aplicacion.
@@ -87,6 +90,12 @@ export type PermissionGate = {
     anyOf?: string[];
     /** El item vive bajo `admin/*`: exige ademas el gate de grupo `dashboard.view`. */
     requiresPanel?: boolean;
+    /**
+     * El item pertenece a un modulo desactivable. Con el modulo apagado
+     * desaparece del menu aunque el usuario tenga el permiso: la ruta responde
+     * 404 (middleware `module:<clave>`), no 403.
+     */
+    module?: Module;
 };
 
 export type NavItemDefinition = NavItem & PermissionGate;
@@ -101,6 +110,8 @@ export type NavItemDefinition = NavItem & PermissionGate;
 export type NavContext = {
     can: PermissionCheck;
     isSuperAdmin: boolean;
+    /** Modulos encendidos (`page.props.modules`). */
+    modules: ModuleFlags;
     /** Hay un tenant resuelto para el host actual (`page.props.tenant !== null`). */
     hasTenant: boolean;
 };
@@ -183,6 +194,7 @@ const panelSection: NavSectionDefinition = {
             href: promotionsIndex().url,
             icon: Megaphone,
             requiresPanel: true,
+            module: 'promotions',
             anyOf: ['promotions.view'],
         },
         {
@@ -190,6 +202,7 @@ const panelSection: NavSectionDefinition = {
             href: newsletterIndex().url,
             icon: Mail,
             requiresPanel: true,
+            module: 'newsletter',
             anyOf: ['newsletter.view'],
         },
         {
@@ -386,7 +399,16 @@ export function resolveWorkspaceLink(
     return null;
 }
 
-function isVisible(item: NavItemDefinition, can: PermissionCheck): boolean {
+function isVisible(
+    item: NavItemDefinition,
+    { can, modules }: NavContext,
+): boolean {
+    // Un modulo apagado se corta antes que cualquier permiso: no existe para
+    // nadie, ni siquiera para el super admin que tiene el catalogo completo.
+    if (item.module !== undefined && !isModuleEnabled(modules, item.module)) {
+        return false;
+    }
+
     // El gate de grupo se evalua ANTES del permiso del modulo, igual que en el
     // backend: sin `dashboard.view` toda ruta de `admin/*` responde 403 aunque
     // el usuario tenga el permiso especifico del item (`contracts.md` §1).
@@ -445,7 +467,6 @@ export function buildNavSections(
     context: NavContext,
     withHome: boolean = true,
 ): NavSection[] {
-    const { can } = context;
     const home: NavItem = { ...homeNavItem, href: resolveHomeUrl(context) };
     const staff = isStaff(context);
     const onPlatform = isOnPlatform(context);
@@ -463,7 +484,7 @@ export function buildNavSections(
                 id: section.id,
                 label: section.label,
                 items: section.items
-                    .filter((item) => isVisible(item, can))
+                    .filter((item) => isVisible(item, context))
                     .map(toNavItem),
             }),
         )

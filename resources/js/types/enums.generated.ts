@@ -122,6 +122,14 @@ export const MEAL_PLAN_VALUES = [
 
 export type MealPlan = (typeof MEAL_PLAN_VALUES)[number];
 
+/** `App\Enums\Module` */
+export const MODULE_VALUES = [
+    'newsletter',
+    'promotions',
+] as const;
+
+export type Module = (typeof MODULE_VALUES)[number];
+
 /** `App\Enums\NewsletterSubscriberStatus` */
 export const NEWSLETTER_SUBSCRIBER_STATUS_VALUES = [
     'active',

@@ -88,6 +88,42 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - **Given** una ruta usada por salidas futuras no canceladas, **when** intento eliminarla, **then** se rechaza con el detalle de las salidas; una ruta usada solo por salidas pasadas o canceladas se puede eliminar y esas salidas quedan sin ruta.
 - **Given** una salida, **then** el selector de ruta ofrece "Sin ruta" y las rutas del producto; una ruta de otro producto es rechazada (422).
 
+## Módulos desactivables
+
+Newsletter y Promociones existen en el producto pero no son foco. Se apagan con un
+interruptor de configuración (`config/montree.php` → `modules`, alimentado por
+`MONTREE_MODULE_NEWSLETTER` y `MONTREE_MODULE_PROMOTIONS`, ambas en `false` por
+defecto). Apagar **no** borra nada: el código, el seeder de permisos y las filas de
+`permissions` y `model_has_permissions` se quedan como están, así que encender el
+módulo es cambiar la variable y limpiar la caché de configuración.
+
+- **Given** un módulo apagado, **when** pido cualquiera de sus rutas web o API
+  —pública o de panel—, **then** recibo **404**, aunque tenga el permiso. Es 404 y no
+  403 porque un 403 confirmaría que la pantalla existe.
+- **Given** un módulo apagado, **then** su ítem no aparece en el menú y sus permisos
+  no se listan en la pantalla de roles.
+- **Given** un rol propio que ya tenía permisos del módulo apagado, **when** lo edito
+  desde la pantalla de roles, **then** esos permisos se conservan (la pantalla no los
+  muestra, así que tampoco los puede quitar sin querer).
+- **Given** `promotions` apagado, **then** la home pública no trae la prop
+  `promotions` (ni ejecuta su consulta) y no pinta la sección "Promociones
+  especiales"; el checkout rechaza `promotion_code` con 422 y `CreateBookingAction`
+  no consulta `ValidatePromotionAction`.
+- **Given** `newsletter` apagado, **then** el enlace público de baja
+  (`/unsubscribe/{token}`) y el alta/baja por API responden 404, y la campaña no se
+  puede enviar desde el panel.
+
+Qué apaga cada interruptor, exactamente:
+
+| Flag | Rutas que pasan a 404 | Otros efectos |
+| --- | --- | --- |
+| `MONTREE_MODULE_NEWSLETTER` | `newsletter.unsubscribe.page`, `api.v1.newsletter.{subscribe,unsubscribe}`, `admin.newsletter.index`, `api.v1.admin.newsletter.{subscribers,send,send-test,subscribers.unsubscribe}` | Ítem "Newsletter" fuera del menú; permisos `newsletter.*` fuera del catálogo de roles |
+| `MONTREE_MODULE_PROMOTIONS` | `admin.promotions.index`, `api.v1.promotions.validate`, `api.v1.admin.promotions.*` (index/store/show/update/destroy) | Ítem "Promociones" fuera del menú; permisos `promotions.*` fuera del catálogo; home sin sección ni prop `promotions`; `promotion_code` prohibido en el checkout |
+
+La suite corre con los dos módulos **encendidos** (`phpunit.xml`), que es el producto
+completo; apagarlos es el caso especial y lo declara `tests/Feature/Modules/ModuleFlagsTest`
+con `config()->set`.
+
 ## Edge cases
 
 - Tenant con cobro `fixed` en moneda distinta a la de la reserva: el cargo se registra en la moneda del tenant (`tenant_configurations.currency`) sin conversión.
@@ -113,6 +149,12 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - Coordenadas obligatorias en paradas de ruta (se agregan como opcionales para poder pintar el mapa).
 
 ## Changelog
+
+- `2026-09-18` — Nueva sección "Módulos desactivables": interruptor por módulo para
+  apagar `newsletter` y `promotions` mientras no son foco (404 en sus rutas, fuera del
+  menú y del catálogo de permisos, sin tocar el seeder ni las filas de `permissions`).
+  Razón: pedido del usuario — los dos módulos están implementados pero no se van a
+  ofrecer todavía, y borrarlos costaría más que volver a montarlos.
 
 - `2026-09-16` — Moneda única por tenant (criterio H): el producto deja de tener moneda propia; se agrupa por moneda en plataforma. Rutas dentro del producto (criterio I): `routes.tour_id` reemplaza al pivote `route_tour`; Logística pierde la pestaña de rutas. Razón: decisión del usuario tras el primer cierre — un tenant nunca combina monedas y una ruta nunca pertenece a dos productos.
 

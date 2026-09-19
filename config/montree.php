@@ -41,6 +41,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Módulos desactivables
+    |--------------------------------------------------------------------------
+    |
+    | Interruptor por módulo. Apagado, el módulo desaparece del producto: sus
+    | rutas web y API responden 404 (middleware `module:<clave>`), su ítem sale
+    | del menú, sus permisos salen del catálogo de roles y sus puntos de entrada
+    | públicos (home, checkout) dejan de mostrarlo. El código y las filas de
+    | `permissions` se quedan donde están: encender es cambiar la variable.
+    |
+    | Leído por App\Enums\Module::isEnabled().
+    |
+    */
+    'modules' => [
+        'newsletter' => (bool) env('MONTREE_MODULE_NEWSLETTER', false),
+        'promotions' => (bool) env('MONTREE_MODULE_PROMOTIONS', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default tour categories
     |--------------------------------------------------------------------------
     |

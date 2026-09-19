@@ -34,7 +34,7 @@ Route::get('tenant', [TenantController::class, 'show'])
     ->middleware('throttle:60,1')
     ->name('api.v1.tenant.show');
 
-Route::middleware('throttle:5,1')->group(function (): void {
+Route::middleware(['throttle:5,1', 'module:newsletter'])->group(function (): void {
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('api.v1.newsletter.subscribe');
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribeByToken'])->name('api.v1.newsletter.unsubscribe');
 });
@@ -52,6 +52,7 @@ Route::middleware('throttle:30,1')->group(function (): void {
 
 Route::middleware(['auth', 'tenant_member.only'])->group(function (): void {
     Route::post('promotions/validate', PromotionValidationController::class)
+        ->middleware('module:promotions')
         ->name('api.v1.promotions.validate');
     Route::post('favorites', [FavoriteController::class, 'store'])->name('api.v1.favorites.store');
     Route::get('bookings/{bookingNumber}', [BookingController::class, 'show'])->name('api.v1.bookings.show');
@@ -93,6 +94,7 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
 
     Route::apiResource('promotions', AdminPromotionController::class)
         ->names('promotions')
+        ->middleware('module:promotions')
         ->middlewareFor(['index', 'show'], 'can:promotions.view')
         ->middlewareFor('store', 'can:promotions.create')
         ->middlewareFor('update', 'can:promotions.update')
@@ -102,10 +104,10 @@ Route::middleware(['auth', 'tenant_admin.only', 'can:dashboard.view'])->prefix('
     Route::patch('reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->middleware('can:reviews.moderate')->name('reviews.status');
     Route::post('reviews/{review}/respond', [AdminReviewController::class, 'respond'])->middleware('can:reviews.respond')->name('reviews.respond');
 
-    Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware('can:newsletter.view')->name('newsletter.subscribers');
-    Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('can:newsletter.send')->name('newsletter.send');
-    Route::post('newsletter/send-test', [AdminNewsletterController::class, 'sendTest'])->middleware('can:newsletter.send')->name('newsletter.send-test');
-    Route::patch('newsletter/subscribers/{subscriber}/unsubscribe', [AdminNewsletterController::class, 'unsubscribeSubscriber'])->middleware('can:newsletter.send')->name('newsletter.subscribers.unsubscribe');
+    Route::get('newsletter/subscribers', [AdminNewsletterController::class, 'index'])->middleware(['module:newsletter', 'can:newsletter.view'])->name('newsletter.subscribers');
+    Route::post('newsletter/send', [AdminNewsletterController::class, 'send'])->middleware(['module:newsletter', 'can:newsletter.send'])->name('newsletter.send');
+    Route::post('newsletter/send-test', [AdminNewsletterController::class, 'sendTest'])->middleware(['module:newsletter', 'can:newsletter.send'])->name('newsletter.send-test');
+    Route::patch('newsletter/subscribers/{subscriber}/unsubscribe', [AdminNewsletterController::class, 'unsubscribeSubscriber'])->middleware(['module:newsletter', 'can:newsletter.send'])->name('newsletter.subscribers.unsubscribe');
 
     Route::get('users', [AdminTeamController::class, 'index'])->middleware('can:team.view')->name('users.index');
     Route::post('users', [AdminTeamController::class, 'store'])->middleware('can:team.invite')->name('users.store');
