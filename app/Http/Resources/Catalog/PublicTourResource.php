@@ -40,6 +40,8 @@ final class PublicTourResource extends JsonResource
                 'id' => $this->category->id,
                 'name' => $this->category->name,
                 'slug' => $this->category->slug,
+                'icon' => $this->category->icon,
+                'image_url' => $this->category->image_url,
             ]),
             'rating_average' => $this->rating_average,
             'rating_count' => $this->rating_count,

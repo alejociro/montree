@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Rbac;
 
 use App\Enums\UserRole;
+use App\Models\Category;
 use App\Models\Hotel;
 use App\Models\Payment;
 use App\Models\Promotion;
@@ -117,6 +118,23 @@ final class CurrentAdminAccessMatrixTest extends TestCase
     }
 
     /**
+     * El catálogo de categorías es del operador: arma el producto. Ventas lo ve
+     * pero no lo toca.
+     *
+     * @return array<string, array{0: string, 1: string, 2: array<int, string>, 3: array<string, mixed>, 4: bool, 5: bool}>
+     */
+    public static function categoryRoutes(): array
+    {
+        return [
+            'categories.index' => ['categories.index', 'GET', [], [], self::PASSES, self::PASSES],
+            'categories.store' => ['categories.store', 'POST', [], [], self::PASSES, self::FORBIDDEN],
+            'categories.update' => ['categories.update', 'PUT', ['category'], [], self::PASSES, self::FORBIDDEN],
+            'categories.destroy' => ['categories.destroy', 'DELETE', ['category'], [], self::PASSES, self::FORBIDDEN],
+            'categories.reorder' => ['categories.reorder', 'PATCH', [], [], self::PASSES, self::FORBIDDEN],
+        ];
+    }
+
+    /**
      * @return array<string, array{0: string, 1: string, 2: array<int, string>, 3: array<string, mixed>, 4: bool, 5: bool}>
      */
     public static function tourRoutes(): array
@@ -219,6 +237,16 @@ final class CurrentAdminAccessMatrixTest extends TestCase
      */
     #[DataProvider('readOnlyOperationRoutes')]
     public function test_read_only_operation_routes_keep_their_current_access(string $route, string $method, array $parameters, array $payload, bool $operatorPasses, bool $salesPasses): void
+    {
+        $this->assertCurrentAccessMatrix($route, $method, $parameters, $payload, $operatorPasses, $salesPasses);
+    }
+
+    /**
+     * @param  array<int, string>  $parameters
+     * @param  array<string, mixed>  $payload
+     */
+    #[DataProvider('categoryRoutes')]
+    public function test_category_routes_keep_their_current_access(string $route, string $method, array $parameters, array $payload, bool $operatorPasses, bool $salesPasses): void
     {
         $this->assertCurrentAccessMatrix($route, $method, $parameters, $payload, $operatorPasses, $salesPasses);
     }
@@ -388,6 +416,7 @@ final class CurrentAdminAccessMatrixTest extends TestCase
             'route' => Route::factory()->for(Tour::factory())->create(),
             'provider' => Provider::factory()->create(),
             'payment' => Payment::factory()->completed()->create(),
+            'category' => Category::factory()->create(),
         };
 
         Tenant::forgetCurrent();

@@ -416,3 +416,32 @@ Nuevo `Tenant::canBeEntered(): bool`, usado por `SuperAdminTenantResource` y
       `CreateBookingAction` no llama a `ValidatePromotionAction`.
 - [x] `tests/Feature/Modules/ModuleFlagsTest` (37 casos); `phpunit.xml` corre la suite
       con los dos módulos encendidos.
+
+## Categorías del panel (2026-09-19)
+
+- [x] Migración `add_image_to_categories_table` (`image_path` nullable) y
+      `add_categories_permissions` (idempotente: inserta los dos permisos y los
+      engancha a los roles base `admin`/`operator`/`sales`, que viven con
+      `tenant_id` nulo y los comparten todos los tenants).
+- [x] `App\Enums\CategoryIcon` (16 nombres Lucide con `label()`) + espejo TS con
+      `php artisan enums:typescript`.
+- [x] Seeder y `PermissionCatalog` suman el módulo `categories` (catálogo 39 → 41);
+      espejo en `resources/js/config/permissions.ts`.
+- [x] Backend: `CategoryData::fromRequest`, requests `Store/Update/ReorderCategories`,
+      actions `Save/Delete/ReorderCategories` (`execute()`), `CategoryInUseException`,
+      `Admin\CategoryResource`, controllers `CategoryPagesController`,
+      `CategoryController` y `ReorderCategoriesController`.
+- [x] `SeedDefaultCategoriesAction::handle()` → `execute()` y sus tres llamadores.
+- [x] Se elimina `GET /api/v1/tours/categories` y su controller: ningún Vue lo llamaba.
+- [x] `TourPagesController::categories()` ofrece solo activas, más la del producto que
+      se está editando aunque esté desactivada.
+- [x] Front: `Admin/Categories/Index.vue` (orden arrastrable + subir/bajar, diálogo de
+      confirmación al borrar), `CategoryDialog.vue`, átomo `CategoryGlyph.vue`,
+      `lib/categories.ts` con el mapa de íconos, ítem "Categorías" en `navigation.ts`.
+- [x] `CategoryGlyph` en home, catálogo (`FilterSidebar`), fichas (`HomeTourCard`,
+      `TourAdminCard`), detalle y los dos selectores de categoría.
+- [x] Tests `tests/Feature/Categories/*` (27 casos) + `PermissionCatalogSeederTest`
+      (41), `CurrentAdminAccessMatrixTest` (5 filas nuevas) e `InertiaAuthUserPropTest`
+      (operador 13 → 15).
+- [x] `CategoryFactory`: el nombre se hace único con sufijo aleatorio; con
+      `fake()->unique()->randomElement()` la factory se agotaba a la sexta categoría.

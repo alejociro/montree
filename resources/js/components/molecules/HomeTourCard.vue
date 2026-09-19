@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { Sparkles, Star } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import FavoriteButton from '@/components/molecules/FavoriteButton.vue';
 import { useTenantCurrency } from '@/composables/useTenant';
 import { categoryLabel } from '@/lib/categories';
@@ -52,8 +53,17 @@ const currency = useTenantCurrency();
 
             <span
                 v-if="tour.category"
-                class="absolute top-3 left-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur"
+                class="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur"
             >
+                <CategoryGlyph
+                    :name="categoryLabel(tour.category.name)"
+                    :icon="tour.category.icon"
+                    :image-url="tour.category.image_url"
+                    :class="
+                        tour.category.image_url ? 'size-3.5 rounded-full' : ''
+                    "
+                    icon-class="size-3.5"
+                />
                 {{ categoryLabel(tour.category.name) }}
             </span>
 

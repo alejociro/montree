@@ -56,7 +56,7 @@ final class RegisterAgencyAction
             'currency' => Currency::FALLBACK,
         ]);
 
-        $this->seedCategories->handle($tenant);
+        $this->seedCategories->execute($tenant);
 
         $user = User::query()->create([
             'name' => $data['founder_name'],

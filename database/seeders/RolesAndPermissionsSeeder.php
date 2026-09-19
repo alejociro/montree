@@ -23,6 +23,7 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public const PERMISSIONS = [
         'dashboard' => ['dashboard.view', 'reports.view'],
+        'categories' => ['categories.view', 'categories.manage'],
         'tours' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'departures' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'logistics' => ['logistics.view', 'logistics.manage'],
@@ -46,6 +47,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'sales' => [
             'dashboard.view',
             'reports.view',
+            'categories.view',
             'tours.view',
             'departures.view',
             'bookings.view',
@@ -63,6 +65,8 @@ class RolesAndPermissionsSeeder extends Seeder
         ],
         'operator' => [
             'dashboard.view',
+            'categories.view',
+            'categories.manage',
             'tours.view',
             'tours.create',
             'tours.update',

@@ -73,7 +73,13 @@ export type TourDetail = {
     duration_hours: number;
     difficulty: 'easy' | 'moderate' | 'hard' | 'extreme';
     default_capacity: number;
-    category: { id: number; name: string; slug: string } | null;
+    category: {
+        id: number;
+        name: string;
+        slug: string;
+        icon: string | null;
+        image_url: string | null;
+    } | null;
     rating_average: string;
     rating_count: number;
     rating_distribution: Record<'1' | '2' | '3' | '4' | '5', number>;

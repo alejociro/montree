@@ -1,4 +1,24 @@
+import {
+    Bike,
+    Binoculars,
+    Camera,
+    Compass,
+    Fish,
+    Flame,
+    Footprints,
+    Map,
+    Mountain,
+    Palette,
+    Sailboat,
+    Sun,
+    Tent,
+    TreePine,
+    Utensils,
+    Waves,
+} from 'lucide-vue-next';
+import type { Component } from 'vue';
 import { translate } from '@/composables/useTranslations';
+import type { CategoryIcon } from '@/types/enums.generated';
 
 /**
  * Catalogo de categorias que `config/montree.php` siembra en cada tenant nuevo. Es copy
@@ -23,4 +43,33 @@ export const DEFAULT_CATEGORY_NAMES = [
  */
 export function categoryLabel(name: string): string {
     return translate(name);
+}
+
+/**
+ * Componente Lucide de cada icono del enum `App\Enums\CategoryIcon`. El valor del
+ * enum ES el nombre del icono, pero el mapa se escribe igual: importar por nombre
+ * dinamico deja a Vite empaquetando el paquete entero.
+ */
+const CATEGORY_ICONS: Record<CategoryIcon, Component> = {
+    mountain: Mountain,
+    compass: Compass,
+    palette: Palette,
+    utensils: Utensils,
+    binoculars: Binoculars,
+    bike: Bike,
+    waves: Waves,
+    tent: Tent,
+    'tree-pine': TreePine,
+    camera: Camera,
+    fish: Fish,
+    sailboat: Sailboat,
+    footprints: Footprints,
+    flame: Flame,
+    sun: Sun,
+    map: Map,
+};
+
+/** Icono de una categoria; `Compass` para las que no eligieron ninguno. */
+export function categoryIconComponent(icon: string | null): Component {
+    return (icon !== null ? CATEGORY_ICONS[icon as CategoryIcon] : undefined) ?? Compass;
 }

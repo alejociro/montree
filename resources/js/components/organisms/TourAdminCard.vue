@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { show as showPage } from '@/actions/App/Http/Controllers/Admin/TourPagesController';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourStatusBadge from '@/components/organisms/TourStatusBadge.vue';
@@ -94,7 +95,21 @@ const nextDeparture = computed<string>(() => {
                         {{ props.tour.name }}
                     </Link>
                 </h3>
-                <p class="mt-0.5 text-xs text-muted-foreground">
+                <p
+                    class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                    <CategoryGlyph
+                        v-if="props.tour.category"
+                        :name="categoryLabel(props.tour.category.name)"
+                        :icon="props.tour.category.icon"
+                        :image-url="props.tour.category.image_url"
+                        :class="
+                            props.tour.category.image_url
+                                ? 'size-3.5 shrink-0 rounded-full'
+                                : 'shrink-0'
+                        "
+                        icon-class="size-3.5"
+                    />
                     {{ subtitle }}
                 </p>
             </div>

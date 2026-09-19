@@ -30,7 +30,7 @@ final class SeedDefaultCategoriesCommand extends Command
         }
 
         foreach ($tenants as $tenant) {
-            $created = $seedCategories->handle($tenant);
+            $created = $seedCategories->execute($tenant);
 
             $this->components->twoColumnDetail(
                 $tenant->slug,

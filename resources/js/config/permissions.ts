@@ -1,7 +1,7 @@
 import type { PermissionModule, PermissionSummary } from '@/types/role';
 
 /**
- * Catalogo de los 40 permisos del panel, agrupado por modulo.
+ * Catalogo de los 41 permisos del panel, agrupado por modulo.
  *
  * **No es la fuente de verdad**: el catalogo real llega del backend en
  * `GET /api/v1/admin/roles` → `meta.available_permissions`
@@ -21,6 +21,7 @@ import type { PermissionModule, PermissionSummary } from '@/types/role';
  */
 export const PERMISSION_MODULE_LABELS: Record<string, string> = {
     dashboard: 'Panel',
+    categories: 'Categorías',
     tours: 'Tours',
     departures: 'Salidas',
     logistics: 'Logística',
@@ -38,6 +39,10 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
     dashboard: [
         ['dashboard.view', 'Ver el panel'],
         ['reports.view', 'Ver reportes'],
+    ],
+    categories: [
+        ['categories.view', 'Ver categorías'],
+        ['categories.manage', 'Crear, editar y ordenar categorías'],
     ],
     tours: [
         ['tours.view', 'Ver productos'],
@@ -100,7 +105,7 @@ const CATALOG_BY_MODULE: Record<string, Array<[string, string]>> = {
     ],
 };
 
-/** Los 40 permisos como lista plana, en el orden del catalogo. */
+/** Los 41 permisos como lista plana, en el orden del catalogo. */
 export const PERMISSION_CATALOG: PermissionSummary[] = Object.entries(
     CATALOG_BY_MODULE,
 ).flatMap(([module, entries]) =>

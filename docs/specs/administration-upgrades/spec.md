@@ -88,6 +88,32 @@ salidas. De paso se retira la exportación a CSV (vuelve en un feature posterior
 - **Given** una ruta usada por salidas futuras no canceladas, **when** intento eliminarla, **then** se rechaza con el detalle de las salidas; una ruta usada solo por salidas pasadas o canceladas se puede eliminar y esas salidas quedan sin ruta.
 - **Given** una salida, **then** el selector de ruta ofrece "Sin ruta" y las rutas del producto; una ruta de otro producto es rechazada (422).
 
+## Módulo de categorías
+
+Las categorías eran datos sembrados que solo se podían tocar por SQL. Pasan a tener
+panel propio (`/admin/categories`), con ícono o imagen, orden y estado.
+
+- **Given** el panel, **when** abro "Categorías", **then** veo las categorías del tenant
+  en su orden de exhibición, cada una con su cara visible (imagen si la subí, si no el
+  ícono), nombre, descripción, cuántos productos la usan y si está activa.
+- **Given** el diálogo de alta o edición, **then** elijo el ícono de una grilla con el set
+  curado de 16 íconos Lucide, o subo una imagen (PNG, JPG, SVG o WEBP de hasta 1 MB).
+  Si hay imagen, manda la imagen. "Quitar imagen" borra el archivo del disco al guardar.
+- **Given** dos categorías con el mismo nombre, **then** la segunda recibe un slug con
+  sufijo numérico (`aventura-2`): el slug es único por tenant y es la llave del filtro
+  público.
+- **Given** una categoría con productos, **when** intento eliminarla, **then** se rechaza
+  nombrando cuántos productos la usan y hasta tres de ellos, y el mensaje propone
+  desactivarla. Sin productos, se elimina junto con su imagen.
+- **Given** la lista, **when** arrastro una fila o uso los botones subir/bajar, **then**
+  el nuevo orden se guarda (`PATCH admin/categories/reorder`) y es el que ve el viajero
+  en el home, el catálogo y los filtros.
+- **Given** una categoría inactiva, **then** desaparece del home, del catálogo y de sus
+  filtros, y del selector del formulario de producto; los productos que ya la tienen la
+  conservan y el formulario de edición la sigue ofreciendo para que guardar no la borre.
+- **Given** los roles, **then** `admin` y `operator` pueden verla y gestionarla, `sales`
+  solo verla y `guide` no la ve. El catálogo de permisos pasa de 39 a 41.
+
 ## Módulos desactivables
 
 Newsletter y Promociones existen en el producto pero no son foco. Se apagan con un
@@ -149,6 +175,12 @@ con `config()->set`.
 - Coordenadas obligatorias en paradas de ruta (se agregan como opcionales para poder pintar el mapa).
 
 ## Changelog
+
+- `2026-09-19` — Nueva sección "Módulo de categorías": CRUD del panel con ícono
+  (enum `CategoryIcon`, 16 nombres Lucide) o imagen (`categories.image_path`, disco
+  `public`), orden arrastrable y estado activo; permisos `categories.view` /
+  `categories.manage` (catálogo 39 → 41). Razón: pedido del usuario — las categorías
+  eran datos sembrados sin pantalla, y el ícono no se podía cambiar sin tocar la base.
 
 - `2026-09-18` — Nueva sección "Módulos desactivables": interruptor por módulo para
   apagar `newsletter` y `promotions` mientras no son foco (404 en sus rutas, fuera del

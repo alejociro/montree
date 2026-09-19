@@ -3,10 +3,7 @@ import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     ArrowRight,
     CalendarDays,
-    Compass,
     Lock,
-    Mountain,
-    Palette,
     Quote,
     Search,
     ShieldCheck,
@@ -14,10 +11,10 @@ import {
     Users,
     Zap,
 } from 'lucide-vue-next';
-import type { Component } from 'vue';
 import { computed, ref } from 'vue';
 import { create as bookingCreate } from '@/actions/App/Http/Controllers/BookingPagesController';
 import { show as tourShow } from '@/actions/App/Http/Controllers/PublicTourPageController';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import { Button } from '@/components/ui/button';
@@ -63,16 +60,6 @@ const heroFallbackImage =
     'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1800&q=80&auto=format&fit=crop';
 
 const searchQuery = ref('');
-
-const CATEGORY_ICONS: Record<string, Component> = {
-    mountain: Mountain,
-    compass: Compass,
-    palette: Palette,
-};
-
-function categoryIcon(icon: string | null): Component {
-    return (icon !== null ? CATEGORY_ICONS[icon] : undefined) ?? Compass;
-}
 
 function categoryHref(slug: string): string {
     return catalogIndex({ query: { category: slug } }).url;
@@ -199,10 +186,16 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                             :href="categoryHref(category.slug)"
                             class="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
                         >
-                            <component
-                                :is="categoryIcon(category.icon)"
-                                class="size-3.5"
-                                aria-hidden="true"
+                            <CategoryGlyph
+                                :name="categoryLabel(category.name)"
+                                :icon="category.icon"
+                                :image-url="category.image_url"
+                                :class="
+                                    category.image_url
+                                        ? 'size-3.5 rounded-full'
+                                        : undefined
+                                "
+                                icon-class="size-3.5"
                             />
                             {{ categoryLabel(category.name) }}
                             <span class="text-white/60"
@@ -272,10 +265,15 @@ function departureDateLabel(departure: UpcomingDeparture): string {
                         <span
                             class="flex size-11 items-center justify-center rounded-xl bg-secondary text-secondary-foreground transition group-hover:bg-primary group-hover:text-primary-foreground"
                         >
-                            <component
-                                :is="categoryIcon(category.icon)"
-                                class="size-5"
-                                aria-hidden="true"
+                            <CategoryGlyph
+                                :name="categoryLabel(category.name)"
+                                :icon="category.icon"
+                                :image-url="category.image_url"
+                                :class="
+                                    category.image_url
+                                        ? 'size-11 rounded-xl'
+                                        : undefined
+                                "
                             />
                         </span>
                         <div>

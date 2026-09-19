@@ -24,15 +24,17 @@ final class PermissionCatalogSeederTest extends TestCase
      * WHY: `spec.md` y `rbacbase.md` titulan el catálogo como "37 permisos" pero la lista
      * que enumeran tiene 38. Manda la enumeración; el número es un error de conteo en los
      * dos documentos y quedó anotado en `tasks.md` para `montree-spec-updater`.
-     * El módulo `payments` (transacciones en el panel) sumó dos y lo dejó en 40.
+     * El módulo `payments` (transacciones en el panel) sumó dos y lo dejó en 40;
+     * `categories` (panel de categorías) sumó otros dos y lo dejó en 41.
      */
-    public const CATALOG_SIZE = 39;
+    public const CATALOG_SIZE = 41;
 
     /**
      * @var array<string, array<int, string>>
      */
     private const CATALOG = [
         'Dashboard' => ['dashboard.view', 'reports.view'],
+        'Categorias' => ['categories.view', 'categories.manage'],
         'Productos' => ['tours.view', 'tours.create', 'tours.update', 'tours.publish', 'tours.delete', 'tours.images.manage'],
         'Salidas' => ['departures.view', 'departures.create', 'departures.update', 'departures.cancel', 'departures.delete', 'departures.assign_guide'],
         'Logistica' => ['logistics.view', 'logistics.manage'],
@@ -70,6 +72,7 @@ final class PermissionCatalogSeederTest extends TestCase
         $this->assertSame([
             'bookings.update',
             'bookings.view',
+            'categories.view',
             'dashboard.view',
             'departures.view',
             'newsletter.send',
@@ -85,6 +88,8 @@ final class PermissionCatalogSeederTest extends TestCase
             'tours.view',
         ], $this->permissionsOf(UserRole::Sales));
         $this->assertSame([
+            'categories.manage',
+            'categories.view',
             'dashboard.view',
             'departures.assign_guide',
             'departures.cancel',

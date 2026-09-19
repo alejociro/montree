@@ -192,6 +192,57 @@ Lecturas auxiliares que se conservan como API porque las consume un buscador as�
 - Props de `Admin/Tour/Edit`: `tour.routes: TourRoute[]` (shape completo con `stops`), sin `availableRoutes`. `Admin/Tour/Show`: `tour.routes` resumido. `LogisticsPagesController@index` deja de enviar `routes`.
 - `StoreTourDateRequest`/`UpdateTourDateRequest`: `route_id` → `Rule::exists('routes','id')->where('tour_id', $tourId)`.
 
+## 8. Categorías del tenant (2026-09-19)
+
+Rutas web (Inertia), todas bajo `admin/*` (`dashboard.view` + el permiso del módulo):
+
+| Método | URI | Nombre | Permiso | Controller |
+|---|---|---|---|---|
+| GET | `admin/categories` | `admin.categories.index` | `categories.view` | `Admin\CategoryPagesController@index` |
+| POST | `admin/categories` | `admin.categories.store` | `categories.manage` | `Admin\CategoryController@store` |
+| PATCH | `admin/categories/reorder` | `admin.categories.reorder` | `categories.manage` | `Admin\ReorderCategoriesController` |
+| PUT | `admin/categories/{category}` | `admin.categories.update` | `categories.manage` | `Admin\CategoryController@update` |
+| DELETE | `admin/categories/{category}` | `admin.categories.destroy` | `categories.manage` | `Admin\CategoryController@destroy` |
+
+Props de `Admin/Categories/Index`:
+
+```ts
+{
+  categories: {
+    id: number; name: string; slug: string; description: string | null;
+    icon: CategoryIcon | null; image_url: string | null;
+    display_order: number; is_active: boolean; tours_count: number;
+  }[];
+  icons: { value: CategoryIcon; label: string }[];
+}
+```
+
+Payload de alta/edición (multipart, `forceFormData`; la edición viaja por POST con
+`_method=put` porque multipart no va en PUT):
+
+```
+name          required string max:80
+description   nullable string max:500
+icon          nullable in: App\Enums\CategoryIcon
+image         nullable file mimes:png,jpg,jpeg,svg,webp max:1024 (KB)
+remove_image  sometimes boolean
+is_active     sometimes boolean (default true)
+```
+
+`PATCH admin/categories/reorder` recibe `ids: number[]` (min 1); cada id debe pertenecer
+al tenant actual (se valida contra el scope, no con `Rule::exists`, que lo ignora) y la
+posición en el array pasa a ser `display_order` (1-based). Un id ajeno responde 422.
+
+Respuestas: `back()` con `success` en el flash; el borrado bloqueado vuelve con
+`withErrors(['category' => …])` y el mensaje nombra el conteo y hasta tres productos.
+
+`icon` e `image_url` se suman también a `CatalogCategoryResource`, `Tour\CategoryResource`
+y al `category` de `PublicTourResource`, para que el catálogo, el home, las fichas y el
+detalle pinten la misma cara con el átomo `CategoryGlyph.vue`.
+
+Eliminación: `GET /api/v1/tours/categories` (`api.v1.tours.categories.index`) y
+`Api\V1\CategoryController` desaparecen — ningún componente Vue los consumía.
+
 ## Cambios al contrato
 
 - `2026-09-16` (B4) — `departureDefaults` **pierde** `currency`, y `tours[]` del

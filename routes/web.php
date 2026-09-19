@@ -3,12 +3,15 @@
 use App\Http\Controllers\AccountPagesController;
 use App\Http\Controllers\Admin\AssignGuideController;
 use App\Http\Controllers\Admin\CancelTourDateController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CategoryPagesController;
 use App\Http\Controllers\Admin\DefaultRouteController;
 use App\Http\Controllers\Admin\DeparturePagesController;
 use App\Http\Controllers\Admin\HotelController;
 use App\Http\Controllers\Admin\LogisticsPagesController;
 use App\Http\Controllers\Admin\PromotionPagesController;
 use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\ReorderCategoriesController;
 use App\Http\Controllers\Admin\RestoreTourDateController;
 use App\Http\Controllers\Admin\ReviewPagesController;
 use App\Http\Controllers\Admin\TeamPagesController;
@@ -139,6 +142,15 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     Route::patch('tour-dates/{tourDate}/cancel', CancelTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.cancel');
     Route::patch('tour-dates/{tourDate}/restore', RestoreTourDateController::class)->middleware('can:departures.cancel')->name('tour-dates.restore');
     Route::patch('tour-dates/{tourDate}/guide', AssignGuideController::class)->middleware('can:departures.assign_guide')->name('tour-dates.guide');
+
+    Route::get('categories', [CategoryPagesController::class, 'index'])->middleware('can:categories.view')->name('categories.index');
+
+    Route::middleware('can:categories.manage')->group(function (): void {
+        Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::patch('categories/reorder', ReorderCategoriesController::class)->name('categories.reorder');
+        Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
 
     Route::get('logistics', [LogisticsPagesController::class, 'index'])->middleware('can:logistics.view')->name('logistics.index');
 

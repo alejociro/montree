@@ -2,6 +2,7 @@
 import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
 import { index as tourReviewsIndex } from '@/actions/App/Http/Controllers/Api/V1/PublicReviewController';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import ReviewCard from '@/components/molecules/ReviewCard.vue';
@@ -296,7 +297,20 @@ onMounted(() => {
             </Link>
             <template v-if="tour.category">
                 <span aria-hidden="true">›</span>
-                <span>{{ categoryLabel(tour.category.name) }}</span>
+                <span class="inline-flex items-center gap-1.5">
+                    <CategoryGlyph
+                        :name="categoryLabel(tour.category.name)"
+                        :icon="tour.category.icon"
+                        :image-url="tour.category.image_url"
+                        :class="
+                            tour.category.image_url
+                                ? 'size-3.5 rounded-full'
+                                : ''
+                        "
+                        icon-class="size-3.5"
+                    />
+                    {{ categoryLabel(tour.category.name) }}
+                </span>
             </template>
             <span aria-hidden="true">›</span>
             <span class="truncate text-foreground">{{ tour.name }}</span>

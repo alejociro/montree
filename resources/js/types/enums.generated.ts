@@ -40,6 +40,28 @@ export const CANCELLATION_POLICY_VALUES = [
 
 export type CancellationPolicy = (typeof CANCELLATION_POLICY_VALUES)[number];
 
+/** `App\Enums\CategoryIcon` */
+export const CATEGORY_ICON_VALUES = [
+    'mountain',
+    'compass',
+    'palette',
+    'utensils',
+    'binoculars',
+    'bike',
+    'waves',
+    'tent',
+    'tree-pine',
+    'camera',
+    'fish',
+    'sailboat',
+    'footprints',
+    'flame',
+    'sun',
+    'map',
+] as const;
+
+export type CategoryIcon = (typeof CATEGORY_ICON_VALUES)[number];
+
 /** `App\Enums\CommissionType` */
 export const COMMISSION_TYPE_VALUES = [
     'percentage',

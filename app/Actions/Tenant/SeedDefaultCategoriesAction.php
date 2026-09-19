@@ -17,7 +17,7 @@ final class SeedDefaultCategoriesAction
      *
      * @return int number of categories created
      */
-    public function handle(Tenant $tenant): int
+    public function execute(Tenant $tenant): int
     {
         $created = 0;
 

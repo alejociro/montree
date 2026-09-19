@@ -8,7 +8,7 @@ use App\Enums\Module;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 /**
- * Presentación del catálogo cerrado de 40 permisos: a qué módulo pertenece cada uno
+ * Presentación del catálogo cerrado de 41 permisos: a qué módulo pertenece cada uno
  * y cómo se llama en la UI.
  *
  * WHY: la lista y el agrupamiento NO se reescriben acá — se leen de
@@ -22,6 +22,7 @@ final class PermissionCatalog
      */
     private const MODULE_LABELS = [
         'dashboard' => 'Panel',
+        'categories' => 'Categorías',
         'tours' => 'Tours',
         'departures' => 'Salidas',
         'logistics' => 'Logística',
@@ -41,6 +42,8 @@ final class PermissionCatalog
     private const LABELS = [
         'dashboard.view' => 'Ver el panel',
         'reports.view' => 'Ver reportes',
+        'categories.view' => 'Ver categorías',
+        'categories.manage' => 'Gestionar categorías',
         'tours.view' => 'Ver tours',
         'tours.create' => 'Crear tours',
         'tours.update' => 'Editar tours',

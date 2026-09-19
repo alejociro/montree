@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AcceptableValue } from 'reka-ui';
 import { computed } from 'vue';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import InputError from '@/components/InputError.vue';
 import CapacityInput from '@/components/molecules/CapacityInput.vue';
@@ -216,7 +217,32 @@ const meetingValue = computed(() => ({
                                             :key="category.id"
                                             :value="String(category.id)"
                                         >
-                                            {{ categoryLabel(category.name) }}
+                                            <span
+                                                class="inline-flex items-center gap-2"
+                                            >
+                                                <CategoryGlyph
+                                                    :name="
+                                                        categoryLabel(
+                                                            category.name,
+                                                        )
+                                                    "
+                                                    :icon="category.icon"
+                                                    :image-url="
+                                                        category.image_url
+                                                    "
+                                                    :class="
+                                                        category.image_url
+                                                            ? 'size-4 rounded'
+                                                            : ''
+                                                    "
+                                                    icon-class="size-4"
+                                                />
+                                                {{
+                                                    categoryLabel(
+                                                        category.name,
+                                                    )
+                                                }}
+                                            </span>
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>

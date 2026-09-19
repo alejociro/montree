@@ -17,9 +17,11 @@ class CategoryFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement([
+        // WHY: el sufijo aleatorio hace el nombre único, no `unique()`: con
+        // `unique()->randomElement()` la factory se agotaba a la sexta categoría.
+        $name = fake()->randomElement([
             'Senderismo', 'Aventura', 'Cultural', 'Gastronomía', 'Buceo', 'Avistamiento',
-        ]).' '.Str::random(4);
+        ]).' '.Str::random(8);
 
         return [
             'name' => $name,

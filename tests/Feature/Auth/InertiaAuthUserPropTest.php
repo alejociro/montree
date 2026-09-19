@@ -63,7 +63,7 @@ class InertiaAuthUserPropTest extends TestCase
             ->where('auth.user.id', $user->id)
             ->where('auth.user.email', $user->email)
             ->where('auth.user.isSuperAdmin', false)
-            ->has('auth.user.permissions', 13)
+            ->has('auth.user.permissions', 15)
             ->where('auth.permissions', fn (Collection $permissions): bool => $permissions->contains('tours.create')
                 && ! $permissions->contains('team.view')
             )

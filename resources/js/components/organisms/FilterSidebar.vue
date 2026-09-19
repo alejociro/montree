@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check } from 'lucide-vue-next';
+import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import PriceRangeFilter from '@/components/molecules/PriceRangeFilter.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -116,6 +117,17 @@ function handleDifficultyUpdate(value: unknown): void {
                                 class="size-3"
                             />
                         </span>
+                        <CategoryGlyph
+                            :name="categoryLabel(category.name)"
+                            :icon="category.icon"
+                            :image-url="category.image_url"
+                            :class="
+                                category.image_url
+                                    ? 'size-4 shrink-0 rounded'
+                                    : 'shrink-0'
+                            "
+                            icon-class="size-4"
+                        />
                         <span class="flex-1 truncate">{{
                             categoryLabel(category.name)
                         }}</span>

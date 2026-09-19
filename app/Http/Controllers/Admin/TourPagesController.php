@@ -129,7 +129,7 @@ final class TourPagesController extends Controller
 
         return [
             'tour' => (new TourResource($tour))->resolve(),
-            'categories' => $this->categories(),
+            'categories' => $this->categories($tour),
             'departures' => $this->departures($tour),
             'departureOptions' => $options->all(),
             'departureDefaults' => DepartureDefaults::fromTour($tour, Tenant::current()?->configuration)->toArray(),
@@ -183,12 +183,22 @@ final class TourPagesController extends Controller
     }
 
     /**
+     * El select ofrece solo categorías activas. La del producto que se está
+     * editando viaja igual aunque esté desactivada: si no, guardar el formulario
+     * la borraría del producto sin que nadie lo pidiera.
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function categories(): array
+    private function categories(?Tour $tour = null): array
     {
         return CategoryResource::collection(
-            Category::query()->orderBy('display_order')->orderBy('name')->get()
+            Category::query()
+                ->where(fn (Builder $query) => $query
+                    ->where('is_active', true)
+                    ->when($tour?->category_id !== null, fn (Builder $inner) => $inner->orWhere('id', $tour?->category_id)))
+                ->orderBy('display_order')
+                ->orderBy('name')
+                ->get()
         )->resolve();
     }
 }

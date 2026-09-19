@@ -38,7 +38,7 @@ class SeedDefaultCategoriesTest extends TestCase
 
         $tenant = Tenant::factory()->create();
 
-        $created = app(SeedDefaultCategoriesAction::class)->handle($tenant);
+        $created = app(SeedDefaultCategoriesAction::class)->execute($tenant);
 
         $this->assertSame(2, $created);
 
@@ -63,8 +63,8 @@ class SeedDefaultCategoriesTest extends TestCase
         $tenant = Tenant::factory()->create();
         $action = app(SeedDefaultCategoriesAction::class);
 
-        $action->handle($tenant);
-        $secondRun = $action->handle($tenant);
+        $action->execute($tenant);
+        $secondRun = $action->execute($tenant);
 
         $this->assertSame(0, $secondRun);
         $this->assertSame(1, Category::query()
@@ -84,7 +84,7 @@ class SeedDefaultCategoriesTest extends TestCase
 
         $other->makeCurrent();
 
-        app(SeedDefaultCategoriesAction::class)->handle($tenant);
+        app(SeedDefaultCategoriesAction::class)->execute($tenant);
 
         $this->assertSame(0, Category::query()
             ->withoutGlobalScope('tenant')
@@ -102,7 +102,7 @@ class SeedDefaultCategoriesTest extends TestCase
 
         $tenant = Tenant::factory()->create();
 
-        $this->assertSame(0, app(SeedDefaultCategoriesAction::class)->handle($tenant));
+        $this->assertSame(0, app(SeedDefaultCategoriesAction::class)->execute($tenant));
         $this->assertSame(0, Category::query()->withoutGlobalScope('tenant')->count());
     }
 

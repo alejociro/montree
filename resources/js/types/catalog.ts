@@ -5,6 +5,7 @@ export type CatalogCategory = {
     slug: string;
     name: string;
     icon: string | null;
+    image_url: string | null;
     tours_count: number;
 };
 
@@ -22,6 +23,7 @@ export type CatalogTour = {
         name: string;
         slug: string;
         icon: string | null;
+        image_url: string | null;
     } | null;
     cover_image_url: string | null;
     rating_average: string;

@@ -23,6 +23,7 @@ class CatalogCategoryResource extends JsonResource
             'slug' => $this->slug,
             'name' => $this->name,
             'icon' => $this->icon,
+            'image_url' => $this->image_url,
             'tours_count' => (int) ($this->resource->getAttribute('tours_count') ?? 0),
         ];
     }

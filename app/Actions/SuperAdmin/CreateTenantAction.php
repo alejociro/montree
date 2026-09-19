@@ -43,7 +43,7 @@ final class CreateTenantAction
                 'currency' => $data['currency'],
             ]);
 
-            $this->seedCategories->handle($tenant);
+            $this->seedCategories->execute($tenant);
 
             return $tenant;
         });

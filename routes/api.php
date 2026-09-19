@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\V1\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Api\V1\Admin\TourPassengerController as AdminTourPassengerController;
 use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\CatalogController;
-use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\Guide\GuideTourController;
 use App\Http\Controllers\Api\V1\Guide\TourDatePassengerController;
@@ -40,7 +39,6 @@ Route::middleware(['throttle:5,1', 'module:newsletter'])->group(function (): voi
 });
 
 Route::middleware('throttle:60,1')->group(function (): void {
-    Route::get('tours/categories', [CategoryController::class, 'index'])->name('api.v1.tours.categories.index');
     Route::get('tours', [CatalogController::class, 'index'])->name('api.v1.tours.index');
     Route::get('tours/{slug}', [PublicTourController::class, 'show'])->name('api.v1.tours.show');
     Route::get('tours/{slug}/reviews', [PublicReviewController::class, 'index'])->name('api.v1.tours.reviews.index');

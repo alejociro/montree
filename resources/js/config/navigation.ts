@@ -14,6 +14,7 @@ import {
     Settings,
     ShieldCheck,
     Star,
+    Tags,
     Truck,
     User,
     Users,
@@ -29,6 +30,7 @@ import {
     profile as accountProfile,
 } from '@/routes/account';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as categoriesIndex } from '@/routes/admin/categories';
 import { index as departuresIndex } from '@/routes/admin/departures';
 import { index as logisticsIndex } from '@/routes/admin/logistics';
 import { index as newsletterIndex } from '@/routes/admin/newsletter';
@@ -165,6 +167,13 @@ const panelSection: NavSectionDefinition = {
             icon: Mountain,
             requiresPanel: true,
             anyOf: ['tours.view'],
+        },
+        {
+            title: 'Categorías',
+            href: categoriesIndex().url,
+            icon: Tags,
+            requiresPanel: true,
+            anyOf: ['categories.view'],
         },
         {
             title: 'Salidas',
