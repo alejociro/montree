@@ -13,7 +13,7 @@ const lastUpdated = t('11 de agosto de 2026');
             <div class="container--narrow container">
                 <div class="reveal section-header">
                     <span class="eyebrow-pill">{{ $t('Legal') }}</span>
-                    <h2 class="section-title">{{ $t('Política de pago') }}</h2>
+                    <h1 class="section-title">{{ $t('Política de pago') }}</h1>
                     <p class="section-sub">
                         {{
                             $t(
@@ -51,22 +51,21 @@ const lastUpdated = t('11 de agosto de 2026');
                     </p>
                     <ul>
                         <li>
-                            <strong>{{ $t('Bre-B') }}</strong>
-                            {{
-                                $t(
-                                    '— transferencias inmediatas entre entidades financieras colombianas.',
-                                )
-                            }}
-                        </li>
-                        <li>
                             <strong>{{ $t('PSE') }}</strong>
                             {{
                                 $t(
-                                    '— débito directo desde cuenta de ahorros o corriente.',
+                                    '— débito directo desde cuenta de ahorros o corriente, procesado por la pasarela PlacetoPay.',
                                 )
                             }}
                         </li>
                     </ul>
+                    <p>
+                        {{
+                            $t(
+                                'La agencia también puede registrar en el panel pagos recibidos por transferencia o en efectivo.',
+                            )
+                        }}
+                    </p>
                     <p class="legal-pending">
                         {{
                             $t(
@@ -126,13 +125,9 @@ const lastUpdated = t('11 de agosto de 2026');
 
                     <h3>{{ $t('7. Reembolsos') }}</h3>
                     <p>
-                        {{ $t('Los reembolsos se rigen por la') }}
-                        <a href="/politica-de-cancelacion">
-                            {{ $t('política de cancelación') }}
-                        </a>
                         {{
                             $t(
-                                'y por las condiciones particulares que publique cada agencia en su tour.',
+                                'Los reembolsos a los viajeros se rigen por los términos y la política de cancelación que cada agencia publica en su sitio, y que el viajero acepta al reservar.',
                             )
                         }}
                     </p>

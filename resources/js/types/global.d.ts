@@ -5,6 +5,7 @@ import type {
     PluralTranslator,
     Translator,
 } from '@/types/locale';
+import type { PlatformInfo } from '@/types/platform';
 import type { Tenant, TenantConfiguration } from '@/types/tenant';
 
 // Extend ImportMeta interface for Vite...
@@ -33,6 +34,7 @@ declare module '@inertiajs/core' {
             csrfToken: string;
             tenant: Tenant | null;
             tenantConfiguration: TenantConfiguration | null;
+            platform: PlatformInfo | null;
             flash: {
                 success?: string;
                 error?: string;

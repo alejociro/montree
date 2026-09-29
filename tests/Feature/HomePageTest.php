@@ -62,13 +62,28 @@ class HomePageTest extends TestCase
         }
     }
 
+    public function test_the_feature_video_referenced_by_the_landing_exists(): void
+    {
+        $markup = file_get_contents(resource_path('js/pages/Landing.vue'));
+
+        preg_match_all('#/landing/[\w-]+\.(?:mp4|jpg)#', $markup, $matches);
+
+        $referenced = array_unique($matches[0]);
+
+        $this->assertContains('/landing/montree-funciones.mp4', $referenced);
+
+        foreach ($referenced as $url) {
+            $this->assertFileExists(public_path(ltrim($url, '/')));
+        }
+    }
+
     public function test_the_landing_preloads_its_hero_image(): void
     {
         $response = $this->get('http://montree.test/');
 
         $response->assertOk();
         $response->assertSee('rel="preload" as="image" type="image/avif"', false);
-        $response->assertSee('/landing/cocora-wide-2560.avif', false);
+        $response->assertSee('/landing/hero-wide-2560.avif', false);
     }
 
     public function test_the_tenant_home_does_not_preload_the_marketing_hero(): void
@@ -78,7 +93,7 @@ class HomePageTest extends TestCase
         $response = $this->get('http://'.$tenant->domain.'/');
 
         $response->assertOk();
-        $response->assertDontSee('/landing/cocora-wide-2560.avif', false);
+        $response->assertDontSee('/landing/hero-wide-2560.avif', false);
     }
 
     public function test_tenant_keeps_its_public_home_instead_of_the_marketing_landing(): void

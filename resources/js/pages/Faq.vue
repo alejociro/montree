@@ -22,13 +22,13 @@ const faqs = [
     {
         q: t('¿Cuánto tarda en estar lista mi agencia?'),
         a: t(
-            'La mayoría publica su primer tour en menos de 10 minutos. Sin configuraciones complicadas, sin técnicos y sin esperas.',
+            'Puedes publicar tu primer tour el mismo día: creas la agencia, confirmas tu correo y cargas el tour desde el panel, sin instalar nada.',
         ),
     },
     {
         q: t('¿Cómo recibo el dinero de las reservas?'),
         a: t(
-            'Tus clientes pagan en línea con Bre-B o PSE y el dinero se transfiere a la cuenta bancaria de tu agencia. Montree descuenta una comisión por reserva confirmada; los detalles están en la política de pago.',
+            'Tus clientes pagan en línea con PSE a través de PlacetoPay y el dinero se transfiere a la cuenta bancaria de tu agencia. Montree descuenta una comisión por reserva confirmada; los detalles están en la política de pago.',
         ),
     },
     {
@@ -40,19 +40,19 @@ const faqs = [
     {
         q: t('¿Puedo migrar desde Excel o WhatsApp?'),
         a: t(
-            'Sí. Nuestro equipo te ayuda a migrar toda la información sin costo adicional durante los primeros 30 días.',
+            'Sí. Cargas tus tours y salidas desde el panel, y si necesitas ayuda puedes escribirnos a hola@montree.co.',
         ),
     },
     {
         q: t('¿Qué pasa si quiero cancelar?'),
         a: t(
-            'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima. Exportas tu información y listo.',
+            'Cancelas cuando quieras, sin penalizaciones ni permanencia mínima, y puedes pedirnos una copia de tu información.',
         ),
     },
     {
         q: t('¿Qué pasa si un viajero cancela su reserva?'),
         a: t(
-            'Cada agencia define su propia política de cancelación y los reembolsos se procesan según esas reglas. Puedes revisar el marco general en nuestra política de cancelación.',
+            'Cada agencia define su política de cancelación en sus propios términos, que el viajero acepta al reservar, y los reembolsos se procesan según esas reglas.',
         ),
     },
 ];
@@ -64,9 +64,9 @@ const faqs = [
             <div class="container--narrow container">
                 <div class="reveal section-header">
                     <span class="eyebrow-pill">{{ $t('FAQ') }}</span>
-                    <h2 class="section-title">
+                    <h1 class="section-title">
                         {{ $t('Preguntas frecuentes') }}
-                    </h2>
+                    </h1>
                     <p class="section-sub">
                         {{
                             $t('Todo lo que necesitas saber antes de empezar.')

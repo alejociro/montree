@@ -151,6 +151,21 @@ final class ModuleFlagsTest extends TestCase
         $this->assertContains('tours', $modules);
     }
 
+    public function test_a_role_never_counts_more_permissions_than_the_visible_catalog(): void
+    {
+        $this->disable('promotions');
+        $this->disable('newsletter');
+
+        $response = $this->actingAs($this->admin)->getJson(self::HOST.'/api/v1/admin/roles');
+
+        $response->assertOk();
+        $visible = count($response->json('meta.available_permissions'));
+        $admin = collect($response->json('data'))->firstWhere('name', UserRole::Admin->value);
+
+        $this->assertNotNull($admin);
+        $this->assertSame($visible, $admin['permissions_count']);
+    }
+
     public function test_editing_a_role_keeps_the_permissions_of_a_disabled_module(): void
     {
         setPermissionsTeamId($this->tenant->id);

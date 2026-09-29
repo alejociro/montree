@@ -45,6 +45,10 @@ Cuando sea posible, el viajero puede solicitar el cambio de fecha o la cesión d
 cupo a otra persona en lugar del reembolso, sujeto a disponibilidad y a la
 diferencia de tarifa.
 
+Nada de lo anterior limita los derechos del viajero como consumidor, incluidos
+el derecho de retracto y la reversión del pago en los casos y plazos que
+establece la Ley 1480 de 2011 (Estatuto del Consumidor).
+
 ## Cambios y cancelaciones por parte de la agencia
 
 - La agencia puede modificar itinerarios, horarios o recorridos por razones

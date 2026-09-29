@@ -46,6 +46,10 @@ When possible, the traveler may request a date change or transfer the place to
 another person instead of a refund, subject to availability and any fare
 difference.
 
+None of the above limits the traveler's rights as a consumer, including the
+right of withdrawal and payment reversal in the cases and within the terms set
+by Law 1480 of 2011 (Colombian Consumer Statute).
+
 ## Changes and cancellations by the agency
 
 - The agency may modify itineraries, schedules or routes for weather, public

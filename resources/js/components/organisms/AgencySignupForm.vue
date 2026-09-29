@@ -6,6 +6,7 @@ import InputError from '@/components/InputError.vue';
 import SubdomainField from '@/components/molecules/SubdomainField.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -21,7 +22,14 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    accepts_terms: false,
+    accepts_data_policy: false,
 });
+
+const legalLinks = {
+    terms: '/terminos-y-condiciones',
+    privacy: '/politica-de-privacidad',
+};
 
 const { status: subdomainStatus, reason: subdomainReason } =
     useSubdomainAvailability(toRef(form, 'subdomain'));
@@ -119,10 +127,81 @@ function submit() {
             <InputError :message="form.errors.password_confirmation" />
         </div>
 
+        <div class="grid gap-3">
+            <div class="flex items-start gap-3">
+                <Checkbox
+                    id="accepts_terms"
+                    v-model="form.accepts_terms"
+                    class="mt-0.5"
+                    :tabindex="7"
+                    :aria-invalid="Boolean(form.errors.accepts_terms)"
+                    aria-describedby="accepts_terms_error"
+                    @update:model-value="form.clearErrors('accepts_terms')"
+                />
+                <Label
+                    for="accepts_terms"
+                    class="text-sm leading-snug font-normal"
+                >
+                    <span>
+                        {{ $t('Acepto los') }}
+                        <a
+                            :href="legalLinks.terms"
+                            target="_blank"
+                            rel="noopener"
+                            class="font-medium text-primary-readable underline underline-offset-4"
+                            >{{ $t('términos y condiciones') }}</a
+                        >
+                        {{ $t('de Montree.') }}
+                    </span>
+                </Label>
+            </div>
+            <InputError
+                id="accepts_terms_error"
+                :message="form.errors.accepts_terms"
+            />
+
+            <div class="flex items-start gap-3">
+                <Checkbox
+                    id="accepts_data_policy"
+                    v-model="form.accepts_data_policy"
+                    class="mt-0.5"
+                    :tabindex="8"
+                    :aria-invalid="Boolean(form.errors.accepts_data_policy)"
+                    aria-describedby="accepts_data_policy_error"
+                    @update:model-value="
+                        form.clearErrors('accepts_data_policy')
+                    "
+                />
+                <Label
+                    for="accepts_data_policy"
+                    class="text-sm leading-snug font-normal"
+                >
+                    <span>
+                        {{
+                            $t(
+                                'Autorizo a Montree a tratar mis datos personales para crear y administrar mi cuenta, según la',
+                            )
+                        }}
+                        <a
+                            :href="legalLinks.privacy"
+                            target="_blank"
+                            rel="noopener"
+                            class="font-medium text-primary-readable underline underline-offset-4"
+                            >{{ $t('política de privacidad') }}</a
+                        >.
+                    </span>
+                </Label>
+            </div>
+            <InputError
+                id="accepts_data_policy_error"
+                :message="form.errors.accepts_data_policy"
+            />
+        </div>
+
         <Button
             type="submit"
             class="mt-1 w-full"
-            :tabindex="7"
+            :tabindex="9"
             :disabled="form.processing"
             data-test="create-agency-button"
         >

@@ -194,7 +194,18 @@ Route::middleware(['auth', 'verified', 'tenant_guide.only'])->prefix('guide')->n
 Route::domain((string) config('montree.platform_host'))->group(function (): void {
     Route::inertia('faq', 'Faq')->name('faq');
     Route::inertia('politica-de-pago', 'Policies/Payment')->name('policies.payment');
-    Route::inertia('politica-de-cancelacion', 'Policies/Cancellation')->name('policies.cancellation');
+    // WHY: la cancelación de un tour es del contrato agencia–viajero y vive en los
+    // términos de cada agencia (/terminos en su subdominio). La URL vieja se
+    // conserva como redirección para no romper enlaces publicados.
+    Route::permanentRedirect('politica-de-cancelacion', '/terminos-y-condiciones');
+    Route::inertia('terminos-y-condiciones', 'Policies/PlatformTerms')->name('policies.platform-terms');
+    Route::inertia('politica-de-privacidad', 'Policies/Privacy')->name('policies.privacy');
+    Route::inertia('politica-de-cookies', 'Policies/Cookies', [
+        'session' => [
+            'cookie' => config('session.cookie'),
+            'lifetimeMinutes' => (int) config('session.lifetime'),
+        ],
+    ])->name('policies.cookies');
 });
 
 Route::domain((string) config('montree.platform_host'))

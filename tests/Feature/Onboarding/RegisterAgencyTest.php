@@ -40,8 +40,8 @@ class RegisterAgencyTest extends TestCase
     }
 
     /**
-     * @param  array<string, string>  $overrides
-     * @return array<string, string>
+     * @param  array<string, string|bool>  $overrides
+     * @return array<string, string|bool>
      */
     private function payload(array $overrides = []): array
     {
@@ -52,11 +52,13 @@ class RegisterAgencyTest extends TestCase
             'email' => 'ana@eco.com',
             'password' => 'super-secret-123',
             'password_confirmation' => 'super-secret-123',
+            'accepts_terms' => true,
+            'accepts_data_policy' => true,
         ], $overrides);
     }
 
     /**
-     * @param  array<string, string>  $overrides
+     * @param  array<string, string|bool>  $overrides
      */
     private function register(array $overrides = []): TestResponse
     {
@@ -153,7 +155,31 @@ class RegisterAgencyTest extends TestCase
             'email' => 'Correo inválido.',
             'password' => 'Ingresa una contraseña.',
             'password_confirmation' => 'Confirma tu contraseña.',
+            'accepts_terms' => 'Debes aceptar los términos y condiciones.',
+            'accepts_data_policy' => 'Debes autorizar el tratamiento de tus datos personales.',
         ]);
+    }
+
+    public function test_rejects_registration_without_terms_or_data_authorization(): void
+    {
+        $this->register(['accepts_terms' => false, 'accepts_data_policy' => false])
+            ->assertSessionHasErrors(['accepts_terms', 'accepts_data_policy']);
+
+        $this->assertDatabaseCount('tenants', 0);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_records_when_the_founder_accepted_the_terms_and_data_policy(): void
+    {
+        Notification::fake();
+
+        $this->freezeSecond();
+
+        $this->register()->assertRedirect(route('onboarding.check-email'));
+
+        $founder = User::query()->where('email', 'ana@eco.com')->firstOrFail();
+        $this->assertTrue($founder->terms_accepted_at?->equalTo(now()));
+        $this->assertTrue($founder->data_policy_accepted_at?->equalTo(now()));
     }
 
     public function test_reports_password_strength_failures_in_spanish(): void

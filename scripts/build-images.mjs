@@ -9,11 +9,8 @@ const sourceDir = join(root, 'resources/images/landing');
 const outputDir = join(root, 'public/landing');
 
 const sets = [
-    { name: 'cocora-wide', widths: [640, 960, 1280, 1600, 1920, 2560, 3200, 3840, 4480, 5120] },
-    { name: 'cocora-portrait', widths: [540, 720, 1080, 1440, 1620] },
-    { name: 'card-sierra-nevada', widths: [320, 480, 640, 960, 1280] },
-    { name: 'card-pago-confirmado', widths: [320, 480, 640, 960, 1280] },
-    { name: 'card-cupos', widths: [320, 480, 640, 960, 1280] },
+    { name: 'hero-wide', widths: [640, 960, 1280, 1600, 1920, 2560, 3200, 3840] },
+    { name: 'hero-portrait', widths: [540, 720, 1080, 1620] },
 ];
 
 const encoders = {
@@ -59,8 +56,15 @@ async function resolveSource(name) {
     return join(sourceDir, match);
 }
 
-await rm(outputDir, { recursive: true, force: true });
+// WHY: public/landing also holds hand-placed media (the feature video and its
+// poster), so only the generated image variants are wiped.
 await mkdir(outputDir, { recursive: true });
+
+for (const entry of await readdir(outputDir)) {
+    if (/\.(?:avif|webp)$/.test(entry)) {
+        await rm(join(outputDir, entry));
+    }
+}
 
 for (const { name, widths } of sets) {
     const sourcePath = await resolveSource(name);

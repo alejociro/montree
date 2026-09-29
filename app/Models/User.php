@@ -39,6 +39,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'password_set_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
+            'data_policy_accepted_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             // WHY: NO va en #[Fillable] — es un timestamp que fija el sistema al autenticar,
             // nunca input del usuario (mismo criterio que `password_set_at` y

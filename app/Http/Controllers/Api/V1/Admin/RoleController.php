@@ -43,7 +43,9 @@ final class RoleController extends Controller
 
         $roles = $this->catalog->visibleQuery($tenant)
             ->withCount([
-                'permissions',
+                // WHY: el total que muestra la UI es el catálogo visible (sin módulos
+                // apagados). Contar también los permisos ocultos daba «41 de 35».
+                'permissions' => fn (Builder $query) => $query->whereNotIn('name', $this->permissions->disabledSlugs()),
                 // WHY: los roles base los comparten todas las agencias; sin scopear el
                 // conteo, `admin` mostraría los admins de la plataforma entera.
                 'users' => fn (Builder $query) => $query->where('model_has_roles.tenant_id', $tenant->getKey()),

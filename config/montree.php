@@ -79,6 +79,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Responsable legal de la plataforma
+    |--------------------------------------------------------------------------
+    |
+    | Identidad de quien opera montree.co. La exigen la política de tratamiento
+    | de datos (Ley 1581 de 2012 y Decreto 1377 de 2013) y la información mínima
+    | del proveedor en comercio electrónico (Ley 1480 de 2011, art. 50). El
+    | footer de la landing y las páginas legales muestran solo los campos que
+    | tengan valor; se leen desde HandleInertiaRequests (prop `platform`).
+    |
+    */
+    'legal' => [
+        'name' => env('MONTREE_LEGAL_NAME'),
+        'nit' => env('MONTREE_LEGAL_NIT'),
+        'address' => env('MONTREE_LEGAL_ADDRESS'),
+        'city' => env('MONTREE_LEGAL_CITY'),
+        'phone' => env('MONTREE_LEGAL_PHONE'),
+        'email' => env('MONTREE_LEGAL_EMAIL', 'hola@montree.co'),
+        'privacy_email' => env('MONTREE_PRIVACY_EMAIL', env('MONTREE_LEGAL_EMAIL', 'hola@montree.co')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Self-serve onboarding (F016)
     |--------------------------------------------------------------------------
     |

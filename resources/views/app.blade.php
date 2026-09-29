@@ -37,14 +37,14 @@
         @if (($page['component'] ?? null) === 'Landing')
             <link rel="preload" as="image" type="image/avif" fetchpriority="high"
                   media="not all and (orientation: portrait) and (max-width: 639px)"
-                  href="/landing/cocora-wide-1600.avif"
+                  href="/landing/hero-wide-1600.avif"
                   imagesizes="100vw"
-                  imagesrcset="/landing/cocora-wide-640.avif 640w, /landing/cocora-wide-960.avif 960w, /landing/cocora-wide-1280.avif 1280w, /landing/cocora-wide-1600.avif 1600w, /landing/cocora-wide-1920.avif 1920w, /landing/cocora-wide-2560.avif 2560w, /landing/cocora-wide-3200.avif 3200w, /landing/cocora-wide-3840.avif 3840w, /landing/cocora-wide-4480.avif 4480w, /landing/cocora-wide-5120.avif 5120w">
+                  imagesrcset="/landing/hero-wide-640.avif 640w, /landing/hero-wide-960.avif 960w, /landing/hero-wide-1280.avif 1280w, /landing/hero-wide-1600.avif 1600w, /landing/hero-wide-1920.avif 1920w, /landing/hero-wide-2560.avif 2560w, /landing/hero-wide-3200.avif 3200w, /landing/hero-wide-3840.avif 3840w">
             <link rel="preload" as="image" type="image/avif" fetchpriority="high"
                   media="(orientation: portrait) and (max-width: 639px)"
-                  href="/landing/cocora-portrait-1080.avif"
+                  href="/landing/hero-portrait-1080.avif"
                   imagesizes="100vw"
-                  imagesrcset="/landing/cocora-portrait-540.avif 540w, /landing/cocora-portrait-720.avif 720w, /landing/cocora-portrait-1080.avif 1080w">
+                  imagesrcset="/landing/hero-portrait-540.avif 540w, /landing/hero-portrait-720.avif 720w, /landing/hero-portrait-1080.avif 1080w, /landing/hero-portrait-1620.avif 1620w">
         @endif
 
         <link rel="preconnect" href="https://fonts.googleapis.com">

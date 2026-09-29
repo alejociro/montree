@@ -82,6 +82,14 @@ final class HandleInertiaRequests extends Middleware
                     ['terms_body', 'terms_is_default'],
                 )
                 : null,
+            // WHY: solo en el host de la plataforma. Los sitios de las agencias
+            // muestran su propia identidad, no la de Montree.
+            'platform' => $tenant === null
+                ? [
+                    'legal' => config('montree.legal'),
+                    'trialDays' => (int) config('montree.onboarding.trial_days'),
+                ]
+                : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

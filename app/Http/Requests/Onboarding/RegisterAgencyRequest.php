@@ -41,6 +41,8 @@ final class RegisterAgencyRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
             'password' => $this->passwordRulesWithoutConfirmation(),
             'password_confirmation' => ['required', 'same:password'],
+            'accepts_terms' => ['accepted'],
+            'accepts_data_policy' => ['accepted'],
         ];
     }
 
@@ -73,6 +75,9 @@ final class RegisterAgencyRequest extends FormRequest
             'password_confirmation.required' => __('Confirma tu contraseña.'),
             'password_confirmation.same' => __('Las contraseñas no coinciden.'),
 
+            'accepts_terms.accepted' => __('Debes aceptar los términos y condiciones.'),
+            'accepts_data_policy.accepted' => __('Debes autorizar el tratamiento de tus datos personales.'),
+
             ...$this->passwordMessages(),
         ];
     }
@@ -86,11 +91,17 @@ final class RegisterAgencyRequest extends FormRequest
             'email' => __('correo electrónico'),
             'password' => __('contraseña'),
             'password_confirmation' => __('confirmación de contraseña'),
+            'accepts_terms' => __('términos y condiciones'),
+            'accepts_data_policy' => __('autorización de tratamiento de datos'),
         ];
     }
 
     public function agencyData(): array
     {
-        return Arr::except($this->validated(), 'password_confirmation');
+        return [
+            ...Arr::except($this->validated(), ['password_confirmation', 'accepts_terms', 'accepts_data_policy']),
+            'accepts_terms' => $this->boolean('accepts_terms'),
+            'accepts_data_policy' => $this->boolean('accepts_data_policy'),
+        ];
     }
 }

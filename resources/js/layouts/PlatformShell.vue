@@ -2,6 +2,8 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Leaf, Mail } from 'lucide-vue-next';
 import { computed, onMounted } from 'vue';
+import PlatformLegalEntity from '@/components/molecules/PlatformLegalEntity.vue';
+import { useLegalLinks } from '@/composables/useLegalLinks';
 import { start } from '@/routes/onboarding';
 
 defineProps<{
@@ -9,6 +11,7 @@ defineProps<{
 }>();
 
 const page = usePage();
+const legalLinks = useLegalLinks();
 const user = computed(() => page.props.auth?.user ?? null);
 const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
 
@@ -63,9 +66,7 @@ onMounted(() => {
                     <span class="brand-tag">{{ $t('Beta') }}</span>
                 </a>
                 <nav class="main-nav">
-                    <a href="/#features">{{ $t('Funciones') }}</a>
-                    <a href="/#how-it-works">{{ $t('Cómo funciona') }}</a>
-                    <a href="/#pricing">{{ $t('Precios') }}</a>
+                    <a href="/#funciones">{{ $t('Funciones') }}</a>
                     <a href="/faq">{{ $t('FAQ') }}</a>
                 </nav>
                 <div class="flex items-center gap-3">
@@ -124,19 +125,21 @@ onMounted(() => {
                 </div>
                 <div class="footer-links-col">
                     <h4>{{ $t('Producto') }}</h4>
-                    <a href="/#features">{{ $t('Funciones') }}</a>
-                    <a href="/#pricing">{{ $t('Precios') }}</a>
+                    <a href="/#funciones">{{ $t('Funciones') }}</a>
                     <a href="/faq">{{ $t('Preguntas frecuentes') }}</a>
                 </div>
                 <div class="footer-links-col">
                     <h4>{{ $t('Legal') }}</h4>
-                    <a href="/politica-de-pago">{{ $t('Política de pago') }}</a>
-                    <a href="/politica-de-cancelacion">
-                        {{ $t('Política de cancelación') }}
-                    </a>
+                    <a
+                        v-for="link in legalLinks"
+                        :key="link.href"
+                        :href="link.href"
+                        >{{ link.label }}</a
+                    >
                 </div>
             </div>
             <div class="footer-bottom container">
+                <PlatformLegalEntity inline />
                 <p>
                     {{
                         $t('© :year Montree. Todos los derechos reservados.', {

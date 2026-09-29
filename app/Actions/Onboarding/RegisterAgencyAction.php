@@ -63,7 +63,13 @@ final class RegisterAgencyAction
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
-        $user->forceFill(['password_set_at' => now()])->save();
+        // WHY: prueba de la autorización (Ley 1581, art. 9). Solo se sella lo que
+        // el formulario de registro recibió aceptado; sin la bandera queda en null.
+        $user->forceFill([
+            'password_set_at' => now(),
+            'terms_accepted_at' => ($data['accepts_terms'] ?? false) === true ? now() : null,
+            'data_policy_accepted_at' => ($data['accepts_data_policy'] ?? false) === true ? now() : null,
+        ])->save();
 
         $this->attachUserToTenant->handle($user, $tenant, UserRole::Admin, 'onboarding');
 
