@@ -10,6 +10,7 @@ import {
     Mail,
     Megaphone,
     Mountain,
+    Percent,
     Receipt,
     Settings,
     ShieldCheck,
@@ -196,6 +197,7 @@ const panelSection: NavSectionDefinition = {
             href: logisticsIndex().url,
             icon: Truck,
             requiresPanel: true,
+            module: 'logistics',
             anyOf: ['logistics.view'],
         },
         {
@@ -266,6 +268,11 @@ const platformSection: NavSectionDefinition = {
             title: 'Tenants',
             href: '/super-admin/tenants',
             icon: Building2,
+        },
+        {
+            title: 'Comisiones',
+            href: '/super-admin/commission',
+            icon: Percent,
         },
     ],
 };

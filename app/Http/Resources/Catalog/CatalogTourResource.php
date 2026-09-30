@@ -30,6 +30,10 @@ class CatalogTourResource extends JsonResource
             'name' => $this->name,
             'short_description' => $this->short_description,
             'base_price' => $this->base_price,
+            // T7: «Desde $X» es el mínimo precio EFECTIVO entre las salidas
+            // reservables (subconsulta de TourCatalogQuery); sin ninguna,
+            // cae al precio base del producto.
+            'from_price' => $this->resolveFromPrice(),
             'duration_hours' => $this->duration_hours,
             'difficulty' => $this->difficulty->value,
             'default_capacity' => $this->default_capacity,
@@ -43,6 +47,21 @@ class CatalogTourResource extends JsonResource
             'has_future_dates' => $nextDate !== null,
             'is_favorite' => (bool) ($this->resource->getAttribute('is_favorite') ?? false),
         ];
+    }
+
+    /**
+     * WHY: `MIN()` sobre una subconsulta escalar viaja como driver-native
+     * (SQLite lo devuelve sin los decimales de la columna), así que se
+     * reformatea a 2 decimales acá en vez de confiar en el tipo que
+     * devuelva cada motor.
+     */
+    private function resolveFromPrice(): string
+    {
+        $raw = $this->resource->getAttribute('from_price');
+
+        return $raw === null
+            ? (string) $this->base_price
+            : number_format((float) $raw, 2, '.', '');
     }
 
     private function resolveNextDate(): ?Carbon

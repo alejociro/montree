@@ -29,6 +29,13 @@ final class BookingPagesController extends Controller
             throw new NotFoundHttpException(__('Tour date not found.'));
         }
 
+        // T7: una salida cerrada, agotada, cancelada o cuyo `booking_closes_at`
+        // ya pasó no muestra checkout. La salida sigue visible en el admin;
+        // acá solo se cierra la puerta al viajero.
+        if (! $tourDate->isBookable()) {
+            throw new NotFoundHttpException(__('Tour date not found.'));
+        }
+
         $authUser = $request->user();
 
         return Inertia::render('Booking/Create', [
@@ -38,8 +45,12 @@ final class BookingPagesController extends Controller
                 'starts_at' => $tourDate->starts_at->toIso8601String(),
                 'ends_at' => $tourDate->ends_at?->toIso8601String(),
                 'price_override' => $tourDate->price_override,
-                'effective_price' => $tourDate->price_override ?? $tourDate->tour->base_price,
+                'effective_price' => $tourDate->effectivePrice(),
                 'available_seats' => max(0, $tourDate->capacity - $tourDate->booked_count),
+                // WHY: la salida predomina sobre el producto (T7): el cupo y el punto de
+                // encuentro que ve el viajero son los de ESTA salida, no los del tour.
+                'capacity' => $tourDate->capacity,
+                'meeting_point' => $tourDate->effectiveMeetingPoint(),
                 // El formulario muestra con esto cuánto es el abono que asegura
                 // la plaza. El monto exacto lo devuelve la reserva ya creada.
                 'min_payment_pct' => $tourDate->minPaymentPercentage(),

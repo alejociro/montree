@@ -176,8 +176,14 @@ final class CustomCssSanitizer
             }
         }
 
-        if (preg_match('/url\s*\(\s*([\'"]?)(.*?)\1\s*\)/i', $value, $m) === 1) {
-            return $this->isUrlAllowed(trim($m[2]));
+        // WHY: todas las `url()` de la declaración, no solo la primera; con
+        // `preg_match` una segunda url (`url(/ok.png), url(javascript:…)`) pasaba.
+        preg_match_all('/url\s*\(\s*([\'"]?)(.*?)\1\s*\)/i', $value, $matches);
+
+        foreach ($matches[2] as $url) {
+            if (! $this->isUrlAllowed(trim($url))) {
+                return false;
+            }
         }
 
         return true;
@@ -200,6 +206,10 @@ final class CustomCssSanitizer
         }
 
         if (str_starts_with($lower, 'javascript:')) {
+            return false;
+        }
+
+        if (str_starts_with($lower, '//')) {
             return false;
         }
 

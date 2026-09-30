@@ -101,7 +101,7 @@ const highlights = [
             <p class="relative z-10 text-sm text-brand-green-100">
                 {{
                     $t(
-                        'Sin tarjeta de crédito · 14 días de prueba en el plan Professional.',
+                        'Sin tarjeta de crédito · sin costo por crear tu agencia.',
                     )
                 }}
             </p>
@@ -132,7 +132,7 @@ const highlights = [
                     <p class="text-sm text-muted-foreground">
                         {{
                             $t(
-                                'Completa tus datos y empieza tu prueba gratis. Activas tu cuenta confirmando tu email.',
+                                'Completa tus datos y empieza a usar Montree. Activas tu cuenta confirmando tu email.',
                             )
                         }}
                     </p>

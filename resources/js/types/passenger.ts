@@ -86,7 +86,7 @@ export type DepartureOption = {
     ends_at: string | null;
     capacity: number;
     booked_count: number;
-    /** Nunca `null`: `tour_dates.guide_id` es `NOT NULL` desde la Fase 1 (D2). */
+    /** `null` cuando la salida todavía no tiene guía asignado (T8). */
     guide?: { id: number; name: string } | null;
     status: string;
 };

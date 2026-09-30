@@ -5,18 +5,15 @@ import EarningsChart from '@/components/organisms/EarningsChart.vue';
 import PlatformStats from '@/components/organisms/PlatformStats.vue';
 import RevenueByTenantChart from '@/components/organisms/RevenueByTenantChart.vue';
 import TenantsPerMonthChart from '@/components/organisms/TenantsPerMonthChart.vue';
-import { planLabel } from '@/lib/plans';
 import type {
     PlatformCharts,
     PlatformMetricsGrowth,
     PlatformMetricsTotals,
-    TenantPlan,
 } from '@/types';
 
 defineProps<{
     totals: PlatformMetricsTotals;
     growth: PlatformMetricsGrowth;
-    plan_distribution: Record<TenantPlan, number>;
     charts: PlatformCharts;
 }>();
 </script>
@@ -35,27 +32,6 @@ defineProps<{
         />
 
         <PlatformStats :totals="totals" :growth="growth" />
-
-        <section class="rounded-lg border border-border bg-card p-6 shadow-sm">
-            <h2 class="mb-4 text-base font-semibold text-foreground">
-                {{ $t('Distribución por plan') }}
-            </h2>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div
-                    v-for="(count, plan) in plan_distribution"
-                    :key="plan"
-                    class="flex items-center justify-between rounded-md border border-border bg-muted px-4 py-3"
-                >
-                    <span class="text-sm font-medium text-foreground">
-                        {{ planLabel(plan as TenantPlan) }}
-                    </span>
-                    <span class="text-lg font-semibold text-foreground">
-                        {{ count }}
-                    </span>
-                </div>
-            </div>
-        </section>
 
         <TenantsPerMonthChart
             :points="charts.tenants_per_month.points"

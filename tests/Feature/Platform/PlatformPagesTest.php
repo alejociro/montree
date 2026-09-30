@@ -70,7 +70,8 @@ class PlatformPagesTest extends TestCase
             ->where('platform.legal.name', 'Montree S.A.S.')
             ->where('platform.legal.nit', '900.000.000-1')
             ->where('platform.legal.privacy_email', 'datos@montree.co')
-            ->where('platform.trialDays', config('montree.onboarding.trial_days')));
+            ->has('platform.commissionSchedule.currency')
+            ->has('platform.commissionSchedule.tiers'));
     }
 
     public function test_tenant_sites_do_not_receive_the_platform_legal_entity(): void

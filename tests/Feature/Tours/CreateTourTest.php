@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tours;
 
-use App\Enums\TenantPlan;
 use App\Enums\TourStatus;
 use App\Enums\UserRole;
 use App\Models\Category;
@@ -113,20 +112,20 @@ final class CreateTourTest extends TestCase
     }
 
     /**
-     * El límite de plan ya no es un 403 JSON: vuelve al formulario como error
-     * de la clave `plan`, con el input preservado.
+     * Los planes desaparecieron del producto: no hay límite de tours por
+     * agencia (T5).
      */
-    public function test_store_fails_when_plan_limit_reached(): void
+    public function test_store_succeeds_past_the_old_plan_limit(): void
     {
-        $tenant = $this->makeTenant(['plan' => TenantPlan::Basic, 'plan_limits' => ['max_tours' => 1]]);
+        $tenant = $this->makeTenant();
         $tenant->makeCurrent();
-        Tour::factory()->create();
+        Tour::factory()->count(11)->create();
         $admin = $this->memberFor($tenant, UserRole::Admin);
 
         $response = $this->actingAs($admin)->post($this->host($tenant).'/admin/tours', $this->validPayload());
 
-        $response->assertSessionHasErrors('plan');
-        $this->assertSame(1, Tour::query()->count());
+        $response->assertSessionDoesntHaveErrors();
+        $this->assertSame(12, Tour::query()->count());
     }
 
     public function test_store_auto_generates_unique_slug_on_collision(): void

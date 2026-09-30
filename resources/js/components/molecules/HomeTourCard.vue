@@ -115,7 +115,7 @@ const currency = useTenantCurrency();
             <p class="mt-auto pt-2 text-sm text-muted-foreground">
                 {{ $t('Desde') }}
                 <span class="text-base font-bold text-foreground">
-                    {{ formatCurrency(tour.base_price, currency) }}
+                    {{ formatCurrency(tour.from_price, currency) }}
                 </span>
                 <span class="text-xs">{{ $t('/persona') }}</span>
             </p>

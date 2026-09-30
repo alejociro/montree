@@ -12,6 +12,10 @@ import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import AssignGuideController from '@/actions/App/Http/Controllers/Admin/AssignGuideController';
 import CancelTourDateController from '@/actions/App/Http/Controllers/Admin/CancelTourDateController';
+import {
+    create as createDeparture,
+    edit as editDeparture,
+} from '@/actions/App/Http/Controllers/Admin/DepartureFormPagesController';
 import { index as departuresIndex } from '@/actions/App/Http/Controllers/Admin/DeparturePagesController';
 import RestoreTourDateController from '@/actions/App/Http/Controllers/Admin/RestoreTourDateController';
 import { destroy as destroyDeparture } from '@/actions/App/Http/Controllers/Admin/TourDatePagesController';
@@ -21,7 +25,6 @@ import type { CountTab } from '@/components/molecules/CountTabs.vue';
 import DepartureBoardFilters from '@/components/organisms/DepartureBoardFilters.vue';
 import DepartureBoardTable from '@/components/organisms/DepartureBoardTable.vue';
 import DepartureDetailSheet from '@/components/organisms/DepartureDetailSheet.vue';
-import TourDateFormDialog from '@/components/organisms/TourDateFormDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -175,17 +178,9 @@ function openDetail(date: TourDateGlobalAdmin): void {
     detailOpen.value = true;
 }
 
-const dialogOpen = ref(false);
-const editing = ref<TourDateGlobalAdmin | null>(null);
-const selectedTourId = ref<number | null>(null);
-
-const selectedTour = computed<DepartureTourOption | null>(
-    () => props.tours.find((tour) => tour.id === selectedTourId.value) ?? null,
-);
-
-const productPickerOpen = ref(false);
-const productPick = ref('');
-
+// T9: crear/editar salida vive en su propia página (`Admin/Departures/Form`),
+// no en un diálogo. El primer paso de esa página ya pide el producto cuando
+// no viene preseleccionado, así que acá solo falta el aviso de siempre.
 function openCreate(): void {
     if (props.tours.length === 0) {
         toast.error(t('Crea un producto antes de programar salidas.'));
@@ -193,38 +188,11 @@ function openCreate(): void {
         return;
     }
 
-    productPick.value = '';
-    productPickerOpen.value = true;
-}
-
-function handleProductPick(value: AcceptableValue): void {
-    if (typeof value === 'string') {
-        productPick.value = value;
-    }
-}
-
-function confirmProduct(): void {
-    if (productPick.value === '') {
-        return;
-    }
-
-    selectedTourId.value = Number(productPick.value);
-    editing.value = null;
-    productPickerOpen.value = false;
-    dialogOpen.value = true;
+    router.visit(createDeparture.url());
 }
 
 function openEdit(date: TourDateGlobalAdmin): void {
-    selectedTourId.value = date.tour.id;
-
-    if (selectedTour.value === null) {
-        toast.error(t('No se pudo abrir la salida para editar.'));
-
-        return;
-    }
-
-    editing.value = date;
-    dialogOpen.value = true;
+    router.visit(editDeparture.url({ tourDate: date.id }));
 }
 
 const busyId = ref<number | null>(null);
@@ -532,84 +500,7 @@ const guideSelectValue = computed(() =>
             </div>
         </div>
 
-        <DepartureDetailSheet
-            v-model:open="detailOpen"
-            :departure="detail"
-            @edit="
-                (value) => {
-                    detailOpen = false;
-                    openEdit(value);
-                }
-            "
-        />
-
-        <TourDateFormDialog
-            v-if="selectedTour"
-            v-model:open="dialogOpen"
-            :tour-id="selectedTour.id"
-            :editing="editing"
-            :duration-hours="selectedTour.duration_hours"
-            :departure-defaults="selectedTour.departure_defaults"
-            :tour-routes="selectedTour.routes"
-            :guides="props.departureOptions.guides"
-            :providers="props.departureOptions.providers"
-            :hotels="props.departureOptions.hotels"
-        />
-
-        <Dialog v-model:open="productPickerOpen">
-            <DialogContent class="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{{ $t('Nueva salida') }}</DialogTitle>
-                    <DialogDescription>
-                        {{
-                            $t(
-                                'Elige el producto: la salida hereda su capacidad, su precio y su ruta.',
-                            )
-                        }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="space-y-1.5">
-                    <Label for="new-departure-tour">{{ $t('Producto') }}</Label>
-                    <Select
-                        :model-value="productPick"
-                        @update:model-value="handleProductPick"
-                    >
-                        <SelectTrigger id="new-departure-tour" class="w-full">
-                            <SelectValue
-                                :placeholder="$t('Selecciona un producto')"
-                            />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem
-                                    v-for="tour in props.tours"
-                                    :key="tour.id"
-                                    :value="String(tour.id)"
-                                >
-                                    {{ tour.name }}
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        @click="productPickerOpen = false"
-                    >
-                        {{ $t('Volver') }}
-                    </Button>
-                    <Button
-                        :disabled="productPick === ''"
-                        @click="confirmProduct"
-                    >
-                        {{ $t('Continuar') }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <DepartureDetailSheet v-model:open="detailOpen" :departure="detail" />
 
         <Dialog v-model:open="assignOpen">
             <DialogContent class="sm:max-w-md">

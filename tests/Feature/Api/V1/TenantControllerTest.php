@@ -41,7 +41,6 @@ class TenantControllerTest extends TestCase
         $response->assertJsonPath('data.tenant.slug', 'demo');
         $response->assertJsonPath('data.tenant.name', 'Demo Eco Adventures');
         $response->assertJsonPath('data.tenant.status', 'active');
-        $response->assertJsonPath('data.tenant.plan', 'professional');
         $response->assertJsonPath('data.configuration.primary_color', '#16a34a');
         $this->assertNotNull($response->json('data.configuration.primary_color_hsl'));
     }

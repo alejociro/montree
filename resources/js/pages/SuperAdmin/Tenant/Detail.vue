@@ -6,6 +6,8 @@ import TenantDetailPanel from '@/components/organisms/TenantDetailPanel.vue';
 import { Button } from '@/components/ui/button';
 import { index as tenantsIndex } from '@/routes/super-admin/tenants';
 import type {
+    CommissionSchedule,
+    CommissionScope,
     SuperAdminTenantSummary,
     TenantChargesSummary,
     TenantMonthlySeries,
@@ -16,6 +18,7 @@ const props = defineProps<{
     charges_summary: TenantChargesSummary;
     monthly: TenantMonthlySeries;
     roles: string[];
+    commissionSchedule: CommissionSchedule & { scope: CommissionScope };
 }>();
 </script>
 
@@ -34,6 +37,7 @@ const props = defineProps<{
             :tenant="tenant"
             :charges-summary="charges_summary"
             :roles="roles"
+            :commission-schedule="commissionSchedule"
         />
 
         <TenantActivityCharts

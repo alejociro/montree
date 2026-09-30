@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Tenant\StoreBrandingAssetsAction;
 use App\Actions\Tenant\UpdateTenantConfigurationAction;
-use App\Exceptions\FeatureRequiresEnterpriseException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Tenant\UpdateTenantConfigurationRequest;
 use App\Models\Tenant;
@@ -35,6 +34,11 @@ final class TenantConfigurationPagesController extends Controller
             'terms' => [
                 'body' => $configuration->terms_body,
                 'is_default' => $this->terms->isDefault($configuration),
+                // T13: el editor se precarga con el texto por defecto vigente
+                // (en el idioma del panel) cuando la agencia todavía no tiene
+                // uno propio, y también sirve para "Restaurar texto por
+                // defecto" cuando sí lo tiene.
+                'default_body' => $this->terms->defaultBody(),
             ],
         ]);
     }
@@ -47,11 +51,7 @@ final class TenantConfigurationPagesController extends Controller
         $tenant = $this->currentTenant();
         $configuration = $tenant->configuration()->firstOrCreate(['tenant_id' => $tenant->id]);
 
-        try {
-            $updateConfiguration->execute($configuration, $request->configuration());
-        } catch (FeatureRequiresEnterpriseException) {
-            return back()->withErrors(['custom_css' => __('El CSS personalizado solo está disponible en el plan Enterprise.')]);
-        }
+        $updateConfiguration->execute($configuration, $request->configuration());
 
         $storeAssets->execute($configuration, $request->brandingAssets());
 

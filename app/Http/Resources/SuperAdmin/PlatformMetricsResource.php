@@ -33,7 +33,6 @@ class PlatformMetricsResource extends JsonResource
                 'tenants_new_this_month' => $metrics->tenantsNewThisMonth,
                 'bookings_growth_pct' => $metrics->bookingsGrowthPct,
             ],
-            'plan_distribution' => $metrics->planDistribution,
             'charts' => $metrics->charts,
         ];
     }

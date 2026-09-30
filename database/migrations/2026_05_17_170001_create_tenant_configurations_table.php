@@ -29,12 +29,17 @@ return new class extends Migration
             $table->longText('terms_body')->nullable();
             $table->boolean('reviews_require_moderation')->default(true);
             $table->boolean('require_traveler_details')->default(true);
-            $table->unsignedSmallInteger('booking_advance_hours')->default(24);
+            // T12: null = sin regla de la agencia (se puede reservar hasta la
+            // hora de salida); con valor, cada salida cierra esas horas antes
+            // de su inicio salvo que tenga su propio `booking_closes_at`.
+            $table->unsignedSmallInteger('booking_advance_hours')->nullable();
             $table->unsignedSmallInteger('booking_expiration_minutes')->default(30);
             $table->unsignedTinyInteger('min_partial_payment_pct')->default(30);
             $table->string('placetopay_login')->nullable();
             $table->text('placetopay_tran_key')->nullable();
-            $table->string('placetopay_url')->nullable();
+            // T14: ambiente del comercio propio del tenant (test|production);
+            // la URL se deriva en `App\Enums\PlaceToPayEnvironment::url()`.
+            $table->string('placetopay_environment', 20)->default('test');
             $table->timestamps();
         });
     }

@@ -8,6 +8,7 @@ use App\Enums\Module;
 use App\Http\Resources\AuthUserResource;
 use App\Http\Resources\TenantConfigurationResource;
 use App\Http\Resources\TenantResource;
+use App\Models\CommissionSchedule;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Locale;
@@ -87,7 +88,7 @@ final class HandleInertiaRequests extends Middleware
             'platform' => $tenant === null
                 ? [
                     'legal' => config('montree.legal'),
-                    'trialDays' => (int) config('montree.onboarding.trial_days'),
+                    'commissionSchedule' => $this->globalCommissionSchedule(),
                 ]
                 : null,
             'flash' => [
@@ -99,6 +100,24 @@ final class HandleInertiaRequests extends Middleware
             // nativo (POST a otro host, `target="_blank"`), y un formulario nativo
             // necesita el token en un input, no en la cabecera que arma Inertia.
             'csrfToken' => $request->session()->token(),
+        ];
+    }
+
+    /**
+     * @return array{currency: string, tiers: array<int, array{from: string, to: string|null, rate: string}>, max_charge: string|null}|null
+     */
+    private function globalCommissionSchedule(): ?array
+    {
+        $schedule = CommissionSchedule::query()->whereNull('tenant_id')->first();
+
+        if ($schedule === null) {
+            return null;
+        }
+
+        return [
+            'currency' => $schedule->currency,
+            'tiers' => $schedule->tiers,
+            'max_charge' => $schedule->max_charge,
         ];
     }
 }

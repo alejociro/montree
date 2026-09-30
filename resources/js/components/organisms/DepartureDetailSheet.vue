@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { Building2, MapPin, Pencil, Truck, UserRound } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { edit as editDeparture } from '@/actions/App/Http/Controllers/Admin/DepartureFormPagesController';
 import InitialsAvatar from '@/components/atoms/InitialsAvatar.vue';
 import MonoLabel from '@/components/atoms/MonoLabel.vue';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useModules } from '@/composables/useModules';
 import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
@@ -31,6 +34,9 @@ import type {
  */
 const { t } = useTranslations();
 const currency = useTenantCurrency();
+// WHY (T3): con el módulo apagado el panel no muestra proveedor ni hotel aunque
+// la salida los tenga guardados de antes de apagarlo.
+const { isModuleEnabled } = useModules();
 
 type Props = {
     open: boolean;
@@ -41,7 +47,6 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
     (e: 'update:open', value: boolean): void;
-    (e: 'edit', value: TourDateGlobalAdmin): void;
 }>();
 
 const statusLabels: Record<TourDateDisplayStatus, string> = {
@@ -81,6 +86,10 @@ const conditions = computed(() => {
         });
     }
 
+    if (!isModuleEnabled('logistics')) {
+        return items;
+    }
+
     if (value.provider) {
         items.push({
             icon: Truck,
@@ -112,12 +121,24 @@ const conditions = computed(() => {
                 <SheetDescription>
                     {{ formatTourDate(departure.starts_at) }}
                 </SheetDescription>
-                <span
-                    class="mt-1 inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
-                    :class="statusClasses[departure.display_status]"
-                >
-                    {{ statusLabels[departure.display_status] }}
-                </span>
+                <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span
+                        class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+                        :class="statusClasses[departure.display_status]"
+                    >
+                        {{ statusLabels[departure.display_status] }}
+                    </span>
+                    <!-- T7: cualquier bloque de "Contenido de la salida"
+                         (itinerario, incluye, no incluye, qué llevar, punto
+                         de encuentro) tiene un valor propio, distinto del
+                         producto. -->
+                    <span
+                        v-if="departure.is_customized"
+                        class="inline-flex w-fit items-center rounded-full bg-secondary-soft px-2.5 py-1 text-[11.5px] font-semibold text-secondary-readable"
+                    >
+                        {{ $t('Personalizada') }}
+                    </span>
+                </div>
             </SheetHeader>
 
             <div class="space-y-5 px-4 pb-6">
@@ -201,10 +222,10 @@ const conditions = computed(() => {
                     </div>
                     <p
                         v-else
-                        class="mt-2 flex items-center gap-2 rounded-xl bg-brand-drop-50 p-3 text-sm text-brand-drop"
+                        class="mt-2 flex items-center gap-2 rounded-xl bg-brand-warn-50 p-3 text-sm text-brand-warn"
                     >
                         <UserRound class="size-4" />
-                        {{ $t('Sin guía asignado.') }}
+                        {{ $t('Guía por asignar.') }}
                     </p>
                 </section>
 
@@ -244,7 +265,11 @@ const conditions = computed(() => {
             <SheetFooter>
                 <Button
                     v-if="departure.display_status !== 'finished'"
-                    @click="emit('edit', departure)"
+                    @click="
+                        router.visit(
+                            editDeparture.url({ tourDate: departure.id }),
+                        )
+                    "
                 >
                     <Pencil class="size-4" />
                     {{ $t('Editar salida') }}

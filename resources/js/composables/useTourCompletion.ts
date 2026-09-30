@@ -242,7 +242,9 @@ export function useTourCompletion(
             id: 'guide',
             label: t('Guía por defecto'),
             done: localDone.value.guide,
-            blocking: true,
+            // T8 (revierte D7): recomendado, no obligatorio — una salida
+            // puede operar sin guía y asignárselo después.
+            blocking: false,
         },
         {
             id: 'stops',

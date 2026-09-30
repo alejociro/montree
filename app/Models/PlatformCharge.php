@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\CommissionType;
 use App\Models\Builders\PlatformChargeBuilder;
 use Database\Factories\PlatformChargeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,10 +23,14 @@ use Illuminate\Support\Carbon;
  * @property int $booking_id
  * @property int|null $payment_id
  * @property string $base_amount
- * @property CommissionType $commission_type
- * @property string $applied_value
+ * @property string $applied_rate
  * @property string $amount
  * @property string $currency
+ * @property string|null $tier_from
+ * @property string|null $tier_to
+ * @property string|null $max_charge
+ * @property bool $was_capped
+ * @property string|null $schedule_scope
  * @property Carbon $charged_at
  */
 class PlatformCharge extends Model
@@ -40,20 +43,27 @@ class PlatformCharge extends Model
         'booking_id',
         'payment_id',
         'base_amount',
-        'commission_type',
-        'applied_value',
+        'applied_rate',
         'amount',
         'currency',
+        'tier_from',
+        'tier_to',
+        'max_charge',
+        'was_capped',
+        'schedule_scope',
         'charged_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'commission_type' => CommissionType::class,
             'base_amount' => 'decimal:2',
-            'applied_value' => 'decimal:2',
+            'applied_rate' => 'decimal:2',
             'amount' => 'decimal:2',
+            'tier_from' => 'decimal:2',
+            'tier_to' => 'decimal:2',
+            'max_charge' => 'decimal:2',
+            'was_capped' => 'boolean',
             'charged_at' => 'datetime',
         ];
     }

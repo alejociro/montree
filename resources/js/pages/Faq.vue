@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import { ChevronDown } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useTranslations } from '@/composables/useTranslations';
 import PlatformShell from '@/layouts/PlatformShell.vue';
 
 const { t } = useTranslations();
+const page = usePage();
+
+const contactEmail = computed(
+    () => page.props.platform?.legal.email ?? 'it@jae-solutions.com',
+);
 
 const openFaq = ref<number | null>(0);
 
@@ -34,13 +40,13 @@ const faqs = [
     {
         q: t('¿Cuánto cobra Montree por reserva?'),
         a: t(
-            'Entre 3% y 5% del valor de cada reserva confirmada, según el volumen de tu agencia. No cobramos por reservas canceladas ni por cupos que no se vendieron.',
+            'Un porcentaje sobre el valor de cada reserva confirmada, que depende del rango en el que esté el valor de esa reserva. Los detalles están en la política de pago. No cobramos por reservas canceladas ni por cupos que no se vendieron.',
         ),
     },
     {
         q: t('¿Puedo migrar desde Excel o WhatsApp?'),
         a: t(
-            'Sí. Cargas tus tours y salidas desde el panel, y si necesitas ayuda puedes escribirnos a hola@montree.co.',
+            'Sí. Cargas tus tours y salidas desde el panel, y si necesitas ayuda puedes escribirnos a it@jae-solutions.com.',
         ),
     },
     {
@@ -99,7 +105,7 @@ const faqs = [
 
                 <p class="faq-footnote">
                     {{ $t('¿Te quedó una duda que no está aquí?') }}
-                    <a href="mailto:hola@montree.co">{{
+                    <a :href="`mailto:${contactEmail}`">{{
                         $t('Escríbenos →')
                     }}</a>
                 </p>

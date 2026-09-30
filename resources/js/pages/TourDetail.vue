@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { index as tourReviewsIndex } from '@/actions/App/Http/Controllers/Api/V1/PublicReviewController';
 import CategoryGlyph from '@/components/atoms/CategoryGlyph.vue';
 import HomeTourCard from '@/components/molecules/HomeTourCard.vue';
 import RatingBreakdown from '@/components/molecules/RatingBreakdown.vue';
 import ReviewCard from '@/components/molecules/ReviewCard.vue';
+import TourDateChips from '@/components/molecules/TourDateChips.vue';
 import TourFactGrid from '@/components/molecules/TourFactGrid.vue';
 import TourInclusionList from '@/components/molecules/TourInclusionList.vue';
 import TourItineraryDay from '@/components/molecules/TourItineraryDay.vue';
@@ -45,13 +46,74 @@ const selectableDates = computed(() =>
     ),
 );
 
-const selectedDateId = ref<number | null>(null);
+/**
+ * T7: la fecha elegida viaja en la URL (`?salida=ID`) para que un enlace
+ * compartido abra directo esa salida. Si el id no corresponde a ninguna
+ * fecha reservable de este tour, se ignora en vez de fallar.
+ */
+const SALIDA_QUERY_PARAM = 'salida';
+
+function initialSelectedDateId(): number | null {
+    const raw = new URLSearchParams(window.location.search).get(
+        SALIDA_QUERY_PARAM,
+    );
+    const parsed = raw === null ? null : Number(raw);
+
+    if (parsed === null || Number.isNaN(parsed)) {
+        return null;
+    }
+
+    return props.tour.future_dates.some((date) => date.id === parsed)
+        ? parsed
+        : null;
+}
+
+const selectedDateId = ref<number | null>(initialSelectedDateId());
 
 const selectedDate = computed(
     () =>
         selectableDates.value.find(
             (date) => date.id === selectedDateId.value,
         ) ?? null,
+);
+
+watch(selectedDateId, (id) => {
+    const url = new URL(window.location.href);
+
+    if (id === null) {
+        url.searchParams.delete(SALIDA_QUERY_PARAM);
+    } else {
+        url.searchParams.set(SALIDA_QUERY_PARAM, String(id));
+    }
+
+    window.history.replaceState(window.history.state, '', url.toString());
+});
+
+/**
+ * Sin fecha elegida y con salidas reservables: se pide elegir una en vez de
+ * mostrar el contenido del producto, que podría no coincidir con el de la
+ * salida. Sin ninguna salida reservable, se cae al contenido base (spec T7).
+ */
+const hasBookableDates = computed(() => selectableDates.value.length > 0);
+const showDateContent = computed(
+    () => selectedDate.value !== null || !hasBookableDates.value,
+);
+
+const activeItinerary = computed(
+    () => selectedDate.value?.effective_itinerary ?? props.tour.itinerary,
+);
+const activeIncludes = computed(
+    () => selectedDate.value?.effective_includes ?? props.tour.includes,
+);
+const activeExcludes = computed(
+    () => selectedDate.value?.effective_excludes ?? props.tour.excludes,
+);
+const activeRequirements = computed(
+    () => selectedDate.value?.effective_requirements ?? props.tour.requirements,
+);
+const activeMeetingPoint = computed(
+    () =>
+        selectedDate.value?.effective_meeting_point ?? props.tour.meeting_point,
 );
 
 /**
@@ -88,7 +150,7 @@ const pickupStopIndex = computed(() => {
 
 /** Paso del itinerario → índice de su parada, para el botón "Ver en el mapa". */
 const stopIndexByStep = computed(() =>
-    props.tour.itinerary.reduce<Record<number, number>>((map, step) => {
+    activeItinerary.value.reduce<Record<number, number>>((map, step) => {
         const index = stopIndexForItineraryStep(
             routeStops.value,
             step.step_number,
@@ -144,10 +206,10 @@ const routeNote = computed(() => {
     const route = departureRoute.value;
 
     if (route === null) {
-        return props.tour.meeting_point === null
+        return activeMeetingPoint.value === null
             ? null
             : t('Punto de encuentro: :place.', {
-                  place: props.tour.meeting_point,
+                  place: activeMeetingPoint.value,
               });
     }
 
@@ -173,6 +235,36 @@ const durationLabel = computed(() =>
     t(':count h', { count: props.tour.duration_hours }),
 );
 
+/**
+ * Cupo que ve el viajero. La salida predomina sobre el producto (T7): con fecha
+ * elegida es el cupo de ESA salida; sin fecha, el rango de las salidas
+ * reservables; sin salidas, el cupo base del producto.
+ */
+const capacityRange = computed<{ min: number; max: number }>(() => {
+    if (selectedDate.value !== null) {
+        const capacity = selectedDate.value.capacity_total;
+
+        return { min: capacity, max: capacity };
+    }
+
+    const capacities = selectableDates.value.map((date) => date.capacity_total);
+
+    if (capacities.length === 0) {
+        return {
+            min: props.tour.default_capacity,
+            max: props.tour.default_capacity,
+        };
+    }
+
+    return { min: Math.min(...capacities), max: Math.max(...capacities) };
+});
+
+const capacityShort = computed(() =>
+    capacityRange.value.min === capacityRange.value.max
+        ? String(capacityRange.value.max)
+        : t(':min–:max', capacityRange.value),
+);
+
 /** Chips del encabezado: solo se pintan los que el tour respalda con datos. */
 const highlightChips = computed(() => {
     const chips: string[] = [];
@@ -181,7 +273,7 @@ const highlightChips = computed(() => {
         chips.push(t('Recogida incluida'));
     }
 
-    chips.push(t('Grupo máx. :count', { count: props.tour.default_capacity }));
+    chips.push(t('Grupo máx. :count', { count: capacityShort.value }));
     chips.push(t('Dificultad: :level', { level: difficultyLabel.value }));
 
     return chips;
@@ -193,10 +285,13 @@ const facts = computed<TourFact[]>(() => {
         { label: t('Dificultad'), value: difficultyLabel.value },
         {
             label: t('Grupo máx.'),
-            value: tChoice(
-                ':count persona|:count personas',
-                props.tour.default_capacity,
-            ),
+            value:
+                capacityRange.value.min === capacityRange.value.max
+                    ? tChoice(
+                          ':count persona|:count personas',
+                          capacityRange.value.max,
+                      )
+                    : t(':min a :max personas', capacityRange.value),
         },
     ];
 
@@ -318,9 +413,9 @@ onMounted(() => {
 
         <!-- Título, meta y chips -->
         <div class="flex flex-wrap items-end justify-between gap-8">
-            <div>
+            <div class="min-w-0">
                 <h1
-                    class="max-w-[16ch] text-[34px] leading-[1.02] font-semibold tracking-tight lg:text-[44px]"
+                    class="max-w-[16ch] text-[34px] leading-[1.02] font-semibold tracking-tight break-words lg:text-[44px]"
                 >
                     {{ tour.name }}
                 </h1>
@@ -377,9 +472,26 @@ onMounted(() => {
             />
         </div>
 
+        <!-- Selector de fecha en móvil: arriba, antes del itinerario (T7). En
+             escritorio la misma elección se hace en la tarjeta de reserva. -->
+        <section
+            v-if="hasBookableDates"
+            class="mt-6 rounded-2xl border border-border bg-card p-4 lg:hidden"
+        >
+            <h2 class="text-sm font-semibold tracking-tight">
+                {{ $t('Elige tu fecha') }}
+            </h2>
+            <TourDateChips
+                class="mt-3"
+                :dates="selectableDates"
+                :selected-date-id="selectedDateId"
+                @update:selected-date-id="selectedDateId = $event"
+            />
+        </section>
+
         <!-- Contenido + columna de reserva -->
         <div
-            class="grid gap-10 pt-8 pb-14 lg:grid-cols-[minmax(0,1fr)_366px] lg:items-start"
+            class="grid grid-cols-[minmax(0,1fr)] gap-10 pt-8 pb-14 lg:grid-cols-[minmax(0,1fr)_366px] lg:items-start"
         >
             <main class="min-w-0">
                 <!-- Descripción y datos duros -->
@@ -392,123 +504,146 @@ onMounted(() => {
                     <TourFactGrid :facts="facts" />
                 </section>
 
-                <!-- Itinerario -->
+                <!-- Sin fecha elegida (y hay salidas reservables): se pide
+                     elegir en vez de mostrar contenido que podría no ser el
+                     de la salida real. -->
                 <section
-                    v-if="tour.itinerary.length > 0"
-                    class="border-t border-border py-6"
+                    v-if="!showDateContent"
+                    class="border-t border-border py-10 text-center"
                 >
-                    <h2 class="text-[26px] font-semibold tracking-tight">
-                        {{ $t('Itinerario') }}
-                    </h2>
-                    <p class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground">
+                    <p class="text-sm font-medium text-foreground">
                         {{
                             $t(
-                                'Cada paso está anclado a un punto del mapa: toca "Ver en el mapa" para ubicarlo.',
-                            )
-                        }}
-                    </p>
-                    <TourItineraryDay
-                        v-for="step in tour.itinerary"
-                        :key="step.step_number"
-                        :step="step"
-                        :mappable="
-                            stopIndexByStep[step.step_number] !== undefined
-                        "
-                        @show-on-map="
-                            showStopOnMap(stopIndexByStep[step.step_number])
-                        "
-                    />
-                </section>
-
-                <!-- Ruta y puntos de encuentro -->
-                <!-- WHY: el mapa se arma al montar y no vuelve a leer las paradas;
-                     cambiar de salida tiene que rehacerlo con la ruta de ese día. -->
-                <TourRouteMapSection
-                    v-if="routeStops.length > 0"
-                    :key="departureRoute?.id ?? 'tour'"
-                    ref="mapSection"
-                    class="border-t border-border py-6"
-                    :stops="routeStops"
-                    :note="routeNote"
-                />
-
-                <!-- Ruta del día sin coordenadas: se listan sus paradas -->
-                <section
-                    v-else-if="unmappedRouteStops.length > 0"
-                    class="border-t border-border py-6"
-                >
-                    <h2 class="text-[26px] font-semibold tracking-tight">
-                        {{ $t('Ruta y puntos de encuentro') }}
-                    </h2>
-                    <p
-                        v-if="routeNote"
-                        class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground"
-                    >
-                        {{ routeNote }}
-                    </p>
-                    <TourRouteStopSummary
-                        :title="$t('Paradas de la ruta')"
-                        :stops="unmappedRouteStops"
-                    />
-                    <p class="mt-2 text-[13px] text-muted-foreground">
-                        {{
-                            $t(
-                                'Esta ruta todavía no tiene sus paradas ubicadas en el mapa.',
+                                'Elige una fecha para ver el itinerario y lo que incluye.',
                             )
                         }}
                     </p>
                 </section>
 
-                <!-- Punto de encuentro sin coordenadas: no hay mapa que dibujar -->
-                <section
-                    v-else-if="tour.meeting_point"
-                    class="border-t border-border py-6"
-                >
-                    <h2 class="text-[26px] font-semibold tracking-tight">
-                        {{ $t('Punto de encuentro') }}
-                    </h2>
-                    <p class="mt-2 text-[13.5px] text-muted-foreground">
-                        {{ tour.meeting_point }}
-                    </p>
-                </section>
-
-                <!-- Qué incluye -->
-                <section
-                    v-if="tour.includes.length > 0 || tour.excludes.length > 0"
-                    class="border-t border-border py-6"
-                >
-                    <h2 class="text-[26px] font-semibold tracking-tight">
-                        {{ $t('Qué incluye') }}
-                    </h2>
-                    <TourInclusionList
-                        :includes="tour.includes"
-                        :excludes="tour.excludes"
-                    />
-                </section>
-
-                <!-- Recomendaciones -->
-                <section
-                    v-if="tour.requirements.length > 0"
-                    class="border-t border-border py-6"
-                >
-                    <h2 class="text-[26px] font-semibold tracking-tight">
-                        {{ $t('Recomendaciones') }}
-                    </h2>
-                    <ul
-                        class="mt-2 max-w-[62ch] space-y-1.5 text-[13.5px] text-muted-foreground"
+                <template v-else>
+                    <!-- Itinerario -->
+                    <section
+                        v-if="activeItinerary.length > 0"
+                        class="border-t border-border py-6"
                     >
-                        <li
-                            v-for="(item, index) in tour.requirements"
-                            :key="`requirement-${index}`"
-                            class="flex items-start gap-2"
+                        <h2 class="text-[26px] font-semibold tracking-tight">
+                            {{ $t('Itinerario') }}
+                        </h2>
+                        <p
+                            class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground"
                         >
-                            <span class="mt-0.5 shrink-0" aria-hidden="true"
-                                >•</span
+                            {{
+                                $t(
+                                    'Cada paso está anclado a un punto del mapa: toca "Ver en el mapa" para ubicarlo.',
+                                )
+                            }}
+                        </p>
+                        <TourItineraryDay
+                            v-for="step in activeItinerary"
+                            :key="step.step_number"
+                            :step="step"
+                            :mappable="
+                                stopIndexByStep[step.step_number] !== undefined
+                            "
+                            @show-on-map="
+                                showStopOnMap(stopIndexByStep[step.step_number])
+                            "
+                        />
+                    </section>
+
+                    <!-- Ruta y puntos de encuentro -->
+                    <!-- WHY: el mapa se arma al montar y no vuelve a leer las paradas;
+                         cambiar de salida tiene que rehacerlo con la ruta de ese día. -->
+                    <TourRouteMapSection
+                        v-if="routeStops.length > 0"
+                        :key="departureRoute?.id ?? 'tour'"
+                        ref="mapSection"
+                        class="border-t border-border py-6"
+                        :stops="routeStops"
+                        :note="routeNote"
+                    />
+
+                    <!-- Ruta del día sin coordenadas: se listan sus paradas -->
+                    <section
+                        v-else-if="unmappedRouteStops.length > 0"
+                        class="border-t border-border py-6"
+                    >
+                        <h2 class="text-[26px] font-semibold tracking-tight">
+                            {{ $t('Ruta y puntos de encuentro') }}
+                        </h2>
+                        <p
+                            v-if="routeNote"
+                            class="mt-1 mb-4.5 text-[13.5px] text-muted-foreground"
+                        >
+                            {{ routeNote }}
+                        </p>
+                        <TourRouteStopSummary
+                            :title="$t('Paradas de la ruta')"
+                            :stops="unmappedRouteStops"
+                        />
+                        <p class="mt-2 text-[13px] text-muted-foreground">
+                            {{
+                                $t(
+                                    'Esta ruta todavía no tiene sus paradas ubicadas en el mapa.',
+                                )
+                            }}
+                        </p>
+                    </section>
+
+                    <!-- Punto de encuentro sin coordenadas: no hay mapa que dibujar -->
+                    <section
+                        v-else-if="activeMeetingPoint"
+                        class="border-t border-border py-6"
+                    >
+                        <h2 class="text-[26px] font-semibold tracking-tight">
+                            {{ $t('Punto de encuentro') }}
+                        </h2>
+                        <p class="mt-2 text-[13.5px] text-muted-foreground">
+                            {{ activeMeetingPoint }}
+                        </p>
+                    </section>
+
+                    <!-- Qué incluye -->
+                    <section
+                        v-if="
+                            activeIncludes.length > 0 ||
+                            activeExcludes.length > 0
+                        "
+                        class="border-t border-border py-6"
+                    >
+                        <h2 class="text-[26px] font-semibold tracking-tight">
+                            {{ $t('Qué incluye y qué no') }}
+                        </h2>
+                        <TourInclusionList
+                            :includes="activeIncludes"
+                            :excludes="activeExcludes"
+                        />
+                    </section>
+
+                    <!-- Recomendaciones -->
+                    <section
+                        v-if="activeRequirements.length > 0"
+                        class="border-t border-border py-6"
+                    >
+                        <h2 class="text-[26px] font-semibold tracking-tight">
+                            {{ $t('Recomendaciones') }}
+                        </h2>
+                        <ul
+                            class="mt-2 max-w-[62ch] space-y-1.5 text-[13.5px] text-muted-foreground"
+                        >
+                            <li
+                                v-for="(item, index) in activeRequirements"
+                                :key="`requirement-${index}`"
+                                class="flex items-start gap-2"
                             >
-                            {{ item }}
-                        </li>
-                    </ul>
-                </section>
+                                <span class="mt-0.5 shrink-0" aria-hidden="true"
+                                    >•</span
+                                >
+                                {{ item }}
+                            </li>
+                        </ul>
+                    </section>
+                </template>
 
                 <!-- Calificaciones y reseñas -->
                 <section class="border-t border-border py-6">
@@ -603,18 +738,20 @@ onMounted(() => {
                 :tour="tour"
                 :dates="selectableDates"
                 :selected-date-id="selectedDateId"
-                :pickup-stop-index="pickupStopIndex"
+                :pickup-stop-index="showDateContent ? pickupStopIndex : null"
                 @update:selected-date-id="selectedDateId = $event"
                 @show-pickup="showStopOnMap(pickupStopIndex ?? undefined)"
             >
                 <template #logistics>
                     <TourLogisticsCard
-                        v-if="routeStops.length > 0"
+                        v-if="showDateContent && routeStops.length > 0"
                         :stops="routeStops"
                         @select="showStopOnMap($event)"
                     />
                     <TourRouteStopSummary
-                        v-else-if="unmappedRouteStops.length > 0"
+                        v-else-if="
+                            showDateContent && unmappedRouteStops.length > 0
+                        "
                         :title="$t('Logística del día')"
                         :stops="unmappedRouteStops"
                     />

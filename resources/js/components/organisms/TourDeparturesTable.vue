@@ -32,10 +32,11 @@ const currency = useTenantCurrency();
  * Las salidas del tour dentro de su pantalla de edición: cuándo, cuánta
  * ocupación, qué guía y en qué estado.
  *
- * WHY (D7): no existe «Falta guía». Toda salida tiene guía desde la Fase 5, así
- * que la celda muestra el nombre y el cambio se hace con el `GuideSelect` de la
- * disponibilidad — que se monta SOLO en la fila que se está tocando: montarlo
- * en las veinte filas dispararía veinte consultas de agenda, una por rango.
+ * WHY (T8, revierte D7): una salida puede quedar «por asignar» — la celda
+ * muestra el nombre cuando hay guía y, si no, la invitación a elegir uno—. El
+ * cambio se hace con el `GuideSelect` de la disponibilidad — que se monta SOLO
+ * en la fila que se está tocando: montarlo en las veinte filas dispararía
+ * veinte consultas de agenda, una por rango.
  */
 type Props = {
     departures: TourDateAdmin[];
@@ -290,13 +291,19 @@ function priceLabel(departure: TourDateAdmin): string {
                             <UsersRound
                                 class="size-3.5 shrink-0 text-muted-foreground"
                             />
-                            <span class="min-w-0 flex-1 truncate text-left">
+                            <span
+                                class="min-w-0 flex-1 truncate text-left"
+                                :class="{
+                                    'font-medium text-brand-warn':
+                                        !departure.guide,
+                                }"
+                            >
                                 {{
-                                    $t('Guía: :name', {
-                                        name:
-                                            departure.guide?.name ??
-                                            $t('sin asignar'),
-                                    })
+                                    departure.guide
+                                        ? $t('Guía: :name', {
+                                              name: departure.guide.name,
+                                          })
+                                        : $t('Guía por asignar')
                                 }}
                             </span>
                             <ChevronDown
@@ -305,8 +312,15 @@ function priceLabel(departure: TourDateAdmin): string {
                         </button>
                         <span
                             v-else
-                            class="text-[13px] text-muted-foreground"
-                            >{{ departure.guide?.name ?? '—' }}</span
+                            class="text-[13px]"
+                            :class="
+                                departure.guide
+                                    ? 'text-muted-foreground'
+                                    : 'font-medium text-brand-warn'
+                            "
+                            >{{
+                                departure.guide?.name ?? $t('Guía por asignar')
+                            }}</span
                         >
                     </div>
 

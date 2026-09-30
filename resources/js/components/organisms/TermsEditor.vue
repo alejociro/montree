@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Info } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Info, RotateCcw } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/composables/useTranslations';
@@ -12,6 +13,8 @@ const TERMS_MAX_LENGTH = 20000;
 
 type Props = {
     isDefault: boolean;
+    /** T13: texto por defecto vigente; precarga el campo y alimenta "Restaurar". */
+    defaultBody: string;
     publicUrl: string;
     error?: string;
 };
@@ -38,6 +41,23 @@ const publicLinkLabel = computed(() =>
         ? t('Ver el texto que se publica hoy')
         : t('Ver la página pública'),
 );
+
+// T13: confirmación en la propia UI (sin `confirm()` del navegador) antes
+// de reemplazar lo que el usuario haya escrito.
+const confirmingRestore = ref(false);
+
+function askRestore(): void {
+    confirmingRestore.value = true;
+}
+
+function cancelRestore(): void {
+    confirmingRestore.value = false;
+}
+
+function confirmRestore(): void {
+    body.value = props.defaultBody;
+    confirmingRestore.value = false;
+}
 </script>
 
 <template>
@@ -60,18 +80,71 @@ const publicLinkLabel = computed(() =>
             <AlertDescription>
                 {{
                     $t(
-                        'Todavía rige el texto por defecto de Montree. Escribe los tuyos aquí para reemplazarlo; si dejas el campo vacío, vuelve el texto por defecto.',
+                        'Este es el texto por defecto de Montree. Modifica lo que necesites y guarda; mientras no lo cambies, se actualiza solo cuando Montree mejore la plantilla.',
+                    )
+                }}
+            </AlertDescription>
+        </Alert>
+
+        <Alert v-else>
+            <Info class="size-4" />
+            <AlertTitle>{{
+                $t('Estás usando tus propios términos')
+            }}</AlertTitle>
+            <AlertDescription>
+                {{
+                    $t(
+                        'Estos son tus propios términos y condiciones, distintos de los que ofrece Montree por defecto. Puedes restaurar el texto por defecto cuando quieras.',
                     )
                 }}
             </AlertDescription>
         </Alert>
 
         <div class="grid gap-2">
-            <Label for="terms-body">{{ $t('Tus términos') }}</Label>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <Label for="terms-body">{{ $t('Tus términos') }}</Label>
+
+                <div v-if="confirmingRestore" class="flex items-center gap-2">
+                    <span class="text-xs text-muted-foreground">
+                        {{
+                            $t(
+                                '¿Reemplazar el texto actual por el por defecto?',
+                            )
+                        }}
+                    </span>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        @click="confirmRestore"
+                    >
+                        {{ $t('Sí, restaurar') }}
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        @click="cancelRestore"
+                    >
+                        {{ $t('Cancelar') }}
+                    </Button>
+                </div>
+                <Button
+                    v-else
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    @click="askRestore"
+                >
+                    <RotateCcw class="size-3.5" />
+                    {{ $t('Restaurar texto por defecto') }}
+                </Button>
+            </div>
+
             <Textarea
                 id="terms-body"
                 v-model="body"
-                class="min-h-80 font-mono text-sm"
+                class="[field-sizing:fixed] max-h-[65vh] min-h-80 overflow-y-auto font-mono text-sm"
                 :aria-invalid="Boolean(error) || isOverLimit"
                 aria-describedby="terms-body-counter terms-body-help"
                 :placeholder="

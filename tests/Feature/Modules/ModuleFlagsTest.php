@@ -10,8 +10,10 @@ use App\Enums\TourDateStatus;
 use App\Enums\TourStatus;
 use App\Enums\UserRole;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\Hotel;
 use App\Models\NewsletterSubscriber;
 use App\Models\Promotion;
+use App\Models\Provider;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
 use App\Models\Tour;
@@ -43,6 +45,10 @@ final class ModuleFlagsTest extends TestCase
 
     private NewsletterSubscriber $subscriber;
 
+    private Provider $provider;
+
+    private Hotel $hotel;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -54,6 +60,8 @@ final class ModuleFlagsTest extends TestCase
         $this->admin = $this->memberFor(UserRole::Admin);
         $this->promotion = Promotion::factory()->create();
         $this->subscriber = NewsletterSubscriber::factory()->create();
+        $this->provider = Provider::factory()->create();
+        $this->hotel = Hotel::factory()->create();
     }
 
     protected function tearDown(): void
@@ -87,6 +95,13 @@ final class ModuleFlagsTest extends TestCase
             'promociones: detalle' => ['promotions', 'GET', '/api/v1/admin/promotions/{promotion}', true],
             'promociones: edición' => ['promotions', 'PUT', '/api/v1/admin/promotions/{promotion}', true],
             'promociones: baja' => ['promotions', 'DELETE', '/api/v1/admin/promotions/{promotion}', true],
+            'logística: pantalla del panel' => ['logistics', 'GET', '/admin/logistics', true],
+            'logística: creación de proveedor' => ['logistics', 'POST', '/admin/providers', true],
+            'logística: edición de proveedor' => ['logistics', 'PUT', '/admin/providers/{provider}', true],
+            'logística: baja de proveedor' => ['logistics', 'DELETE', '/admin/providers/{provider}', true],
+            'logística: creación de hotel' => ['logistics', 'POST', '/admin/hotels', true],
+            'logística: edición de hotel' => ['logistics', 'PUT', '/admin/hotels/{hotel}', true],
+            'logística: baja de hotel' => ['logistics', 'DELETE', '/admin/hotels/{hotel}', true],
         ];
     }
 
@@ -149,6 +164,87 @@ final class ModuleFlagsTest extends TestCase
         $this->assertNotContains('promotions', $modules);
         $this->assertNotContains('newsletter', $modules);
         $this->assertContains('tours', $modules);
+    }
+
+    public function test_the_role_catalog_hides_logistics_permissions_when_the_module_is_off(): void
+    {
+        $this->disable('logistics');
+
+        $response = $this->actingAs($this->admin)->getJson(self::HOST.'/api/v1/admin/roles');
+
+        $response->assertOk();
+        $modules = array_column($response->json('meta.available_permissions'), 'module');
+
+        $this->assertNotContains('logistics', $modules);
+        $this->assertContains('tours', $modules);
+    }
+
+    public function test_the_departure_options_drop_providers_and_hotels_when_logistics_is_off(): void
+    {
+        $this->disable('logistics');
+        $tour = Tour::factory()->create();
+
+        $response = $this->actingAs($this->admin)->get(self::HOST.'/admin/tours/'.$tour->id.'/edit', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request()) ?? '',
+        ]);
+
+        $response->assertOk();
+        $this->assertSame([], $response->json('props.departureOptions.providers'));
+        $this->assertSame([], $response->json('props.departureOptions.hotels'));
+    }
+
+    public function test_the_departure_options_keep_providers_and_hotels_when_logistics_is_on(): void
+    {
+        $tour = Tour::factory()->create();
+
+        $response = $this->actingAs($this->admin)->get(self::HOST.'/admin/tours/'.$tour->id.'/edit', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request()) ?? '',
+        ]);
+
+        $response->assertOk();
+        $this->assertNotEmpty($response->json('props.departureOptions.providers'));
+        $this->assertNotEmpty($response->json('props.departureOptions.hotels'));
+    }
+
+    /**
+     * WHY: apagar el módulo no puede borrar lo que una salida ya tenía guardado
+     * de antes — el formulario deja de ofrecer proveedor/hotel, pero editar
+     * otros campos de la misma salida no le toca lo que ya tiene.
+     */
+    public function test_editing_a_tour_date_keeps_its_provider_and_hotel_when_logistics_is_off(): void
+    {
+        $guide = $this->memberFor(UserRole::Guide);
+        $tour = Tour::factory()->create(['status' => TourStatus::Active, 'duration_hours' => 4]);
+
+        $this->actingAs($this->admin)->post(self::HOST.'/admin/tours/'.$tour->id.'/dates', [
+            'starts_at' => now()->addDays(10)->toDateTimeString(),
+            'capacity' => 10,
+            'guide_id' => $guide->id,
+            'provider_id' => $this->provider->id,
+            'hotel_ids' => [$this->hotel->id],
+        ])->assertRedirect();
+
+        $tourDate = TourDate::query()->where('tour_id', $tour->id)->firstOrFail();
+        $this->assertSame($this->provider->id, $tourDate->provider_id);
+        $this->assertSame([$this->hotel->id], $tourDate->hotels()->pluck('hotels.id')->all());
+
+        $this->disable('logistics');
+
+        $otherProvider = Provider::factory()->create();
+        $otherHotel = Hotel::factory()->create();
+
+        $this->actingAs($this->admin)->put(self::HOST.'/admin/tour-dates/'.$tourDate->id, [
+            'notes' => 'actualizada tras apagar logística',
+            'provider_id' => $otherProvider->id,
+            'hotel_ids' => [$otherHotel->id],
+        ])->assertRedirect();
+
+        $tourDate->refresh();
+        $this->assertSame($this->provider->id, $tourDate->provider_id);
+        $this->assertSame([$this->hotel->id], $tourDate->hotels()->pluck('hotels.id')->all());
+        $this->assertSame('actualizada tras apagar logística', $tourDate->notes);
     }
 
     public function test_a_role_never_counts_more_permissions_than_the_visible_catalog(): void
@@ -240,8 +336,14 @@ final class ModuleFlagsTest extends TestCase
     private function visit(string $method, string $path, bool $authenticated): TestResponse
     {
         $url = self::HOST.str_replace(
-            ['{token}', '{subscriber}', '{promotion}'],
-            [$this->subscriber->unsubscribe_token, (string) $this->subscriber->id, (string) $this->promotion->id],
+            ['{token}', '{subscriber}', '{promotion}', '{provider}', '{hotel}'],
+            [
+                $this->subscriber->unsubscribe_token,
+                (string) $this->subscriber->id,
+                (string) $this->promotion->id,
+                (string) $this->provider->id,
+                (string) $this->hotel->id,
+            ],
             $path,
         );
 

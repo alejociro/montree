@@ -61,6 +61,19 @@ export type TourDetailDate = {
     status: TourDateStatus;
     route: TourDepartureRoute | null;
     guide: { name: string } | null;
+    /** Fecha límite propia de esta salida. `null` = sin cierre propio. */
+    booking_closes_at: string | null;
+    /**
+     * T12: cierre EFECTIVO (propio o, sin él, la regla de la agencia).
+     * `null` cuando ninguno de los dos aplica.
+     */
+    effective_booking_closes_at: string | null;
+    /** T7: contenido de esta salida ya resuelto (override propio o del producto). */
+    effective_itinerary: TourDetailItineraryStep[];
+    effective_includes: string[];
+    effective_excludes: string[];
+    effective_requirements: string[];
+    effective_meeting_point: string | null;
 };
 
 export type TourDetail = {
@@ -70,6 +83,8 @@ export type TourDetail = {
     short_description: string | null;
     description: string;
     base_price: string;
+    /** T7: "Desde $X" — mínimo precio efectivo entre las salidas reservables. */
+    from_price: string;
     duration_hours: number;
     difficulty: 'easy' | 'moderate' | 'hard' | 'extreme';
     default_capacity: number;

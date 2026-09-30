@@ -18,7 +18,7 @@ const number = computed(() => String(props.step.step_number).padStart(2, '0'));
 
 <template>
     <div
-        class="mb-2 grid grid-cols-[64px_1fr] items-start gap-4 rounded-xl border border-border bg-card px-3.5 py-4 sm:grid-cols-[64px_1fr_auto]"
+        class="mb-2 grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-3.5 py-4 sm:grid-cols-[64px_minmax(0,1fr)_auto]"
     >
         <p
             class="text-[11px] tracking-[0.08em] text-primary-readable uppercase"

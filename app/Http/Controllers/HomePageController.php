@@ -41,7 +41,7 @@ final class HomePageController extends Controller
             return Inertia::render('Landing', [
                 'registerUrl' => route('onboarding.start', absolute: false),
                 'loginUrl' => route('login', absolute: false),
-                'contactUrl' => 'mailto:hola@montree.co',
+                'contactUrl' => 'https://wa.me/'.config('montree.contact.whatsapp'),
                 'demoUrl' => '#funciones',
             ]);
         }
@@ -67,7 +67,7 @@ final class HomePageController extends Controller
     private function upcomingDepartures(): array
     {
         $departures = TourDate::query()
-            ->openFuture()
+            ->bookable()
             ->whereHas('tour', fn ($query) => $query->active())
             ->with('tour.coverImage')
             ->orderBy('starts_at')

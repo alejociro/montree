@@ -14,6 +14,9 @@ const page = usePage();
 const legalLinks = useLegalLinks();
 const user = computed(() => page.props.auth?.user ?? null);
 const isSuperAdmin = computed(() => user.value?.isSuperAdmin ?? false);
+const contactEmail = computed(
+    () => page.props.platform?.legal.email ?? 'it@jae-solutions.com',
+);
 
 onMounted(() => {
     const observer = new IntersectionObserver(
@@ -119,8 +122,8 @@ onMounted(() => {
                             )
                         }}
                     </p>
-                    <a href="mailto:hola@montree.co" class="footer-email"
-                        ><Mail class="size-4" />{{ $t('hola@montree.co') }}</a
+                    <a :href="`mailto:${contactEmail}`" class="footer-email"
+                        ><Mail class="size-4" />{{ contactEmail }}</a
                     >
                 </div>
                 <div class="footer-links-col">

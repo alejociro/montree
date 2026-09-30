@@ -1,5 +1,6 @@
+import type { PlaceToPayEnvironment } from '@/types/enums.generated';
+
 export type TenantStatus = 'active' | 'suspended' | 'pending';
-export type TenantPlan = 'basic' | 'professional' | 'enterprise';
 export type TenantLocale = 'es' | 'en';
 
 export type Tenant = {
@@ -8,7 +9,6 @@ export type Tenant = {
     name: string;
     domain: string;
     status: TenantStatus;
-    plan: TenantPlan;
     contact_email: string | null;
     contact_phone: string | null;
 };
@@ -47,12 +47,15 @@ export type TenantConfiguration = {
     custom_css: string | null;
     hero_image_url: string | null;
     min_partial_payment_pct: number;
+    /** T12: cierre de reservas por defecto de la agencia, en horas antes del inicio. `null` = sin regla. */
+    booking_advance_hours: number | null;
     placetopay: TenantCheckoutCredentials;
 };
 
 export type TenantCheckoutCredentials = {
     login: string | null;
-    url: string | null;
+    /** T14: ambiente del comercio propio del tenant; deriva la URL del checkout. */
+    environment: PlaceToPayEnvironment;
     /** El tranKey nunca sale del servidor; solo se informa si hay uno guardado. */
     tran_key_set: boolean;
 };
@@ -65,6 +68,8 @@ export type TenantCheckoutCredentials = {
 export type TenantTerms = {
     body: string | null;
     is_default: boolean;
+    /** T13: texto por defecto vigente (en el idioma del panel); precarga el editor y alimenta "Restaurar". */
+    default_body: string;
 };
 
 export type TenantConfigurationPayload = {
@@ -79,9 +84,10 @@ export type TenantConfigurationPayload = {
     contact_info?: TenantContactInfo | null;
     reviews_require_moderation?: boolean;
     require_traveler_details?: boolean;
+    booking_advance_hours?: number | null;
     custom_css?: string | null;
     placetopay_login?: string | null;
     placetopay_tran_key?: string | null;
-    placetopay_url?: string | null;
+    placetopay_environment?: PlaceToPayEnvironment;
     terms_body?: string | null;
 };

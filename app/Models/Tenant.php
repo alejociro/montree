@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\CommissionType;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Models\Builders\TenantBuilder;
 use Database\Factories\TenantFactory;
@@ -24,12 +22,7 @@ use Spatie\Multitenancy\Models\Tenant as BaseTenant;
  * @property string $contact_email
  * @property string|null $contact_phone
  * @property TenantStatus $status
- * @property TenantPlan $plan
- * @property Carbon|null $trial_ends_at
  * @property Carbon|null $suspended_at
- * @property array<string, mixed>|null $plan_limits
- * @property CommissionType|null $commission_type
- * @property string|null $commission_value
  */
 class Tenant extends BaseTenant
 {
@@ -43,24 +36,14 @@ class Tenant extends BaseTenant
         'contact_email',
         'contact_phone',
         'status',
-        'plan',
-        'trial_ends_at',
         'suspended_at',
-        'plan_limits',
-        'commission_type',
-        'commission_value',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => TenantStatus::class,
-            'plan' => TenantPlan::class,
-            'trial_ends_at' => 'datetime',
             'suspended_at' => 'datetime',
-            'plan_limits' => 'array',
-            'commission_type' => CommissionType::class,
-            'commission_value' => 'decimal:2',
         ];
     }
 
@@ -110,6 +93,12 @@ class Tenant extends BaseTenant
     public function platformCharges(): HasMany
     {
         return $this->hasMany(PlatformCharge::class);
+    }
+
+    /** Esquema de comisión PROPIO de la agencia, si eligió tener uno. */
+    public function commissionSchedule(): HasOne
+    {
+        return $this->hasOne(CommissionSchedule::class);
     }
 
     /** Una agencia suspendida o pendiente no recibe visitas: su panel no abre. */

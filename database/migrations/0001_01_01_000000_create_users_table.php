@@ -17,6 +17,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // WHY: Ley 1581 de 2012 (art. 9) obliga a conservar prueba de la
+            // autorización para tratar datos personales. Null = no hay
+            // prueba, no "no aceptó".
+            $table->timestamp('terms_accepted_at')->nullable();
+            $table->timestamp('data_policy_accepted_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

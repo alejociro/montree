@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Tenant;
 
 use App\Data\TenantConfigurationData;
-use App\Exceptions\FeatureRequiresEnterpriseException;
+use App\Enums\PlaceToPayEnvironment;
 use App\Models\TenantConfiguration;
 use App\Services\Tenant\CustomCssSanitizer;
 use Illuminate\Support\Arr;
@@ -35,10 +35,8 @@ final class UpdateTenantConfigurationAction
             return $attributes;
         }
 
-        if (! $configuration->tenant->plan->limits()['allows_custom_css']) {
-            throw new FeatureRequiresEnterpriseException('custom_css');
-        }
-
+        // WHY: el CSS personalizado está disponible para todas las agencias
+        // (ya no hay planes); igual se sanea siempre, sin excepción.
         $attributes['custom_css'] = $this->sanitizer->sanitize((string) $attributes['custom_css'])['css'];
 
         return $attributes;
@@ -54,7 +52,7 @@ final class UpdateTenantConfigurationAction
      */
     private function resolveCheckoutCredentials(TenantConfiguration $configuration, array $attributes): array
     {
-        if (! Arr::hasAny($attributes, ['placetopay_login', 'placetopay_tran_key', 'placetopay_url'])) {
+        if (! Arr::hasAny($attributes, ['placetopay_login', 'placetopay_tran_key', 'placetopay_environment'])) {
             return $attributes;
         }
 
@@ -62,7 +60,7 @@ final class UpdateTenantConfigurationAction
             return array_merge($attributes, [
                 'placetopay_login' => null,
                 'placetopay_tran_key' => null,
-                'placetopay_url' => null,
+                'placetopay_environment' => PlaceToPayEnvironment::Test,
             ]);
         }
 

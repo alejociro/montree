@@ -23,7 +23,7 @@ final class UpcomingDepartureResource extends JsonResource
             'starts_at' => $this->starts_at->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
             'available_seats' => max(0, $this->capacity - $this->booked_count),
-            'effective_price' => $this->price_override ?? $this->tour->base_price,
+            'effective_price' => $this->resource->effectivePrice(),
             'tour' => [
                 'name' => $this->tour->name,
                 'slug' => $this->tour->slug,

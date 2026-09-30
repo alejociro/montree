@@ -62,14 +62,6 @@ export const CATEGORY_ICON_VALUES = [
 
 export type CategoryIcon = (typeof CATEGORY_ICON_VALUES)[number];
 
-/** `App\Enums\CommissionType` */
-export const COMMISSION_TYPE_VALUES = [
-    'percentage',
-    'fixed',
-] as const;
-
-export type CommissionType = (typeof COMMISSION_TYPE_VALUES)[number];
-
 /** `App\Enums\Currency` */
 export const CURRENCY_VALUES = [
     'USD',
@@ -148,6 +140,7 @@ export type MealPlan = (typeof MEAL_PLAN_VALUES)[number];
 export const MODULE_VALUES = [
     'newsletter',
     'promotions',
+    'logistics',
 ] as const;
 
 export type Module = (typeof MODULE_VALUES)[number];
@@ -200,6 +193,14 @@ export const PAYMENT_TYPE_VALUES = [
 ] as const;
 
 export type PaymentType = (typeof PAYMENT_TYPE_VALUES)[number];
+
+/** `App\Enums\PlaceToPayEnvironment` */
+export const PLACE_TO_PAY_ENVIRONMENT_VALUES = [
+    'test',
+    'production',
+] as const;
+
+export type PlaceToPayEnvironment = (typeof PLACE_TO_PAY_ENVIRONMENT_VALUES)[number];
 
 /** `App\Enums\PromotionType` */
 export const PROMOTION_TYPE_VALUES = [
@@ -299,15 +300,6 @@ export const TENANT_MEMBERSHIP_STATUS_VALUES = [
 ] as const;
 
 export type TenantMembershipStatus = (typeof TENANT_MEMBERSHIP_STATUS_VALUES)[number];
-
-/** `App\Enums\TenantPlan` */
-export const TENANT_PLAN_VALUES = [
-    'basic',
-    'professional',
-    'enterprise',
-] as const;
-
-export type TenantPlan = (typeof TENANT_PLAN_VALUES)[number];
 
 /** `App\Enums\TenantStatus` */
 export const TENANT_STATUS_VALUES = [

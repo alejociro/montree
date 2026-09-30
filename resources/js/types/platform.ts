@@ -8,7 +8,19 @@ export type PlatformLegalEntity = {
     privacy_email: string;
 };
 
+export type CommissionTier = {
+    from: string;
+    to: string | null;
+    rate: string;
+};
+
+export type CommissionSchedule = {
+    currency: string;
+    tiers: CommissionTier[];
+    max_charge: string | null;
+};
+
 export type PlatformInfo = {
     legal: PlatformLegalEntity;
-    trialDays: number;
+    commissionSchedule: CommissionSchedule | null;
 };

@@ -40,9 +40,9 @@ final class DepartureBoardQuery
             'active' => (int) ($totals?->getAttribute('active') ?? 0),
             'seats_left' => (int) ($totals?->getAttribute('seats_left') ?? 0),
             'travellers' => (int) ($totals?->getAttribute('travellers') ?? 0),
-            // `guide_id` es NOT NULL desde la fase 1, así que hoy siempre da
-            // cero. El KPI se queda porque la regla puede relajarse y porque un
-            // cero explícito es información: no hay salidas huérfanas.
+            // T8 (revierte D7): una salida puede quedar sin guía —«Asignar
+            // después»—, así que este conteo ya es una alarma real, no un
+            // cero de adorno.
             'without_guide' => (int) $upcoming()->whereNull('guide_id')->count(),
         ];
     }

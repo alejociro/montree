@@ -9,9 +9,7 @@ use App\Actions\Tour\BuildTourShowStatsAction;
 use App\Actions\Tour\CreateTourAction;
 use App\Actions\Tour\DeleteTourAction;
 use App\Actions\Tour\UpdateTourAction;
-use App\Data\DepartureDefaults;
 use App\Data\Tour\TourFilters;
-use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\TourHasActiveBookingsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Tour\StoreTourRequest;
@@ -89,13 +87,7 @@ final class TourPagesController extends Controller
         $tenant = Tenant::current();
         abort_if($tenant === null, 404);
 
-        try {
-            $tour = $createTour->execute($tenant, $request->validated());
-        } catch (PlanLimitReachedException $limit) {
-            // El 403 JSON del límite de plan sería una página de error en una
-            // visita Inertia y se llevaría puesto el formulario entero.
-            return back()->withErrors(['plan' => $limit->getMessage()])->withInput();
-        }
+        $tour = $createTour->execute($tenant, $request->validated());
 
         return redirect()->route('admin.tours.edit', $tour)->with('success', __('Tour creado.'));
     }
@@ -132,7 +124,6 @@ final class TourPagesController extends Controller
             'categories' => $this->categories($tour),
             'departures' => $this->departures($tour),
             'departureOptions' => $options->all(),
-            'departureDefaults' => DepartureDefaults::fromTour($tour, Tenant::current()?->configuration)->toArray(),
         ];
     }
 

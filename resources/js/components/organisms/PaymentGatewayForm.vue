@@ -1,13 +1,28 @@
 <script setup lang="ts">
+import type { AcceptableValue } from 'reka-ui';
+import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useTranslations } from '@/composables/useTranslations';
+import type { PlaceToPayEnvironment } from '@/types/enums.generated';
+
+const { t } = useTranslations();
 
 type GatewayValues = {
     placetopay_login: string;
     placetopay_tran_key: string;
-    placetopay_url: string;
+    placetopay_environment: PlaceToPayEnvironment;
 };
 
 type GatewayErrors = Partial<Record<keyof GatewayValues, string | undefined>>;
@@ -30,6 +45,23 @@ function update<K extends keyof GatewayValues>(
     value: GatewayValues[K],
 ): void {
     emit('update:modelValue', { ...props.modelValue, [key]: value });
+}
+
+const environmentOptions: { value: PlaceToPayEnvironment; label: string }[] = [
+    { value: 'test', label: t('Pruebas (sandbox)') },
+    { value: 'production', label: t('Producción (cobros reales)') },
+];
+
+const isProduction = computed(
+    () => props.modelValue.placetopay_environment === 'production',
+);
+
+function onEnvironmentChange(value: AcceptableValue): void {
+    if (value !== 'test' && value !== 'production') {
+        return;
+    }
+
+    update('placetopay_environment', value);
 }
 </script>
 
@@ -82,26 +114,47 @@ function update<K extends keyof GatewayValues>(
             </div>
 
             <div class="space-y-2 md:col-span-2">
-                <Label for="placetopay_url">
-                    {{ $t('URL del checkout') }}
-                </Label>
-                <Input
-                    id="placetopay_url"
-                    :model-value="modelValue.placetopay_url"
-                    autocomplete="off"
-                    placeholder="https://checkout.placetopay.com"
-                    @update:model-value="
-                        (v) => update('placetopay_url', String(v ?? ''))
-                    "
-                />
+                <div class="flex items-center gap-2">
+                    <Label for="placetopay_environment">
+                        {{ $t('Ambiente') }}
+                    </Label>
+                    <Badge
+                        v-if="isProduction"
+                        variant="outline"
+                        class="border-destructive/30 bg-destructive/10 text-destructive"
+                    >
+                        {{ $t('Cobros reales activos') }}
+                    </Badge>
+                </div>
+                <Select
+                    :model-value="modelValue.placetopay_environment"
+                    @update:model-value="onEnvironmentChange"
+                >
+                    <SelectTrigger id="placetopay_environment" class="w-full">
+                        <SelectValue
+                            :placeholder="$t('Seleccionar ambiente')"
+                        />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectItem
+                                v-for="option in environmentOptions"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
                 <p class="text-xs text-muted-foreground">
                     {{
                         $t(
-                            'El endpoint del país de tu comercio. Vacío usa el de la plataforma.',
+                            'En Pruebas no se cobra dinero real; úsalo con las credenciales de pruebas de PlacetoPay. Cambia a Producción cuando PlacetoPay te entregue las credenciales productivas.',
                         )
                     }}
                 </p>
-                <InputError :message="errors?.placetopay_url" />
+                <InputError :message="errors?.placetopay_environment" />
             </div>
         </div>
     </section>

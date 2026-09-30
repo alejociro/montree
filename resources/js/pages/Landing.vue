@@ -18,7 +18,9 @@ const props = defineProps<Props>();
 const { t } = useTranslations();
 const page = usePage();
 
-const trialDays = computed(() => page.props.platform?.trialDays ?? 14);
+const contactEmail = computed(
+    () => page.props.platform?.legal.email ?? 'it@jae-solutions.com',
+);
 
 const pillars = [
     { icon: '24/7', label: t('Reservas en línea') },
@@ -706,8 +708,7 @@ const legalLinks = useLegalLinks();
                 >
                     {{
                         $t(
-                            'Tu agencia arranca con :days días de prueba, sin tarjeta de crédito. Después, Montree cobra una comisión solo por reserva confirmada.',
-                            { days: trialDays },
+                            'Crear tu agencia no tiene costo. Montree cobra un porcentaje solo por reserva confirmada, según el valor de la reserva.',
                         )
                     }}
                 </p>
@@ -719,6 +720,8 @@ const legalLinks = useLegalLinks();
                     >
                     <a
                         :href="props.contactUrl"
+                        target="_blank"
+                        rel="noopener"
                         class="rounded-full border border-[#FBF6EC]/45 px-7 py-[15px] text-[13.5px] transition-colors hover:bg-[#FBF6EC]/14"
                         >{{ $t('Hablar con el equipo') }}</a
                     >
@@ -756,9 +759,9 @@ const legalLinks = useLegalLinks();
                         }}
                     </p>
                     <a
-                        href="mailto:hola@montree.co"
+                        :href="`mailto:${contactEmail}`"
                         class="mt-2.5 block text-[13px] transition-colors hover:text-[#2C5C3C]"
-                        >hola@montree.co</a
+                        >{{ contactEmail }}</a
                     >
                 </div>
                 <nav :aria-label="$t('Producto')">

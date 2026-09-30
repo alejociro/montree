@@ -74,11 +74,6 @@ const showDeparture = computed(
     () => isTourScope.value && tourDateId.value === null,
 );
 
-/** Pasajero, documento, contacto y pago; más salida y acciones si aplican. */
-const columnCount = computed(
-    () => 4 + (showDeparture.value ? 1 : 0) + (props.readonly ? 0 : 1),
-);
-
 const drawerOpen = ref(false);
 const selected = ref<Passenger | null>(null);
 
@@ -256,61 +251,56 @@ function print(): void {
                             @edit="openEdit"
                         />
                     </tbody>
-                    <tfoot
-                        v-if="summary"
-                        class="border-t border-border bg-muted/40"
-                    >
-                        <tr>
-                            <td :colspan="columnCount" class="px-3 py-3">
-                                <div
-                                    class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground"
-                                >
-                                    <span class="font-medium text-foreground">
-                                        {{
-                                            $t(':count pasajeros', {
-                                                count: summary.total_passengers,
-                                            })
-                                        }}
-                                    </span>
-                                    <span>
-                                        {{
-                                            $t(':count con saldo pendiente', {
-                                                count: summary.with_due,
-                                            })
-                                        }}
-                                    </span>
-                                    <!--
-                                      `with_notes` solo llega con el permiso
-                                      médico: el conteo agregado también dice
-                                      cuántos hay (D7).
-                                    -->
-                                    <span
-                                        v-if="summary.with_notes !== undefined"
-                                        class="font-medium text-brand-drop"
-                                    >
-                                        {{
-                                            $t(':count con observaciones', {
-                                                count: summary.with_notes,
-                                            })
-                                        }}
-                                    </span>
-                                    <span
-                                        class="font-semibold text-foreground tabular-nums"
-                                    >
-                                        {{
-                                            $t('Total por cobrar :amount', {
-                                                amount: formatCurrency(
-                                                    summary.total_due_amount,
-                                                    summary.currency,
-                                                ),
-                                            })
-                                        }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tfoot>
                 </table>
+            </div>
+            <!--
+              El resumen vive fuera de la tabla con scroll horizontal: dentro
+              de un `tfoot` con colspan quedaba tan ancho como la tabla y, en
+              mobile, se desplazaba fuera de la vista junto con las columnas.
+            -->
+            <div
+                v-if="summary"
+                class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-muted/40 px-3 py-3 text-sm text-muted-foreground print:hidden"
+            >
+                <span class="font-medium text-foreground">
+                    {{
+                        $t(':count pasajeros', {
+                            count: summary.total_passengers,
+                        })
+                    }}
+                </span>
+                <span>
+                    {{
+                        $t(':count con saldo pendiente', {
+                            count: summary.with_due,
+                        })
+                    }}
+                </span>
+                <!--
+                  `with_notes` solo llega con el permiso
+                  médico: el conteo agregado también dice
+                  cuántos hay (D7).
+                -->
+                <span
+                    v-if="summary.with_notes !== undefined"
+                    class="font-medium text-brand-drop"
+                >
+                    {{
+                        $t(':count con observaciones', {
+                            count: summary.with_notes,
+                        })
+                    }}
+                </span>
+                <span class="font-semibold text-foreground tabular-nums">
+                    {{
+                        $t('Total por cobrar :amount', {
+                            amount: formatCurrency(
+                                summary.total_due_amount,
+                                summary.currency,
+                            ),
+                        })
+                    }}
+                </span>
             </div>
         </div>
 

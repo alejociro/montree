@@ -30,7 +30,7 @@ final class DepartureDefaultsTest extends TestCase
         parent::setUp();
 
         $this->tenant = $this->makeTenant();
-        $this->tenant->configuration()->update(['min_partial_payment_pct' => 45]);
+        $this->tenant->configuration()->update(['min_partial_payment_pct' => 45, 'booking_advance_hours' => 36]);
         $this->tenant->makeCurrent();
         $this->admin = $this->memberFor($this->tenant, UserRole::Admin);
 
@@ -45,7 +45,7 @@ final class DepartureDefaultsTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_the_edit_page_inherits_guide_capacity_default_route_price_and_agency_percentage(): void
+    public function test_the_departure_form_inherits_guide_capacity_default_route_price_and_agency_percentage(): void
     {
         $guide = $this->guideFor($this->tenant);
         $tour = Tour::factory()->create([
@@ -56,16 +56,26 @@ final class DepartureDefaultsTest extends TestCase
         ]);
         $route = Route::factory()->for($tour)->create(['is_default' => true]);
 
+        // T9: los valores por defecto viajan con el producto a la vista paso a paso
+        // de la salida, que es la única que los consume.
+        $this->actingAs($this->admin)
+            ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/departures/create")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('tours.0.departure_defaults.guide_id', $guide->id)
+                ->where('tours.0.departure_defaults.capacity', 17)
+                ->where('tours.0.departure_defaults.base_price', '250000.00')
+                ->where('tours.0.departure_defaults.min_payment_pct', 45)
+                ->where('tours.0.departure_defaults.booking_advance_hours', 36)
+            );
+
         $this->actingAs($this->admin)
             ->get($this->host($this->tenant)."/admin/tours/{$tour->id}/edit")
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('departureDefaults.guide_id', $guide->id)
-                ->where('departureDefaults.capacity', 17)
                 ->where('tour.routes.0.id', $route->id)
                 ->where('tour.routes.0.is_default', true)
-                ->where('departureDefaults.base_price', '250000.00')
-                ->where('departureDefaults.min_payment_pct', 45)
+                ->missing('departureDefaults')
             );
     }
 

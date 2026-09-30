@@ -210,7 +210,7 @@ function submit() {
         </Button>
 
         <p class="text-center text-xs text-muted-foreground">
-            {{ $t('Sin tarjeta de crédito · 14 días de prueba gratis') }}
+            {{ $t('Sin tarjeta de crédito · sin costo por crear tu agencia') }}
         </p>
     </form>
 </template>

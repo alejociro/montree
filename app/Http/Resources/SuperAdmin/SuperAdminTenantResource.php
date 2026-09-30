@@ -6,6 +6,7 @@ namespace App\Http\Resources\SuperAdmin;
 
 use App\Enums\Currency;
 use App\Http\Resources\TenantConfigurationResource;
+use App\Models\CommissionSchedule;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,22 +29,22 @@ class SuperAdminTenantResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $ownSchedule = $this->whenLoaded('commissionSchedule');
+
         return [
             'id' => $this->id,
             'slug' => $this->slug,
             'name' => $this->name,
             'domain' => $this->domain,
             'status' => $this->status->value,
-            'plan' => $this->plan->value,
-            'trial_ends_at' => $this->trial_ends_at?->toIso8601String(),
             'suspended_at' => $this->suspended_at?->toIso8601String(),
             'contact_email' => $this->contact_email,
             'contact_phone' => $this->contact_phone,
             'created_at' => $this->created_at?->toIso8601String(),
             'can_enter' => $this->resource->canBeEntered(),
             'commission' => [
-                'type' => $this->commission_type?->value,
-                'value' => $this->commission_value === null ? null : (string) $this->commission_value,
+                'scope' => $ownSchedule instanceof CommissionSchedule ? 'tenant' : 'global',
+                'tiers_count' => $ownSchedule instanceof CommissionSchedule ? count($ownSchedule->tiers) : null,
                 'currency' => $this->resource->configuration?->currency ?? Currency::FALLBACK,
             ],
             'stats' => [

@@ -5,7 +5,6 @@ use App\Exceptions\CrossTenantAccessException;
 use App\Exceptions\InvalidTourStatusTransitionException;
 use App\Exceptions\NewsletterException;
 use App\Exceptions\PaymentException;
-use App\Exceptions\PlanLimitReachedException;
 use App\Exceptions\PromotionCodeLockedException;
 use App\Exceptions\PromotionCodeTakenException;
 use App\Exceptions\PromotionInvalidException;
@@ -111,7 +110,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(fn (PlanLimitReachedException $e) => $e->toResponse());
         $exceptions->render(fn (InvalidTourStatusTransitionException $e) => $e->toResponse());
         $exceptions->render(fn (TourHasActiveBookingsException $e) => $e->toResponse());
         $exceptions->render(fn (PromotionCodeTakenException $e) => $e->toResponse());

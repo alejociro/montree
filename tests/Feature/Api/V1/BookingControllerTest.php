@@ -269,6 +269,90 @@ final class BookingControllerTest extends TestCase
             ->assertJsonPath('error_code', 'BOOKING_WINDOW_CLOSED');
     }
 
+    /**
+     * T7: `booking_closes_at` cierra la reserva antes de que empiece la
+     * salida. Sin este campo (`null`), la ventana sigue siendo la hora de
+     * inicio (cubierto por `test_rejects_past_date`).
+     */
+    public function test_rejects_when_booking_closes_at_has_passed(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $tenant->makeCurrent();
+
+        $tour = Tour::factory()->create(['status' => TourStatus::Active]);
+        $tourDate = TourDate::factory()->for($tour)->create([
+            'starts_at' => now()->addDays(7),
+            'status' => TourDateStatus::Open,
+            'booking_closes_at' => now()->subHour(),
+        ]);
+
+        $user = User::factory()->create();
+        $tenant->users()->attach($user->id, [
+            'status' => TenantMembershipStatus::Active->value,
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('http://demo.montree.test/api/v1/bookings', [
+                'tour_date_id' => $tourDate->id,
+                'adults_count' => 1,
+                'minors_count' => 0,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error_code', 'BOOKING_WINDOW_CLOSED');
+    }
+
+    public function test_allows_booking_before_booking_closes_at(): void
+    {
+        [$tenant, $tour, , $user] = $this->setupTenantWithUser();
+        $tourDate = TourDate::factory()->for($tour)->create([
+            'starts_at' => now()->addDays(7),
+            'status' => TourDateStatus::Open,
+            'booking_closes_at' => now()->addDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('http://demo.montree.test/api/v1/bookings', [
+                'tour_date_id' => $tourDate->id,
+                'adults_count' => 1,
+                'minors_count' => 0,
+            ])
+            ->assertStatus(201);
+    }
+
+    /**
+     * T12: sin cierre propio, la regla general de la agencia
+     * (`booking_advance_hours`) también cierra la ventana de reserva.
+     */
+    public function test_rejects_when_the_agency_advance_hours_rule_has_closed_the_window(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'demo', 'domain' => 'demo.montree.test']);
+        $tenant->configuration()->create(['booking_advance_hours' => 24]);
+        $tenant->makeCurrent();
+
+        $tour = Tour::factory()->create(['status' => TourStatus::Active]);
+        $tourDate = TourDate::factory()->for($tour)->create([
+            'starts_at' => now()->addHours(10),
+            'status' => TourDateStatus::Open,
+            'booking_closes_at' => null,
+        ]);
+
+        $user = User::factory()->create();
+        $tenant->users()->attach($user->id, [
+            'status' => TenantMembershipStatus::Active->value,
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('http://demo.montree.test/api/v1/bookings', [
+                'tour_date_id' => $tourDate->id,
+                'adults_count' => 1,
+                'minors_count' => 0,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error_code', 'BOOKING_WINDOW_CLOSED');
+    }
+
     public function test_show_returns_own_booking(): void
     {
         [$tenant, $tour, $tourDate, $user] = $this->setupTenantWithUser(10);

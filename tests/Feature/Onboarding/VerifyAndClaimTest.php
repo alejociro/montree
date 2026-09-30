@@ -36,7 +36,6 @@ class VerifyAndClaimTest extends TestCase
             'slug' => 'eco',
             'domain' => 'eco.montree.test',
             'contact_email' => 'ana@eco.com',
-            'trial_ends_at' => null,
         ]);
         TenantConfiguration::factory()->for($this->tenant)->create();
 
@@ -72,7 +71,7 @@ class VerifyAndClaimTest extends TestCase
         }
     }
 
-    public function test_verification_activates_tenant_and_starts_trial(): void
+    public function test_verification_activates_tenant(): void
     {
         $response = $this->get($this->verifyUrl());
 
@@ -82,8 +81,6 @@ class VerifyAndClaimTest extends TestCase
         $this->founder->refresh();
 
         $this->assertSame(TenantStatus::Active, $this->tenant->status);
-        $this->assertNotNull($this->tenant->trial_ends_at);
-        $this->assertEqualsWithDelta(14, now()->diffInDays($this->tenant->trial_ends_at, false), 1);
         $this->assertNotNull($this->founder->email_verified_at);
     }
 

@@ -6,7 +6,6 @@ namespace App\Actions\Onboarding;
 
 use App\Actions\Tenant\SeedDefaultCategoriesAction;
 use App\Enums\Currency;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
 use App\Events\AgencyRegistered;
@@ -48,7 +47,6 @@ final class RegisterAgencyAction
             'domain' => $data['subdomain'].'.'.Config::get('montree.platform_host'),
             'contact_email' => $data['email'],
             'status' => TenantStatus::Pending,
-            'plan' => $this->defaultPlan(),
         ]);
 
         TenantConfiguration::query()->create([
@@ -74,13 +72,6 @@ final class RegisterAgencyAction
         $this->attachUserToTenant->handle($user, $tenant, UserRole::Admin, 'onboarding');
 
         return [$tenant, $user];
-    }
-
-    private function defaultPlan(): TenantPlan
-    {
-        $plan = Config::get('montree.onboarding.default_plan');
-
-        return $plan instanceof TenantPlan ? $plan : TenantPlan::Professional;
     }
 
     private function translateSlugCollision(QueryException $e): QueryException|SubdomainTakenException

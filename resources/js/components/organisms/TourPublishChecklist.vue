@@ -9,9 +9,10 @@ import type { TourPublishRequirement } from '@/types/tour';
  * «Para publicar»: qué le falta al tour para dejar de ser borrador.
  *
  * WHY (D7): el checklist avisa, no inventa reglas. `blocking` marca lo que el
- * backend rechaza de verdad —los campos obligatorios del Form Request, y la
- * imagen y el guía por defecto de `ChangeTourStatusAction`—; el resto se lista
- * como recomendado, con la misma tipografía pero sin prometer que bloquea.
+ * backend rechaza de verdad —los campos obligatorios del Form Request y la
+ * imagen de `ChangeTourStatusAction`—; el resto (guía por defecto incluido
+ * desde T8) se lista como recomendado, con la misma tipografía pero sin
+ * prometer que bloquea.
  */
 type Props = {
     requirements: TourPublishRequirement[];

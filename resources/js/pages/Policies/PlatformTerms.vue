@@ -10,7 +10,7 @@ const { t } = useTranslations();
 const page = usePage();
 
 const contactEmail = computed(
-    () => page.props.platform?.legal.email ?? 'hola@montree.co',
+    () => page.props.platform?.legal.email ?? 'it@jae-solutions.com',
 );
 
 const sections = computed<LegalSection[]>(() => [
@@ -90,7 +90,7 @@ const sections = computed<LegalSection[]>(() => [
         title: t('8. Tarifas'),
         paragraphs: [
             t(
-                'Las agencias nuevas inician con un periodo de prueba sin costo cuya duración se informa al registrarse. Las condiciones económicas del servicio, incluida la comisión sobre reservas confirmadas, se detallan en la política de pago y en el acuerdo comercial con cada agencia.',
+                'Crear una agencia en Montree no tiene costo. Montree cobra un porcentaje sobre el valor de cada reserva confirmada, según el rango en que esté la reserva; los detalles se encuentran en la política de pago y en el acuerdo comercial con cada agencia.',
             ),
             t(
                 'Si cambiamos las tarifas te avisaremos con anticipación razonable. Los cambios no afectan reservas ya confirmadas.',

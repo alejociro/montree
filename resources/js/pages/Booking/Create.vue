@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Clock3, Gauge, MapPin } from 'lucide-vue-next';
+import { Clock3, Gauge, Info, MapPin } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { store as storeBooking } from '@/actions/App/Http/Controllers/Api/V1/BookingController';
@@ -44,6 +44,8 @@ type TourDate = {
     ends_at: string | null;
     effective_price: string;
     available_seats: number;
+    capacity: number;
+    meeting_point: string | null;
     min_payment_pct: number;
 };
 
@@ -196,16 +198,22 @@ const scheduleLabel = computed(() => {
     });
 });
 
-const logisticsLabel = computed(() => {
-    if (props.tour.default_capacity === null) {
-        return t('Dificultad :level', { level: difficultyLabel.value });
-    }
-
-    return t('Dificultad :level · grupo máx. :count', {
+const logisticsLabel = computed(() =>
+    t('Dificultad :level · grupo máx. :count', {
         level: difficultyLabel.value,
-        count: props.tour.default_capacity,
-    });
-});
+        count: props.tourDate.capacity,
+    }),
+);
+
+const meetingPoint = computed(
+    () => props.tourDate.meeting_point ?? props.tour.meeting_point,
+);
+
+// WHY: quien llega directo al checkout (enlace compartido) no pasó por la ficha
+// del tour; este enlace la abre con esta misma salida elegida.
+const tourDetailUrl = computed(
+    () => `${showTour(props.tour.slug).url}?salida=${props.tourDate.id}`,
+);
 
 function clearErrors(): void {
     for (const key of Object.keys(errors)) {
@@ -397,7 +405,7 @@ async function submit(): Promise<void> {
             class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10"
         >
             <Link
-                :href="showTour(tour.slug).url"
+                :href="tourDetailUrl"
                 class="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
                 <span aria-hidden="true">&larr;</span>
@@ -834,17 +842,14 @@ async function submit(): Promise<void> {
                                     </dt>
                                     <dd>{{ scheduleLabel }}</dd>
                                 </div>
-                                <div
-                                    v-if="tour.meeting_point"
-                                    class="flex gap-2.5"
-                                >
+                                <div v-if="meetingPoint" class="flex gap-2.5">
                                     <dt class="shrink-0 text-muted-foreground">
                                         <MapPin class="size-4" />
                                         <span class="sr-only">
                                             {{ $t('Punto de encuentro') }}
                                         </span>
                                     </dt>
-                                    <dd>{{ tour.meeting_point }}</dd>
+                                    <dd>{{ meetingPoint }}</dd>
                                 </div>
                                 <div class="flex gap-2.5">
                                     <dt class="shrink-0 text-muted-foreground">
@@ -856,6 +861,19 @@ async function submit(): Promise<void> {
                                     <dd>{{ logisticsLabel }}</dd>
                                 </div>
                             </dl>
+
+                            <a
+                                :href="tourDetailUrl"
+                                target="_blank"
+                                rel="noopener"
+                                class="mt-3 mb-1 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-primary-readable transition hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            >
+                                <Info class="size-4" aria-hidden="true" />
+                                {{ $t('Ver información completa del tour') }}
+                                <span class="sr-only">{{
+                                    $t('(se abre en una pestaña nueva)')
+                                }}</span>
+                            </a>
 
                             <dl
                                 class="space-y-2 border-b border-border py-4 text-[13.5px] text-card-foreground"

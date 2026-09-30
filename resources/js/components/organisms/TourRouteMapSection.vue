@@ -108,7 +108,7 @@ defineExpose({ selectStop, fit });
                 @select="selectStop"
             />
 
-            <div class="relative h-[470px] w-full">
+            <div class="relative h-[280px] w-full lg:h-[470px]">
                 <div ref="mapContainer" class="z-[1] h-full w-full" />
 
                 <div

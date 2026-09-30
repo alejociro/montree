@@ -56,7 +56,6 @@ final class TourEditDeparturesTest extends TestCase
             ->where('departures.0.id', $past->id)
             ->where('departures.1.id', $upcoming->id)
             ->has('departureOptions')
-            ->has('departureDefaults')
             ->has('tour.routes')
         );
     }

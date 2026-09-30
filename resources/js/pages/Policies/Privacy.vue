@@ -10,7 +10,7 @@ const { t } = useTranslations();
 const page = usePage();
 
 const privacyEmail = computed(
-    () => page.props.platform?.legal.privacy_email ?? 'hola@montree.co',
+    () => page.props.platform?.legal.privacy_email ?? 'it@jae-solutions.com',
 );
 
 const sections = computed<LegalSection[]>(() => [

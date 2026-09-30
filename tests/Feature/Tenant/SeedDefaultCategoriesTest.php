@@ -7,7 +7,6 @@ namespace Tests\Feature\Tenant;
 use App\Actions\Onboarding\RegisterAgencyAction;
 use App\Actions\SuperAdmin\CreateTenantAction;
 use App\Actions\Tenant\SeedDefaultCategoriesAction;
-use App\Enums\TenantPlan;
 use App\Enums\UserRole;
 use App\Models\Category;
 use App\Models\Tenant;
@@ -146,7 +145,6 @@ class SeedDefaultCategoriesTest extends TestCase
         $tenant = app(CreateTenantAction::class)->handle([
             'name' => 'Eco Adventures',
             'slug' => 'eco-adventures',
-            'plan' => TenantPlan::Professional->value,
             'currency' => 'COP',
             'admin_name' => 'Ada Admin',
             'admin_email' => 'ada@eco-adventures.test',

@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\TenantPlan;
-
 return [
     /*
     |--------------------------------------------------------------------------
@@ -56,6 +54,7 @@ return [
     'modules' => [
         'newsletter' => (bool) env('MONTREE_MODULE_NEWSLETTER', false),
         'promotions' => (bool) env('MONTREE_MODULE_PROMOTIONS', false),
+        'logistics' => (bool) env('MONTREE_MODULE_LOGISTICS', false),
     ],
 
     /*
@@ -95,22 +94,22 @@ return [
         'address' => env('MONTREE_LEGAL_ADDRESS'),
         'city' => env('MONTREE_LEGAL_CITY'),
         'phone' => env('MONTREE_LEGAL_PHONE'),
-        'email' => env('MONTREE_LEGAL_EMAIL', 'hola@montree.co'),
-        'privacy_email' => env('MONTREE_PRIVACY_EMAIL', env('MONTREE_LEGAL_EMAIL', 'hola@montree.co')),
+        'email' => env('MONTREE_LEGAL_EMAIL', 'it@jae-solutions.com'),
+        'privacy_email' => env('MONTREE_PRIVACY_EMAIL', env('MONTREE_LEGAL_EMAIL', 'it@jae-solutions.com')),
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Self-serve onboarding (F016)
+    | Contacto de Montree
     |--------------------------------------------------------------------------
     |
-    | Trial length and default plan a newly registered agency enters once its
-    | founder verifies their email. Read by App\Actions\Onboarding.
+    | Canal por el que un visitante de la landing habla con el equipo de
+    | Montree. Lo lee App\Http\Controllers\HomePageController para armar el
+    | enlace de WhatsApp del botón «Hablar con el equipo».
     |
     */
-    'onboarding' => [
-        'trial_days' => (int) env('MONTREE_ONBOARDING_TRIAL_DAYS', 14),
-        'default_plan' => TenantPlan::Professional,
+    'contact' => [
+        'whatsapp' => env('MONTREE_CONTACT_WHATSAPP', '573008904278'),
     ],
 
     /*

@@ -15,7 +15,6 @@ use App\Enums\RateUnit;
 use App\Enums\RouteKind;
 use App\Enums\RouteSeason;
 use App\Enums\TenantMembershipStatus;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TourDifficulty;
 use App\Enums\TourStatus;
@@ -83,8 +82,6 @@ class DemoTenantSeeder extends Seeder
                 'contact_email' => 'hello@demo.montree.test',
                 'contact_phone' => '+57 300 000 0000',
                 'status' => TenantStatus::Active,
-                'plan' => TenantPlan::Professional,
-                'trial_ends_at' => null,
             ],
         );
 
@@ -102,6 +99,11 @@ class DemoTenantSeeder extends Seeder
                 'contact_info' => ['email' => 'hello@demo.montree.test'],
                 'reviews_require_moderation' => true,
                 'require_traveler_details' => true,
+                // T12: la agencia demo queda sin regla general de cierre
+                // (comportamiento de siempre: se puede reservar hasta la
+                // hora de salida) para no cambiar el resto de fixtures de
+                // desarrollo que asumían eso.
+                'booking_advance_hours' => null,
             ],
         );
 

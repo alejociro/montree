@@ -84,6 +84,11 @@ final class GuideAvailabilityQuery
             ->get();
 
         $projected = $departures
+            // T8 (revierte D7): una salida sin guía no le puede chocar la
+            // agenda a nadie. Sin este filtro, `(int) null` colapsaría todas
+            // las salidas sin guía en el grupo `0` y las reportaría como si
+            // compartieran guía entre sí.
+            ->filter(fn (TourDate $departure): bool => $departure->guide_id !== null)
             ->map(function (TourDate $departure) use ($tour, $durationHours): array {
                 $end = $departure->tour_id === $tour->getKey()
                     ? TourDate::deriveEndsAt($departure->starts_at, $durationHours)

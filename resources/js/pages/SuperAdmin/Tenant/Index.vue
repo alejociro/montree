@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/select';
 import { index as tenantsIndex } from '@/routes/super-admin/tenants';
 import type {
-    TenantPlan,
     TenantsListFilters,
     TenantsListPaginated,
     TenantStatus,
@@ -31,7 +30,6 @@ const ALL = 'all';
 
 const search = ref(props.filters.search ?? '');
 const status = ref<TenantStatus | typeof ALL>(props.filters.status ?? ALL);
-const plan = ref<TenantPlan | typeof ALL>(props.filters.plan ?? ALL);
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -44,10 +42,6 @@ function reload(page?: number): void {
 
     if (status.value !== ALL) {
         query.status = status.value;
-    }
-
-    if (plan.value !== ALL) {
-        query.plan = plan.value;
     }
 
     if (page !== undefined && page > 1) {
@@ -70,7 +64,7 @@ watch(search, () => {
     searchDebounce = setTimeout(() => reload(), 350);
 });
 
-watch([status, plan], () => reload());
+watch(status, () => reload());
 </script>
 
 <template>
@@ -120,24 +114,6 @@ watch([status, plan], () => reload());
                     }}</SelectItem>
                     <SelectItem value="pending">{{
                         $t('Pendientes')
-                    }}</SelectItem>
-                </SelectContent>
-            </Select>
-
-            <Select v-model="plan">
-                <SelectTrigger class="w-full md:w-44">
-                    <SelectValue :placeholder="$t('Plan')" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">{{
-                        $t('Todos los planes')
-                    }}</SelectItem>
-                    <SelectItem value="basic">{{ $t('Basic') }}</SelectItem>
-                    <SelectItem value="professional">{{
-                        $t('Professional')
-                    }}</SelectItem>
-                    <SelectItem value="enterprise">{{
-                        $t('Enterprise')
                     }}</SelectItem>
                 </SelectContent>
             </Select>

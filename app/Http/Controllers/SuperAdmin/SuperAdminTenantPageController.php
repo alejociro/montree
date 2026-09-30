@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\TenantIndexRequest;
 use App\Http\Resources\SuperAdmin\SuperAdminTenantResource;
 use App\Models\Tenant;
+use App\Services\Platform\CommissionScheduleResolver;
 use App\Services\Rbac\TenantRoleCatalog;
 use App\Services\SuperAdmin\PlatformMetricsAggregator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -19,7 +20,10 @@ final class SuperAdminTenantPageController extends Controller
 {
     private const PER_PAGE = 15;
 
-    public function __construct(private PlatformMetricsAggregator $aggregator) {}
+    public function __construct(
+        private PlatformMetricsAggregator $aggregator,
+        private CommissionScheduleResolver $commissionResolver,
+    ) {}
 
     public function index(TenantIndexRequest $request): Response
     {
@@ -33,15 +37,22 @@ final class SuperAdminTenantPageController extends Controller
 
     public function show(Tenant $tenant): Response
     {
-        $tenant->loadMissing('configuration')->loadCount(['users', 'tours']);
+        $tenant->loadMissing(['configuration', 'commissionSchedule'])->loadCount(['users', 'tours']);
 
         $stats = $this->aggregator->statsForTenants([$tenant->id]);
+        $resolved = $this->commissionResolver->resolve($tenant);
 
         return Inertia::render('SuperAdmin/Tenant/Detail', [
             'tenant' => (new SuperAdminTenantResource($tenant, $stats[$tenant->id]))->resolve(),
             'charges_summary' => $this->aggregator->chargesSummaryForTenant($tenant),
             'monthly' => $this->aggregator->monthlyForTenant($tenant),
             'roles' => TenantRoleCatalog::STAFF_ROLES,
+            'commissionSchedule' => [
+                'scope' => $resolved['scope'],
+                'currency' => $resolved['schedule']->currency,
+                'tiers' => $resolved['schedule']->tiers,
+                'max_charge' => $resolved['schedule']->max_charge,
+            ],
         ]);
     }
 
@@ -68,7 +79,7 @@ final class SuperAdminTenantPageController extends Controller
     private function query(TenantFilters $filters): LengthAwarePaginator
     {
         return Tenant::query()
-            ->with('configuration')
+            ->with(['configuration', 'commissionSchedule'])
             ->withCount(['users', 'tours'])
             ->applyFilters($filters)
             ->paginate(self::PER_PAGE)

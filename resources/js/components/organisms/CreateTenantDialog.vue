@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/composables/useTranslations';
 import { store as storeTenant } from '@/routes/super-admin/tenants';
-import type { TenantPlan } from '@/types';
 import { CURRENCY_VALUES } from '@/types/enums.generated';
 import type { Currency } from '@/types/enums.generated';
 
@@ -35,7 +34,6 @@ const slugTouched = ref(false);
 const form = useForm({
     name: '',
     slug: '',
-    plan: 'basic' as TenantPlan,
     currency: 'COP' as Currency,
     admin_name: '',
     admin_email: '',
@@ -137,31 +135,6 @@ function submit(): void {
                 </div>
 
                 <div class="space-y-2">
-                    <Label>{{ $t('Plan') }}</Label>
-                    <Select v-model="form.plan">
-                        <SelectTrigger>
-                            <SelectValue
-                                :placeholder="$t('Seleccionar plan')"
-                            />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="basic">{{
-                                $t('Basic')
-                            }}</SelectItem>
-                            <SelectItem value="professional">
-                                {{ $t('Professional') }}
-                            </SelectItem>
-                            <SelectItem value="enterprise">
-                                {{ $t('Enterprise') }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <p v-if="form.errors.plan" class="text-xs text-destructive">
-                        {{ form.errors.plan }}
-                    </p>
-                </div>
-
-                <div class="space-y-2">
                     <Label>{{ $t('Moneda') }}</Label>
                     <Select v-model="form.currency">
                         <SelectTrigger>
@@ -242,7 +215,11 @@ function submit(): void {
                         {{ $t('Cancelar') }}
                     </Button>
                     <Button type="submit" :disabled="form.processing">
-                        {{ form.processing ? $t('Creando…') : $t('Crear agencia') }}
+                        {{
+                            form.processing
+                                ? $t('Creando…')
+                                : $t('Crear agencia')
+                        }}
                     </Button>
                 </DialogFooter>
             </form>

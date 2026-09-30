@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Building2, Gauge, ShieldCheck } from 'lucide-vue-next';
+import { Building2, Gauge, Percent, ShieldCheck } from 'lucide-vue-next';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -29,6 +29,11 @@ const navItems: NavItem[] = [
         title: t('Tenants'),
         href: '/super-admin/tenants',
         icon: Building2,
+    },
+    {
+        title: t('Comisiones'),
+        href: '/super-admin/commission',
+        icon: Percent,
     },
 ];
 

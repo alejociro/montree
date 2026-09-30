@@ -35,6 +35,14 @@ export interface LogisticsRef {
     name: string;
 }
 
+/** Un paso del itinerario, tal como lo guarda el producto o una salida propia. */
+export interface TourDateItineraryStep {
+    step_number: number;
+    title: string;
+    description: string | null;
+    duration_label: string | null;
+}
+
 export interface TourDateAdmin {
     id: number;
     /** `TD<tour>-<mmdd>`, derivado en el backend. No hay columna que lo guarde. */
@@ -56,6 +64,32 @@ export interface TourDateAdmin {
     route: LogisticsRef | null;
     provider: LogisticsRef | null;
     hotels: LogisticsRef[];
+    /** Fecha límite propia de esta salida. `null` = sin cierre propio. */
+    booking_closes_at: string | null;
+    /**
+     * T12: cierre EFECTIVO (propio o, sin él, la regla de la agencia).
+     * `null` cuando ninguno de los dos aplica (se puede reservar hasta la
+     * hora de salida).
+     */
+    effective_booking_closes_at: string | null;
+    /**
+     * T7: cada bloque de "Contenido de la salida" viaja como override crudo
+     * —`null` = hereda del producto y sigue sus cambios futuros— más el
+     * valor ya resuelto (`effective_*`) para precargar el formulario y
+     * pintar la ficha pública sin repetir la lógica de herencia.
+     */
+    itinerary: TourDateItineraryStep[] | null;
+    includes: string[] | null;
+    excludes: string[] | null;
+    requirements: string[] | null;
+    meeting_point: string | null;
+    effective_itinerary: TourDateItineraryStep[];
+    effective_includes: string[];
+    effective_excludes: string[];
+    effective_requirements: string[];
+    effective_meeting_point: string | null;
+    /** Cualquiera de los bloques de contenido tiene un valor propio. */
+    is_customized: boolean;
 }
 
 export interface TourDateGlobalAdmin extends TourDateAdmin {
@@ -130,6 +164,14 @@ export interface DepartureDefaults {
     capacity: number;
     base_price: string;
     min_payment_pct: number;
+    /** T12: regla de cierre de reservas de la agencia (horas antes del inicio); `null` = sin regla. */
+    booking_advance_hours: number | null;
+    /** T7: lo que precarga —de solo lectura— cada bloque apagado del diálogo. */
+    itinerary: TourDateItineraryStep[];
+    includes: string[];
+    excludes: string[];
+    requirements: string[];
+    meeting_point: string | null;
 }
 
 /** Producto del selector del tablero de salidas, con lo que hereda el diálogo. */
@@ -165,6 +207,12 @@ export interface TourDateFormInput {
     route_id: number | null;
     provider_id: number | null;
     hotel_ids: number[];
+    booking_closes_at: string;
+    itinerary: TourDateItineraryStep[] | null;
+    includes: string[] | null;
+    excludes: string[] | null;
+    requirements: string[] | null;
+    meeting_point: string | null;
 }
 
 export interface RouteStopRecord {

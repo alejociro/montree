@@ -4,18 +4,33 @@ declare(strict_types=1);
 
 namespace App\Actions\SuperAdmin;
 
-use App\Enums\CommissionType;
+use App\Models\CommissionSchedule;
 use App\Models\Tenant;
 
 final class UpdateTenantCommissionAction
 {
-    public function execute(Tenant $tenant, ?CommissionType $type, ?string $value): Tenant
+    /**
+     * `$tiers === null` (o `$useGlobal` true) borra el esquema propio de la
+     * agencia: vuelve a caer en el global. Con rangos, se guardan en la
+     * moneda de configuración de la agencia (spec: "el esquema está en la
+     * moneda de la agencia").
+     *
+     * @param  array<int, array{from: string, to: string|null, rate: string}>|null  $tiers
+     */
+    public function execute(Tenant $tenant, bool $useGlobal, ?array $tiers, ?string $maxCharge): void
     {
-        $tenant->update([
-            'commission_type' => $type,
-            'commission_value' => $type === null ? null : $value,
-        ]);
+        if ($useGlobal || $tiers === null) {
+            CommissionSchedule::query()->where('tenant_id', $tenant->id)->delete();
 
-        return $tenant->refresh();
+            return;
+        }
+
+        $tenant->loadMissing('configuration');
+        $currency = $tenant->configuration?->currency ?? 'COP';
+
+        CommissionSchedule::query()->updateOrCreate(
+            ['tenant_id' => $tenant->id],
+            ['currency' => $currency, 'tiers' => $tiers, 'max_charge' => $maxCharge],
+        );
     }
 }

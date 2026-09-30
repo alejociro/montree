@@ -34,7 +34,7 @@ final class CheckPendingPaymentsCommandTest extends TestCase
         config([
             'placetopay.login' => 'platform-login',
             'placetopay.tran_key' => 'platform-tran-key',
-            'placetopay.url' => 'https://checkout.test',
+            'placetopay.environments.test' => 'https://checkout.test',
             'placetopay.check.settle_margin_minutes' => 15,
             'placetopay.check.lookback_hours' => 72,
         ]);

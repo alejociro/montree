@@ -23,7 +23,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Eco Adventures',
                 'slug' => 'eco-adventures',
-                'plan' => 'professional',
                 'currency' => 'COP',
                 'admin_name' => 'Jane Owner',
                 'admin_email' => 'jane@eco.test',
@@ -56,7 +55,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Eco Adventures',
                 'slug' => 'ECO-Adventures',
-                'plan' => 'professional',
                 'currency' => 'COP',
                 'admin_name' => 'Jane Owner',
                 'admin_email' => 'Jane@ECO.test',
@@ -76,7 +74,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Eco Adventures',
                 'slug' => 'eco-adventures',
-                'plan' => 'professional',
                 'currency' => 'XXX',
                 'admin_name' => 'Jane Owner',
                 'admin_email' => 'jane@eco.test',
@@ -94,7 +91,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Otra',
                 'slug' => 'eco-adventures',
-                'plan' => 'basic',
                 'admin_name' => 'Jane',
                 'admin_email' => 'jane@otra.test',
             ])
@@ -107,7 +103,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Admin',
                 'slug' => 'admin',
-                'plan' => 'basic',
                 'admin_name' => 'Jane',
                 'admin_email' => 'jane@admin.test',
             ])
@@ -120,7 +115,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Eco',
                 'slug' => 'eco',
-                'plan' => 'basic',
             ])
             ->assertSessionHasErrors(['admin_name', 'admin_email']);
     }
@@ -131,7 +125,6 @@ class StoreTenantTest extends SuperAdminTestCase
             ->post($this->platformUrl('/super-admin/tenants'), [
                 'name' => 'Eco',
                 'slug' => 'eco',
-                'plan' => 'basic',
                 'admin_name' => 'Jane',
                 'admin_email' => 'jane@eco.test',
             ])

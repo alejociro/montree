@@ -6,7 +6,6 @@ namespace Tests\Feature\SuperAdmin;
 
 use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Enums\BookingStatus;
-use App\Enums\CommissionType;
 use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Models\Booking;
@@ -45,12 +44,13 @@ final class PlatformChargeFailureDoesNotBlockSettlementTest extends SuperAdminTe
         $this->assertSame(PaymentStatus::Completed, Payment::query()->sole()->status);
     }
 
+    /**
+     * WHY: no hace falta esquema propio, el global (COP, sembrado por
+     * migración) ya cubre cualquier monto y esta agencia opera en COP.
+     */
     private function tenantCharging(): Tenant
     {
-        $tenant = Tenant::factory()->create([
-            'commission_type' => CommissionType::Percentage,
-            'commission_value' => '10',
-        ]);
+        $tenant = Tenant::factory()->create();
 
         TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
 

@@ -67,6 +67,9 @@ function occupancyColor(pct: number | null): string {
                             <span v-if="date.guide_name">
                                 · {{ date.guide_name }}</span
                             >
+                            <span v-else class="font-medium text-brand-warn">
+                                · {{ $t('Guía por asignar') }}</span
+                            >
                         </p>
                     </div>
 

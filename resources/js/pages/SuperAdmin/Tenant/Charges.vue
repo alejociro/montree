@@ -25,6 +25,22 @@ const props = defineProps<{
 const from = ref(props.filters.from ?? '');
 const to = ref(props.filters.to ?? '');
 
+function formatTierRange(
+    tierFrom: string | null,
+    tierTo: string | null,
+    currency: string,
+): string {
+    if (tierFrom === null) {
+        return '—';
+    }
+
+    const fromLabel = formatCurrency(tierFrom, currency);
+
+    return tierTo === null
+        ? `${fromLabel}+`
+        : `${fromLabel} – ${formatCurrency(tierTo, currency)}`;
+}
+
 function reload(page?: number): void {
     const query: Record<string, string | number> = {};
 
@@ -87,7 +103,9 @@ watch([from, to], () => reload());
 
             <dl class="flex gap-6">
                 <div>
-                    <dt class="text-xs tracking-wider text-muted-foreground uppercase">
+                    <dt
+                        class="text-xs tracking-wider text-muted-foreground uppercase"
+                    >
                         {{ $t('Cargos') }}
                     </dt>
                     <dd class="text-xl font-semibold text-foreground">
@@ -95,7 +113,9 @@ watch([from, to], () => reload());
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs tracking-wider text-muted-foreground uppercase">
+                    <dt
+                        class="text-xs tracking-wider text-muted-foreground uppercase"
+                    >
                         {{ $t('Total') }}
                     </dt>
                     <dd class="text-xl font-semibold text-foreground">
@@ -129,12 +149,12 @@ watch([from, to], () => reload());
                         <th
                             class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                         >
-                            {{ $t('Tipo') }}
+                            {{ $t('Rango') }}
                         </th>
                         <th
                             class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                         >
-                            {{ $t('Valor aplicado') }}
+                            {{ $t('Porcentaje aplicado') }}
                         </th>
                         <th
                             class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
@@ -164,7 +184,9 @@ watch([from, to], () => reload());
                         <td class="px-4 py-3 text-sm text-foreground">
                             {{ charge.booking?.booking_number ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right text-sm text-foreground">
+                        <td
+                            class="px-4 py-3 text-right text-sm text-foreground"
+                        >
                             {{
                                 formatCurrency(
                                     charge.base_amount,
@@ -174,20 +196,23 @@ watch([from, to], () => reload());
                         </td>
                         <td class="px-4 py-3 text-sm text-foreground">
                             {{
-                                charge.type === 'percentage'
-                                    ? $t('Porcentaje por reserva')
-                                    : $t('Monto fijo por reserva')
+                                formatTierRange(
+                                    charge.tier_from,
+                                    charge.tier_to,
+                                    charge.currency,
+                                )
                             }}
                         </td>
-                        <td class="px-4 py-3 text-right text-sm text-foreground">
-                            {{
-                                charge.type === 'percentage'
-                                    ? `${Number(charge.applied_value)} %`
-                                    : formatCurrency(
-                                          charge.applied_value,
-                                          charge.currency,
-                                      )
-                            }}
+                        <td
+                            class="px-4 py-3 text-right text-sm text-foreground"
+                        >
+                            {{ `${Number(charge.applied_rate)} %` }}
+                            <span
+                                v-if="charge.was_capped"
+                                class="text-muted-foreground"
+                            >
+                                ({{ $t('tope aplicado') }})
+                            </span>
                         </td>
                         <td
                             class="px-4 py-3 text-right text-sm font-medium text-foreground"

@@ -37,6 +37,9 @@ class TenantConfigurationResource extends JsonResource
             'contact_info' => $this->contact_info,
             'reviews_require_moderation' => (bool) $this->reviews_require_moderation,
             'require_traveler_details' => (bool) $this->require_traveler_details,
+            // T12: regla general de cierre de reservas (horas antes del
+            // inicio). `null` = sin regla.
+            'booking_advance_hours' => $this->booking_advance_hours,
             'custom_css' => $this->custom_css,
             'hero_image_url' => $this->resolveUrl($this->hero_image_path),
             'terms_body' => $this->terms_body,
@@ -46,7 +49,7 @@ class TenantConfigurationResource extends JsonResource
             // si hay uno guardado para decidir si pide reemplazarlo.
             'placetopay' => [
                 'login' => $this->placetopay_login,
-                'url' => $this->placetopay_url,
+                'environment' => $this->placetopay_environment->value,
                 'tran_key_set' => filled($this->placetopay_tran_key),
             ],
         ];

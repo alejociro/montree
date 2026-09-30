@@ -60,6 +60,25 @@ class CustomCssSanitizerTest extends TestCase
         $this->assertNotEmpty($result['removed']);
     }
 
+    public function test_blocks_a_dangerous_url_after_an_allowed_one(): void
+    {
+        $css = '.tenant-banner { background: url(/ok.png), url(javascript:alert(1)); }';
+
+        $result = $this->sanitizer->sanitize($css);
+
+        $this->assertSame('', $result['css']);
+        $this->assertNotEmpty($result['removed']);
+    }
+
+    public function test_blocks_protocol_relative_urls(): void
+    {
+        $css = '.tenant-banner { background: url(//evil.example.com/x.png); }';
+
+        $result = $this->sanitizer->sanitize($css);
+
+        $this->assertSame('', $result['css']);
+    }
+
     public function test_blocks_at_import(): void
     {
         $css = '@import url("https://evil.example.com/payload.css"); .tenant-banner { color: red; }';

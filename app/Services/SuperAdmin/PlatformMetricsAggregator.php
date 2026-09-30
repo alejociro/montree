@@ -8,7 +8,6 @@ use App\Data\SuperAdmin\PlatformMetrics;
 use App\Enums\BookingStatus;
 use App\Enums\Currency;
 use App\Enums\PaymentStatus;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Models\Booking;
 use App\Models\Payment;
@@ -50,7 +49,6 @@ final class PlatformMetricsAggregator
             ),
             tenantsNewThisMonth: Tenant::query()->whereBetween('created_at', [$from, $to])->count(),
             bookingsGrowthPct: $this->growthPercentage($bookingsPreviousMonth, $bookingsThisMonth),
-            planDistribution: $this->planDistribution(),
             charts: $this->charts($to),
         );
     }
@@ -306,26 +304,6 @@ final class PlatformMetricsAggregator
         }
 
         return round((($current - $previous) / $previous) * 100, 1);
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    private function planDistribution(): array
-    {
-        $counts = Tenant::query()
-            ->selectRaw('plan, COUNT(*) as total')
-            ->groupBy('plan')
-            ->pluck('total', 'plan')
-            ->all();
-
-        $distribution = [];
-
-        foreach (TenantPlan::cases() as $plan) {
-            $distribution[$plan->value] = (int) ($counts[$plan->value] ?? 0);
-        }
-
-        return $distribution;
     }
 
     private function decimal(int|float|string $amount): string

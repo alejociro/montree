@@ -99,6 +99,24 @@ final class GuidePagesAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * T8 (revierte D7): una salida sin guía no es de nadie. La comprobación
+     * de pertenencia es `guide_id === auth()->id()`, y `null` no es igual al
+     * id de ningún guía, así que la guarda ya la cubre sin cambios — este
+     * test solo lo deja explícito.
+     */
+    public function test_no_guide_can_open_the_manifest_page_of_a_departure_without_a_guide(): void
+    {
+        $guide = $this->memberFor(UserRole::Guide);
+        $this->tenant->makeCurrent();
+        $tourDate = TourDate::factory()->for(Tour::factory()->create())->withoutGuide()->create();
+        Tenant::forgetCurrent();
+
+        $this->actingAs($guide)
+            ->get(self::HOST."/guide/tour-dates/{$tourDate->id}/passengers")
+            ->assertForbidden();
+    }
+
     private function tourDateFor(User $guide): TourDate
     {
         $this->tenant->makeCurrent();

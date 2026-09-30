@@ -27,6 +27,7 @@ final class UpdateTourDateAction
 
         $tourDate->fill(array_intersect_key($data, array_flip([
             'starts_at', 'capacity', 'price_override', 'min_payment_pct', 'notes', 'guide_id', 'route_id', 'provider_id',
+            'itinerary', 'includes', 'excludes', 'requirements', 'meeting_point', 'booking_closes_at',
         ])));
 
         // WHY (D9): se rederiva siempre, no solo cuando cambia el inicio. Una

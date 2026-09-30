@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PlaceToPayEnvironment;
 use Database\Factories\TenantConfigurationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,17 +29,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $terms_body
  * @property bool $reviews_require_moderation
  * @property bool $require_traveler_details
- * @property int $booking_advance_hours
+ * @property int|null $booking_advance_hours
  * @property int $booking_expiration_minutes
  * @property int $min_partial_payment_pct
  * @property string|null $placetopay_login
  * @property string|null $placetopay_tran_key
- * @property string|null $placetopay_url
+ * @property PlaceToPayEnvironment $placetopay_environment
  */
 class TenantConfiguration extends Model
 {
     /** @use HasFactory<TenantConfigurationFactory> */
     use HasFactory;
+
+    /**
+     * WHY: igual al default de la columna. Sin esto, un modelo recién creado y
+     * todavía no recargado no tiene ambiente y el resource falla al leerlo.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'placetopay_environment' => 'test',
+    ];
 
     protected $fillable = [
         'tenant_id',
@@ -63,7 +74,7 @@ class TenantConfiguration extends Model
         'min_partial_payment_pct',
         'placetopay_login',
         'placetopay_tran_key',
-        'placetopay_url',
+        'placetopay_environment',
     ];
 
     protected function casts(): array
@@ -77,6 +88,7 @@ class TenantConfiguration extends Model
             'booking_expiration_minutes' => 'integer',
             'min_partial_payment_pct' => 'integer',
             'placetopay_tran_key' => 'encrypted',
+            'placetopay_environment' => PlaceToPayEnvironment::class,
         ];
     }
 

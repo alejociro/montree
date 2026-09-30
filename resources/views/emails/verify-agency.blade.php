@@ -25,7 +25,7 @@
                         <td style="padding:32px;">
                             <p style="margin:0 0 16px 0;font-size:16px;">{{ __('Hola :name,', ['name' => $recipientName]) }}</p>
                             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
-                                {{ __('Tu agencia :agency ya está casi lista. Confirma tu correo para activarla, empezar tu prueba gratuita y entrar directo a tu panel de administración.', ['agency' => $agencyName]) }}
+                                {{ __('Tu agencia :agency ya está casi lista. Confirma tu correo para activarla y entrar directo a tu panel de administración.', ['agency' => $agencyName]) }}
                             </p>
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;">
                                 <tr>

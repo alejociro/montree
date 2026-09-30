@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Enums\Module;
 use App\Enums\TenantMembershipStatus;
 use App\Enums\UserRole;
 use App\Models\Hotel;
@@ -26,10 +27,15 @@ final class DepartureOptionsQuery
      */
     public function all(): array
     {
+        // WHY (T3): con el módulo apagado el diálogo no ofrece proveedor ni
+        // hotel — listas vacías, no una consulta que además dejaría de tener
+        // sentido en un tenant que nunca cargó ese catálogo.
+        $logisticsEnabled = Module::Logistics->isEnabled();
+
         return [
             'guides' => $this->guides(),
-            'providers' => $this->refs(Provider::query()),
-            'hotels' => $this->refs(Hotel::query()),
+            'providers' => $logisticsEnabled ? $this->refs(Provider::query()) : [],
+            'hotels' => $logisticsEnabled ? $this->refs(Hotel::query()) : [],
         ];
     }
 

@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Salida como opción del selector de la planilla. `guide` nunca es `null`:
- * `tour_dates.guide_id` es `NOT NULL` desde la Fase 1 (D2).
+ * Salida como opción del selector de la planilla. `guide` es `null` cuando la
+ * salida todavía no tiene guía asignado (T8, revierte D7).
  *
  * @mixin TourDate
  */

@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $tenant_id
  * @property int $tour_id
- * @property int $guide_id
+ * @property int|null $guide_id
  * @property int|null $route_id
  * @property int|null $provider_id
  * @property Carbon $starts_at
@@ -34,6 +34,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $min_payment_pct
  * @property TourDateStatus $status
  * @property string|null $notes
+ * @property array<int, array<string, mixed>>|null $itinerary
+ * @property array<int, string>|null $includes
+ * @property array<int, string>|null $excludes
+ * @property array<int, string>|null $requirements
+ * @property string|null $meeting_point
+ * @property Carbon|null $booking_closes_at
  */
 class TourDate extends Model
 {
@@ -54,6 +60,12 @@ class TourDate extends Model
         'min_payment_pct',
         'status',
         'notes',
+        'itinerary',
+        'includes',
+        'excludes',
+        'requirements',
+        'meeting_point',
+        'booking_closes_at',
     ];
 
     protected function casts(): array
@@ -66,6 +78,11 @@ class TourDate extends Model
             'price_override' => 'decimal:2',
             'min_payment_pct' => 'integer',
             'status' => TourDateStatus::class,
+            'itinerary' => 'array',
+            'includes' => 'array',
+            'excludes' => 'array',
+            'requirements' => 'array',
+            'booking_closes_at' => 'datetime',
         ];
     }
 
@@ -82,6 +99,134 @@ class TourDate extends Model
         return $this->min_payment_pct
             ?? Tenant::current()?->configuration?->min_partial_payment_pct
             ?? Booking::DEFAULT_MIN_PAYMENT_PCT;
+    }
+
+    /**
+     * Precio efectivo de la salida (T7): el override manda; sin él, el
+     * precio base del producto en el momento en que se consulta —así que un
+     * cambio futuro del precio base se refleja en toda salida que no lo haya
+     * personalizado.
+     */
+    public function effectivePrice(): string
+    {
+        return (string) ($this->price_override ?? $this->tour->base_price);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function effectiveItinerary(): array
+    {
+        if ($this->itinerary !== null) {
+            return $this->itinerary;
+        }
+
+        return $this->tour->itineraries->map(fn ($step) => [
+            'step_number' => $step->step_number,
+            'title' => $step->title,
+            'description' => $step->description,
+            'duration_label' => $step->duration_label,
+        ])->values()->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function effectiveIncludes(): array
+    {
+        return $this->includes ?? $this->tour->includes ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function effectiveExcludes(): array
+    {
+        return $this->excludes ?? $this->tour->excludes ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function effectiveRequirements(): array
+    {
+        return $this->requirements ?? $this->tour->requirements ?? [];
+    }
+
+    public function effectiveMeetingPoint(): ?string
+    {
+        return $this->meeting_point ?? $this->tour->meeting_point;
+    }
+
+    /**
+     * Cualquier bloque de «Contenido de la salida» (spec T7 §admin)
+     * personalizado. El precio y el mínimo de abono tienen su propio
+     * indicador desde antes, así que no cuentan aquí.
+     */
+    public function hasCustomContent(): bool
+    {
+        return $this->itinerary !== null
+            || $this->includes !== null
+            || $this->excludes !== null
+            || $this->requirements !== null
+            || $this->meeting_point !== null;
+    }
+
+    /**
+     * Cierre efectivo de esta salida (T12): el propio `booking_closes_at`
+     * manda; sin él, rige la regla general de la agencia
+     * (`tenant_configurations.booking_advance_hours`, horas antes del
+     * inicio); sin ninguno de los dos, el límite es la propia hora de
+     * inicio —el comportamiento de siempre—.
+     *
+     * WHY: siempre devuelve una fecha (nunca null) porque tanto
+     * `isBookable()` como el catálogo necesitan un umbral con el que
+     * comparar `now()`. Para decidir si hay que MOSTRARLE ese límite al
+     * viajero, ver {@see hasBookingDeadline()}.
+     */
+    public function effectiveBookingClosesAt(): CarbonInterface
+    {
+        if ($this->booking_closes_at !== null) {
+            return $this->booking_closes_at;
+        }
+
+        $advanceHours = Tenant::current()?->configuration?->booking_advance_hours;
+
+        if ($advanceHours !== null) {
+            return $this->starts_at->copy()->subHours($advanceHours);
+        }
+
+        return $this->starts_at;
+    }
+
+    /**
+     * Si esta salida tiene un límite de reserva real que valga la pena
+     * mostrar (propio o por la regla de la agencia), a diferencia de
+     * `effectiveBookingClosesAt()` que sin ninguno de los dos cae en la
+     * hora de inicio como umbral interno.
+     */
+    public function hasBookingDeadline(): bool
+    {
+        return $this->booking_closes_at !== null
+            || Tenant::current()?->configuration?->booking_advance_hours !== null;
+    }
+
+    /**
+     * Si esta salida admite una reserva nueva en este momento: abierta, con
+     * el inicio todavía por venir y, si tiene fecha de cierre —propia o por
+     * la regla de la agencia—, que no haya pasado.
+     */
+    public function isBookable(): bool
+    {
+        if ($this->status !== TourDateStatus::Open) {
+            return false;
+        }
+
+        if ($this->starts_at->isPast()) {
+            return false;
+        }
+
+        return $this->effectiveBookingClosesAt()->isFuture();
     }
 
     public function tour(): BelongsTo
@@ -166,6 +311,44 @@ class TourDate extends Model
     public function scopeOpenFuture(Builder $query): Builder
     {
         return $query->where('status', TourDateStatus::Open)->where('starts_at', '>', now());
+    }
+
+    /**
+     * Salidas que admiten una reserva nueva ahora mismo (T7/T12): abiertas,
+     * con el inicio por venir y, según cuál de los dos cierres aplique:
+     * - `booking_closes_at` propio: que todavía no haya pasado.
+     * - sin cierre propio, con regla de la agencia: que el inicio esté al
+     *   menos esas horas en el futuro.
+     * - sin ninguno: cualquier salida abierta con el inicio por venir.
+     *
+     * Es la versión a nivel SQL de {@see isBookable()}: la usan el catálogo,
+     * la home y la página pública del tour. La regla de la agencia es
+     * constante para todas las filas de esta consulta (un solo tenant a la
+     * vez), así que el umbral se calcula una vez en PHP y no por fila —
+     * compatible con SQLite y MySQL.
+     *
+     * @param  Builder<TourDate>  $query
+     * @return Builder<TourDate>
+     */
+    public function scopeBookable(Builder $query): Builder
+    {
+        $now = now();
+        $advanceHours = Tenant::current()?->configuration?->booking_advance_hours;
+
+        return $query
+            ->where('status', TourDateStatus::Open)
+            ->where('starts_at', '>', $now)
+            ->where(function (Builder $inner) use ($now, $advanceHours): void {
+                $inner->where('booking_closes_at', '>', $now);
+
+                if ($advanceHours !== null) {
+                    $inner->orWhere(fn (Builder $rule) => $rule
+                        ->whereNull('booking_closes_at')
+                        ->where('starts_at', '>', $now->copy()->addHours($advanceHours)));
+                } else {
+                    $inner->orWhereNull('booking_closes_at');
+                }
+            });
     }
 
     /**

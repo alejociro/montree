@@ -29,7 +29,7 @@ class PlatformMetricsAggregatorTest extends TestCase
     public function test_collects_totals_across_all_tenants(): void
     {
         $tenantA = Tenant::factory()->create();
-        $tenantB = Tenant::factory()->basic()->create();
+        $tenantB = Tenant::factory()->create();
 
         $tenantA->makeCurrent();
         Booking::factory()->count(2)->create();
@@ -53,8 +53,6 @@ class PlatformMetricsAggregatorTest extends TestCase
         $this->assertSame(2, $metrics->totalTenants);
         $this->assertSame(4, $metrics->bookingsThisMonth);
         $this->assertSame([['currency' => 'USD', 'amount' => '200.00']], $metrics->revenueThisMonth);
-        $this->assertSame(1, $metrics->planDistribution['basic']);
-        $this->assertSame(1, $metrics->planDistribution['professional']);
     }
 
     public function test_skips_uncompleted_payments_from_revenue(): void

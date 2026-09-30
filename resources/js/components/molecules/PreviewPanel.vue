@@ -13,6 +13,7 @@ import { readableInk } from '@/lib/color';
 type Props = {
     tenantName: string;
     tagline?: string | null;
+    description?: string | null;
     primaryColor: string;
     secondaryColor: string;
 };
@@ -45,7 +46,11 @@ const onSecondary = computed(() => readableInk(safeSecondary.value));
         <CardHeader>
             <CardTitle>{{ $t('Vista previa') }}</CardTitle>
             <CardDescription>
-                {{ $t('Así se verán los colores en la tienda pública.') }}
+                {{
+                    $t(
+                        'Así se verán los colores y el banner en la tienda pública.',
+                    )
+                }}
             </CardDescription>
         </CardHeader>
 
@@ -74,6 +79,12 @@ const onSecondary = computed(() => readableInk(safeSecondary.value));
                             )
                         }}
                     </h3>
+                    <p class="mt-1 text-sm opacity-90">
+                        {{
+                            description ||
+                            $t('Explora experiencias inolvidables con nosotros')
+                        }}
+                    </p>
                 </div>
 
                 <div class="space-y-3 bg-background p-5">

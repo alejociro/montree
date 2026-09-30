@@ -8,6 +8,7 @@ import {
 } from 'lucide-vue-next';
 import OccupancyBar from '@/components/molecules/OccupancyBar.vue';
 import TourDateStatusBadge from '@/components/molecules/TourDateStatusBadge.vue';
+import { useModules } from '@/composables/useModules';
 import { useTenantCurrency } from '@/composables/useTenant';
 import { formatCurrency, formatTourDate } from '@/lib/format';
 import type { TourDateAdmin } from '@/types/logistics';
@@ -19,6 +20,10 @@ type Props = {
 };
 
 const currency = useTenantCurrency();
+// WHY (T3): con el módulo apagado el listado no muestra proveedor ni hotel
+// aunque la salida los tenga guardados de antes de apagarlo.
+const { isModuleEnabled } = useModules();
+const logisticsEnabled = isModuleEnabled('logistics');
 
 const props = withDefaults(defineProps<Props>(), {
     canViewPassengers: false,
@@ -31,7 +36,6 @@ const emit = defineEmits<{
      */
     (e: 'view-passengers', dateId: number): void;
 }>();
-
 </script>
 
 <template>
@@ -62,6 +66,14 @@ const emit = defineEmits<{
                                 {{ formatTourDate(date.starts_at) }}
                             </p>
                             <TourDateStatusBadge :status="date.status" />
+                            <!-- T7: algún bloque de "Contenido de la salida"
+                                 tiene valor propio, distinto del producto. -->
+                            <span
+                                v-if="date.is_customized"
+                                class="inline-flex items-center rounded-full bg-secondary-soft px-2 py-0.5 text-[11px] font-semibold text-secondary-readable"
+                            >
+                                {{ $t('Personalizada') }}
+                            </span>
                         </div>
 
                         <OccupancyBar
@@ -83,6 +95,13 @@ const emit = defineEmits<{
                                 {{ date.guide.name }}
                             </span>
                             <span
+                                v-else
+                                class="flex items-center gap-1 font-medium text-brand-warn"
+                            >
+                                <UserRound class="size-3.5" />
+                                {{ $t('Guía por asignar') }}
+                            </span>
+                            <span
                                 v-if="date.route"
                                 class="flex items-center gap-1"
                             >
@@ -90,14 +109,16 @@ const emit = defineEmits<{
                                 {{ date.route.name }}
                             </span>
                             <span
-                                v-if="date.provider"
+                                v-if="logisticsEnabled && date.provider"
                                 class="flex items-center gap-1"
                             >
                                 <Truck class="size-3.5" />
                                 {{ date.provider.name }}
                             </span>
                             <span
-                                v-if="date.hotels.length > 0"
+                                v-if="
+                                    logisticsEnabled && date.hotels.length > 0
+                                "
                                 class="flex items-center gap-1"
                             >
                                 <Building2 class="size-3.5" />
@@ -114,12 +135,7 @@ const emit = defineEmits<{
                         <span
                             class="text-sm font-semibold text-foreground tabular-nums"
                         >
-                            {{
-                                formatCurrency(
-                                    date.effective_price,
-                                    currency,
-                                )
-                            }}
+                            {{ formatCurrency(date.effective_price, currency) }}
                         </span>
                         <Button
                             v-if="props.canViewPassengers"

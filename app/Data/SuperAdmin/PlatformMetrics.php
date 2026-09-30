@@ -9,7 +9,6 @@ final readonly class PlatformMetrics
     /**
      * @param  list<array{currency: string, amount: string}>  $revenueThisMonth
      * @param  list<array{currency: string, amount: string}>  $earningsThisMonth
-     * @param  array<string, int>  $planDistribution
      * @param  array{
      *     tenants_per_month: array{points: list<array{month: string, label: string, value: int|string}>, average: float},
      *     revenue_per_tenant: array{months: list<string>, series: list<array{tenant: string, currency: string, values: list<string>}>},
@@ -25,7 +24,6 @@ final readonly class PlatformMetrics
         public array $earningsThisMonth,
         public int $tenantsNewThisMonth,
         public float $bookingsGrowthPct,
-        public array $planDistribution,
         public array $charts,
     ) {}
 }

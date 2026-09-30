@@ -74,37 +74,47 @@ function onDescription(value: string | number): void {
             />
         </div>
 
-        <div class="grid content-start gap-2">
-            <Label for="tagline">{{ $t('Tagline') }}</Label>
-            <Input
-                id="tagline"
-                :model-value="modelValue.tagline"
-                :placeholder="$t('Aventuras inolvidables en Colombia')"
-                maxlength="160"
-                @update:model-value="onTagline"
+        <div class="space-y-4 rounded-lg border border-dashed border-input p-4">
+            <Heading
+                variant="small"
+                :title="$t('Banner principal')"
+                :description="$t('Se muestra en la portada de tu sitio.')"
             />
-            <p class="text-xs text-muted-foreground">
-                {{ $t('Máximo 160 caracteres.') }}
-            </p>
-            <InputError :message="errors?.tagline" />
-        </div>
 
-        <div class="grid content-start gap-2">
-            <Label for="description">{{ $t('Descripción') }}</Label>
-            <Textarea
-                id="description"
-                :model-value="modelValue.description"
-                :placeholder="
-                    $t('Cuenta brevemente qué hace única a tu agencia')
-                "
-                rows="4"
-                maxlength="2000"
-                @update:model-value="onDescription"
-            />
-            <p class="text-xs text-muted-foreground">
-                {{ $t('Máximo 2000 caracteres.') }}
-            </p>
-            <InputError :message="errors?.description" />
+            <div class="grid content-start gap-2">
+                <Label for="tagline">{{ $t('Título del banner') }}</Label>
+                <Input
+                    id="tagline"
+                    :model-value="modelValue.tagline"
+                    :placeholder="$t('Aventuras inolvidables en Colombia')"
+                    maxlength="160"
+                    @update:model-value="onTagline"
+                />
+                <p class="text-xs text-muted-foreground">
+                    {{ $t('Máximo 160 caracteres.') }}
+                </p>
+                <InputError :message="errors?.tagline" />
+            </div>
+
+            <div class="grid content-start gap-2">
+                <Label for="description">{{
+                    $t('Texto bajo el título')
+                }}</Label>
+                <Textarea
+                    id="description"
+                    :model-value="modelValue.description"
+                    :placeholder="
+                        $t('Cuenta brevemente qué hace única a tu agencia')
+                    "
+                    rows="4"
+                    maxlength="2000"
+                    @update:model-value="onDescription"
+                />
+                <p class="text-xs text-muted-foreground">
+                    {{ $t('Máximo 2000 caracteres.') }}
+                </p>
+                <InputError :message="errors?.description" />
+            </div>
         </div>
     </section>
 </template>

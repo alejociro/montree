@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Data\DepartureDefaults;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TourDate\DepartureIndexRequest;
-use App\Http\Resources\Admin\RouteResource;
 use App\Http\Resources\Admin\TourDateDetailResource;
-use App\Models\Tenant;
-use App\Models\TenantConfiguration;
-use App\Models\Tour;
 use App\Models\TourDate;
 use App\Queries\DepartureBoardQuery;
 use App\Queries\DepartureOptionsQuery;
+use App\Queries\DepartureTourOptionsQuery;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,7 +21,10 @@ final class DeparturePagesController extends Controller
 
     private const RELATIONS = ['tour', 'guide', 'route', 'provider', 'hotels'];
 
-    public function __construct(private DepartureBoardQuery $board) {}
+    public function __construct(
+        private DepartureBoardQuery $board,
+        private DepartureTourOptionsQuery $tourOptions,
+    ) {}
 
     public function index(DepartureIndexRequest $request, DepartureOptionsQuery $options): Response
     {
@@ -50,7 +48,7 @@ final class DeparturePagesController extends Controller
             'stats' => $this->board->stats(),
             'counts' => $this->board->counts($request->searchTerm(), $request->tourId()),
             'totals' => $totals,
-            'tours' => $this->tours(),
+            'tours' => $this->tourOptions->all(),
             'departureOptions' => $options->all(),
         ];
     }
@@ -85,43 +83,5 @@ final class DeparturePagesController extends Controller
             ->when($tourId !== null, fn (Builder $query) => $query->where('tour_id', $tourId))
             ->when($request->from(), fn (Builder $query, $from) => $query->where('starts_at', '>=', $from))
             ->when($request->to(), fn (Builder $query, $to) => $query->where('starts_at', '<=', $to));
-    }
-
-    /**
-     * Productos del selector, con lo que el diálogo de salida necesita heredar.
-     *
-     * WHY: los valores por defecto viajan embebidos en cada producto en vez de
-     * resolverse al abrir el diálogo. Son seis escalares y la lista de rutas
-     * —que el selector necesita igual— así que un `router.reload` por apertura
-     * sería un viaje por nada.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function tours(): array
-    {
-        $configuration = Tenant::current()?->configuration;
-
-        return Tour::query()
-            ->with(['routes' => fn (HasMany $query) => $query->withCount('stops')])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Tour $tour) => [
-                'id' => $tour->id,
-                'name' => $tour->name,
-                // El diálogo deriva el fin de la salida con la duración del
-                // producto; al crear desde el tablero no hay otra fuente.
-                'duration_hours' => $tour->duration_hours,
-                'routes' => RouteResource::collection($tour->routes)->resolve(),
-                'departure_defaults' => $this->defaultsFor($tour, $configuration),
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function defaultsFor(Tour $tour, ?TenantConfiguration $configuration): array
-    {
-        return DepartureDefaults::fromTour($tour, $configuration)->toArray();
     }
 }

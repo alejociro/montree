@@ -57,7 +57,9 @@ final class TourPublishChecklistTest extends TestCase
         $this->assertTrue($checklist['general']['done']);
         $this->assertTrue($checklist['image']['done']);
         $this->assertTrue($checklist['guide']['done']);
-        // Las paradas se recomiendan, no bloquean (D7).
+        // El guía por defecto y las paradas se recomiendan, no bloquean
+        // (T8/D7).
+        $this->assertFalse($checklist['guide']['blocking']);
         $this->assertFalse($checklist['stops']['blocking']);
         $this->assertFalse($checklist['stops']['done']);
     }

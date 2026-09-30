@@ -39,7 +39,7 @@ final class CompleteJourneyTest extends TestCase
         config([
             'placetopay.login' => 'platform-login',
             'placetopay.tran_key' => 'platform-tran-key',
-            'placetopay.url' => 'https://checkout.test',
+            'placetopay.environments.test' => 'https://checkout.test',
         ]);
         $tenant->makeCurrent();
 

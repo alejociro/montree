@@ -13,7 +13,6 @@ import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
 import TourForm from '@/components/organisms/TourForm.vue';
 import TourProgressRail from '@/components/organisms/TourProgressRail.vue';
 import TourPublishChecklist from '@/components/organisms/TourPublishChecklist.vue';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -66,7 +65,6 @@ const form = useForm<TourFormPayload>(() => ({ ...initialValues }));
 const formErrors = computed(
     () => form.errors as Record<string, string | undefined>,
 );
-const planError = computed(() => formErrors.value.plan ?? null);
 const saving = computed(() => form.processing);
 
 const payload = computed<TourFormPayload>(() => form.data());
@@ -195,11 +193,6 @@ function submit(): void {
                 </Button>
             </div>
         </div>
-
-        <Alert v-if="planError" variant="destructive" class="mt-5">
-            <AlertTitle>{{ $t('Límite del plan alcanzado') }}</AlertTitle>
-            <AlertDescription>{{ planError }}</AlertDescription>
-        </Alert>
 
         <div
             class="mt-5 grid grid-cols-1 items-start gap-6 min-[1180px]:grid-cols-[minmax(0,1fr)_320px]"

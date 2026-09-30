@@ -17,8 +17,7 @@ class DashboardPageTest extends SuperAdminTestCase
 {
     public function test_the_dashboard_ships_every_total_as_a_prop(): void
     {
-        Tenant::factory()->count(2)->create();
-        Tenant::factory()->basic()->create();
+        Tenant::factory()->count(3)->create();
 
         $this->actingAs($this->superAdmin())
             ->get($this->platformUrl('/super-admin/dashboard'))
@@ -34,9 +33,6 @@ class DashboardPageTest extends SuperAdminTestCase
                     'totals.earnings_this_month',
                     'growth.tenants_new_this_month',
                     'growth.bookings_growth_pct',
-                    'plan_distribution.basic',
-                    'plan_distribution.professional',
-                    'plan_distribution.enterprise',
                 ]));
     }
 

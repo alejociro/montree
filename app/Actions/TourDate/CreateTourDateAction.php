@@ -19,7 +19,10 @@ final class CreateTourDateAction
         $startsAt = Carbon::parse($data['starts_at']);
 
         $tourDate = $tour->dates()->create([
-            'guide_id' => $data['guide_id'],
+            // T8 (revierte D7): sin guía propuesto ni elegido, la clave ni
+            // siquiera llega a `validated()` — la salida se crea «por
+            // asignar».
+            'guide_id' => $data['guide_id'] ?? null,
             'route_id' => $data['route_id'] ?? null,
             'provider_id' => $data['provider_id'] ?? null,
             'starts_at' => $startsAt,
@@ -31,6 +34,15 @@ final class CreateTourDateAction
             'notes' => $data['notes'] ?? null,
             'status' => TourDateStatus::Open,
             'booked_count' => 0,
+            // T7: apagado en el diálogo → no llega la clave → hereda del
+            // producto. `array_key_exists` distingue "no llegó" de "llegó
+            // como null explícito", pero acá las dos cosas heredan igual.
+            'itinerary' => $data['itinerary'] ?? null,
+            'includes' => $data['includes'] ?? null,
+            'excludes' => $data['excludes'] ?? null,
+            'requirements' => $data['requirements'] ?? null,
+            'meeting_point' => $data['meeting_point'] ?? null,
+            'booking_closes_at' => $data['booking_closes_at'] ?? null,
         ]);
 
         if (! empty($data['hotel_ids'])) {

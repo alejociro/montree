@@ -28,7 +28,7 @@ class PlatformChargeLedgerTest extends SuperAdminTestCase
                 ->where('totals.currency', 'COP')
                 ->has('charges.data', 2)
                 ->has('charges.data.0', fn (AssertableInertia $row) => $row
-                    ->hasAll(['id', 'charged_at', 'booking', 'base_amount', 'type', 'applied_value', 'amount', 'currency'])
+                    ->hasAll(['id', 'charged_at', 'booking', 'base_amount', 'applied_rate', 'amount', 'currency', 'tier_from', 'tier_to', 'max_charge', 'was_capped', 'schedule_scope'])
                     ->etc()));
     }
 

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Catalog;
 
 use App\Enums\TourDateStatus;
+use App\Models\Tenant;
 use App\Models\Tour;
+use App\Models\TourDate;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,6 +53,7 @@ final class TourCatalogQuery
             ->select('tours.*')
             ->addSelect([
                 'next_date_starts_at' => $this->nextDateSubquery(),
+                'from_price' => $this->fromPriceSubquery(),
             ]);
 
         $this->applyFilters($query, $filters);
@@ -119,13 +122,63 @@ final class TourCatalogQuery
         };
     }
 
+    /**
+     * Espeja `TourDate::scopeBookable()` a nivel SQL: la salida más próxima
+     * que todavía admite una reserva nueva, no solo la más próxima abierta.
+     */
     private function nextDateSubquery(): QueryBuilder
     {
+        $now = Carbon::now();
+
         return DB::table('tour_dates')
             ->selectRaw('MIN(starts_at)')
             ->whereColumn('tour_dates.tour_id', 'tours.id')
             ->where('tour_dates.status', TourDateStatus::Open->value)
-            ->where('tour_dates.starts_at', '>', Carbon::now());
+            ->where('tour_dates.starts_at', '>', $now)
+            ->where(fn ($q) => $this->applyBookableWindow($q, $now));
+    }
+
+    /**
+     * «Desde $X» del catálogo (T7): el mínimo precio EFECTIVO entre las
+     * salidas reservables del tour, o `base_price` si no tiene ninguna.
+     *
+     * WHY: se resuelve con una subconsulta escalar en vez de cargar las
+     * salidas en PHP —el catálogo pagina decenas de tours por página y cada
+     * uno puede tener docenas de salidas—.
+     */
+    private function fromPriceSubquery(): QueryBuilder
+    {
+        $now = Carbon::now();
+
+        return DB::table('tour_dates')
+            ->selectRaw('MIN(COALESCE(tour_dates.price_override, tours_price.base_price))')
+            ->join('tours as tours_price', 'tours_price.id', '=', 'tour_dates.tour_id')
+            ->whereColumn('tour_dates.tour_id', 'tours.id')
+            ->where('tour_dates.status', TourDateStatus::Open->value)
+            ->where('tour_dates.starts_at', '>', $now)
+            ->where(fn ($q) => $this->applyBookableWindow($q, $now));
+    }
+
+    /**
+     * Espeja la parte de {@see TourDate::scopeBookable()} que
+     * decide si una fila admite una reserva nueva, además del `status`/
+     * `starts_at` que cada subconsulta ya filtra por su cuenta (T12): el
+     * cierre propio de la salida manda; sin él, rige la regla de la agencia
+     * (`booking_advance_hours`); sin ninguno, cualquier salida abierta con el
+     * inicio por venir sirve.
+     */
+    private function applyBookableWindow(QueryBuilder $query, Carbon $now): QueryBuilder
+    {
+        $advanceHours = Tenant::current()?->configuration?->booking_advance_hours;
+
+        return $query->where('tour_dates.booking_closes_at', '>', $now)
+            ->orWhere(function (QueryBuilder $inner) use ($now, $advanceHours): void {
+                $inner->whereNull('tour_dates.booking_closes_at');
+
+                if ($advanceHours !== null) {
+                    $inner->where('tour_dates.starts_at', '>', $now->copy()->addHours($advanceHours));
+                }
+            });
     }
 
     /**

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,10 +28,7 @@ class TenantFactory extends Factory
             'contact_email' => fake()->unique()->companyEmail(),
             'contact_phone' => fake()->phoneNumber(),
             'status' => TenantStatus::Active,
-            'plan' => TenantPlan::Professional,
-            'trial_ends_at' => null,
             'suspended_at' => null,
-            'plan_limits' => null,
         ];
     }
 
@@ -48,23 +44,6 @@ class TenantFactory extends Factory
     {
         return $this->state(fn () => [
             'status' => TenantStatus::Pending,
-        ]);
-    }
-
-    public function basic(): self
-    {
-        return $this->state(fn () => ['plan' => TenantPlan::Basic]);
-    }
-
-    public function enterprise(): self
-    {
-        return $this->state(fn () => ['plan' => TenantPlan::Enterprise]);
-    }
-
-    public function onTrial(): self
-    {
-        return $this->state(fn () => [
-            'trial_ends_at' => now()->addDays(14),
         ]);
     }
 }

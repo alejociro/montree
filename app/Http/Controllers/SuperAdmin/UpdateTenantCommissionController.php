@@ -17,7 +17,7 @@ final class UpdateTenantCommissionController extends Controller
         Tenant $tenant,
         UpdateTenantCommissionAction $updateCommission,
     ): RedirectResponse {
-        $updateCommission->execute($tenant, $request->commissionType(), $request->commissionValue());
+        $updateCommission->execute($tenant, $request->usesGlobal(), $request->tiers(), $request->maxCharge());
 
         return redirect()
             ->route('super-admin.tenants.show', $tenant)

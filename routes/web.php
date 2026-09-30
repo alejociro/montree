@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CancelTourDateController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryPagesController;
 use App\Http\Controllers\Admin\DefaultRouteController;
+use App\Http\Controllers\Admin\DepartureFormPagesController;
 use App\Http\Controllers\Admin\DeparturePagesController;
 use App\Http\Controllers\Admin\HotelController;
 use App\Http\Controllers\Admin\LogisticsPagesController;
@@ -39,15 +40,16 @@ use App\Http\Controllers\PolicyPagesController;
 use App\Http\Controllers\PublicTourPageController;
 use App\Http\Controllers\QueryTransactionController;
 use App\Http\Controllers\RoleHomeRedirectController;
+use App\Http\Controllers\SuperAdmin\CommissionSchedulePageController;
 use App\Http\Controllers\SuperAdmin\EnterTenantController;
 use App\Http\Controllers\SuperAdmin\PlatformChargePageController;
 use App\Http\Controllers\SuperAdmin\StoreTenantController;
 use App\Http\Controllers\SuperAdmin\StoreTenantUserController;
 use App\Http\Controllers\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\SuperAdminTenantPageController;
+use App\Http\Controllers\SuperAdmin\UpdateGlobalCommissionScheduleController;
 use App\Http\Controllers\SuperAdmin\UpdateTenantCommissionController;
 use App\Http\Controllers\SuperAdmin\UpdateTenantConfigurationController;
-use App\Http\Controllers\SuperAdmin\UpdateTenantPlanController;
 use App\Http\Controllers\SuperAdmin\UpdateTenantStatusController;
 use App\Http\Controllers\TransactionPagesController;
 use Illuminate\Support\Facades\Route;
@@ -136,6 +138,10 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
     });
 
     Route::get('departures', [DeparturePagesController::class, 'index'])->middleware('can:departures.view')->name('departures.index');
+    // T9: vista paso a paso de crear/editar salida (reemplaza TourDateFormDialog).
+    Route::get('departures/create', [DepartureFormPagesController::class, 'create'])->middleware('can:departures.create')->name('departures.create');
+    Route::get('departures/{tourDate}/edit', [DepartureFormPagesController::class, 'edit'])->middleware('can:departures.update')->name('departures.edit');
+    Route::get('tours/{tour}/departures/create', [DepartureFormPagesController::class, 'createForTour'])->middleware('can:departures.create')->name('tours.departures.create');
     Route::post('tours/{tour}/dates', [TourDatePagesController::class, 'store'])->middleware('can:departures.create')->name('tours.dates.store');
     Route::put('tour-dates/{tourDate}', [TourDatePagesController::class, 'update'])->middleware('can:departures.update')->name('tour-dates.update');
     Route::delete('tour-dates/{tourDate}', [TourDatePagesController::class, 'destroy'])->middleware('can:departures.delete')->name('tour-dates.destroy');
@@ -152,7 +158,7 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
         Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
 
-    Route::get('logistics', [LogisticsPagesController::class, 'index'])->middleware('can:logistics.view')->name('logistics.index');
+    Route::get('logistics', [LogisticsPagesController::class, 'index'])->middleware(['module:logistics', 'can:logistics.view'])->name('logistics.index');
 
     Route::middleware('can:tours.update')->group(function (): void {
         Route::post('tours/{tour}/routes', [TourRouteController::class, 'store'])->name('tours.routes.store');
@@ -161,7 +167,7 @@ Route::middleware(['auth', 'verified', 'tenant_admin.only', 'can:dashboard.view'
         Route::patch('routes/{route}/default', DefaultRouteController::class)->name('routes.default');
     });
 
-    Route::middleware('can:logistics.manage')->group(function (): void {
+    Route::middleware(['module:logistics', 'can:logistics.manage'])->group(function (): void {
         Route::post('providers', [ProviderController::class, 'store'])->name('providers.store');
         Route::put('providers/{provider}', [ProviderController::class, 'update'])->name('providers.update');
         Route::delete('providers/{provider}', [ProviderController::class, 'destroy'])->name('providers.destroy');
@@ -220,10 +226,12 @@ Route::domain((string) config('montree.platform_host'))
         Route::post('tenants/{tenant}/enter', EnterTenantController::class)->name('tenants.enter');
         Route::post('tenants/{tenant}/users', StoreTenantUserController::class)->name('tenants.users.store');
         Route::patch('tenants/{tenant}/status', UpdateTenantStatusController::class)->name('tenants.status.update');
-        Route::patch('tenants/{tenant}/plan', UpdateTenantPlanController::class)->name('tenants.plan.update');
         Route::post('tenants/{tenant}/configuration', UpdateTenantConfigurationController::class)->name('tenants.configuration.update');
         Route::put('tenants/{tenant}/commission', UpdateTenantCommissionController::class)->name('tenants.commission.update');
         Route::get('tenants/{tenant}/charges', [PlatformChargePageController::class, 'index'])->name('tenants.charges.index');
+
+        Route::get('commission', [CommissionSchedulePageController::class, 'index'])->name('commission.edit');
+        Route::put('commission', UpdateGlobalCommissionScheduleController::class)->name('commission.update');
     });
 
 require __DIR__.'/settings.php';

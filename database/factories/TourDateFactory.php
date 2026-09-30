@@ -55,6 +55,16 @@ class TourDateFactory extends Factory
         });
     }
 
+    /**
+     * T8 (revierte D7): una salida sin guía asignado todavía.
+     *
+     * @return $this
+     */
+    public function withoutGuide(): self
+    {
+        return $this->state(fn () => ['guide_id' => null]);
+    }
+
     public function full(): self
     {
         return $this->state(fn (array $attrs) => [
@@ -75,6 +85,33 @@ class TourDateFactory extends Factory
         return $this->state(fn () => [
             'starts_at' => now()->subDays(7),
             'ends_at' => null,
+        ]);
+    }
+
+    /**
+     * T7: fecha de cierre de reservas. Sin argumento, cierra ya —útil para
+     * probar que una salida cerrada no admite reservas nuevas—.
+     */
+    public function withBookingClosesAt(?\DateTimeInterface $closesAt = null): self
+    {
+        return $this->state(fn () => [
+            'booking_closes_at' => $closesAt ?? now()->subHour(),
+        ]);
+    }
+
+    /**
+     * T7: contenido propio en los cinco bloques que hereda del producto.
+     */
+    public function withCustomContent(): self
+    {
+        return $this->state(fn () => [
+            'itinerary' => [
+                ['step_number' => 1, 'title' => fake()->sentence(3), 'description' => fake()->sentence(), 'duration_label' => '1 h'],
+            ],
+            'includes' => [fake()->words(2, true)],
+            'excludes' => [fake()->words(2, true)],
+            'requirements' => [fake()->words(2, true)],
+            'meeting_point' => fake()->address(),
         ]);
     }
 

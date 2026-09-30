@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { Link, useForm, usePage } from '@inertiajs/vue3';
-import { Globe, Image, LogIn, Mail, Palette, Phone, Upload } from 'lucide-vue-next';
+import {
+    Globe,
+    Image,
+    LogIn,
+    Mail,
+    Palette,
+    Phone,
+    Upload,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
-import PlanBadge from '@/components/molecules/PlanBadge.vue';
-import PlanChanger from '@/components/molecules/PlanChanger.vue';
 import StatusChanger from '@/components/molecules/StatusChanger.vue';
 import TenantStatusBadge from '@/components/molecules/TenantStatusBadge.vue';
 import AddTenantUserDialog from '@/components/organisms/AddTenantUserDialog.vue';
@@ -26,12 +32,12 @@ import { formatCurrency } from '@/lib/format';
 import { enter as enterTenant } from '@/routes/super-admin/tenants';
 import { index as chargesIndex } from '@/routes/super-admin/tenants/charges';
 import { update as updateConfiguration } from '@/routes/super-admin/tenants/configuration';
-import { update as updatePlan } from '@/routes/super-admin/tenants/plan';
 import { update as updateStatus } from '@/routes/super-admin/tenants/status';
 import type {
+    CommissionSchedule,
+    CommissionScope,
     SuperAdminTenantSummary,
     TenantChargesSummary,
-    TenantPlan,
     TenantStatus,
 } from '@/types';
 import { CURRENCY_VALUES } from '@/types/enums.generated';
@@ -56,6 +62,7 @@ const props = defineProps<{
     tenant: SuperAdminTenantSummary;
     chargesSummary: TenantChargesSummary;
     roles: string[];
+    commissionSchedule: CommissionSchedule & { scope: CommissionScope };
 }>();
 
 const page = usePage();
@@ -64,12 +71,13 @@ const configuration = computed<TenantConfiguration | null>(
     () => props.tenant.configuration ?? null,
 );
 
-const statusForm = useForm<{ status: TenantStatus | null; reason: string | null }>({
+const statusForm = useForm<{
+    status: TenantStatus | null;
+    reason: string | null;
+}>({
     status: null,
     reason: null,
 });
-
-const planForm = useForm<{ plan: TenantPlan }>({ plan: props.tenant.plan });
 
 /**
  * WHY: las reglas del servidor no son `sometimes` acá, pero los archivos y los
@@ -98,15 +106,15 @@ const configForm = useForm(() => ({
 function changeStatus(next: TenantStatus, reason: string | null): void {
     statusForm.status = next;
     statusForm.reason = reason;
-    statusForm.patch(updateStatus.url(props.tenant.id), { preserveScroll: true });
+    statusForm.patch(updateStatus.url(props.tenant.id), {
+        preserveScroll: true,
+    });
 }
 
-function changePlan(next: TenantPlan): void {
-    planForm.plan = next;
-    planForm.patch(updatePlan.url(props.tenant.id), { preserveScroll: true });
-}
-
-function pickFile(event: Event, target: 'logo' | 'favicon' | 'hero_image'): void {
+function pickFile(
+    event: Event,
+    target: 'logo' | 'favicon' | 'hero_image',
+): void {
     const input = event.target as HTMLInputElement;
     configForm[target] = input.files?.[0] ?? null;
 }
@@ -149,9 +157,7 @@ function submitConfiguration(): void {
         });
 }
 
-const processing = computed(
-    () => statusForm.processing || planForm.processing,
-);
+const processing = computed(() => statusForm.processing);
 </script>
 
 <template>
@@ -165,7 +171,6 @@ const processing = computed(
                         {{ tenant.name }}
                     </h1>
                     <TenantStatusBadge :status="tenant.status" />
-                    <PlanBadge :plan="tenant.plan" />
                 </div>
                 <p class="text-sm text-muted-foreground">
                     {{ tenant.domain ?? tenant.slug }}
@@ -214,16 +219,11 @@ const processing = computed(
                         {{ $t('Ver cargos') }}
                     </Link>
                 </Button>
-                <AddTenantUserDialog
-                    :tenant-id="tenant.id"
-                    :roles="roles"
-                />
+                <AddTenantUserDialog :tenant-id="tenant.id" :roles="roles" />
             </div>
         </header>
 
-        <section
-            class="grid gap-4 rounded-lg border border-border bg-card p-6 shadow-sm md:grid-cols-2"
-        >
+        <section class="rounded-lg border border-border bg-card p-6 shadow-sm">
             <div class="space-y-2">
                 <h2
                     class="text-sm font-semibold tracking-wider text-muted-foreground uppercase"
@@ -249,27 +249,13 @@ const processing = computed(
                     {{ statusForm.errors.status }}
                 </p>
             </div>
-
-            <div class="space-y-2">
-                <h2
-                    class="text-sm font-semibold tracking-wider text-muted-foreground uppercase"
-                >
-                    {{ $t('Plan asignado') }}
-                </h2>
-                <p class="text-sm text-muted-foreground">
-                    {{ $t('Los nuevos límites aplican inmediatamente.') }}
-                </p>
-                <PlanChanger
-                    :current-plan="tenant.plan"
-                    :processing="processing"
-                    @submit="changePlan"
-                />
-            </div>
         </section>
 
         <section class="grid grid-cols-2 gap-4 md:grid-cols-5">
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <p class="text-xs tracking-wider text-muted-foreground uppercase">
+                <p
+                    class="text-xs tracking-wider text-muted-foreground uppercase"
+                >
                     {{ $t('Usuarios') }}
                 </p>
                 <p class="text-xl font-semibold text-foreground">
@@ -277,7 +263,9 @@ const processing = computed(
                 </p>
             </div>
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <p class="text-xs tracking-wider text-muted-foreground uppercase">
+                <p
+                    class="text-xs tracking-wider text-muted-foreground uppercase"
+                >
                     {{ $t('Tours') }}
                 </p>
                 <p class="text-xl font-semibold text-foreground">
@@ -285,7 +273,9 @@ const processing = computed(
                 </p>
             </div>
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <p class="text-xs tracking-wider text-muted-foreground uppercase">
+                <p
+                    class="text-xs tracking-wider text-muted-foreground uppercase"
+                >
                     {{ $t('Reservas (30d)') }}
                 </p>
                 <p class="text-xl font-semibold text-foreground">
@@ -293,7 +283,9 @@ const processing = computed(
                 </p>
             </div>
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <p class="text-xs tracking-wider text-muted-foreground uppercase">
+                <p
+                    class="text-xs tracking-wider text-muted-foreground uppercase"
+                >
                     {{ $t('Ingresos (30d)') }}
                 </p>
                 <p class="text-xl font-semibold text-foreground">
@@ -306,7 +298,9 @@ const processing = computed(
                 </p>
             </div>
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <p class="text-xs tracking-wider text-muted-foreground uppercase">
+                <p
+                    class="text-xs tracking-wider text-muted-foreground uppercase"
+                >
                     {{ $t('Cargos acumulados') }}
                 </p>
                 <p class="text-xl font-semibold text-foreground">
@@ -322,7 +316,7 @@ const processing = computed(
 
         <TenantCommissionForm
             :tenant-id="tenant.id"
-            :commission="tenant.commission"
+            :schedule="commissionSchedule"
         />
 
         <section class="rounded-lg border border-border bg-card shadow-sm">
@@ -382,25 +376,44 @@ const processing = computed(
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <Label>{{ $t('Eslogan') }}</Label>
-                        <Input
-                            v-model="configForm.tagline"
-                            :placeholder="
-                                $t('Ej: Descubre la naturaleza con nosotros')
-                            "
-                            maxlength="160"
-                        />
-                    </div>
+                    <div
+                        class="space-y-4 rounded-lg border border-dashed border-input p-4"
+                    >
+                        <div>
+                            <h4 class="text-sm font-medium text-foreground">
+                                {{ $t('Banner principal') }}
+                            </h4>
+                            <p class="text-xs text-muted-foreground">
+                                {{
+                                    $t('Se muestra en la portada de tu sitio.')
+                                }}
+                            </p>
+                        </div>
 
-                    <div class="space-y-2">
-                        <Label>{{ $t('Descripción') }}</Label>
-                        <Textarea
-                            v-model="configForm.description"
-                            :placeholder="$t('Descripción de la agencia...')"
-                            rows="3"
-                            maxlength="2000"
-                        />
+                        <div class="space-y-2">
+                            <Label>{{ $t('Título del banner') }}</Label>
+                            <Input
+                                v-model="configForm.tagline"
+                                :placeholder="
+                                    $t(
+                                        'Ej: Descubre la naturaleza con nosotros',
+                                    )
+                                "
+                                maxlength="160"
+                            />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>{{ $t('Texto bajo el título') }}</Label>
+                            <Textarea
+                                v-model="configForm.description"
+                                :placeholder="
+                                    $t('Descripción de la agencia...')
+                                "
+                                rows="3"
+                                maxlength="2000"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -594,9 +607,7 @@ const processing = computed(
                                 </p>
                             </div>
                             <Switch
-                                v-model="
-                                    configForm.reviews_require_moderation
-                                "
+                                v-model="configForm.reviews_require_moderation"
                             />
                         </div>
 

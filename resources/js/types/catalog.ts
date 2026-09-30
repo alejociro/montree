@@ -15,6 +15,8 @@ export type CatalogTour = {
     name: string;
     short_description: string | null;
     base_price: string;
+    /** T7: "Desde $X" — mínimo precio efectivo entre las salidas reservables. */
+    from_price: string;
     duration_hours: number;
     difficulty: TourDifficulty;
     default_capacity: number;

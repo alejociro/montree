@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\PlaceToPay;
 
+use App\Enums\PlaceToPayEnvironment;
 use App\Models\Tenant;
 
 /**
@@ -27,13 +28,16 @@ final readonly class CheckoutCredentials
         $tranKey = $hasOwnMerchant ? $configuration->placetopay_tran_key : config('placetopay.tran_key');
 
         /**
-         * La URL viaja con el comercio: un login de Ecuador no autentica contra
-         * el checkout de Colombia. Solo se hereda la de plataforma cuando el
-         * tenant no eligió una.
+         * La URL viaja con el ambiente del comercio: un comercio propio en
+         * producción no autentica contra el checkout de pruebas. Solo se
+         * hereda el ambiente de plataforma cuando el tenant usa el comercio
+         * de plataforma.
          */
-        $url = $hasOwnMerchant
-            ? ($configuration->placetopay_url ?: config('placetopay.url'))
-            : config('placetopay.url');
+        $environment = $hasOwnMerchant
+            ? $configuration->placetopay_environment
+            : PlaceToPayEnvironment::from((string) config('placetopay.environment'));
+
+        $url = $environment->url();
 
         if (blank($login) || blank($tranKey) || blank($url)) {
             return null;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\SuperAdmin;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,7 +25,6 @@ class TenantIndexRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', 'string', Rule::in(array_column(TenantStatus::cases(), 'value'))],
-            'plan' => ['nullable', 'string', Rule::in(array_column(TenantPlan::cases(), 'value'))],
             'page' => ['nullable', 'integer', 'min:1'],
             'sort' => ['nullable', 'string', Rule::in(self::SORTS)],
             'direction' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
@@ -43,11 +41,6 @@ class TenantIndexRequest extends FormRequest
     public function status(): ?string
     {
         return $this->validated('status');
-    }
-
-    public function plan(): ?string
-    {
-        return $this->validated('plan');
     }
 
     public function sort(): string

@@ -5,22 +5,23 @@ declare(strict_types=1);
 namespace Tests\Feature\SuperAdmin;
 
 use App\Actions\Payment\RegisterManualPaymentAction;
-use App\Enums\CommissionType;
 use App\Enums\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Models\Booking;
+use App\Models\CommissionSchedule;
 use App\Models\Payment;
 use App\Models\PlatformCharge;
 use App\Models\Tenant;
 use App\Models\TenantConfiguration;
+use Illuminate\Support\Facades\Log;
 use Tests\Support\FakeCheckout;
 
 class RecordPlatformChargeTest extends SuperAdminTestCase
 {
     public function test_a_percentage_commission_charges_over_the_booking_total(): void
     {
-        $tenant = $this->tenantCharging(CommissionType::Percentage, '10');
+        $tenant = $this->tenantWithOwnSchedule('10', '250.00');
         $booking = $this->pendingBooking($tenant, '250.00');
 
         $this->pay($booking, '250.00');
@@ -28,34 +29,87 @@ class RecordPlatformChargeTest extends SuperAdminTestCase
         $charge = PlatformCharge::query()->where('booking_id', $booking->id)->sole();
         $this->assertSame('25.00', $charge->amount);
         $this->assertSame('250.00', $charge->base_amount);
-        $this->assertSame(CommissionType::Percentage, $charge->commission_type);
+        $this->assertSame('10.00', $charge->applied_rate);
         $this->assertSame('COP', $charge->currency);
+        $this->assertSame('tenant', $charge->schedule_scope);
+        $this->assertFalse($charge->was_capped);
     }
 
-    public function test_a_fixed_commission_charges_the_configured_amount(): void
-    {
-        $tenant = $this->tenantCharging(CommissionType::Fixed, '4.50');
-        $booking = $this->pendingBooking($tenant, '900.00');
-
-        $this->pay($booking, '900.00');
-
-        $this->assertSame('4.50', PlatformCharge::query()->sole()->amount);
-    }
-
-    public function test_a_tenant_without_commission_generates_no_charge(): void
+    /**
+     * El tope es del ESQUEMA, no del rango: nunca se cobra más que él sin
+     * importar en qué rango cae la reserva.
+     */
+    public function test_a_schedule_cap_never_charges_more_than_the_cap(): void
     {
         $tenant = Tenant::factory()->create();
-        TenantConfiguration::factory()->for($tenant)->create();
+        TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
+        CommissionSchedule::factory()->for($tenant)->withTiers([
+            ['from' => '0.00', 'to' => null, 'rate' => '5.00'],
+        ])->withMaxCharge('300000.00')->create();
+
+        $booking = $this->pendingBooking($tenant, '10000000.00');
+        $this->pay($booking, '10000000.00');
+
+        $charge = PlatformCharge::query()->sole();
+        $this->assertSame('300000.00', $charge->amount);
+        $this->assertTrue($charge->was_capped);
+        $this->assertSame('300000.00', $charge->max_charge);
+    }
+
+    public function test_a_null_cap_never_caps_the_charge(): void
+    {
+        $tenant = Tenant::factory()->create();
+        TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
+        CommissionSchedule::factory()->for($tenant)->withTiers([
+            ['from' => '0.00', 'to' => null, 'rate' => '5.00'],
+        ])->withMaxCharge(null)->create();
+
+        $booking = $this->pendingBooking($tenant, '10000000.00');
+        $this->pay($booking, '10000000.00');
+
+        $charge = PlatformCharge::query()->sole();
+        $this->assertSame('500000.00', $charge->amount);
+        $this->assertFalse($charge->was_capped);
+        $this->assertNull($charge->max_charge);
+    }
+
+    public function test_a_tenant_without_its_own_schedule_falls_back_to_global(): void
+    {
+        CommissionSchedule::query()->whereNull('tenant_id')->delete();
+        CommissionSchedule::factory()->global()->withTiers([
+            ['from' => '0.00', 'to' => null, 'rate' => '8.00'],
+        ])->create(['currency' => 'COP']);
+
+        $tenant = Tenant::factory()->create();
+        TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
+        $booking = $this->pendingBooking($tenant, '100.00');
+
+        $this->pay($booking, '100.00');
+
+        $charge = PlatformCharge::query()->sole();
+        $this->assertSame('8.00', $charge->amount);
+        $this->assertSame('global', $charge->schedule_scope);
+    }
+
+    public function test_a_currency_mismatch_skips_the_charge_and_logs_a_warning(): void
+    {
+        Log::spy();
+
+        CommissionSchedule::query()->whereNull('tenant_id')->update(['currency' => 'COP']);
+
+        $tenant = Tenant::factory()->create();
+        TenantConfiguration::factory()->for($tenant)->create(['currency' => 'USD']);
         $booking = $this->pendingBooking($tenant, '100.00');
 
         $this->pay($booking, '100.00');
 
         $this->assertSame(0, PlatformCharge::query()->count());
+        Log::shouldHaveReceived('warning')->once();
     }
 
     public function test_two_partial_payments_on_the_same_booking_charge_only_once(): void
     {
-        $tenant = $this->tenantCharging(CommissionType::Percentage, '10');
+        $tenant = $this->tenantWithOwnSchedule('10', '200.00');
         $booking = $this->pendingBooking($tenant, '200.00');
 
         $this->pay($booking, '120.00');
@@ -65,18 +119,20 @@ class RecordPlatformChargeTest extends SuperAdminTestCase
         $this->assertSame('20.00', PlatformCharge::query()->sole()->amount);
     }
 
-    public function test_changing_the_rate_afterwards_does_not_recalculate_past_charges(): void
+    public function test_changing_the_schedule_afterwards_does_not_recalculate_past_charges(): void
     {
-        $tenant = $this->tenantCharging(CommissionType::Percentage, '10');
+        $tenant = $this->tenantWithOwnSchedule('10', '100.00');
         $booking = $this->pendingBooking($tenant, '100.00');
 
         $this->pay($booking, '100.00');
 
-        $tenant->update(['commission_value' => '50']);
+        CommissionSchedule::query()->where('tenant_id', $tenant->id)->update([
+            'tiers' => [['from' => '0.00', 'to' => null, 'rate' => '50.00']],
+        ]);
 
         $charge = PlatformCharge::query()->sole();
         $this->assertSame('10.00', $charge->amount);
-        $this->assertSame('10.00', $charge->applied_value);
+        $this->assertSame('10.00', $charge->applied_rate);
     }
 
     /**
@@ -89,12 +145,12 @@ class RecordPlatformChargeTest extends SuperAdminTestCase
         config([
             'placetopay.login' => 'platform-login',
             'placetopay.tran_key' => 'platform-tran-key',
-            'placetopay.url' => 'https://checkout.test',
+            'placetopay.environments.test' => 'https://checkout.test',
             'placetopay.retry.attempts' => 1,
         ]);
         $checkout = FakeCheckout::fake();
 
-        $tenant = $this->tenantCharging(CommissionType::Percentage, '10', [
+        $tenant = $this->tenantWithOwnSchedule('10', '250.00', [
             'slug' => 'demo',
             'domain' => 'demo.montree.test',
         ]);
@@ -141,15 +197,15 @@ class RecordPlatformChargeTest extends SuperAdminTestCase
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function tenantCharging(CommissionType $type, string $value, array $attributes = []): Tenant
+    private function tenantWithOwnSchedule(string $rate, string $upTo, array $attributes = []): Tenant
     {
-        $tenant = Tenant::factory()->create([
-            ...$attributes,
-            'commission_type' => $type,
-            'commission_value' => $value,
-        ]);
+        $tenant = Tenant::factory()->create($attributes);
 
         TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
+
+        CommissionSchedule::factory()->for($tenant)->withTiers([
+            ['from' => '0.00', 'to' => null, 'rate' => $rate],
+        ])->create(['currency' => 'COP']);
 
         return $tenant;
     }

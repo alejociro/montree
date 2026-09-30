@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { CalendarOff, MapPinned, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
+import TourDateChips from '@/components/molecules/TourDateChips.vue';
 import { useTenantCurrency } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency, formatTourDate } from '@/lib/format';
@@ -29,7 +30,7 @@ const selectedDate = computed<TourDetailDate | null>(
 
 const price = computed(() =>
     formatCurrency(
-        selectedDate.value?.effective_price ?? props.tour.base_price,
+        selectedDate.value?.effective_price ?? props.tour.from_price,
         currency.value,
     ),
 );
@@ -40,27 +41,20 @@ const bookingUrl = computed(() =>
         : `/booking/new?tour_date_id=${selectedDate.value.id}`,
 );
 
-function dateOptionLabel(date: TourDetailDate): string {
-    const replacements = {
-        date: formatTourDate(date.starts_at, {
-            withWeekday: true,
-            withTime: true,
-        }),
-        seats: date.available_seats,
-        price: formatCurrency(date.effective_price, currency.value),
-    };
-
-    return date.route === null
-        ? t(':date · :seats cupos · :price', replacements)
-        : t(':date · :route · :seats cupos · :price', {
-              ...replacements,
-              route: date.route.name,
-          });
-}
+const bookingClosesLabel = computed(() =>
+    selectedDate.value?.effective_booking_closes_at
+        ? t('Reservas hasta el :date.', {
+              date: formatTourDate(
+                  selectedDate.value.effective_booking_closes_at,
+                  { withTime: true },
+              ),
+          })
+        : null,
+);
 </script>
 
 <template>
-    <aside class="flex flex-col gap-3.5 lg:sticky lg:top-[78px]">
+    <aside class="flex min-w-0 flex-col gap-3.5 lg:sticky lg:top-[78px]">
         <div
             class="rounded-2xl border border-border bg-card p-5 shadow-[0_14px_40px_-28px_rgba(20,48,31,0.5)]"
         >
@@ -74,46 +68,19 @@ function dateOptionLabel(date: TourDetailDate): string {
             </p>
 
             <template v-if="dates.length > 0">
-                <div
-                    class="mt-4 rounded-[10px] border border-border px-2.5 py-2"
-                >
-                    <label
-                        for="tour-date-select"
-                        class="block text-[11px] tracking-[0.08em] text-muted-foreground uppercase"
+                <div class="mt-4 space-y-2">
+                    <p
+                        class="text-[11px] tracking-[0.08em] text-muted-foreground uppercase"
                     >
                         {{ $t('Fecha de salida') }}
-                    </label>
-                    <!--
-                      `w-auto`: a lo ancho de la tarjeta el select dejaba la
-                      fecha pegada a la izquierda y la flecha a 20 rem de
-                      distancia, con un vacío enorme en medio que se leía como
-                      un campo sin diligenciar. Ajustado al texto, la flecha
-                      queda junto al valor.
-                    -->
-                    <select
-                        id="tour-date-select"
-                        class="w-auto max-w-full bg-transparent text-sm capitalize outline-none"
-                        :value="selectedDateId"
-                        @change="
-                            emit(
-                                'update:selectedDateId',
-                                Number(
-                                    ($event.target as HTMLSelectElement).value,
-                                ) || null,
-                            )
+                    </p>
+                    <TourDateChips
+                        :dates="dates"
+                        :selected-date-id="selectedDateId"
+                        @update:selected-date-id="
+                            emit('update:selectedDateId', $event)
                         "
-                    >
-                        <option :value="null" disabled>
-                            {{ $t('Seleccionar fecha') }}
-                        </option>
-                        <option
-                            v-for="date in dates"
-                            :key="date.id"
-                            :value="date.id"
-                        >
-                            {{ dateOptionLabel(date) }}
-                        </option>
-                    </select>
+                    />
                 </div>
 
                 <p
@@ -125,6 +92,22 @@ function dateOptionLabel(date: TourDetailDate): string {
                         $tc(
                             ':count cupo disponible|:count cupos disponibles',
                             selectedDate.available_seats,
+                        )
+                    }}
+                </p>
+                <p
+                    v-if="bookingClosesLabel"
+                    class="mt-1 text-[12.5px] text-muted-foreground"
+                >
+                    {{ bookingClosesLabel }}
+                </p>
+                <p
+                    v-else-if="!selectedDate"
+                    class="mt-2.5 text-[13px] text-muted-foreground"
+                >
+                    {{
+                        $t(
+                            'Elige una fecha para ver el itinerario y lo que incluye.',
                         )
                     }}
                 </p>

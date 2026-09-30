@@ -33,6 +33,13 @@ const { guides, loading, reasonFor } = useGuideAvailability(
     toRef(props, 'excludeTourDateId'),
 );
 
+/**
+ * T8/T9: el guía deja de ser obligatorio (revierte D7). «Asignar después» es
+ * una opción explícita del select, no solo un valor vacío que se pudiera
+ * confundir con «todavía no elegiste» — el operador la elige a propósito y el
+ * formulario manda `guide_id: null`.
+ */
+
 type Option = { id: number; name: string; reason: string | null };
 
 const options = computed<Option[]>(() => {
@@ -68,15 +75,15 @@ function onChange(event: Event): void {
 
 <template>
     <div class="space-y-1.5">
-        <Label :for="props.id">{{ $t('Guía *') }}</Label>
+        <Label :for="props.id">{{ $t('Guía') }}</Label>
         <select
             :id="props.id"
             :value="props.modelValue ?? ''"
             class="flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             @change="onChange"
         >
-            <option value="" disabled>
-                {{ $t('Elige un guía') }}
+            <option value="">
+                {{ $t('Asignar después (sin guía)') }}
             </option>
             <option
                 v-for="option in options"

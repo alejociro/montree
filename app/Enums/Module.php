@@ -16,6 +16,7 @@ enum Module: string
 {
     case Newsletter = 'newsletter';
     case Promotions = 'promotions';
+    case Logistics = 'logistics';
 
     public function isEnabled(): bool
     {

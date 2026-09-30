@@ -4,6 +4,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import CurrencySelector from '@/components/molecules/CurrencySelector.vue';
 import TimezoneSelector from '@/components/molecules/TimezoneSelector.vue';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -22,6 +23,8 @@ type OperationalValues = {
     locale: TenantLocale;
     reviews_require_moderation: boolean;
     require_traveler_details: boolean;
+    /** T12: horas antes del inicio de cada salida en que cierran las reservas. Vacío = sin regla. */
+    booking_advance_hours: number | '';
 };
 
 type OperationalErrors = Partial<
@@ -158,6 +161,37 @@ function onLocaleChange(value: AcceptableValue): void {
                     "
                 />
             </div>
+        </div>
+
+        <div class="grid gap-2 md:max-w-xs">
+            <Label for="booking_advance_hours">
+                {{ $t('Cierre de reservas por defecto (horas)') }}
+            </Label>
+            <Input
+                id="booking_advance_hours"
+                type="number"
+                min="0"
+                max="720"
+                step="1"
+                :model-value="modelValue.booking_advance_hours"
+                :aria-invalid="Boolean(errors?.booking_advance_hours)"
+                :placeholder="$t('Vacío: hasta la hora de salida')"
+                @update:model-value="
+                    (v) =>
+                        update(
+                            'booking_advance_hours',
+                            v === '' || v === null ? '' : Number(v),
+                        )
+                "
+            />
+            <p class="text-xs text-muted-foreground">
+                {{
+                    $t(
+                        'Las reservas de cada salida se cierran estas horas antes del inicio. Vacío: se puede reservar hasta la hora de salida. Cada salida puede tener su propio cierre.',
+                    )
+                }}
+            </p>
+            <InputError :message="errors?.booking_advance_hours" />
         </div>
     </section>
 </template>

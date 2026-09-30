@@ -39,5 +39,6 @@
              tendría que encenderlo en su `setUp`. -->
         <env name="MONTREE_MODULE_NEWSLETTER" value="true"/>
         <env name="MONTREE_MODULE_PROMOTIONS" value="true"/>
+        <env name="MONTREE_MODULE_LOGISTICS" value="true"/>
     </php>
 </phpunit>

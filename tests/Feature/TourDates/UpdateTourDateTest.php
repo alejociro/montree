@@ -95,6 +95,74 @@ final class UpdateTourDateTest extends TestCase
             );
     }
 
+    /**
+     * T7: enviar un bloque personaliza esa salida; enviarlo como `null`
+     * —el interruptor apagado— la vuelve a la herencia del producto.
+     */
+    public function test_update_persists_custom_content_blocks(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $tourDate = TourDate::factory()->for($tour)->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$tourDate->id}",
+            [
+                'includes' => ['Guía bilingüe'],
+                'meeting_point' => 'Otro punto para esta salida',
+            ],
+        )->assertSessionHas('success');
+
+        $tourDate->refresh();
+        $this->assertSame(['Guía bilingüe'], $tourDate->includes);
+        $this->assertSame('Otro punto para esta salida', $tourDate->meeting_point);
+        $this->assertTrue($tourDate->hasCustomContent());
+    }
+
+    public function test_update_clears_a_custom_content_block_back_to_inheritance(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $tourDate = TourDate::factory()->for($tour)->withCustomContent()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$tourDate->id}",
+            [
+                'itinerary' => null,
+                'includes' => null,
+                'excludes' => null,
+                'requirements' => null,
+                'meeting_point' => null,
+            ],
+        )->assertSessionHas('success');
+
+        $tourDate->refresh();
+        $this->assertNull($tourDate->itinerary);
+        $this->assertNull($tourDate->includes);
+        $this->assertNull($tourDate->excludes);
+        $this->assertNull($tourDate->requirements);
+        $this->assertNull($tourDate->meeting_point);
+        $this->assertFalse($tourDate->hasCustomContent());
+    }
+
+    public function test_update_rejects_a_booking_closes_at_after_the_start(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $tourDate = TourDate::factory()->for($tour)->create(['starts_at' => now()->addDays(10)]);
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+
+        $this->actingAs($admin)->put(
+            $this->host($tenant)."/admin/tour-dates/{$tourDate->id}",
+            ['booking_closes_at' => now()->addDays(11)->toIso8601String()],
+        )->assertSessionHasErrors('booking_closes_at');
+    }
+
     public function test_update_rejects_a_capacity_below_the_booked_count(): void
     {
         $tenant = $this->makeTenant();

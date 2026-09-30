@@ -39,6 +39,9 @@ class UpdateTenantConfigurationRequest extends FormRequest
             'locale' => ['nullable', 'string', Rule::in(self::SUPPORTED_LOCALES)],
             'reviews_require_moderation' => ['sometimes', 'boolean'],
             'require_traveler_details' => ['sometimes', 'boolean'],
+            // T12: regla general de cierre de reservas de la agencia (horas
+            // antes del inicio de cada salida). Vacío = sin regla.
+            'booking_advance_hours' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:720'],
             'social_links' => ['nullable', 'array'],
             'social_links.*' => ['nullable', 'url', 'max:255'],
             'contact_info' => ['nullable', 'array'],

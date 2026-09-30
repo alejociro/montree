@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\TourDate;
 
+use App\Enums\Module;
 use App\Http\Requests\Concerns\ValidatesTenantGuide;
 use App\Models\Tour;
 use App\Models\TourDate;
@@ -31,13 +32,24 @@ class StoreTourDateRequest extends FormRequest
      * cualquier otro —pertenencia al tenant, rol y disponibilidad—. Si el
      * propuesto ya está ocupado esos días, la salida se rechaza igual: la
      * preferencia no salta la agenda.
+     *
+     * WHY (T8, revierte D7): la clave AUSENTE y la clave enviada como `null`
+     * ya no son lo mismo. Ausente («no elegí nada») sigue proponiendo el
+     * guía por defecto; `null` explícito («Asignar después») es la forma en
+     * que el cliente pide una salida sin guía, y no se le reemplaza. Por eso
+     * la comprobación es `! $this->has('guide_id')` y no `input() === null`
+     * —esta última no distinguiría los dos casos—. Una cadena vacía cuenta
+     * como ausente: es lo que manda un `<select>` sin tocar.
      */
     protected function prepareForValidation(): void
     {
         $tour = $this->route('tour');
-        $sent = $this->input('guide_id');
 
-        if ($tour instanceof Tour && ($sent === null || $sent === '') && $tour->default_guide_id !== null) {
+        if (! $tour instanceof Tour || $tour->default_guide_id === null) {
+            return;
+        }
+
+        if (! $this->has('guide_id') || $this->input('guide_id') === '') {
             $this->merge(['guide_id' => $tour->default_guide_id]);
         }
     }
@@ -47,7 +59,7 @@ class StoreTourDateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'starts_at' => ['required', 'date', 'after:now'],
             // WHY (D9): el fin se deriva de `tours.duration_hours` en el
             // servidor. Aceptarlo del cliente era dejar que la regla de
@@ -57,9 +69,60 @@ class StoreTourDateRequest extends FormRequest
             'price_override' => ['nullable', 'numeric', 'min:0'],
             'min_payment_pct' => ['nullable', 'integer', 'min:1', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            // WHY (D7): toda salida lleva guía. No existe «Sin asignar».
-            'guide_id' => ['required', 'integer', $this->guideRule()],
+            // WHY (T8, revierte D7): la salida puede crearse sin guía —
+            // «Asignar después»—; `nullable` hace que Laravel se salte el
+            // resto de las reglas del campo (incluida `guideRule()`) cuando
+            // no llega valor, así que un `guide_id` null nunca choca contra
+            // la pertenencia al tenant.
+            'guide_id' => ['nullable', 'integer', $this->guideRule()],
             'route_id' => ['nullable', 'integer', $this->routeRule()],
+            // T7: la fecha de cierre de reservas. Al crear, todavía tiene
+            // que quedar tiempo para reservar y no puede pasarse del inicio.
+            'booking_closes_at' => ['nullable', 'date', 'after:now', 'before_or_equal:starts_at'],
+        ];
+
+        return [...$rules, ...$this->logisticsRules(), ...$this->contentRules()];
+    }
+
+    /**
+     * Reglas de «Contenido de la salida» (T7): cada bloque llega `null`
+     * —hereda del producto— o con su propio valor, con los mismos topes que
+     * el formulario del tour (`StoreTourRequest`).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function contentRules(): array
+    {
+        return [
+            'itinerary' => ['nullable', 'array', 'max:50'],
+            'itinerary.*.step_number' => ['required', 'integer', 'min:1', 'distinct'],
+            'itinerary.*.title' => ['required', 'string', 'max:120'],
+            'itinerary.*.description' => ['nullable', 'string', 'max:2000'],
+            'itinerary.*.duration_label' => ['nullable', 'string', 'max:30'],
+            'includes' => ['nullable', 'array', 'max:30'],
+            'includes.*' => ['string', 'max:200'],
+            'excludes' => ['nullable', 'array', 'max:30'],
+            'excludes.*' => ['string', 'max:200'],
+            'requirements' => ['nullable', 'array', 'max:30'],
+            'requirements.*' => ['string', 'max:200'],
+            'meeting_point' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    /**
+     * WHY (T3): con el módulo apagado `provider_id`/`hotel_ids` no tienen
+     * regla, así que `validated()` los descarta y la acción nunca los toca —
+     * sin esto habría que limpiarlos a mano en cada acción que guarda la salida.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function logisticsRules(): array
+    {
+        if (! Module::Logistics->isEnabled()) {
+            return [];
+        }
+
+        return [
             'provider_id' => ['nullable', 'integer', Rule::exists('providers', 'id')->where('tenant_id', $this->tenantId())],
             'hotel_ids' => ['nullable', 'array'],
             'hotel_ids.*' => ['integer', 'distinct', Rule::exists('hotels', 'id')->where('tenant_id', $this->tenantId())],

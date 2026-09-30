@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
+import { computed, useTemplateRef } from 'vue';
+import CommissionTierEditor from '@/components/organisms/CommissionTierEditor.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -11,24 +11,40 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { update as updateCommission } from '@/routes/super-admin/tenants/commission';
-import type { CommissionType, TenantCommission } from '@/types';
+import type { CommissionSchedule, CommissionScope } from '@/types';
 
-const NONE = 'none';
+const GLOBAL = 'global';
+const TENANT = 'tenant';
 
 const props = defineProps<{
     tenantId: number;
-    commission: TenantCommission;
+    /** Esquema EFECTIVO hoy: el propio si existe, si no el global. */
+    schedule: CommissionSchedule & { scope: CommissionScope };
 }>();
 
-const form = useForm<{ type: CommissionType | typeof NONE; value: string }>({
-    type: props.commission.type ?? NONE,
-    value: props.commission.value ?? '',
+const form = useForm<{
+    use_global: CommissionScope;
+    tiers: CommissionSchedule['tiers'];
+    max_charge: CommissionSchedule['max_charge'];
+}>({
+    use_global: props.schedule.scope,
+    tiers: props.schedule.tiers,
+    max_charge: props.schedule.max_charge,
 });
 
+const usingOwn = computed(() => form.use_global === TENANT);
+
+const editor = useTemplateRef<{ hasLiveErrors: boolean }>('editor');
+
 function submit(): void {
+    if (usingOwn.value && editor.value?.hasLiveErrors) {
+        return;
+    }
+
     form.transform((data) => ({
-        type: data.type === NONE ? null : data.type,
-        value: data.type === NONE ? null : data.value,
+        use_global: data.use_global === GLOBAL,
+        tiers: data.use_global === TENANT ? data.tiers : undefined,
+        max_charge: data.use_global === TENANT ? data.max_charge : undefined,
     })).put(updateCommission.url(props.tenantId), {
         preserveScroll: true,
     });
@@ -50,62 +66,42 @@ function submit(): void {
             </p>
         </header>
 
-        <form class="grid gap-4 sm:grid-cols-3" @submit.prevent="submit">
-            <div class="space-y-2">
-                <Label>{{ $t('Tipo de cobro') }}</Label>
-                <Select v-model="form.type">
-                    <SelectTrigger>
-                        <SelectValue :placeholder="$t('Seleccionar tipo')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">{{
-                            $t('Sin cobro')
-                        }}</SelectItem>
-                        <SelectItem value="percentage">{{
-                            $t('Porcentaje por reserva')
-                        }}</SelectItem>
-                        <SelectItem value="fixed">{{
-                            $t('Monto fijo por reserva')
-                        }}</SelectItem>
-                    </SelectContent>
-                </Select>
-                <p v-if="form.errors.type" class="text-xs text-destructive">
-                    {{ form.errors.type }}
-                </p>
-            </div>
+        <div class="mb-4 space-y-2">
+            <Select v-model="form.use_global">
+                <SelectTrigger
+                    class="w-56"
+                    :aria-label="$t('Esquema de comisión')"
+                >
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem :value="GLOBAL">{{
+                        $t('Usar esquema global')
+                    }}</SelectItem>
+                    <SelectItem :value="TENANT">{{
+                        $t('Esquema propio')
+                    }}</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
 
-            <div class="space-y-2">
-                <Label for="commission-value">
-                    {{
-                        form.type === 'percentage'
-                            ? $t('Porcentaje (%)')
-                            : $t('Monto (:currency)', {
-                                  currency: commission.currency,
-                              })
-                    }}
-                </Label>
-                <Input
-                    id="commission-value"
-                    v-model="form.value"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    :disabled="form.type === 'none'"
-                />
-                <p v-if="form.errors.value" class="text-xs text-destructive">
-                    {{ form.errors.value }}
-                </p>
-            </div>
+        <CommissionTierEditor
+            v-if="usingOwn"
+            ref="editor"
+            v-model="form.tiers"
+            v-model:max-charge="form.max_charge"
+            :currency="schedule.currency"
+            :errors="form.errors"
+            :disabled="form.processing"
+        />
+        <p v-else class="text-sm text-muted-foreground">
+            {{ $t('Esta agencia usa el esquema global vigente.') }}
+        </p>
 
-            <div class="flex items-end">
-                <Button type="submit" :disabled="form.processing">
-                    {{
-                        form.processing
-                            ? $t('Guardando…')
-                            : $t('Guardar cobro')
-                    }}
-                </Button>
-            </div>
-        </form>
+        <div class="mt-4 flex justify-end">
+            <Button type="button" :disabled="form.processing" @click="submit">
+                {{ form.processing ? $t('Guardando…') : $t('Guardar cobro') }}
+            </Button>
+        </div>
     </section>
 </template>

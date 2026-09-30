@@ -3,7 +3,40 @@ set -e
 
 # ------------------------------------------------------------
 # Entrypoint de montree en Railway
+#
+# Una misma imagen, tres roles segun CONTAINER_ROLE:
+#   web        (defecto) Apache + migraciones + permisos.
+#   worker     cola: cobros de comision (listener ShouldQueue), correos.
+#   scheduler  tareas programadas (recordatorios, vencimiento de reservas
+#              pendientes, consulta de pagos cada 10 min).
+# Sin worker ni scheduler, esas tareas nunca se ejecutan en produccion.
 # ------------------------------------------------------------
+
+ROLE="${CONTAINER_ROLE:-web}"
+
+# Caches de arranque (config, rutas, vistas, eventos). Seguro: no hay env()
+# fuera de config/ ni closures en las rutas. Se regeneran en cada arranque.
+warm_caches() {
+    php artisan optimize:clear >/dev/null 2>&1 || true
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan event:cache
+}
+
+if [ "$ROLE" = "worker" ]; then
+    php artisan package:discover --ansi || true
+    warm_caches
+    # --max-time: reinicia el proceso cada hora para liberar memoria; Railway
+    # lo vuelve a levantar por la politica de reinicio.
+    exec php artisan queue:work --tries=3 --backoff=10 --max-time=3600 --sleep=3
+fi
+
+if [ "$ROLE" = "scheduler" ]; then
+    php artisan package:discover --ansi || true
+    warm_caches
+    exec php artisan schedule:work
+fi
 
 # Asegurar UN SOLO MPM (prefork, requerido por mod_php) en cada arranque.
 # Evita el fallo "AH00534: apache2: More than one MPM loaded" pase lo que
@@ -36,7 +69,7 @@ php artisan migrate --force || echo "[entrypoint] AVISO: migrate fallo, revisar 
 php artisan montree:sync-permissions 2>&1 \
     || echo "[entrypoint] AVISO: sync-permissions fallo, revisar logs/DB"
 
-# Limpiar cualquier cache stale del build
-php artisan optimize:clear || true
+# Limpiar cualquier cache stale del build y calentar las de produccion
+warm_caches || echo "[entrypoint] AVISO: no se pudieron generar las caches"
 
 exec apache2-foreground

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\CommissionType;
 use App\Models\Booking;
 use App\Models\PlatformCharge;
 use App\Models\Tenant;
@@ -26,21 +25,16 @@ class PlatformChargeFactory extends Factory
             'booking_id' => Booking::factory(),
             'payment_id' => null,
             'base_amount' => $base,
-            'commission_type' => CommissionType::Percentage,
-            'applied_value' => 5,
+            'applied_rate' => 5,
             'amount' => round($base * 0.05, 2),
             'currency' => 'USD',
+            'tier_from' => '0.00',
+            'tier_to' => null,
+            'max_charge' => null,
+            'was_capped' => false,
+            'schedule_scope' => 'global',
             'charged_at' => now(),
         ];
-    }
-
-    public function fixed(float $amount): self
-    {
-        return $this->state(fn () => [
-            'commission_type' => CommissionType::Fixed,
-            'applied_value' => $amount,
-            'amount' => $amount,
-        ]);
     }
 
     public function chargedAt(string $date): self

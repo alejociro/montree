@@ -6,10 +6,8 @@ namespace App\Actions\Tour;
 
 use App\Enums\Currency;
 use App\Enums\TourStatus;
-use App\Exceptions\PlanLimitReachedException;
 use App\Models\Tenant;
 use App\Models\Tour;
-use App\Services\Tour\PlanLimitChecker;
 use App\Services\Tour\TourSlugGenerator;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +15,6 @@ final class CreateTourAction
 {
     public function __construct(
         private TourSlugGenerator $slugGenerator,
-        private PlanLimitChecker $planLimits,
         private SyncTourItineraryAction $syncItinerary,
         private SyncTourStopsAction $syncStops,
     ) {}
@@ -27,10 +24,6 @@ final class CreateTourAction
      */
     public function execute(Tenant $tenant, array $data): Tour
     {
-        if (! $this->planLimits->canCreateTour($tenant)) {
-            throw PlanLimitReachedException::tours($this->planLimits->maxToursForTenant($tenant));
-        }
-
         return DB::transaction(function () use ($tenant, $data): Tour {
             $tour = new Tour;
             $tour->fill($this->withoutRelations($data));

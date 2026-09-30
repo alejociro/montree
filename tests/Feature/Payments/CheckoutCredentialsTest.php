@@ -23,7 +23,9 @@ final class CheckoutCredentialsTest extends TestCase
         config([
             'placetopay.login' => 'platform-login',
             'placetopay.tran_key' => 'platform-tran-key',
-            'placetopay.url' => 'https://checkout.platform.test',
+            'placetopay.environment' => 'test',
+            'placetopay.environments.test' => 'https://checkout.platform.test',
+            'placetopay.environments.production' => 'https://checkout.placetopay.com',
         ]);
     }
 
@@ -37,27 +39,62 @@ final class CheckoutCredentialsTest extends TestCase
         $this->assertSame('https://checkout.platform.test', $credentials->url);
     }
 
-    public function test_a_tenant_with_its_own_merchant_uses_its_own_credentials_and_url(): void
+    /**
+     * T14: el respaldo de plataforma también usa el ambiente de plataforma,
+     * no siempre "test".
+     */
+    public function test_a_tenant_without_its_own_merchant_falls_back_to_the_platform_environment(): void
+    {
+        config(['placetopay.environment' => 'production']);
+
+        $credentials = CheckoutCredentials::resolve($this->tenant());
+
+        $this->assertSame('https://checkout.placetopay.com', $credentials->url);
+    }
+
+    public function test_a_tenant_with_its_own_merchant_in_test_uses_the_test_endpoint(): void
     {
         $tenant = $this->tenant([
             'placetopay_login' => 'tenant-login',
             'placetopay_tran_key' => 'tenant-tran-key',
-            'placetopay_url' => 'https://checkout.placetopay.ec',
+            'placetopay_environment' => 'test',
         ]);
 
         $credentials = CheckoutCredentials::resolve($tenant);
 
         $this->assertSame('tenant-login', $credentials->login);
         $this->assertSame('tenant-tran-key', $credentials->tranKey);
-        $this->assertSame('https://checkout.placetopay.ec', $credentials->url);
+        $this->assertSame('https://checkout.platform.test', $credentials->url);
     }
 
     /**
-     * Un comercio propio sin URL hereda la de plataforma; lo que nunca hereda es
-     * el tranKey, porque un login propio con tranKey ajeno no autentica.
+     * T14: la URL viaja con el ambiente del comercio propio, no con el de
+     * plataforma — un comercio propio en producción no debe autenticar
+     * contra el sandbox.
      */
-    public function test_a_tenant_merchant_without_url_inherits_the_platform_endpoint(): void
+    public function test_a_tenant_with_its_own_merchant_in_production_uses_the_production_endpoint(): void
     {
+        $tenant = $this->tenant([
+            'placetopay_login' => 'tenant-login',
+            'placetopay_tran_key' => 'tenant-tran-key',
+            'placetopay_environment' => 'production',
+        ]);
+
+        $credentials = CheckoutCredentials::resolve($tenant);
+
+        $this->assertSame('tenant-login', $credentials->login);
+        $this->assertSame('https://checkout.placetopay.com', $credentials->url);
+    }
+
+    /**
+     * T14: sin ambiente explícito, la columna trae el default de la
+     * migración ('test'), así que un comercio propio nunca hereda el
+     * ambiente de plataforma.
+     */
+    public function test_a_tenant_merchant_without_environment_defaults_to_test(): void
+    {
+        config(['placetopay.environment' => 'production']);
+
         $tenant = $this->tenant([
             'placetopay_login' => 'tenant-login',
             'placetopay_tran_key' => 'tenant-tran-key',

@@ -33,6 +33,10 @@ final class PublicTourResource extends JsonResource
             'short_description' => $this->short_description,
             'description' => $this->description,
             'base_price' => $this->base_price,
+            // T7: precio "Desde" visible siempre, con o sin fecha elegida —
+            // mínimo precio EFECTIVO entre las salidas reservables cargadas
+            // por el resolver, o el precio base si no tiene ninguna.
+            'from_price' => $this->fromPrice(),
             'duration_hours' => $this->duration_hours,
             'difficulty' => $this->difficulty->value,
             'default_capacity' => $this->default_capacity,
@@ -67,12 +71,12 @@ final class PublicTourResource extends JsonResource
             'meeting_point' => $this->meeting_point,
             'meeting_latitude' => $this->meeting_latitude,
             'meeting_longitude' => $this->meeting_longitude,
-            'future_dates' => $this->dates->map(fn ($d) => [
+            'future_dates' => $this->dates->map(fn (TourDate $d) => [
                 'id' => $d->id,
                 'starts_at' => $d->starts_at->toIso8601String(),
                 'ends_at' => $d->ends_at?->toIso8601String(),
                 'price_override' => $d->price_override,
-                'effective_price' => $d->price_override ?? $this->base_price,
+                'effective_price' => $d->effectivePrice(),
                 'capacity_total' => $d->capacity,
                 'capacity_booked' => $d->booked_count,
                 'available_seats' => max(0, $d->capacity - $d->booked_count),
@@ -80,9 +84,41 @@ final class PublicTourResource extends JsonResource
                 'status' => $d->status->value,
                 'route' => $this->routeOf($d),
                 'guide' => $d->guide === null ? null : ['name' => $d->guide->name],
+                'booking_closes_at' => $d->booking_closes_at?->toIso8601String(),
+                // T12: el cierre EFECTIVO (propio o por la regla de la
+                // agencia), o null cuando no hay ningún límite real que
+                // mostrarle al viajero —"hasta la hora de salida" no cuenta.
+                'effective_booking_closes_at' => $d->hasBookingDeadline()
+                    ? $d->effectiveBookingClosesAt()->toIso8601String()
+                    : null,
+                // T7: cada salida manda ya su contenido efectivo resuelto —
+                // itinerario, incluye/no incluye, requisitos y punto de
+                // encuentro— para que la ficha pública no tenga que repetir
+                // la lógica de herencia que ya vive en el modelo.
+                'effective_itinerary' => $d->effectiveItinerary(),
+                'effective_includes' => $d->effectiveIncludes(),
+                'effective_excludes' => $d->effectiveExcludes(),
+                'effective_requirements' => $d->effectiveRequirements(),
+                'effective_meeting_point' => $d->effectiveMeetingPoint(),
             ])->values(),
             'is_favorite' => (bool) ($this->is_favorite ?? false),
         ];
+    }
+
+    /**
+     * Mínimo precio efectivo entre las salidas cargadas (ya filtradas a
+     * reservables por `TourDetailResolver::bySlug()`), o el precio base si
+     * el tour no tiene ninguna.
+     */
+    private function fromPrice(): string
+    {
+        $min = $this->dates
+            ->map(fn (TourDate $d) => (float) $d->effectivePrice())
+            ->min();
+
+        return $min === null
+            ? (string) $this->base_price
+            : number_format($min, 2, '.', '');
     }
 
     /**

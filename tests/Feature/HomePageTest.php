@@ -43,8 +43,20 @@ class HomePageTest extends TestCase
             ->component('Landing')
             ->where('registerUrl', '/start')
             ->where('loginUrl', '/login')
-            ->where('contactUrl', 'mailto:hola@montree.co')
+            ->where('contactUrl', 'https://wa.me/573008904278')
             ->where('demoUrl', '#funciones'));
+    }
+
+    public function test_contact_url_is_built_from_the_configured_whatsapp_number(): void
+    {
+        config(['montree.contact.whatsapp' => '573001112233']);
+
+        $response = $this->get('http://montree.test/');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Landing')
+            ->where('contactUrl', 'https://wa.me/573001112233'));
     }
 
     public function test_every_hero_variant_referenced_by_the_landing_exists(): void
@@ -257,6 +269,28 @@ class HomePageTest extends TestCase
         $this->assertArrayNotHasKey('capacity', $item);
         $this->assertArrayNotHasKey('price_override', $item);
         $this->assertArrayNotHasKey('booked_count', $item);
+    }
+
+    /**
+     * T12: la regla general de cierre de reservas de la agencia
+     * (`booking_advance_hours`) también aplica a la home cuando la salida no
+     * tiene su propio cierre.
+     */
+    public function test_home_hides_departures_closed_by_the_agency_advance_hours_rule(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->configuration->update(['booking_advance_hours' => 24]);
+
+        $tour = Tour::factory()->active()->create(['name' => 'Cierre por regla']);
+
+        TourDate::factory()->for($tour)->create(['starts_at' => now()->addHours(10)]);
+        $stillOpen = TourDate::factory()->for($tour)->create(['starts_at' => now()->addHours(30)]);
+
+        $response = $this->partialReload($tenant, ['upcomingDepartures']);
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('props.upcomingDepartures'));
+        $response->assertJsonPath('props.upcomingDepartures.0.id', $stillOpen->id);
     }
 
     public function test_home_excludes_non_open_past_and_inactive_tour_departures_and_caps_at_six(): void

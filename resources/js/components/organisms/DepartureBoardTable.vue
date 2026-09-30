@@ -120,7 +120,172 @@ function canManage(date: TourDateGlobalAdmin): boolean {
 </script>
 
 <template>
-    <div class="overflow-x-auto">
+    <!--
+      En mobile las seis columnas no caben ni con scroll horizontal legible
+      (precio, guía y acciones quedaban fuera de vista): se listan como
+      tarjetas apiladas y la tabla completa queda para md+.
+    -->
+    <div class="divide-y divide-brand-line-2 md:hidden">
+        <div
+            v-for="date in props.departures"
+            :key="date.id"
+            class="flex flex-col gap-3 p-4"
+            :class="isDisabled(date) ? 'opacity-[.62]' : ''"
+        >
+            <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <Link
+                        :href="tourShowPage(date.tour.id).url"
+                        class="text-[14.5px] font-semibold text-foreground underline-offset-4 hover:underline"
+                    >
+                        {{ date.tour.name }}
+                    </Link>
+                    <MonoLabel class="mt-1">{{ subtitleFor(date) }}</MonoLabel>
+                </div>
+                <ActionMenu
+                    variant="ghost"
+                    :label="$t('Acciones de :name', { name: date.tour.name })"
+                >
+                    <DropdownMenuItem @select="emit('detail', date)">
+                        <Eye class="size-4" />
+                        {{ $t('Ver detalle') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-if="canManage(date) && !isDisabled(date)"
+                        @select="emit('edit', date)"
+                    >
+                        <Pencil class="size-4" />
+                        {{ $t('Editar salida') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-if="canManage(date) && !isDisabled(date)"
+                        @select="emit('assign-guide', date)"
+                    >
+                        <UserRoundCog class="size-4" />
+                        {{ $t('Asignar guía') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-if="isDisabled(date)"
+                        :disabled="props.busyId === date.id"
+                        @select="emit('restore', date)"
+                    >
+                        <CheckCircle2 class="size-4" />
+                        {{ $t('Habilitar') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-else-if="canManage(date)"
+                        variant="destructive"
+                        @select="emit('cancel', date)"
+                    >
+                        <Ban class="size-4" />
+                        {{ $t('Inhabilitar') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        v-if="date.booked_count === 0"
+                        variant="destructive"
+                        @select="emit('remove', date)"
+                    >
+                        <Trash2 class="size-4" />
+                        {{ $t('Eliminar salida') }}
+                    </DropdownMenuItem>
+                </ActionMenu>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <span
+                    class="grid w-[46px] shrink-0 place-items-center rounded-lg border border-border bg-background py-1"
+                >
+                    <span
+                        class="text-base leading-none font-semibold tabular-nums"
+                    >
+                        {{ formatDayMonth(date.starts_at).day }}
+                    </span>
+                    <span
+                        class="mt-0.5 text-[10px] font-semibold tracking-[0.09em] text-muted-foreground"
+                    >
+                        {{ formatDayMonth(date.starts_at).month }}
+                    </span>
+                </span>
+                <span class="min-w-0">
+                    <span class="block text-[13px] font-medium text-foreground">
+                        {{ formatWeekdayTime(date.starts_at) }}
+                    </span>
+                    <span class="block text-xs text-muted-foreground">
+                        {{ formatDayDistance(date.starts_at) }}
+                    </span>
+                </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <span class="block text-[15px] font-bold tabular-nums">
+                        {{ priceLabel(date) }}
+                    </span>
+                    <span class="block text-xs text-muted-foreground">
+                        {{ $t('por persona') }}
+                    </span>
+                </div>
+                <div v-if="date.guide" class="flex items-center gap-2">
+                    <InitialsAvatar :name="date.guide.name" size="sm" />
+                    <span class="min-w-0">
+                        <span
+                            class="block text-[13px] font-medium text-foreground"
+                        >
+                            {{ date.guide.name }}
+                        </span>
+                        <span class="block text-xs text-muted-foreground">
+                            {{ $t('asignado') }}
+                        </span>
+                    </span>
+                </div>
+                <span
+                    v-else
+                    class="inline-flex items-center rounded-full border border-brand-warn/30 bg-brand-warn-50 px-2.5 py-1 text-[11.5px] font-semibold text-brand-warn"
+                >
+                    {{ $t('Guía por asignar') }}
+                </span>
+            </div>
+
+            <div>
+                <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-[13px] font-semibold tabular-nums">
+                        {{ date.booked_count }}/{{ date.capacity }}
+                    </span>
+                    <span class="text-xs text-muted-foreground">
+                        {{
+                            $t(':count libres', { count: date.available_seats })
+                        }}
+                    </span>
+                </div>
+                <div
+                    class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-brand-line-2"
+                >
+                    <div
+                        class="h-full rounded-full transition-all"
+                        :class="occupancyBarClass(date)"
+                        :style="{ width: `${occupancyPercent(date)}%` }"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="border-t border-border bg-background/60 px-4 py-3 text-xs text-muted-foreground"
+        >
+            {{ $tc(':count salida|:count salidas', props.totals.departures) }}
+            ·
+            {{ $tc(':count viajero|:count viajeros', props.totals.travellers) }}
+            ·
+            {{
+                $tc(
+                    ':count cupo libre|:count cupos libres',
+                    props.totals.seats_left,
+                )
+            }}
+        </div>
+    </div>
+
+    <div class="hidden overflow-x-auto md:block">
         <table class="w-full min-w-[880px] text-sm">
             <thead>
                 <tr class="border-b border-border text-left">
@@ -221,9 +386,9 @@ function canManage(date: TourDateGlobalAdmin): boolean {
                         </div>
                         <span
                             v-else
-                            class="inline-flex items-center rounded-full bg-brand-drop-50 px-2.5 py-1 text-[11.5px] font-semibold text-brand-drop"
+                            class="inline-flex items-center rounded-full border border-brand-warn/30 bg-brand-warn-50 px-2.5 py-1 text-[11.5px] font-semibold text-brand-warn"
                         >
-                            {{ $t('Sin guía') }}
+                            {{ $t('Guía por asignar') }}
                         </span>
                     </td>
 

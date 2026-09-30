@@ -13,6 +13,10 @@ import {
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import CancelTourDateController from '@/actions/App/Http/Controllers/Admin/CancelTourDateController';
+import {
+    createForTour as createDeparture,
+    edit as editDeparture,
+} from '@/actions/App/Http/Controllers/Admin/DepartureFormPagesController';
 import { destroy as destroyDate } from '@/actions/App/Http/Controllers/Admin/TourDatePagesController';
 import {
     destroy as destroyTour,
@@ -28,7 +32,6 @@ import PickupChangeNotice from '@/components/molecules/PickupChangeNotice.vue';
 import StickySaveBar from '@/components/molecules/StickySaveBar.vue';
 import TourTabs from '@/components/molecules/TourTabs.vue';
 import type { TourTabItem } from '@/components/molecules/TourTabs.vue';
-import TourDateFormDialog from '@/components/organisms/TourDateFormDialog.vue';
 import TourDeparturesTable from '@/components/organisms/TourDeparturesTable.vue';
 import TourForm from '@/components/organisms/TourForm.vue';
 import TourImageUploader from '@/components/organisms/TourImageUploader.vue';
@@ -70,11 +73,7 @@ import { applyFormValue } from '@/lib/form-errors';
 import { formatRelativeDate } from '@/lib/format';
 import { tourStopDraftsFrom, tourStopsPayload } from '@/lib/tour-stops';
 import { tourTabId, tourTabPanelId } from '@/lib/tour-tabs';
-import type {
-    DepartureDefaults,
-    DepartureOptions,
-    TourDateAdmin,
-} from '@/types/logistics';
+import type { DepartureOptions, TourDateAdmin } from '@/types/logistics';
 import type {
     Tour,
     TourCategory,
@@ -92,7 +91,6 @@ type Props = {
     categories: TourCategory[];
     departures: TourDateAdmin[];
     departureOptions: DepartureOptions;
-    departureDefaults: DepartureDefaults;
 };
 
 const props = defineProps<Props>();
@@ -244,23 +242,31 @@ const {
     load: loadManifestSummary,
 } = useTourManifestSummary(props.tour.id);
 
-const dateDialogOpen = ref(false);
-const editingDate = ref<TourDateAdmin | null>(null);
-
 const cancelOpen = ref(false);
 const cancelTarget = ref<TourDateAdmin | null>(null);
 const cancelForm = useForm({ reason: '' });
 const cancelling = computed(() => cancelForm.processing);
 const destroyDateForm = useForm({});
 
+/**
+ * T9: crear/editar una salida es su propia página, no un diálogo. El
+ * `return` la trae de vuelta a esta pestaña de este tour.
+ */
+const departuresTabReturnUrl = computed(
+    () => `/admin/tours/${props.tour.id}/edit?tab=departures`,
+);
+
 function openCreateDate(): void {
-    editingDate.value = null;
-    dateDialogOpen.value = true;
+    router.visit(createDeparture.url({ tour: props.tour.id }));
 }
 
 function openEditDate(departure: TourDateAdmin): void {
-    editingDate.value = departure;
-    dateDialogOpen.value = true;
+    router.visit(
+        editDeparture.url(
+            { tourDate: departure.id },
+            { query: { return: departuresTabReturnUrl.value } },
+        ),
+    );
 }
 
 function openCancelDate(departure: TourDateAdmin): void {
@@ -333,9 +339,24 @@ function openFullManifest(): void {
     router.visit(showPage({ tour: props.tour.id }).url + '?tab=passengers');
 }
 
+const TOUR_EDIT_TABS: TourEditTab[] = [
+    'content',
+    'route',
+    'departures',
+    'passengers',
+];
+
 onMounted(() => {
     if (canViewPassengers.value) {
         void loadManifestSummary();
+    }
+
+    // T9: al volver de crear/editar una salida (`return=…?tab=departures`),
+    // la pestaña activa tiene que ser la que el operador dejó.
+    const tab = new URLSearchParams(window.location.search).get('tab');
+
+    if (tab !== null && TOUR_EDIT_TABS.includes(tab as TourEditTab)) {
+        activeTab.value = tab as TourEditTab;
     }
 });
 
@@ -818,18 +839,6 @@ const lastEdited = computed<string | null>(() =>
                 />
             </aside>
         </div>
-
-        <TourDateFormDialog
-            v-model:open="dateDialogOpen"
-            :tour-id="props.tour.id"
-            :editing="editingDate"
-            :duration-hours="props.tour.duration_hours"
-            :departure-defaults="props.departureDefaults"
-            :tour-routes="props.tour.routes"
-            :guides="props.departureOptions.guides"
-            :providers="props.departureOptions.providers"
-            :hotels="props.departureOptions.hotels"
-        />
 
         <Dialog v-model:open="cancelOpen">
             <DialogContent class="sm:max-w-md">

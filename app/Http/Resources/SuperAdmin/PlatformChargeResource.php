@@ -28,10 +28,14 @@ class PlatformChargeResource extends JsonResource
                 'currency' => $this->resource->booking->currency,
             ]),
             'base_amount' => (string) $this->base_amount,
-            'type' => $this->commission_type->value,
-            'applied_value' => (string) $this->applied_value,
+            'applied_rate' => (string) $this->applied_rate,
             'amount' => (string) $this->amount,
             'currency' => $this->currency,
+            'tier_from' => $this->tier_from === null ? null : (string) $this->tier_from,
+            'tier_to' => $this->tier_to === null ? null : (string) $this->tier_to,
+            'max_charge' => $this->max_charge === null ? null : (string) $this->max_charge,
+            'was_capped' => (bool) $this->was_capped,
+            'schedule_scope' => $this->schedule_scope,
         ];
     }
 }

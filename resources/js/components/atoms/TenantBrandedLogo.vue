@@ -77,7 +77,10 @@ const showNameFallback = computed(() => isResolved.value && !hasLogo.value);
 <template>
     <span
         :class="
-            cn('inline-flex items-center justify-center gap-2', props.class)
+            cn(
+                'inline-flex min-w-0 items-center justify-center gap-2',
+                props.class,
+            )
         "
     >
         <img
@@ -91,7 +94,7 @@ const showNameFallback = computed(() => isResolved.value && !hasLogo.value);
             v-else-if="showNameFallback"
             :class="
                 cn(
-                    'font-semibold tracking-tight text-primary-readable',
+                    'max-w-full truncate font-semibold tracking-tight text-primary-readable',
                     nameSizeClass,
                 )
             "

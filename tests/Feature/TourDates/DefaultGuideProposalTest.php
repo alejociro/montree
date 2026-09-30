@@ -84,7 +84,11 @@ final class DefaultGuideProposalTest extends TestCase
         $this->assertStringContainsString('Valle de Cocora', (string) session('errors')?->first('guide_id'));
     }
 
-    public function test_a_tour_without_default_guide_still_demands_one(): void
+    /**
+     * T8 (revierte D7): sin guía por defecto que proponer y sin uno elegido
+     * a mano, la salida se crea igual — queda «por asignar».
+     */
+    public function test_a_tour_without_default_guide_creates_the_departure_without_one(): void
     {
         [$tenant, $admin] = $this->scenario();
         $tour = Tour::factory()->create(['duration_hours' => 8, 'default_guide_id' => null]);
@@ -94,7 +98,27 @@ final class DefaultGuideProposalTest extends TestCase
             ['starts_at' => self::START, 'capacity' => 10],
         );
 
-        $response->assertSessionHasErrors('guide_id');
+        $response->assertSessionHas('success');
+        $this->assertNull(TourDate::query()->where('tour_id', $tour->id)->sole()->guide_id);
+    }
+
+    /**
+     * T8: un `guide_id` `null` explícito gana incluso cuando el tour SÍ tiene
+     * uno por defecto — el cliente pidió «Asignar después», no que se le
+     * proponga nada.
+     */
+    public function test_an_explicit_null_wins_over_the_default(): void
+    {
+        [$tenant, $admin, $guide] = $this->scenario();
+        $tour = $this->tour($guide);
+
+        $response = $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
+            ['starts_at' => self::START, 'capacity' => 10, 'guide_id' => null],
+        );
+
+        $response->assertSessionHas('success');
+        $this->assertNull(TourDate::query()->where('tour_id', $tour->id)->sole()->guide_id);
     }
 
     public function test_editing_a_departure_never_proposes_the_default(): void

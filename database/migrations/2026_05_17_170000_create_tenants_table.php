@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -20,10 +19,7 @@ return new class extends Migration
             $table->string('contact_email');
             $table->string('contact_phone')->nullable();
             $table->string('status')->default(TenantStatus::Pending->value)->index();
-            $table->string('plan')->default(TenantPlan::Basic->value)->index();
-            $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('suspended_at')->nullable();
-            $table->json('plan_limits')->nullable();
             $table->timestamps();
         });
     }

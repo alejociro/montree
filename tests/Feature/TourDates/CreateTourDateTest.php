@@ -195,4 +195,108 @@ final class CreateTourDateTest extends TestCase
             ['starts_at' => now()->addDays(3)->toIso8601String(), 'capacity' => 5],
         )->assertNotFound();
     }
+
+    /**
+     * T7: sin enviar los bloques de "Contenido de la salida", la salida
+     * nueva hereda del producto — las columnas quedan `null`.
+     */
+    public function test_store_leaves_content_blocks_null_when_not_sent(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+
+        $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+            ],
+        )->assertSessionHas('success');
+
+        $departure = TourDate::query()->where('tour_id', $tour->id)->sole();
+        $this->assertNull($departure->itinerary);
+        $this->assertNull($departure->includes);
+        $this->assertNull($departure->excludes);
+        $this->assertNull($departure->requirements);
+        $this->assertNull($departure->meeting_point);
+        $this->assertNull($departure->booking_closes_at);
+    }
+
+    public function test_store_persists_custom_content_and_booking_closes_at(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+        $closesAt = now()->addDays(5);
+
+        $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+                'booking_closes_at' => $closesAt->toIso8601String(),
+                'itinerary' => [
+                    ['step_number' => 1, 'title' => 'Salida especial', 'description' => null, 'duration_label' => null],
+                ],
+                'includes' => ['Almuerzo especial'],
+                'excludes' => ['Transporte'],
+                'requirements' => ['Ropa de agua'],
+                'meeting_point' => 'Punto especial de esta salida',
+            ],
+        )->assertSessionHas('success');
+
+        $departure = TourDate::query()->where('tour_id', $tour->id)->sole();
+        $this->assertSame('Salida especial', $departure->itinerary[0]['title']);
+        $this->assertSame(['Almuerzo especial'], $departure->includes);
+        $this->assertSame(['Transporte'], $departure->excludes);
+        $this->assertSame(['Ropa de agua'], $departure->requirements);
+        $this->assertSame('Punto especial de esta salida', $departure->meeting_point);
+        $this->assertNotNull($departure->booking_closes_at);
+        $this->assertTrue($departure->hasCustomContent());
+    }
+
+    public function test_store_rejects_a_booking_closes_at_after_the_start(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+
+        $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+                'booking_closes_at' => now()->addDays(11)->toIso8601String(),
+            ],
+        )->assertSessionHasErrors('booking_closes_at');
+    }
+
+    public function test_store_rejects_a_booking_closes_at_in_the_past(): void
+    {
+        $tenant = $this->makeTenant();
+        $tenant->makeCurrent();
+        $tour = Tour::factory()->create();
+        $admin = $this->memberFor($tenant, UserRole::Admin);
+        $guide = $this->guideFor($tenant);
+
+        $this->actingAs($admin)->post(
+            $this->host($tenant)."/admin/tours/{$tour->id}/dates",
+            [
+                'starts_at' => now()->addDays(10)->toIso8601String(),
+                'capacity' => 12,
+                'guide_id' => $guide->id,
+                'booking_closes_at' => now()->subHour()->toIso8601String(),
+            ],
+        )->assertSessionHasErrors('booking_closes_at');
+    }
 }

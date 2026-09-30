@@ -172,7 +172,13 @@ final class GuideAvailabilityTest extends TestCase
         $response->assertSessionHasErrors('guide_id');
     }
 
-    public function test_guide_id_is_required_in_the_three_paths(): void
+    /**
+     * T8 (revierte D7): crear y editar aceptan quedarse sin guía —el tour
+     * de este escenario no tiene guía por defecto que proponer—. El `PATCH`
+     * de asignación es el único de los tres que sigue exigiendo uno: su
+     * propósito es asignar, no vaciar.
+     */
+    public function test_create_and_edit_allow_no_guide_but_the_assign_endpoint_still_requires_one(): void
     {
         [$tenant, $admin, $guide] = $this->scenario();
         $tour = $this->tour(8, 'Salento');
@@ -181,12 +187,16 @@ final class GuideAvailabilityTest extends TestCase
         $this->actingAs($admin)->post(
             $this->host($tenant)."/admin/tours/{$tour->id}/dates",
             ['starts_at' => '2026-10-01 07:00:00', 'capacity' => 10],
-        )->assertSessionHasErrors('guide_id');
+        )->assertSessionHas('success');
+        $this->assertNull(
+            TourDate::query()->where('starts_at', '2026-10-01 07:00:00')->sole()->guide_id,
+        );
 
         $this->actingAs($admin)->put(
             $this->host($tenant)."/admin/tour-dates/{$departure->id}",
             ['guide_id' => null],
-        )->assertSessionHasErrors('guide_id');
+        )->assertSessionHas('success');
+        $this->assertNull($departure->fresh()?->guide_id);
 
         $this->actingAs($admin)->patch(
             $this->host($tenant)."/admin/tour-dates/{$departure->id}/guide",

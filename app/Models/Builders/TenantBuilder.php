@@ -20,7 +20,6 @@ final class TenantBuilder extends Builder
         return $this
             ->when($filters->search !== null, fn (self $query) => $query->matching($filters->search))
             ->when($filters->status !== null, fn (self $query) => $query->where('status', $filters->status))
-            ->when($filters->plan !== null, fn (self $query) => $query->where('plan', $filters->plan))
             ->orderBy($filters->sort, $filters->direction);
     }
 

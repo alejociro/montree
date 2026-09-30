@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useTenant } from '@/composables/useTenant';
 import { useTranslations } from '@/composables/useTranslations';
 import { terms as termsRoute } from '@/routes/policies';
+import type { PlaceToPayEnvironment } from '@/types/enums.generated';
 import type {
     TenantContactInfo,
     TenantLocale,
@@ -43,12 +44,13 @@ type ConfigurationForm = {
     locale: TenantLocale;
     reviews_require_moderation: boolean;
     require_traveler_details: boolean;
+    booking_advance_hours: number | '';
     social_links: TenantSocialLinks;
     contact_info: TenantContactInfo;
     custom_css: string;
     placetopay_login: string;
     placetopay_tran_key: string;
-    placetopay_url: string;
+    placetopay_environment: PlaceToPayEnvironment;
     terms_body: string;
     logo: File | null;
     favicon: File | null;
@@ -59,8 +61,6 @@ type ConfigurationForm = {
 
 const { tenant, configuration } = useTenant();
 const page = usePage();
-
-const isEnterprise = computed(() => tenant.value?.plan === 'enterprise');
 
 /**
  * WHY: sin color configurado el campo arranca vacío, no en el verde de MONTREE.
@@ -79,14 +79,19 @@ const form = useForm<ConfigurationForm>(() => ({
         configuration.value?.reviews_require_moderation ?? true,
     require_traveler_details:
         configuration.value?.require_traveler_details ?? true,
+    booking_advance_hours: configuration.value?.booking_advance_hours ?? '',
     social_links: { ...(configuration.value?.social_links ?? {}) },
     contact_info: { ...(configuration.value?.contact_info ?? {}) },
     custom_css: configuration.value?.custom_css ?? '',
     placetopay_login: configuration.value?.placetopay?.login ?? '',
     // Nunca se precarga: el servidor no devuelve el tranKey guardado.
     placetopay_tran_key: '',
-    placetopay_url: configuration.value?.placetopay?.url ?? '',
-    terms_body: props.terms.body ?? '',
+    placetopay_environment:
+        configuration.value?.placetopay?.environment ?? 'test',
+    // T13: sin términos propios, el editor arranca precargado con el texto
+    // por defecto vigente (no vacío) para que personalizar sea editar, no
+    // escribir desde cero.
+    terms_body: props.terms.body ?? props.terms.default_body,
     logo: null,
     favicon: null,
     hero_image: null,
@@ -116,6 +121,7 @@ const operationalValues = computed({
         locale: form.locale,
         reviews_require_moderation: form.reviews_require_moderation,
         require_traveler_details: form.require_traveler_details,
+        booking_advance_hours: form.booking_advance_hours,
     }),
     set: (value) => {
         form.currency = value.currency;
@@ -123,6 +129,7 @@ const operationalValues = computed({
         form.locale = value.locale;
         form.reviews_require_moderation = value.reviews_require_moderation;
         form.require_traveler_details = value.require_traveler_details;
+        form.booking_advance_hours = value.booking_advance_hours;
     },
 });
 
@@ -130,12 +137,12 @@ const gatewayValues = computed({
     get: () => ({
         placetopay_login: form.placetopay_login,
         placetopay_tran_key: form.placetopay_tran_key,
-        placetopay_url: form.placetopay_url,
+        placetopay_environment: form.placetopay_environment,
     }),
     set: (value) => {
         form.placetopay_login = value.placetopay_login;
         form.placetopay_tran_key = value.placetopay_tran_key;
-        form.placetopay_url = value.placetopay_url;
+        form.placetopay_environment = value.placetopay_environment;
     },
 });
 
@@ -167,10 +174,14 @@ function buildPayload(data: ConfigurationForm): Record<string, unknown> {
         locale: data.locale,
         reviews_require_moderation: data.reviews_require_moderation,
         require_traveler_details: data.require_traveler_details,
+        booking_advance_hours:
+            data.booking_advance_hours === ''
+                ? null
+                : data.booking_advance_hours,
         social_links: data.social_links,
         contact_info: data.contact_info,
         placetopay_login: data.placetopay_login,
-        placetopay_url: data.placetopay_url,
+        placetopay_environment: data.placetopay_environment,
         terms_body: data.terms_body,
         remove_logo: data.remove_logo,
         remove_hero_image: data.remove_hero_image,
@@ -188,7 +199,7 @@ function buildPayload(data: ConfigurationForm): Record<string, unknown> {
         payload.placetopay_tran_key = data.placetopay_tran_key;
     }
 
-    if (isEnterprise.value && data.custom_css) {
+    if (data.custom_css) {
         payload.custom_css = data.custom_css;
     }
 
@@ -233,7 +244,6 @@ function resetForm(): void {
 }
 </script>
 
-
 <template>
     <Head :title="$t('Configuración del tenant')" />
 
@@ -265,7 +275,7 @@ function resetForm(): void {
             <form class="space-y-10" @submit.prevent="submit">
                 <Alert v-if="form.errors.custom_css" variant="destructive">
                     <AlertCircle class="size-4" />
-                    <AlertTitle>{{ $t('Función Enterprise') }}</AlertTitle>
+                    <AlertTitle>{{ $t('CSS personalizado') }}</AlertTitle>
                     <AlertDescription>
                         {{ form.errors.custom_css }}
                     </AlertDescription>
@@ -324,13 +334,15 @@ function resetForm(): void {
                     :errors="{
                         placetopay_login: form.errors.placetopay_login,
                         placetopay_tran_key: form.errors.placetopay_tran_key,
-                        placetopay_url: form.errors.placetopay_url,
+                        placetopay_environment:
+                            form.errors.placetopay_environment,
                     }"
                 />
 
                 <TermsEditor
                     v-model="form.terms_body"
                     :is-default="props.terms.is_default"
+                    :default-body="props.terms.default_body"
                     :public-url="termsRoute.url()"
                     :error="form.errors.terms_body"
                 />
@@ -381,6 +393,7 @@ function resetForm(): void {
                 <PreviewPanel
                     :tenant-name="tenant.name"
                     :tagline="form.tagline"
+                    :description="form.description"
                     :primary-color="form.primary_color"
                     :secondary-color="form.secondary_color"
                 />

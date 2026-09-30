@@ -2,7 +2,6 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { LogIn } from 'lucide-vue-next';
 import { computed } from 'vue';
-import PlanBadge from '@/components/molecules/PlanBadge.vue';
 import TenantStatusBadge from '@/components/molecules/TenantStatusBadge.vue';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatCurrency } from '@/lib/format';
@@ -27,13 +26,13 @@ const page = usePage();
 const csrfToken = computed(() => page.props.csrfToken);
 
 function commissionLabel(tenant: SuperAdminTenantSummary): string {
-    if (tenant.commission.type === null || tenant.commission.value === null) {
-        return t('Sin cobro');
+    if (tenant.commission.scope === 'global') {
+        return t('Global');
     }
 
-    return tenant.commission.type === 'percentage'
-        ? `${Number(tenant.commission.value)} %`
-        : formatCurrency(tenant.commission.value, tenant.commission.currency);
+    return t('Propio (:count rangos)', {
+        count: tenant.commission.tiers_count ?? 0,
+    });
 }
 
 function enterTitle(tenant: SuperAdminTenantSummary): string {
@@ -53,9 +52,7 @@ function enterFromRow(event: Event, tenant: SuperAdminTenantSummary): void {
         return;
     }
 
-    (event.currentTarget as HTMLElement)
-        .querySelector('form')
-        ?.requestSubmit();
+    (event.currentTarget as HTMLElement).querySelector('form')?.requestSubmit();
 }
 </script>
 
@@ -75,11 +72,6 @@ function enterFromRow(event: Event, tenant: SuperAdminTenantSummary): void {
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                         {{ $t('Estado') }}
-                    </th>
-                    <th
-                        class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                    >
-                        {{ $t('Plan') }}
                     </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
@@ -111,7 +103,7 @@ function enterFromRow(event: Event, tenant: SuperAdminTenantSummary): void {
             <tbody class="divide-y divide-border">
                 <tr v-if="tenants.length === 0">
                     <td
-                        colspan="8"
+                        colspan="7"
                         class="px-4 py-12 text-center text-sm text-muted-foreground"
                     >
                         {{ $t('No se encontraron agencias con esos filtros.') }}
@@ -168,9 +160,6 @@ function enterFromRow(event: Event, tenant: SuperAdminTenantSummary): void {
                     </td>
                     <td class="px-4 py-3">
                         <TenantStatusBadge :status="tenant.status" />
-                    </td>
-                    <td class="px-4 py-3">
-                        <PlanBadge :plan="tenant.plan" />
                     </td>
                     <td class="px-4 py-3 text-sm text-foreground">
                         {{ commissionLabel(tenant) }}

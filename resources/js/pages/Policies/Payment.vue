@@ -1,10 +1,48 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { useTranslations } from '@/composables/useTranslations';
 import PlatformShell from '@/layouts/PlatformShell.vue';
+import { formatCurrency } from '@/lib/format';
 
 const { t } = useTranslations();
+const page = usePage();
 
-const lastUpdated = t('11 de agosto de 2026');
+const lastUpdated = t('29 de septiembre de 2026');
+
+const contactEmail = computed(
+    () => page.props.platform?.legal.email ?? 'it@jae-solutions.com',
+);
+
+const commissionSchedule = computed(
+    () => page.props.platform?.commissionSchedule ?? null,
+);
+
+function formatTierRange(from: string, to: string | null): string {
+    const currency = commissionSchedule.value?.currency ?? 'COP';
+    const fromLabel = formatCurrency(from, currency);
+
+    if (to === null) {
+        return t('Desde :from', { from: fromLabel });
+    }
+
+    return t(':from – :to', {
+        from: fromLabel,
+        to: formatCurrency(to, currency),
+    });
+}
+
+const maxChargeLabel = computed(() => {
+    const maxCharge = commissionSchedule.value?.max_charge ?? null;
+
+    if (maxCharge === null) {
+        return null;
+    }
+
+    const currency = commissionSchedule.value?.currency ?? 'COP';
+
+    return formatCurrency(maxCharge, currency);
+});
 </script>
 
 <template>
@@ -87,21 +125,40 @@ const lastUpdated = t('11 de agosto de 2026');
                     <p>
                         {{
                             $t(
-                                'Montree cobra a la agencia una comisión de entre el',
-                            )
-                        }}
-                        <strong>{{ $t('3% y el 5%') }}</strong>
-                        {{
-                            $t(
-                                'sobre el valor de cada reserva confirmada. El porcentaje exacto depende del volumen mensual de la agencia y queda establecido en su contrato. No se cobra comisión por reservas canceladas, expiradas o no pagadas.',
+                                'Montree cobra un porcentaje sobre el valor total de cada reserva confirmada, según el rango en que esté la reserva. Si hay un tope máximo por reserva y el porcentaje lo supera, se cobra solo el tope. El porcentaje de tu agencia puede estar definido en tu acuerdo comercial. No se cobra comisión por reservas canceladas, expiradas o no pagadas.',
                             )
                         }}
                     </p>
-                    <p class="legal-pending">
+                    <table
+                        v-if="
+                            commissionSchedule &&
+                            commissionSchedule.tiers.length > 0
+                        "
+                        class="legal-table"
+                    >
+                        <thead>
+                            <tr>
+                                <th>{{ $t('Valor de la reserva') }}</th>
+                                <th>{{ $t('Comisión') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="tier in commissionSchedule.tiers"
+                                :key="`${tier.from}-${tier.to ?? 'inf'}`"
+                            >
+                                <td>
+                                    {{ formatTierRange(tier.from, tier.to) }}
+                                </td>
+                                <td>{{ tier.rate }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p v-if="maxChargeLabel">
                         {{
-                            $t(
-                                'Pendiente de confirmación: tarifa mensual de infraestructura para agencias pequeñas.',
-                            )
+                            $t('Tope máximo por reserva: :amount', {
+                                amount: maxChargeLabel,
+                            })
                         }}
                     </p>
 
@@ -135,8 +192,8 @@ const lastUpdated = t('11 de agosto de 2026');
                     <h3>{{ $t('8. Contacto') }}</h3>
                     <p>
                         {{ $t('Para dudas sobre un cobro escríbenos a') }}
-                        <a href="mailto:hola@montree.co">{{
-                            $t('hola@montree.co')
+                        <a :href="`mailto:${contactEmail}`">{{
+                            contactEmail
                         }}</a
                         >.
                     </p>
@@ -203,5 +260,21 @@ const lastUpdated = t('11 de agosto de 2026');
     background: var(--green-pale);
     border-radius: 0 8px 8px 0;
     font-size: 0.875rem;
+}
+.legal-table {
+    width: 100%;
+    margin-top: 1.1rem;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+.legal-table th,
+.legal-table td {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+.legal-table th {
+    color: var(--text-dark);
+    font-weight: 600;
 }
 </style>

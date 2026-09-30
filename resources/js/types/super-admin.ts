@@ -1,8 +1,8 @@
-import type { CommissionType } from './enums.generated';
-
-export type { CommissionType };
 import type { PaginatedResponse } from './pagination';
-import type { TenantConfiguration, TenantPlan, TenantStatus } from './tenant';
+import type { CommissionSchedule, CommissionTier } from './platform';
+import type { TenantConfiguration, TenantStatus } from './tenant';
+
+export type { CommissionSchedule, CommissionTier };
 
 export type MonthPoint = {
     month: string;
@@ -10,9 +10,11 @@ export type MonthPoint = {
     value: number | string;
 };
 
+export type CommissionScope = 'global' | 'tenant';
+
 export type TenantCommission = {
-    type: CommissionType | null;
-    value: string | null;
+    scope: CommissionScope;
+    tiers_count: number | null;
     currency: string;
 };
 
@@ -30,8 +32,6 @@ export type SuperAdminTenantSummary = {
     name: string;
     domain: string | null;
     status: TenantStatus;
-    plan: TenantPlan;
-    trial_ends_at: string | null;
     suspended_at: string | null;
     contact_email: string | null;
     contact_phone: string | null;
@@ -45,7 +45,6 @@ export type SuperAdminTenantSummary = {
 export type TenantsListFilters = {
     search: string | null;
     status: TenantStatus | null;
-    plan: TenantPlan | null;
     sort: 'created_at' | 'name';
     direction: 'asc' | 'desc';
 };
@@ -98,10 +97,14 @@ export type PlatformChargeRow = {
         currency: string;
     } | null;
     base_amount: string;
-    type: CommissionType;
-    applied_value: string;
+    applied_rate: string;
     amount: string;
     currency: string;
+    tier_from: string | null;
+    tier_to: string | null;
+    max_charge: string | null;
+    was_capped: boolean;
+    schedule_scope: 'global' | 'tenant' | null;
 };
 
 export type PlatformChargeTotals = {

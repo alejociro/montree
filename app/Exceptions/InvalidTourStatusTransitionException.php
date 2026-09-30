@@ -32,20 +32,6 @@ final class InvalidTourStatusTransitionException extends RuntimeException implem
     }
 
     /**
-     * WHY (D7): publicar un tour sin guía por defecto deja salidas que nadie
-     * puede crear —el guía es obligatorio desde la Fase 1— o que hay que
-     * completar a mano una por una.
-     */
-    public static function needsDefaultGuide(): self
-    {
-        $exception = new self(TourStatus::Draft, TourStatus::Active);
-        $exception->message = __('Tour needs a default guide before activating.');
-        $exception->errorCode = 'TOUR_NEEDS_GUIDE_TO_ACTIVATE';
-
-        return $exception;
-    }
-
-    /**
      * WHY (D7): el resumen corto es lo que se lee en el catálogo debajo del
      * nombre. Publicar sin él deja la tarjeta pública muda, y la regla 4 del
      * handoff lo pide desde el principio.

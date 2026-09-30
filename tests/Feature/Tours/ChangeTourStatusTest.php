@@ -73,10 +73,11 @@ final class ChangeTourStatusTest extends TestCase
     }
 
     /**
-     * D7/D9: toda salida lleva guía, así que publicar un tour sin guía por
-     * defecto deja un tour que no puede programar nada.
+     * T8 (revierte D7): el guía por defecto es una recomendación, no un
+     * requisito para publicar — una salida puede operar sin guía y
+     * asignárselo después.
      */
-    public function test_activating_without_a_default_guide_fails(): void
+    public function test_activating_without_a_default_guide_succeeds(): void
     {
         $tenant = $this->makeTenant();
         $tenant->makeCurrent();
@@ -89,8 +90,8 @@ final class ChangeTourStatusTest extends TestCase
             ['status' => 'active'],
         );
 
-        $response->assertSessionHasErrors(['status' => __('Tour needs a default guide before activating.')]);
-        $this->assertSame(TourStatus::Draft, $tour->fresh()?->status);
+        $response->assertSessionHas('success');
+        $this->assertSame(TourStatus::Active, $tour->fresh()?->status);
     }
 
     public function test_activating_without_a_future_date_succeeds(): void

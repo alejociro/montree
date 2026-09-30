@@ -3,7 +3,15 @@
 declare(strict_types=1);
 
 return [
-    'url' => env('P2P_URL', 'https://checkout-test.placetopay.com'),
+    // T14: ambiente por defecto de la plataforma; cada tenant con comercio
+    // propio puede elegir el suyo (`tenant_configurations.placetopay_environment`).
+    'environment' => env('P2P_ENVIRONMENT', 'test'),
+
+    'environments' => [
+        'test' => 'https://checkout-test.placetopay.com',
+        'production' => 'https://checkout.placetopay.com',
+    ],
+
     'login' => env('P2P_LOGIN'),
     'tran_key' => env('P2P_TRANKEY'),
 

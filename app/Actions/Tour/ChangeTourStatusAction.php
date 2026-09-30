@@ -46,9 +46,10 @@ final class ChangeTourStatusAction
             return;
         }
 
+        // WHY (T8): REQUIREMENT_GUIDE ya no bloquea, así que `$pending` nunca
+        // lo trae —no hay rama para él aquí, a propósito—.
         throw match ($pending[0]) {
             TourPublishChecklist::REQUIREMENT_IMAGE => InvalidTourStatusTransitionException::needsImage(),
-            TourPublishChecklist::REQUIREMENT_GUIDE => InvalidTourStatusTransitionException::needsDefaultGuide(),
             TourPublishChecklist::REQUIREMENT_SUMMARY => InvalidTourStatusTransitionException::needsSummary(),
             default => InvalidTourStatusTransitionException::incomplete(),
         };

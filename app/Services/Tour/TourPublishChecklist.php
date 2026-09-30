@@ -19,6 +19,11 @@ use App\Models\Tour;
  *
  * Las paradas de recogida y regreso NO bloquean (D7): endurecerlas dejaría en
  * borrador a tours que hoy están activos la próxima vez que alguien los toque.
+ *
+ * El guía por defecto tampoco bloquea (T8, revierte D7): una salida puede
+ * crearse y operar sin guía, así que exigirlo para publicar el TOUR dejaría
+ * de tener sentido. Se queda como recomendación —sin guía por defecto, cada
+ * salida nueva va a pedir uno a mano—.
  */
 final class TourPublishChecklist
 {
@@ -72,7 +77,7 @@ final class TourPublishChecklist
                 'id' => self::REQUIREMENT_GUIDE,
                 'label' => __('Guía por defecto'),
                 'done' => $tour->default_guide_id !== null,
-                'blocking' => true,
+                'blocking' => false,
             ],
             [
                 'id' => self::REQUIREMENT_STOPS,

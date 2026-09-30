@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\SuperAdmin;
 
-use App\Enums\CommissionType;
 use App\Enums\PaymentStatus;
 use App\Models\Booking;
+use App\Models\CommissionSchedule;
 use App\Models\Payment;
 use App\Models\PlatformCharge;
 use App\Models\Tenant;
+use App\Models\TenantConfiguration;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
@@ -17,11 +18,11 @@ class TenantIndexPageTest extends SuperAdminTestCase
 {
     public function test_the_listing_ships_every_row_with_its_stats_and_commission(): void
     {
-        $tenant = Tenant::factory()->create([
-            'name' => 'Eco Travels',
-            'commission_type' => CommissionType::Percentage,
-            'commission_value' => '5.00',
-        ]);
+        $tenant = Tenant::factory()->create(['name' => 'Eco Travels']);
+        TenantConfiguration::factory()->for($tenant)->create(['currency' => 'COP']);
+        CommissionSchedule::factory()->for($tenant)->withTiers([
+            ['from' => '0.00', 'to' => null, 'rate' => '5.00'],
+        ])->create(['currency' => 'COP']);
 
         $tenant->makeCurrent();
         $booking = Booking::factory()->create();
@@ -48,8 +49,8 @@ class TenantIndexPageTest extends SuperAdminTestCase
                 ->has('tenants.data', 1)
                 ->where('tenants.data.0.name', 'Eco Travels')
                 ->where('tenants.data.0.can_enter', true)
-                ->where('tenants.data.0.commission.type', 'percentage')
-                ->where('tenants.data.0.commission.value', '5.00')
+                ->where('tenants.data.0.commission.scope', 'tenant')
+                ->where('tenants.data.0.commission.tiers_count', 1)
                 ->where('tenants.data.0.stats.bookings_count_30d', 1)
                 ->where('tenants.data.0.stats.revenue_30d', '80.00')
                 ->where('tenants.data.0.stats.charges_30d', '4.00')
@@ -87,7 +88,7 @@ class TenantIndexPageTest extends SuperAdminTestCase
     public function test_an_unknown_sort_column_is_rejected(): void
     {
         $this->actingAs($this->superAdmin())
-            ->get($this->platformUrl('/super-admin/tenants?sort=commission_value'))
+            ->get($this->platformUrl('/super-admin/tenants?sort=contact_email'))
             ->assertSessionHasErrors('sort');
     }
 

@@ -37,7 +37,10 @@ final class CreateBookingAction
                 throw BookingException::dateNotAvailable();
             }
 
-            if ($tourDate->starts_at->isPast()) {
+            // T7/T12: `booking_closes_at` propio manda; sin él, rige la regla
+            // de la agencia (horas antes del inicio); sin ninguno, la
+            // ventana sigue siendo la hora de inicio.
+            if ($tourDate->starts_at->isPast() || $tourDate->effectiveBookingClosesAt()->isPast()) {
                 throw BookingException::bookingWindowClosed();
             }
 
@@ -49,7 +52,7 @@ final class CreateBookingAction
                 throw BookingException::insufficientCapacity($available);
             }
 
-            $pricePerSeat = (string) ($tourDate->price_override ?? $tourDate->tour->base_price);
+            $pricePerSeat = $tourDate->effectivePrice();
             $subtotal = bcmul($pricePerSeat, (string) $travelers, 2);
 
             $discount = '0.00';

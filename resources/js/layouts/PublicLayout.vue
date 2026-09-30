@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { Mail, MapPin, MessageCircle, Phone } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { Mail, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import TenantBrandedLogo from '@/components/atoms/TenantBrandedLogo.vue';
 import LocaleSwitcher from '@/components/molecules/LocaleSwitcher.vue';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,38 @@ const hasSocialLinks = computed(() => {
 
     return Object.values(links).some((value) => Boolean(value));
 });
+
+const isMobileMenuOpen = ref(false);
+
+function closeMobileMenu(): void {
+    isMobileMenuOpen.value = false;
+}
+
+function toggleMobileMenu(): void {
+    isMobileMenuOpen.value = !isMobileMenuOpen.value;
+}
+
+function handleEscape(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+        closeMobileMenu();
+    }
+}
+
+watch(isMobileMenuOpen, (open) => {
+    if (open) {
+        document.addEventListener('keydown', handleEscape);
+    } else {
+        document.removeEventListener('keydown', handleEscape);
+    }
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', handleEscape);
+});
+
+const stopNavigateListener = router.on('navigate', closeMobileMenu);
+
+onBeforeUnmount(stopNavigateListener);
 </script>
 
 <template>
@@ -53,7 +85,7 @@ const hasSocialLinks = computed(() => {
             >
                 <Link
                     href="/"
-                    class="flex items-center gap-2"
+                    class="flex min-w-0 shrink items-center gap-2"
                     :aria-label="displayName"
                 >
                     <TenantBrandedLogo size="sm" />
@@ -88,7 +120,7 @@ const hasSocialLinks = computed(() => {
                         aria-hidden="true"
                     />
                     <LocaleSwitcher />
-                    <div class="ml-2 flex items-center gap-2">
+                    <div class="ml-2 hidden items-center gap-2 sm:flex">
                         <template v-if="$page.props.auth.user">
                             <Button
                                 v-if="!isStaffMember"
@@ -115,6 +147,76 @@ const hasSocialLinks = computed(() => {
                             </Button>
                         </template>
                     </div>
+                    <button
+                        type="button"
+                        class="ml-1 flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground sm:hidden"
+                        :aria-expanded="isMobileMenuOpen"
+                        aria-controls="public-mobile-menu"
+                        :aria-label="
+                            isMobileMenuOpen
+                                ? $t('Cerrar menú')
+                                : $t('Abrir menú')
+                        "
+                        @click="toggleMobileMenu"
+                    >
+                        <X v-if="isMobileMenuOpen" class="size-5" />
+                        <Menu v-else class="size-5" />
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Menú móvil -->
+            <div
+                v-if="isMobileMenuOpen"
+                id="public-mobile-menu"
+                class="border-t border-border/60 sm:hidden"
+            >
+                <nav
+                    class="mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 py-3"
+                >
+                    <Link
+                        :href="catalogIndex().url"
+                        class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                        {{ $t('Tours') }}
+                    </Link>
+                    <template v-if="$page.props.auth.user">
+                        <Link
+                            v-if="workspace"
+                            :href="workspace.href"
+                            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            {{ $t('Panel') }}
+                        </Link>
+                        <Link
+                            v-if="!isStaffMember"
+                            :href="accountBookings()"
+                            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            {{ $t('Reservas') }}
+                        </Link>
+                        <Link
+                            v-if="!isStaffMember"
+                            :href="accountProfile()"
+                            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            {{ $t('Mi cuenta') }}
+                        </Link>
+                    </template>
+                    <template v-else-if="tenant">
+                        <Link
+                            :href="login().url"
+                            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            {{ $t('Ingresar') }}
+                        </Link>
+                        <Link
+                            :href="register().url"
+                            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            {{ $t('Registrarse') }}
+                        </Link>
+                    </template>
                 </nav>
             </div>
         </header>
@@ -132,7 +234,7 @@ const hasSocialLinks = computed(() => {
                     />
                 </div>
 
-                <div v-if="hasContactInfo" class="space-y-4">
+                <div v-if="hasContactInfo" class="min-w-0 space-y-4">
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
                         {{ $t('Información de Contacto') }}
                     </h3>
@@ -142,21 +244,25 @@ const hasSocialLinks = computed(() => {
                             class="flex items-start gap-2"
                         >
                             <MapPin class="mt-0.5 size-4 shrink-0" />
-                            <span>{{ configuration.contact_info.address }}</span>
+                            <span class="min-w-0 break-words">{{
+                                configuration.contact_info.address
+                            }}</span>
                         </li>
                         <li
                             v-if="configuration?.contact_info?.phone"
                             class="flex items-center gap-2"
                         >
                             <Phone class="size-4 shrink-0" />
-                            <span>{{ configuration.contact_info.phone }}</span>
+                            <span class="min-w-0 break-words">{{
+                                configuration.contact_info.phone
+                            }}</span>
                         </li>
                         <li
                             v-if="configuration?.contact_info?.whatsapp"
                             class="flex items-center gap-2"
                         >
                             <MessageCircle class="size-4 shrink-0" />
-                            <span>{{
+                            <span class="min-w-0 break-words">{{
                                 configuration.contact_info.whatsapp
                             }}</span>
                         </li>
@@ -165,15 +271,14 @@ const hasSocialLinks = computed(() => {
                             class="flex items-center gap-2"
                         >
                             <Mail class="size-4 shrink-0" />
-                            <span>{{ configuration.contact_info.email }}</span>
+                            <span class="min-w-0 break-words">{{
+                                configuration.contact_info.email
+                            }}</span>
                         </li>
                     </ul>
                 </div>
 
-                <div
-                    v-if="hasSocialLinks"
-                    class="space-y-4 lg:col-start-3"
-                >
+                <div v-if="hasSocialLinks" class="space-y-4 lg:col-start-3">
                     <h3 class="text-sm font-semibold tracking-wider uppercase">
                         {{ $t('Síguenos en Redes Sociales') }}
                     </h3>

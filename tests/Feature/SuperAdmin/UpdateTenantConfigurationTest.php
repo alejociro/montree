@@ -50,6 +50,24 @@ class UpdateTenantConfigurationTest extends SuperAdminTestCase
         Storage::disk('public')->assertExists($configuration->hero_image_path);
     }
 
+    /**
+     * T12: el super admin también puede fijar la regla de cierre de
+     * reservas por defecto de la agencia.
+     */
+    public function test_super_admin_updates_the_booking_advance_hours_rule(): void
+    {
+        $tenant = Tenant::factory()->create();
+        TenantConfiguration::factory()->for($tenant)->create();
+
+        $this->actingAs($this->superAdmin())
+            ->post($this->platformUrl("/super-admin/tenants/{$tenant->id}/configuration"), [
+                'booking_advance_hours' => 48,
+            ])
+            ->assertRedirect($this->platformUrl("/super-admin/tenants/{$tenant->id}"));
+
+        $this->assertSame(48, $tenant->configuration->fresh()->booking_advance_hours);
+    }
+
     public function test_an_invalid_color_is_rejected(): void
     {
         $tenant = Tenant::factory()->create();

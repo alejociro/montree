@@ -7,7 +7,9 @@ namespace App\Http\Requests\Admin\Tenant;
 use App\Data\BrandingAssetsData;
 use App\Data\TenantConfigurationData;
 use App\Enums\Currency;
+use App\Enums\PlaceToPayEnvironment;
 use App\Models\Tenant;
+use App\Services\Tenant\TermsRenderer;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -51,11 +53,14 @@ final class UpdateTenantConfigurationRequest extends FormRequest
             'contact_info.whatsapp' => ['sometimes', 'nullable', 'string', 'max:40'],
             'reviews_require_moderation' => ['sometimes', 'boolean'],
             'require_traveler_details' => ['sometimes', 'boolean'],
+            // T12: regla general de cierre de reservas de la agencia (horas
+            // antes del inicio de cada salida). Vacío = sin regla.
+            'booking_advance_hours' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:720'],
             'custom_css' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'terms_body' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'placetopay_login' => ['sometimes', 'nullable', 'string', 'max:60'],
             'placetopay_tran_key' => ['sometimes', 'nullable', 'string', 'max:120'],
-            'placetopay_url' => ['sometimes', 'nullable', 'url', 'max:255', 'starts_with:https://'],
+            'placetopay_environment' => ['sometimes', Rule::enum(PlaceToPayEnvironment::class)],
             'logo' => ['sometimes', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
             'favicon' => ['sometimes', 'image', 'mimes:png,ico,svg', 'max:1024'],
             'hero_image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -75,8 +80,12 @@ final class UpdateTenantConfigurationRequest extends FormRequest
     }
 
     /**
-     * Un texto en blanco equivale a «sin personalizar»: se guarda `null` y vuelve
-     * a regir el texto por defecto.
+     * Un texto en blanco equivale a «sin personalizar»: se guarda `null` y
+     * vuelve a regir el texto por defecto. Lo mismo si el texto enviado es —
+     * salvo fin de línea y espacios al inicio/fin— exactamente el texto por
+     * defecto VIGENTE (T13): la agencia sigue "usando el por defecto" y
+     * recibe las mejoras futuras de Montree a la plantilla, en vez de quedar
+     * congelada en una copia idéntica guardada como propia.
      */
     protected function prepareForValidation(): void
     {
@@ -86,9 +95,24 @@ final class UpdateTenantConfigurationRequest extends FormRequest
 
         $body = $this->input('terms_body');
 
+        if (blank($body)) {
+            $this->merge(['terms_body' => null]);
+
+            return;
+        }
+
+        $trimmed = trim((string) $body);
+        $matchesDefault = $this->normalizeTermsBody($trimmed)
+            === $this->normalizeTermsBody(app(TermsRenderer::class)->defaultBody());
+
         $this->merge([
-            'terms_body' => blank($body) ? null : trim((string) $body),
+            'terms_body' => $matchesDefault ? null : $trimmed,
         ]);
+    }
+
+    private function normalizeTermsBody(string $body): string
+    {
+        return trim(str_replace(["\r\n", "\r"], "\n", $body));
     }
 
     public function withValidator(Validator $validator): void
@@ -112,7 +136,6 @@ final class UpdateTenantConfigurationRequest extends FormRequest
             'locale.in' => __('The selected locale is not supported.'),
             'custom_css.max' => __('Custom CSS must be 10000 characters or less.'),
             'terms_body.max' => __('Los términos y condiciones deben tener 20000 caracteres o menos.'),
-            'placetopay_url.starts_with' => __('La URL del checkout debe usar https.'),
         ];
     }
 
